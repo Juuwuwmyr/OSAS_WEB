@@ -39,20 +39,23 @@ switch ($method) {
         $controller->create();
         break;
     case 'PUT':
-        if ($id > 0) {
-            $controller->update();
-        } else {
-            $controller->error('Violation ID required for update');
-        }
+        $controller->update();
         break;
     case 'DELETE':
-        if ($id > 0) {
-            $controller->delete();
-        } else {
-            $controller->error('Violation ID required for deletion');
-        }
+        $controller->delete();
         break;
     default:
-        $controller->error('Invalid request method');
+        // Output error JSON directly since error() is protected
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/json');
+        http_response_code(400);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid request method',
+            'data' => []
+        ]);
+        exit;
         break;
 }

@@ -103,12 +103,21 @@ class StudentModel extends Model {
                 $avatar = 'https://ui-avatars.com/api/?name=' . urlencode($fullName) . '&background=ffd700&color=333&size=40';
             } else {
                 if (!filter_var($avatar, FILTER_VALIDATE_URL) && strpos($avatar, 'data:') !== 0) {
-                    if (strpos($avatar, 'assets/img/students/') === false) {
-                        if (strpos($avatar, '../assets/img/students/') === 0) {
-                            $avatar = substr($avatar, 3);
+                    // Normalize avatar paths to use app/assets/
+                    if (strpos($avatar, 'app/assets/img/students/') === false && strpos($avatar, 'assets/img/students/') === false) {
+                        if (strpos($avatar, '../app/assets/img/students/') === 0 || strpos($avatar, '../assets/img/students/') === 0) {
+                            // Remove ../ prefix and normalize to app/assets/
+                            $avatar = 'app/' . ltrim(substr($avatar, 3), '/');
+                            if (strpos($avatar, 'app/assets/') === false) {
+                                $avatar = str_replace('assets/', 'app/assets/', $avatar);
+                            }
                         } else {
-                            $avatar = 'assets/img/students/' . basename($avatar);
+                            // Assume it's just a filename, prepend the path
+                            $avatar = 'app/assets/img/students/' . basename($avatar);
                         }
+                    } elseif (strpos($avatar, 'assets/img/students/') !== false && strpos($avatar, 'app/assets/') === false) {
+                        // Normalize old assets/ paths to app/assets/
+                        $avatar = str_replace('assets/', 'app/assets/', $avatar);
                     }
                 }
             }

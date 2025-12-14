@@ -2,8 +2,8 @@ const CACHE_NAME = "osas-cache-v1";
 const urlsToCache = [
   "",
   "index.php",
-  "assets/styles/login.css",
-  "assets/img/default.png"
+  "app/assets/styles/login.css",
+  "app/assets/img/default.png"
 ];
 
 // INSTALL

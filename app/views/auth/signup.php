@@ -19,7 +19,7 @@
 
             <div class="signup-header">
                 <div class="logo">
-                    <img src="../app/assets/img/default.png" alt="Logo" width="55" height="55">
+                    <img src="../../app/assets/img/default.png" alt="Logo" width="55" height="55">
                 </div>
 
                 <h2>Create Account</h2>
@@ -254,6 +254,6 @@
         </div>
     </div>
 
-  <script src="../app/assets/js/register.js"></script>
+  <script src="../../app/assets/js/register.js"></script>
 </body>
 </html>

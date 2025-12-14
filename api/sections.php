@@ -33,8 +33,7 @@ switch ($action) {
         $controller->restore();
         break;
     case 'stats':
-        // Stats would need to be implemented in controller
-        $controller->index();
+        $controller->stats();
         break;
     default:
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {

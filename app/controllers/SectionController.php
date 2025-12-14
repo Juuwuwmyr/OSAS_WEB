@@ -138,5 +138,14 @@ class SectionController extends Controller {
             $this->error('Failed to restore section: ' . $e->getMessage());
         }
     }
+
+    public function stats() {
+        try {
+            $stats = $this->model->getStats();
+            $this->success('Statistics retrieved successfully', $stats);
+        } catch (Exception $e) {
+            $this->error('Failed to retrieve statistics: ' . $e->getMessage());
+        }
+    }
 }
 

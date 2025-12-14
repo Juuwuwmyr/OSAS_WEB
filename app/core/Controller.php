@@ -7,15 +7,17 @@ class Controller {
     /**
      * Load a view
      */
-    protected function view($viewName, $data = []) {
-        extract($data);
-        $viewFile = __DIR__ . '/../views/' . $viewName . '.php';
-        
-        if (!file_exists($viewFile)) {
-            die("View not found: $viewName");
-        }
-        
-        require_once $viewFile;
+    protected function view($viewName, $data = [], $layout = null) {
+        require_once __DIR__ . '/View.php';
+        View::render($viewName, $data, $layout);
+    }
+    
+    /**
+     * Include a partial
+     */
+    protected function partial($partialName, $data = []) {
+        require_once __DIR__ . '/View.php';
+        View::partial($partialName, $data);
     }
 
     /**

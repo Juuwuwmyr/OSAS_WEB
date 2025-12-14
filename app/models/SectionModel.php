@@ -117,5 +117,43 @@ class SectionModel extends Model {
     public function restore($id) {
         return $this->update($id, ['status' => 'active', 'updated_at' => date('Y-m-d H:i:s')]);
     }
+
+    /**
+     * Get statistics
+     */
+    public function getStats() {
+        $stats = [];
+        
+        // Total sections
+        $totalResult = $this->query("SELECT COUNT(*) as count FROM sections");
+        $stats['total'] = (int)($totalResult[0]['count'] ?? 0);
+        
+        // Active sections
+        $activeResult = $this->query("SELECT COUNT(*) as count FROM sections WHERE status = 'active'");
+        $stats['active'] = (int)($activeResult[0]['count'] ?? 0);
+        
+        // Archived sections
+        $archivedResult = $this->query("SELECT COUNT(*) as count FROM sections WHERE status = 'archived'");
+        $stats['archived'] = (int)($archivedResult[0]['count'] ?? 0);
+        
+        // Sections with students
+        $withStudentsResult = $this->query("
+            SELECT COUNT(DISTINCT s.id) as count 
+            FROM sections s
+            INNER JOIN students st ON s.id = st.section_id 
+            WHERE st.status != 'archived' AND s.status = 'active'
+        ");
+        $stats['with_students'] = (int)($withStudentsResult[0]['count'] ?? 0);
+        
+        // Total students in sections
+        $totalStudentsResult = $this->query("
+            SELECT COUNT(*) as count 
+            FROM students 
+            WHERE section_id IS NOT NULL AND status != 'archived'
+        ");
+        $stats['total_students'] = (int)($totalStudentsResult[0]['count'] ?? 0);
+        
+        return $stats;
+    }
 }
 

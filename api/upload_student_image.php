@@ -4,7 +4,7 @@
 header('Content-Type: application/json');
 
 // Create uploads directory if it doesn't exist
-$uploadDir = '../assets/img/students/';
+$uploadDir = __DIR__ . '/../app/assets/img/students/';
 if (!file_exists($uploadDir)) {
     if (!mkdir($uploadDir, 0777, true)) {
         echo json_encode([
@@ -53,15 +53,28 @@ $filepath = $uploadDir . $filename;
 
 // Move uploaded file
 if (move_uploaded_file($file['tmp_name'], $filepath)) {
-    // Return relative path for database storage
-    $relativePath = 'assets/img/students/' . $filename;
+    // Return relative path for database storage (using app/assets structure)
+    $relativePath = 'app/assets/img/students/' . $filename;
+    
+    // Get project base path from SCRIPT_NAME
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $basePath = '';
+    if ($scriptName) {
+        $basePath = dirname($scriptName);
+        $basePath = ltrim($basePath, '/');
+        if (!empty($basePath)) {
+            $basePath = '/' . $basePath;
+        }
+    } else {
+        $basePath = '/OSAS_WEBSYS';
+    }
     
     echo json_encode([
         'status' => 'success',
         'message' => 'Image uploaded successfully.',
         'data' => [
             'path' => $relativePath,
-            'url' => '../' . $relativePath
+            'url' => $basePath . '/' . $relativePath
         ]
     ]);
 } else {

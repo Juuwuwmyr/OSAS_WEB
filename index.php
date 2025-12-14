@@ -39,11 +39,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <title>OSAS | Login</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a2d6d">
-    <link rel="apple-touch-icon" href="assets/img/default.png">
+    <link rel="apple-touch-icon" href="app/assets/img/default.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="./assets/styles/login.css">
+    <link rel="stylesheet" href="./app/assets/styles/login.css">
     <style>
         /* Error toast styles */
         .error-toast {
@@ -211,7 +211,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 
             <div class="login-header">
                 <div class="logo">
-                    <img src="./assets/img/default.png" alt="Logo" width="55" height="55">
+                    <img src="./app/assets/img/default.png" alt="Logo" width="55" height="55">
                 </div>
                 <h2>Welcome Back</h2>
                 <p>Please enter your credentials to login</p>
@@ -300,9 +300,9 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     </button>
 
     <script src="service-worker.js"></script>
-    <script src="assets/js/pwa.js"></script>
-    <script src="assets/js/session.js"></script>
-    <script src="assets/js/login.js"></script>
+    <script src="app/assets/js/pwa.js"></script>
+    <script src="app/assets/js/session.js"></script>
+    <script src="app/assets/js/login.js"></script>
 
 </body>
 
