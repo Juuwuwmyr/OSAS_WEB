@@ -345,19 +345,32 @@ function loadContent(page) {
           setTimeout(() => {
             if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
             if (typeof initializeAnnouncements === 'function') initializeAnnouncements();
+            // Load dashboard data from database
+            if (typeof userDashboardData !== 'undefined' && userDashboardData) {
+              userDashboardData.loadAllData();
+            }
           }, 100);
         }
 
-        if (page.toLowerCase().includes('my_violations') && typeof initViolationsModule === 'function') {
-          initViolationsModule();
+        if (page.toLowerCase().includes('my_violations')) {
+          // Load user violations script
+          loadScript('../app/assets/js/userViolations.js', () => {
+            console.log('✅ User violations script loaded');
+          });
         }
 
-        if (page.toLowerCase().includes('my_profile') && typeof initProfileModule === 'function') {
-          initProfileModule();
+        if (page.toLowerCase().includes('my_profile')) {
+          // Load user profile script
+          loadScript('../app/assets/js/userProfile.js', () => {
+            console.log('✅ User profile script loaded');
+          });
         }
 
-        if (page.toLowerCase().includes('announcements') && typeof initAnnouncementsModule === 'function') {
-          initAnnouncementsModule();
+        if (page.toLowerCase().includes('announcements') && !page.toLowerCase().includes('user_dashcontent')) {
+          // Load user announcements script (only if not dashboard)
+          loadScript('../app/assets/js/userAnnouncements.js', () => {
+            console.log('✅ User announcements script loaded');
+          });
         }
       }
     } else if (this.status === 404) {
@@ -370,6 +383,24 @@ function loadContent(page) {
   };
 
   xhr.send();
+}
+
+// Load script dynamically
+function loadScript(src, callback) {
+  // Check if script already loaded
+  const existingScript = document.querySelector(`script[src="${src}"]`);
+  if (existingScript) {
+    if (callback) callback();
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = src;
+  script.onload = callback;
+  script.onerror = function() {
+    console.error(`❌ Failed to load script: ${src}`);
+  };
+  document.head.appendChild(script);
 }
 
 // Announcements functionality

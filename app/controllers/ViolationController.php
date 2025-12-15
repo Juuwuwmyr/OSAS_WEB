@@ -74,16 +74,21 @@ class ViolationController extends Controller {
         }
 
         // Get student info
-        $student = $this->studentModel->query(
-            "SELECT s.first_name, s.middle_name, s.last_name, 
-                    COALESCE(d.department_name, s.department, 'N/A') as department_name,
-                    s.department as department_code,
-                    s.section_id 
-             FROM students s
-             LEFT JOIN departments d ON s.department = d.department_code
-             WHERE s.student_id = ?",
-            [$studentId]
-        );
+        try {
+            $student = $this->studentModel->query(
+                "SELECT s.first_name, s.middle_name, s.last_name, 
+                        COALESCE(d.department_name, s.department, 'N/A') as department_name,
+                        s.department as department_code,
+                        s.section_id 
+                 FROM students s
+                 LEFT JOIN departments d ON s.department = d.department_code
+                 WHERE s.student_id = ?",
+                [$studentId]
+            );
+        } catch (Exception $e) {
+            error_log("Error querying student: " . $e->getMessage());
+            $this->error('Failed to retrieve student information: ' . $e->getMessage());
+        }
 
         if (empty($student)) {
             $this->error('Student not found.');

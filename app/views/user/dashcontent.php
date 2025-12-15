@@ -31,7 +31,10 @@ require_once __DIR__ . '/../../core/View.php';
       </button>
     </div>
     <div class="announcements-content" id="announcementsContent">
-      <div class="announcement-item urgent">
+      <div style="text-align: center; padding: 40px;">
+        <div class="loading-spinner"></div>
+        <p>Loading announcements...</p>
+      </div><div class="announcement-item urgent">
         <div class="announcement-icon">
           <i class='bx bxs-error-circle'></i>
         </div>

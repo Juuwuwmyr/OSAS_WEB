@@ -107,13 +107,15 @@ async function loadAnnouncements() {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">
-                        <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
-                        <p>Error loading announcements: ${error.message}</p>
-                        <p style="font-size: 12px; margin-top: 10px; color: var(--dark-grey);">
-                            Make sure you have run the SQL file: <code>database/announcements_table.sql</code>
-                        </p>
-                        <button onclick="loadAnnouncements()" style="margin-top: 10px; padding: 8px 16px; background: var(--gold); border: none; border-radius: 6px; cursor: pointer;">Retry</button>
+                    <td colspan="5">
+                        <div class="empty-state" style="color: #ef4444;">
+                            <i class='bx bx-error-circle'></i>
+                            <p>Error loading announcements: ${error.message}</p>
+                            <p style="font-size: 12px; margin-top: 10px; color: var(--dark-grey);">
+                                Make sure you have run the SQL file: <code>database/announcements_table.sql</code>
+                            </p>
+                            <button onclick="loadAnnouncements()" class="btn-submit" style="margin-top: 10px;">Retry</button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -129,9 +131,11 @@ function renderAnnouncements() {
     if (announcements.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" style="text-align: center; padding: 40px;">
-                    <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
-                    <p>No announcements found</p>
+                <td colspan="5">
+                    <div class="empty-state">
+                        <i class='bx bx-info-circle'></i>
+                        <p>No announcements found</p>
+                    </div>
                 </td>
             </tr>
         `;
@@ -143,7 +147,7 @@ function renderAnnouncements() {
     announcements.forEach(announcement => {
         const row = document.createElement('tr');
         const typeClass = announcement.type || 'info';
-        const statusClass = announcement.status === 'active' ? 'completed' : 'pending';
+        const statusClass = announcement.status === 'active' ? 'active' : 'archived';
         const statusText = announcement.status === 'active' ? 'Active' : 'Archived';
         const createdDate = formatDate(announcement.created_at);
 
@@ -151,30 +155,30 @@ function renderAnnouncements() {
             <td>
                 <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
                 <br>
-                <small style="color: var(--dark-grey);">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
+                <small style="color: var(--dark-grey); font-size: 13px;">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
             </td>
             <td>
                 <span class="announcement-type ${typeClass}">${typeClass}</span>
             </td>
             <td>
-                <span class="status ${statusClass}">${statusText}</span>
+                <span class="status-badge ${statusClass}">${statusText}</span>
             </td>
             <td>${createdDate}</td>
-            <td>
-                <div class="action-buttons">
+            <td style="white-space: nowrap;">
+                <div class="action-buttons" style="justify-content: flex-end;">
                     ${announcement.status === 'archived' 
                         ? `<button class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore">
-                             <i class='bx bx-undo'></i> Restore
+                             <i class='bx bx-undo'></i>
                            </button>`
                         : `<button class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit">
-                             <i class='bx bx-edit'></i> Edit
+                             <i class='bx bx-edit'></i>
                            </button>
                            <button class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive">
-                             <i class='bx bx-archive'></i> Archive
+                             <i class='bx bx-archive'></i>
                            </button>`
                     }
                     <button class="action-btn delete" onclick="deleteAnnouncement(${announcement.id})" title="Delete">
-                      <i class='bx bx-trash'></i> Delete
+                      <i class='bx bx-trash'></i>
                     </button>
                 </div>
             </td>
@@ -211,17 +215,32 @@ function filterAnnouncements() {
 
 // Open add announcement modal
 function openAddAnnouncementModal() {
+    const modal = document.getElementById('announcementModal');
+    if (!modal) return;
+    
     document.getElementById('modalTitle').innerHTML = '<i class=\'bx bxs-megaphone\'></i> Add New Announcement';
     document.getElementById('announcementForm').reset();
     document.getElementById('announcementId').value = '';
-    document.getElementById('announcementModal').style.display = 'flex';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    document.body.style.overflow = 'hidden';
 }
 
 // Close announcement modal
 function closeAnnouncementModal() {
-    document.getElementById('announcementModal').style.display = 'none';
+    const modal = document.getElementById('announcementModal');
+    if (!modal) return;
+    
+    modal.style.display = 'none';
     document.getElementById('announcementForm').reset();
     document.getElementById('announcementId').value = '';
+    document.body.style.overflow = 'auto';
 }
 
 // Edit announcement
@@ -229,12 +248,23 @@ function editAnnouncement(id) {
     const announcement = announcements.find(a => a.id === id);
     if (!announcement) return;
 
+    const modal = document.getElementById('announcementModal');
+    if (!modal) return;
+    
     document.getElementById('modalTitle').innerHTML = '<i class=\'bx bxs-megaphone\'></i> Edit Announcement';
     document.getElementById('announcementId').value = id;
     document.getElementById('announcementTitle').value = announcement.title || '';
     document.getElementById('announcementMessage').value = announcement.message || '';
     document.getElementById('announcementType').value = announcement.type || 'info';
-    document.getElementById('announcementModal').style.display = 'flex';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    document.body.style.overflow = 'hidden';
 }
 
 // Save announcement (create or update)

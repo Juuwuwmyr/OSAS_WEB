@@ -8,7 +8,7 @@ class AnnouncementModel extends Model {
     /**
      * Get all announcements with filters
      */
-    public function getAll($filter = 'all', $search = '') {
+    public function getFiltered($filter = 'all', $search = '') {
         // Check if table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE '{$this->table}'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -52,13 +52,13 @@ class AnnouncementModel extends Model {
                     $stmt->close();
                     return $data;
                 } else {
-                    error_log("AnnouncementModel::getAll - Failed to prepare statement: " . $this->conn->error);
+                    error_log("AnnouncementModel::getFiltered - Failed to prepare statement: " . $this->conn->error);
                     return [];
                 }
             } else {
                 $result = $this->conn->query($query);
                 if ($result === false) {
-                    error_log("AnnouncementModel::getAll - Query failed: " . $this->conn->error);
+                    error_log("AnnouncementModel::getFiltered - Query failed: " . $this->conn->error);
                     return [];
                 }
                 $data = [];
@@ -68,7 +68,7 @@ class AnnouncementModel extends Model {
                 return $data;
             }
         } catch (Throwable $e) {
-            error_log("AnnouncementModel::getAll error: " . $e->getMessage());
+            error_log("AnnouncementModel::getFiltered error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             return [];
         }

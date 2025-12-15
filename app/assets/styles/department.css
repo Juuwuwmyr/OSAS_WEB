@@ -102,14 +102,15 @@ body.dark {
 /* ========================================= */
 /*          HEADER ACTION BUTTONS           */
 /* ========================================= */
-.header-actions {
+/* Scoped to department page only */
+#department-page .header-actions {
   display: flex;
   align-items: center;
   gap: 20px;
   flex-shrink: 0;
 }
 
-.button-group {
+#department-page .button-group {
   display: flex;
   gap: 8px;
   padding: 8px;
@@ -119,7 +120,7 @@ body.dark {
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
-.action-btn {
+#department-page .action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -137,21 +138,21 @@ body.dark {
   overflow: hidden;
 }
 
-.action-btn.outline {
+#department-page .action-btn.outline {
   background: var(--light);
   color: var(--dark);
   border: 2px solid var(--border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.action-btn.outline.small {
+#department-page .action-btn.outline.small {
   padding: 8px 14px;
   font-size: 13px;
   border-radius: 8px;
   border-width: 1.5px;
 }
 
-.action-btn.primary {
+#department-page .action-btn.primary {
   background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
   color: var(--dark);
   font-weight: 600;
@@ -160,21 +161,21 @@ body.dark {
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
 }
 
-.action-btn i {
+#department-page .action-btn i {
   font-size: 18px;
   transition: transform 0.25s ease;
   color: currentColor;
 }
 
-.action-btn.primary i {
+#department-page .action-btn.primary i {
   font-size: 19px;
 }
 
-.action-btn.outline.small i {
+#department-page .action-btn.outline.small i {
   font-size: 17px;
 }
 
-.action-btn.outline:hover {
+#department-page .action-btn.outline:hover {
   background: var(--light);
   border-color: var(--gold);
   color: var(--gold);
@@ -182,31 +183,31 @@ body.dark {
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
 }
 
-.action-btn.primary:hover {
+#department-page .action-btn.primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(255, 215, 0, 0.35);
   background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%);
 }
 
-.action-btn:hover i {
+#department-page .action-btn:hover i {
   transform: scale(1.1);
 }
 
-.action-btn:active {
+#department-page .action-btn:active {
   transform: translateY(0) scale(0.98);
   transition: all 0.1s ease;
 }
 
-.action-btn.primary:active {
+#department-page .action-btn.primary:active {
   box-shadow: 0 2px 6px rgba(255, 215, 0, 0.25);
   background: linear-gradient(135deg, #E6B800 0%, #E68A00 100%);
 }
 
-.action-btn.outline:active {
+#department-page .action-btn.outline:active {
   background: var(--grey);
 }
 
-.action-btn.outline.active {
+#department-page .action-btn.outline.active {
   background: var(--gold);
   color: var(--dark);
   border-color: var(--gold);
@@ -214,13 +215,13 @@ body.dark {
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
 }
 
-.action-btn.outline.active:hover {
+#department-page .action-btn.outline.active:hover {
   background: #FFCC00;
   border-color: #FFCC00;
   color: var(--dark);
 }
 
-.action-btn:focus {
+#department-page .action-btn:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
 }
@@ -402,7 +403,8 @@ body.dark {
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
 }
 
-.filter-btn {
+/* Scoped to department page only */
+#department-page .filter-btn {
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -416,7 +418,7 @@ body.dark {
   transition: all 0.3s ease;
 }
 
-.filter-btn:hover {
+#department-page .filter-btn:hover {
   border-color: var(--gold);
   color: var(--gold);
   background: rgba(255, 215, 0, 0.05);
@@ -556,12 +558,13 @@ body.dark {
 /* ========================================= */
 /*            ACTION BUTTONS                */
 /* ========================================= */
-.action-buttons {
+/* Scoped to department page only */
+#department-page .action-buttons {
   display: flex;
   gap: 8px;
 }
 
-.action-buttons .action-btn {
+#department-page .action-buttons .action-btn {
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -576,26 +579,26 @@ body.dark {
   color: var(--dark-grey);
 }
 
-.action-buttons .action-btn:hover {
+#department-page .action-buttons .action-btn:hover {
   transform: translateY(-2px);
 }
 
-.action-buttons .action-btn.edit:hover {
+#department-page .action-buttons .action-btn.edit:hover {
   background: rgba(255, 152, 0, 0.15);
   color: #FF9800;
 }
 
-.action-buttons .action-btn.archive:hover {
+#department-page .action-buttons .action-btn.archive:hover {
   background: rgba(158, 158, 158, 0.15);
   color: #616161;
 }
 
-.action-buttons .action-btn.delete:hover {
+#department-page .action-buttons .action-btn.delete:hover {
   background: rgba(244, 67, 54, 0.15);
   color: #F44336;
 }
 
-.action-buttons .action-btn.restore:hover {
+#department-page .action-buttons .action-btn.restore:hover {
   background: rgba(76, 175, 80, 0.15);
   color: #4CAF50;
 }
