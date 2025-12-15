@@ -35,15 +35,16 @@ class AnnouncementController extends Controller {
             $search = $this->getGet('search', '');
             
             if (!$this->model) {
-                throw new Exception('Model not initialized. Check database connection.');
+                $this->error('Model not initialized. Check database connection.', '', 500);
+                return;
             }
             
-            $announcements = $this->model->getAll($filter, $search);
+            $announcements = $this->model->getFiltered($filter, $search);
             $this->success('Announcements retrieved successfully', $announcements);
         } catch (Throwable $e) {
             error_log("AnnouncementController::index error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
-            $this->error('Failed to retrieve announcements: ' . $e->getMessage());
+            $this->error('Failed to retrieve announcements: ' . $e->getMessage(), '', 500);
         }
     }
 
@@ -52,7 +53,8 @@ class AnnouncementController extends Controller {
             $limit = $this->getGet('limit', null);
             
             if (!$this->model) {
-                throw new Exception('Model not initialized. Check database connection.');
+                $this->error('Model not initialized. Check database connection.', '', 500);
+                return;
             }
             
             $announcements = $this->model->getActive($limit);
@@ -60,7 +62,7 @@ class AnnouncementController extends Controller {
         } catch (Throwable $e) {
             error_log("AnnouncementController::getActive error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
-            $this->error('Failed to retrieve active announcements: ' . $e->getMessage());
+            $this->error('Failed to retrieve active announcements: ' . $e->getMessage(), '', 500);
         }
     }
 

@@ -13,15 +13,9 @@ ini_set('log_errors', 1);
 while (ob_get_level() > 0) {
     ob_end_clean();
 }
-ob_start();
 
-// Set headers first
-if (!headers_sent()) {
-    header('Content-Type: application/json; charset=utf-8');
-} else {
-    // Headers already sent - log this
-    error_log("WARNING: Headers already sent in announcements.php");
-}
+// Don't start output buffer here - let controller's json() method handle it
+// The controller's json() method will set headers and output JSON
 
 try {
     require_once __DIR__ . '/../app/core/Model.php';
@@ -50,9 +44,8 @@ try {
 }
 
 try {
-    // Capture any output from controller methods
-    ob_start();
-    
+    // Controller methods handle their own output and exit
+    // We don't need to capture output here since json() method exits
     switch ($action) {
         case 'get':
         case '':
@@ -96,19 +89,14 @@ try {
     }
     
     // If we get here, the controller method didn't exit (shouldn't happen)
-    $output = ob_get_clean();
-    if (!empty($output)) {
-        // Output was captured, send it
-        echo $output;
-    } else {
-        // No output - this shouldn't happen, but send error
-        http_response_code(500);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Controller method completed without output',
-            'data' => []
-        ]);
-    }
+    // This means json() wasn't called or didn't exit properly
+    ob_end_clean();
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Controller method completed without output',
+        'data' => []
+    ]);
 } catch (Throwable $e) {
     while (ob_get_level() > 0) {
         ob_end_clean();

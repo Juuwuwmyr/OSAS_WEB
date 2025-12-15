@@ -316,5 +316,6 @@ require_once __DIR__ . '/../../core/View.php';
     updateUnreadCount();
   });
   </script>
+  <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
 
 

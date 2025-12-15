@@ -187,15 +187,33 @@ class Model {
     public function query($sql, $params = []) {
         $stmt = $this->conn->prepare($sql);
         
+        if (!$stmt) {
+            $error = $this->conn->error;
+            error_log("Model::query() prepare failed: " . $error);
+            error_log("SQL: " . $sql);
+            throw new Exception("Database query preparation failed: " . $error);
+        }
+        
         if (!empty($params)) {
             $types = "";
             foreach ($params as $param) {
                 $types .= is_int($param) ? "i" : (is_float($param) ? "d" : "s");
             }
-            $stmt->bind_param($types, ...$params);
+            if (!$stmt->bind_param($types, ...$params)) {
+                $error = $stmt->error;
+                $stmt->close();
+                error_log("Model::query() bind_param failed: " . $error);
+                throw new Exception("Database query parameter binding failed: " . $error);
+            }
         }
         
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            error_log("Model::query() execute failed: " . $error);
+            throw new Exception("Database query execution failed: " . $error);
+        }
+        
         $result = $stmt->get_result();
         
         $data = [];

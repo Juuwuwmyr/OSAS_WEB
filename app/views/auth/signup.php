@@ -13,6 +13,7 @@
         <div class="signup-card">
             <div class="gold-border"></div>
 
+            
             <div class="theme-toggle" onclick="toggleTheme()">
                 <i class="fas fa-sun"></i>
             </div>

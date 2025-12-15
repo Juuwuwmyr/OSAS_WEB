@@ -77,6 +77,7 @@ if ($_SESSION['role'] !== 'user') {
   <!-- CONTENT -->
   <script src="../app/assets/js/initModules.js"></script>
   <script src="../app/assets/js/user_dashboard.js"></script>
+  <script src="../app/assets/js/userDashboardData.js"></script>
   <script src="../app/assets/js/chatbot.js"></script>
 </body>
 
