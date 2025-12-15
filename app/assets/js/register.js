@@ -355,8 +355,32 @@ function handleSignup(event) {
     signupButton.disabled = true;
     signupButton.innerHTML = '<span class="loading-spinner"></span>';
 
+    // Determine the correct API path based on current location
+    function getRegisterAPIPath() {
+        const currentPath = window.location.pathname;
+        const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+        const projectBase = pathMatch ? pathMatch[1] : '';
+        
+        if (projectBase) {
+            return projectBase + '/app/views/auth/register.php';
+        }
+        
+        if (currentPath.includes('/includes/')) {
+            return '../app/views/auth/register.php';
+        } else if (currentPath.includes('/app/views/')) {
+            return '../auth/register.php';
+        } else {
+            return 'app/views/auth/register.php';
+        }
+    }
+    
+    const apiPath = getRegisterAPIPath();
+    console.log('Register API Path:', apiPath);
+    console.log('Current page URL:', window.location.href);
+    console.log('Current pathname:', window.location.pathname);
+    
     // Send data to PHP backend
-    fetch('../app/views/auth/register.php', {
+    fetch(apiPath, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -372,11 +396,54 @@ function handleSignup(event) {
             role: 'user'
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+    .then(async response => {
+        // Log response for debugging
+        console.log('Response status:', response.status);
+        console.log('Response URL:', response.url);
+        
+        // Get response text first to check if it's JSON
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response URL:', response.url);
+        console.log('Response text length:', responseText.length);
+        console.log('Response text (full):', responseText);
+        
+        // Check if response is empty
+        if (!responseText || responseText.trim().length === 0) {
+            throw new Error('Server returned an empty response. The API endpoint may not exist or there was a server error.');
         }
-        return response.json();
+        
+        // Try to parse as JSON
+        let data;
+        try {
+            // Trim whitespace that might cause issues
+            const trimmedText = responseText.trim();
+            data = JSON.parse(trimmedText);
+        } catch (e) {
+            // If it's not JSON, it's probably an HTML error page
+            console.error('Failed to parse JSON:', e);
+            console.error('Full response text:', responseText);
+            
+            // Check if it's an HTML error page
+            if (responseText.trim().startsWith('<!') || responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+                throw new Error('Server returned HTML instead of JSON. The API endpoint may be incorrect or there was a PHP error. Check the console for details.');
+            }
+            
+            // Check if it's a 404 or other error
+            if (responseText.includes('404') || responseText.includes('Not Found')) {
+                throw new Error('API endpoint not found (404). Please check the API path in the console.');
+            }
+            
+            // Show more of the response for debugging
+            const preview = responseText.length > 200 ? responseText.substring(0, 200) + '...' : responseText;
+            throw new Error('Invalid response from server. Response: ' + preview);
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Network response was not ok');
+        }
+        
+        return data;
     })
     .then(data => {
         signupButton.disabled = false;
@@ -411,8 +478,14 @@ function handleSignup(event) {
     .catch(error => {
         signupButton.disabled = false;
         signupButton.innerHTML = '<span>Create Account</span>';
-        console.error('Error:', error);
-        showNotification('error', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
+        console.error('Registration Error:', error);
+        
+        let errorMessage = 'Unable to connect to server. Please check your connection and try again.';
+        if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showNotification('error', 'Registration Failed', errorMessage);
     });
 }
 

@@ -35,6 +35,7 @@ $pathMap = [
     'admin_page/Students' => 'admin/students',
     'admin_page/Violations' => 'admin/violations',
     'admin_page/Reports' => 'admin/reports',
+    'admin_page/Announcements' => 'admin/Announcements',
     'user-page/user_dashcontent' => 'user/dashcontent',
     'user-page/my_violations' => 'user/my_violations',
     'user-page/my_profile' => 'user/my_profile',

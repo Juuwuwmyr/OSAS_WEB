@@ -2,9 +2,16 @@
 function initDashboardModule() {
   console.log('📊 Initializing Dashboard Module');
   
-  // Initialize charts
-  if (typeof initializeCharts === 'function') {
-    setTimeout(initializeCharts, 100);
+  // Initialize dashboard data (will update stats, charts, and tables with real database data)
+  if (typeof initDashboardData === 'function') {
+    setTimeout(() => {
+      initDashboardData();
+    }, 200);
+  } else {
+    // Fallback to old chart initialization if dashboard data loader not available
+    if (typeof initializeCharts === 'function') {
+      setTimeout(initializeCharts, 100);
+    }
   }
   
   // Initialize announcements
@@ -159,6 +166,13 @@ function initializeCharts() {
     return;
   }
 
+  // Initialize dashboard data loader (will update charts with real data)
+  if (typeof initDashboardData === 'function') {
+    initDashboardData();
+    return; // Dashboard data loader will handle chart initialization
+  }
+
+  // Fallback to old method if dashboard data loader not available
   // Destroy existing charts to prevent duplicates
   Chart.helpers.each(Chart.instances, (instance) => {
     instance.destroy();

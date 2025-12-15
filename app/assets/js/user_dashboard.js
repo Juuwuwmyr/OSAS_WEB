@@ -150,6 +150,11 @@ function deleteCookie(name) {
 // SIDEBAR HANDLING
 // ===============================
 allSideMenu.forEach(item => {
+  // Skip chatbot buttons - they have their own handlers
+  if (item.classList.contains('chatbot-sidebar-btn')) {
+    return;
+  }
+  
   const li = item.parentElement;
 
   item.addEventListener('click', function (e) {
@@ -157,7 +162,11 @@ allSideMenu.forEach(item => {
     const page = this.getAttribute('data-page');
     if (!page) return;
 
-    allSideMenu.forEach(i => i.parentElement.classList.remove('active'));
+    allSideMenu.forEach(i => {
+      if (!i.classList.contains('chatbot-sidebar-btn')) {
+        i.parentElement.classList.remove('active');
+      }
+    });
     li.classList.add('active');
 
     loadContent(page);

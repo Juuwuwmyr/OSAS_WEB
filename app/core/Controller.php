@@ -29,9 +29,13 @@ class Controller {
             ob_end_clean();
         }
         
-        // Set headers
-        http_response_code($statusCode);
-        header('Content-Type: application/json; charset=utf-8');
+        // Set headers (only if not already sent)
+        if (!headers_sent()) {
+            http_response_code($statusCode);
+            header('Content-Type: application/json; charset=utf-8');
+        } else {
+            http_response_code($statusCode);
+        }
         
         // Encode and output JSON
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -40,7 +44,9 @@ class Controller {
         if ($json === false) {
             $error = json_last_error_msg();
             error_log("JSON encoding error: " . $error);
-            http_response_code(500);
+            if (!headers_sent()) {
+                http_response_code(500);
+            }
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Failed to encode response: ' . $error
