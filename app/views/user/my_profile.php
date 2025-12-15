@@ -305,5 +305,6 @@ require_once __DIR__ . '/../../core/View.php';
     }
   }
   </script>
+  <script src="<?= View::asset('js/userProfile.js') ?>"></script>
 
 

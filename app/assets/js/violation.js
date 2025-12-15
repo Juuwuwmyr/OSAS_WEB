@@ -429,13 +429,40 @@ function initViolationsModule() {
                     body: JSON.stringify(violationData)
                 });
 
+                // Try to get response text first to see what the server returned
+                const responseText = await response.text();
+                console.log('Response status:', response.status);
+                console.log('Response text:', responseText);
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // Try to parse as JSON to get error message
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        if (errorData.message) {
+                            errorMessage = errorData.message;
+                        } else if (errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        // If not JSON, use the raw text (might be HTML error page)
+                        if (responseText && responseText.length < 500) {
+                            errorMessage = responseText;
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const result = await response.json();
+                // Parse JSON response
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Invalid JSON response from server: ' + responseText.substring(0, 200));
+                }
+
                 if (result.status === 'error') {
-                    throw new Error(result.message);
+                    throw new Error(result.message || 'Unknown error occurred');
                 }
 
                 console.log('✅ Violation saved successfully');

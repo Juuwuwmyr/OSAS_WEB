@@ -266,6 +266,7 @@ window.onclick = function(event) {
     modal.style.display = 'none';
   }
 }
-</script>
+  </script>
+  <script src="<?= View::asset('js/userViolations.js') ?>"></script>
 
 

@@ -46,6 +46,12 @@ require_once __DIR__ . '/../../core/View.php';
         <span class="text">Reports</span>
       </a>
     </li>
+    <li>
+      <a href="#" data-page="admin_page/Announcements">
+        <i class='bx bxs-megaphone'></i>
+        <span class="text">Announcements</span>
+      </a>
+    </li>
   </ul>
   <ul class="side-menu">
     <li>

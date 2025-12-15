@@ -38,7 +38,9 @@ $notificationCount = 1; // Can be dynamic later
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://js.puter.com/v2/"></script>
 </head>
 
 <body>
@@ -57,6 +59,7 @@ $notificationCount = 1; // Can be dynamic later
 
   <script src="<?= View::asset('js/dashboard.js') ?>"></script>
   <script src="<?= View::asset('js/utils/notification.js') ?>"></script>
+  <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
   <script src="<?= View::asset('js/department.js') ?>"></script>
@@ -64,6 +67,8 @@ $notificationCount = 1; // Can be dynamic later
   <script src="<?= View::asset('js/student.js') ?>"></script>
   <script src="<?= View::asset('js/violation.js') ?>"></script>
   <script src="<?= View::asset('js/reports.js') ?>"></script>
+  <script src="<?= View::asset('js/announcement.js') ?>"></script>
+  <script src="<?= View::asset('js/chatbot.js') ?>"></script>
 </body>
 
 </html>

@@ -34,60 +34,16 @@ if ($_SESSION['role'] !== 'user') {
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css">
+  <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://js.puter.com/v2/"></script>
 </head>
 
 <body>
-
-  <section id="sidebar">
-    <a href="#" class="brand">
-      <img src="../app/assets/img/default.png" alt="Crown Icon"
-        style="width: 38px; height: 38px; vertical-align: middle; margin-right: 24px; margin-left: 10px;">
-      <span class="text">Osas System</span>
-    </a>
-
-    <ul class="side-menu top">
-      <li class="active">
-        <a href="#" data-page="user-page/user_dashcontent">
-          <i class='bx bxs-dashboard'></i>
-          <span class="text">My Dashboard</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-page="user-page/my_violations">
-          <i class='bx bxs-shield-x'></i>
-          <span class="text">My Violations</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-page="user-page/my_profile">
-          <i class='bx bxs-user'></i>
-          <span class="text">My Profile</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-page="user-page/announcements">
-          <i class='bx bxs-megaphone'></i>
-          <span class="text">Announcements</span>
-        </a>
-      </li>
-    </ul>
-    <ul class="side-menu">
-      <li>
-        <a href="#" class="logout" onclick="alert('Settings page coming soon')">
-          <i class='bx bxs-cog'></i>
-          <span class="text">Settings</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" class="logout" onclick="logout()">
-          <i class='bx bx-log-out'></i>
-          <span class="text">Logout</span>
-        </a>
-      </li>
-    </ul>
-  </section>
-  <!-- SIDEBAR -->
+  <?php
+  require_once __DIR__ . '/../app/core/View.php';
+  View::partial('user_sidebar');
+  ?>
 
   <!-- CONTENT -->
   <section id="content">
@@ -121,6 +77,8 @@ if ($_SESSION['role'] !== 'user') {
   <!-- CONTENT -->
   <script src="../app/assets/js/initModules.js"></script>
   <script src="../app/assets/js/user_dashboard.js"></script>
+  <script src="../app/assets/js/userDashboardData.js"></script>
+  <script src="../app/assets/js/chatbot.js"></script>
 </body>
 
 </html>

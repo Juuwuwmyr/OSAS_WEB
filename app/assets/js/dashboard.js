@@ -353,6 +353,13 @@ function loadContent(page) {
             // Initialize module JS
             initializeModule(page);
 
+            // Initialize dashboard data if dashboard page is loaded
+            if (page === 'admin_page/dashcontent' && typeof initDashboardData === 'function') {
+                setTimeout(() => {
+                    initDashboardData();
+                }, 300);
+            }
+
             console.log(`✅ ${page} loaded successfully`);
 
         } else if (this.status === 404) {
@@ -412,7 +419,8 @@ function initializeModule(page) {
         'violations': 'initViolationsModule',  // This should match your violations.js function name
         'reports': 'initReportsModule',
         'users': 'initUsersModule',
-        'settings': 'initSettingsModule'
+        'settings': 'initSettingsModule',
+        'announcements': 'initAnnouncementModule'
     };
 
     const moduleName = page.toLowerCase().replace('admin_page/', '');
@@ -477,14 +485,26 @@ function loadModuleScript(moduleName) {
 function initializeEventListeners() {
     // Enhanced side menu functionality
     allSideMenu.forEach(item => {
+        // Skip chatbot buttons - they have their own handlers
+        if (item.classList.contains('chatbot-sidebar-btn')) {
+            return;
+        }
+        
         const li = item.parentElement;
 
         item.addEventListener('click', function (e) {
             e.preventDefault();
             const page = this.getAttribute('data-page');
+            
+            // Only process items with data-page attribute
+            if (!page) return;
 
             // Update active menu item
-            allSideMenu.forEach(i => i.parentElement.classList.remove('active'));
+            allSideMenu.forEach(i => {
+                if (!i.classList.contains('chatbot-sidebar-btn')) {
+                    i.parentElement.classList.remove('active');
+                }
+            });
             li.classList.add('active');
 
             // Close sidebar on mobile after selection
