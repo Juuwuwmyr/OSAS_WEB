@@ -8,7 +8,7 @@ class ViolationModel extends Model {
     /**
      * Get all violations with student info
      */
-    public function getAllWithStudentInfo($filter = 'all', $search = '') {
+    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '') {
         // Check if violations table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -52,6 +52,14 @@ class ViolationModel extends Model {
         $params = [];
         $types = "";
 
+        if (!empty($studentId)) {
+            $query .= " AND (BINARY v.student_id = BINARY ? OR BINARY s.student_id = BINARY ? OR s.id = ?)";
+            $params[] = $studentId;
+            $params[] = $studentId;
+            $params[] = $studentId;
+            $types .= "sss";
+        }
+
         if ($filter === 'resolved') {
             $query .= " AND v.status = 'resolved'";
         } elseif ($filter === 'pending') {
@@ -63,8 +71,9 @@ class ViolationModel extends Model {
         if (!empty($search)) {
             $query .= " AND (v.case_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR v.student_id LIKE ? OR v.violation_type LIKE ?)";
             $searchTerm = "%$search%";
-            $params = array_fill(0, 5, $searchTerm);
-            $types = "sssss";
+            $searchParams = array_fill(0, 5, $searchTerm);
+            $params = array_merge($params, $searchParams);
+            $types .= "sssss";
         }
 
         $query .= " ORDER BY v.created_at DESC";

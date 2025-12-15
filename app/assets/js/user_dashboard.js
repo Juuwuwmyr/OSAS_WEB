@@ -343,33 +343,73 @@ function loadContent(page) {
         // Fallback: Initialize modules even if structure is different
         if (page.toLowerCase().includes('user_dashcontent')) {
           setTimeout(() => {
+            console.log('🔄 Initializing dashboard page...');
             if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
             if (typeof initializeAnnouncements === 'function') initializeAnnouncements();
-            // Load dashboard data from database
-            if (typeof userDashboardData !== 'undefined' && userDashboardData) {
-              userDashboardData.loadAllData();
-            }
-          }, 100);
+            
+            const loadData = () => {
+              if (typeof window.userDashboardData !== 'undefined' && window.userDashboardData) {
+                console.log('🔄 Loading user dashboard data...');
+                window.userDashboardData.loadAllData().catch(error => {
+                  console.error('❌ Error loading dashboard data:', error);
+                });
+              } else if (typeof userDashboardData !== 'undefined' && userDashboardData) {
+                console.log('🔄 Loading user dashboard data (fallback)...');
+                userDashboardData.loadAllData().catch(error => {
+                  console.error('❌ Error loading dashboard data:', error);
+                });
+              } else {
+                console.warn('⚠️ userDashboardData not available, retrying in 500ms...');
+                setTimeout(loadData, 500);
+              }
+            };
+            
+            loadData();
+          }, 500);
         }
 
         if (page.toLowerCase().includes('my_violations')) {
-          // Load user violations script
           loadScript('../app/assets/js/userViolations.js', () => {
             console.log('✅ User violations script loaded');
+            setTimeout(() => {
+              if (typeof window.initUserViolations === 'function') {
+                window.initUserViolations();
+              } else if (typeof window.initializeUserViolations === 'function') {
+                window.initializeUserViolations();
+              } else {
+                console.warn('⚠️ User violations init function not found');
+              }
+            }, 300);
           });
         }
 
         if (page.toLowerCase().includes('my_profile')) {
-          // Load user profile script
           loadScript('../app/assets/js/userProfile.js', () => {
             console.log('✅ User profile script loaded');
+            setTimeout(() => {
+              if (typeof window.initUserProfile === 'function') {
+                window.initUserProfile();
+              } else if (typeof window.initializeUserProfile === 'function') {
+                window.initializeUserProfile();
+              } else {
+                console.warn('⚠️ User profile init function not found');
+              }
+            }, 300);
           });
         }
 
         if (page.toLowerCase().includes('announcements') && !page.toLowerCase().includes('user_dashcontent')) {
-          // Load user announcements script (only if not dashboard)
           loadScript('../app/assets/js/userAnnouncements.js', () => {
             console.log('✅ User announcements script loaded');
+            setTimeout(() => {
+              if (typeof window.initAnnouncementsModule === 'function') {
+                window.initAnnouncementsModule();
+              } else if (typeof window.initializeUserAnnouncements === 'function') {
+                window.initializeUserAnnouncements();
+              } else {
+                console.warn('⚠️ User announcements init function not found');
+              }
+            }, 300);
           });
         }
       }

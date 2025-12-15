@@ -9,20 +9,29 @@ function getUserAPIBasePath() {
     const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
     const projectBase = pathMatch ? pathMatch[1] : '';
     
-    if (projectBase) {
-        return projectBase + '/api/';
-    }
-    
-    if (currentPath.includes('/app/views/')) {
-        return '../../api/';
-    } else if (currentPath.includes('/includes/')) {
+    // Try to detect from current URL
+    if (currentPath.includes('/includes/') || currentPath.includes('/app/entry/')) {
         return '../api/';
+    } else if (currentPath.includes('/app/views/')) {
+        return '../../api/';
+    } else if (projectBase) {
+        return projectBase + '/api/';
     } else {
+        // Default fallback - try to detect from window location
+        const host = window.location.host;
+        const path = window.location.pathname;
+        const pathParts = path.split('/').filter(p => p);
+        
+        if (pathParts.length > 0) {
+            return '/' + pathParts[0] + '/api/';
+        }
+        
         return 'api/';
     }
 }
 
 const USER_API_BASE = getUserAPIBasePath();
+console.log('🔗 User API Base Path:', USER_API_BASE);
 
 // User Dashboard Data Manager
 class UserDashboardData {
@@ -51,6 +60,7 @@ class UserDashboardData {
             return false;
         }
         this.userId = userId;
+        console.log('✅ User ID initialized:', this.userId);
         return true;
     }
 
@@ -58,7 +68,6 @@ class UserDashboardData {
      * Get user ID from session/cookies
      */
     getUserId() {
-        // Try to get from cookies first
         const cookies = document.cookie.split(';').reduce((acc, cookie) => {
             const [key, value] = cookie.trim().split('=');
             acc[key] = value;
@@ -69,12 +78,49 @@ class UserDashboardData {
             return parseInt(cookies.user_id);
         }
         
-        // Try localStorage
         try {
             const session = localStorage.getItem('userSession');
             if (session) {
                 const parsed = JSON.parse(session);
                 return parsed.user_id || parsed.id;
+            }
+        } catch (e) {
+            console.warn('Could not parse user session:', e);
+        }
+        
+        return null;
+    }
+    
+    getStudentId() {
+        const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+            const [key, value] = cookie.trim().split('=');
+            acc[key] = value;
+            return acc;
+        }, {});
+        
+        if (cookies.student_id) {
+            return cookies.student_id;
+        }
+        
+        if (cookies.student_id_code) {
+            return cookies.student_id_code;
+        }
+        
+        const storedId = localStorage.getItem('student_id');
+        if (storedId) {
+            return storedId;
+        }
+        
+        const storedCode = localStorage.getItem('student_id_code');
+        if (storedCode) {
+            return storedCode;
+        }
+        
+        try {
+            const session = localStorage.getItem('userSession');
+            if (session) {
+                const parsed = JSON.parse(session);
+                return parsed.studentId || parsed.studentIdCode;
             }
         } catch (e) {
             console.warn('Could not parse user session:', e);
@@ -89,23 +135,43 @@ class UserDashboardData {
     async loadAllData() {
         try {
             console.log('📊 Loading user dashboard data from database...');
+            console.log('API Base Path:', USER_API_BASE);
             
             if (!this.init()) {
-                console.warn('⚠️ Could not initialize user dashboard data');
+                console.warn('⚠️ Could not initialize user dashboard data - user ID not found');
+                await this.loadAnnouncements();
+                this.updateAnnouncementsDisplay();
                 return;
             }
 
-            // Load data in parallel
+            console.log('✅ User ID initialized:', this.userId);
+
+            this.studentId = this.getStudentId();
+            
+            if (!this.studentId) {
+                console.log('⚠️ Student ID not in session, fetching from profile...');
+                await this.loadUserProfile();
+            } else {
+                console.log('✅ Student ID found in session:', this.studentId);
+            }
+            
+            if (!this.studentId) {
+                console.warn('⚠️ Student ID not found, cannot load user-specific data');
+                await this.loadAnnouncements();
+                this.updateAnnouncementsDisplay();
+                return;
+            }
+
             await Promise.all([
                 this.loadUserViolations(),
-                this.loadAnnouncements(),
-                this.loadUserProfile()
+                this.loadAnnouncements()
             ]);
 
-            // Update dashboard display
             this.updateDashboardDisplay();
+            console.log('✅ Dashboard data loaded and displayed');
         } catch (error) {
             console.error('❌ Error loading user dashboard data:', error);
+            console.error('Error stack:', error.stack);
         }
     }
 
@@ -114,46 +180,51 @@ class UserDashboardData {
      */
     async loadUserViolations() {
         try {
+            if (!this.studentId) {
+                console.warn('⚠️ Student ID not set, cannot load violations');
+                this.violations = [];
+                this.calculateViolationStats();
+                return;
+            }
+
             console.log('🔄 Loading user violations...');
+            console.log('Filtering for student_id:', this.studentId);
+            const url = USER_API_BASE + 'violations.php?student_id=' + encodeURIComponent(this.studentId);
+            console.log('Fetching from:', url);
             
-            // Get all violations and filter by user's student_id
-            const response = await fetch(USER_API_BASE + 'violations.php');
+            const response = await fetch(url);
             
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const responseText = await response.text();
+            console.log('Violations API response (first 500 chars):', responseText.substring(0, 500));
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse JSON:', e);
+                console.error('Response was:', responseText);
+                throw new Error('Invalid JSON response from violations API');
+            }
             
             if (data.status === 'error') {
                 throw new Error(data.message || 'Failed to load violations');
             }
 
-            const allViolations = data.violations || data.data || [];
-            
-            // Get user's student_id from profile or session
-            if (!this.studentId) {
-                await this.loadUserProfile();
-            }
-            
-            // Filter violations for this user
-            if (this.studentId) {
-                this.violations = allViolations.filter(v => 
-                    (v.student_id && parseInt(v.student_id) === parseInt(this.studentId)) ||
-                    (v.studentId && parseInt(v.studentId) === parseInt(this.studentId))
-                );
-            } else {
-                // Fallback: if we can't get student_id, show empty
-                this.violations = [];
-            }
+            this.violations = data.violations || data.data || [];
+            console.log(`✅ Loaded ${this.violations.length} violations for student_id: ${this.studentId}`);
 
-            // Calculate stats
             this.calculateViolationStats();
-            
-            console.log(`✅ Loaded ${this.violations.length} violations for user`);
         } catch (error) {
             console.error('❌ Error loading violations:', error);
+            console.error('Error details:', error.message, error.stack);
             this.violations = [];
+            this.calculateViolationStats();
         }
     }
 
@@ -200,14 +271,28 @@ class UserDashboardData {
     async loadAnnouncements() {
         try {
             console.log('🔄 Loading announcements...');
+            const url = USER_API_BASE + 'announcements.php?action=active&limit=10';
+            console.log('Fetching from:', url);
             
-            const response = await fetch(USER_API_BASE + 'announcements.php?action=active&limit=10');
+            const response = await fetch(url);
             
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const responseText = await response.text();
+            console.log('Announcements API response (first 500 chars):', responseText.substring(0, 500));
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse JSON:', e);
+                console.error('Response was:', responseText);
+                throw new Error('Invalid JSON response from announcements API');
+            }
             
             if (data.status === 'error') {
                 throw new Error(data.message || 'Failed to load announcements');
@@ -218,6 +303,7 @@ class UserDashboardData {
             console.log(`✅ Loaded ${this.announcements.length} announcements`);
         } catch (error) {
             console.error('❌ Error loading announcements:', error);
+            console.error('Error details:', error.message, error.stack);
             this.announcements = [];
         }
     }
@@ -227,38 +313,58 @@ class UserDashboardData {
      */
     async loadUserProfile() {
         try {
-            console.log('🔄 Loading user profile...');
+            console.log('🔄 Loading user profile to get student_id...');
+            console.log('Looking for user_id:', this.userId);
+            const url = USER_API_BASE + 'students.php';
+            console.log('Fetching from:', url);
             
-            // Get user's student data
-            const response = await fetch(USER_API_BASE + 'students.php');
+            const response = await fetch(url);
             
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const responseText = await response.text();
+            console.log('Students API response (first 500 chars):', responseText.substring(0, 500));
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse JSON:', e);
+                console.error('Response was:', responseText);
+                throw new Error('Invalid JSON response from students API');
+            }
             
             if (data.status === 'error') {
                 throw new Error(data.message || 'Failed to load profile');
             }
 
             const allStudents = data.data || data.students || [];
+            console.log(`📋 Total students in database: ${allStudents.length}`);
             
-            // Find student by user_id
-            const student = allStudents.find(s => 
-                (s.user_id && parseInt(s.user_id) === parseInt(this.userId)) ||
-                (s.id && parseInt(s.id) === parseInt(this.userId))
-            );
+            const student = allStudents.find(s => {
+                const match = s.user_id && parseInt(s.user_id) === parseInt(this.userId);
+                if (match) {
+                    console.log('✅ Found matching student:', s);
+                }
+                return match;
+            });
             
             if (student) {
                 this.userProfile = student;
-                this.studentId = student.id || student.student_id;
-                console.log('✅ Loaded user profile');
+                this.studentId = student.student_id || student.studentId || student.id;
+                console.log('✅ Loaded user profile, student_id:', this.studentId);
+                console.log('Student data:', { id: student.id, student_id: student.student_id, studentId: student.studentId });
             } else {
-                console.warn('⚠️ User profile not found');
+                console.warn('⚠️ Student not found for user_id:', this.userId);
+                console.log('Available students (first 3):', allStudents.slice(0, 3));
             }
         } catch (error) {
             console.error('❌ Error loading user profile:', error);
+            console.error('Error details:', error.message, error.stack);
         }
     }
 
@@ -266,14 +372,16 @@ class UserDashboardData {
      * Update dashboard display with loaded data
      */
     updateDashboardDisplay() {
-        // Update stats boxes
+        console.log('🔄 Updating dashboard display...');
+        console.log('Stats:', this.stats);
+        console.log('Violations count:', this.violations.length);
+        console.log('Announcements count:', this.announcements.length);
+        
         this.updateStatsBoxes();
-        
-        // Update announcements
         this.updateAnnouncementsDisplay();
-        
-        // Update violations
         this.updateViolationsDisplay();
+        
+        console.log('✅ Dashboard display updated');
     }
 
     /**
@@ -309,8 +417,13 @@ class UserDashboardData {
      * Update announcements display
      */
     updateAnnouncementsDisplay() {
-        const container = document.getElementById('announcementsContent');
-        if (!container) return;
+        const container = document.getElementById('announcementsContent') || 
+                         document.querySelector('#announcementsContent') ||
+                         document.querySelector('.announcements-content');
+        if (!container) {
+            console.warn('⚠️ Announcements container not found');
+            return;
+        }
 
         if (this.announcements.length === 0) {
             container.innerHTML = `
@@ -366,8 +479,11 @@ class UserDashboardData {
      * Update violation summary cards
      */
     updateViolationSummary() {
-        const summaryContainer = document.querySelector('.violation-summary');
-        if (!summaryContainer) return;
+        const summaryContainer = document.querySelector('.violation-summary') || document.getElementById('violationSummary');
+        if (!summaryContainer) {
+            console.warn('⚠️ Violation summary container not found');
+            return;
+        }
 
         const types = ['improper_uniform', 'improper_footwear', 'no_id'];
         const typeLabels = {
@@ -422,8 +538,11 @@ class UserDashboardData {
      * Update recent violations table
      */
     updateRecentViolationsTable() {
-        const tbody = document.querySelector('.violation-history tbody');
-        if (!tbody) return;
+        const tbody = document.querySelector('.violation-history tbody') || document.getElementById('recentViolationsTableBody');
+        if (!tbody) {
+            console.warn('⚠️ Recent violations table body not found');
+            return;
+        }
 
         if (this.violations.length === 0) {
             tbody.innerHTML = `
@@ -520,10 +639,25 @@ const userDashboardData = new UserDashboardData();
 document.addEventListener('DOMContentLoaded', function() {
     // Check if we're on the dashboard page
     if (document.querySelector('.box-info') || document.getElementById('announcementsContent')) {
-        userDashboardData.loadAllData();
+        console.log('🔄 Auto-loading user dashboard data on DOMContentLoaded...');
+        userDashboardData.loadAllData().catch(error => {
+            console.error('❌ Error auto-loading dashboard data:', error);
+        });
     }
 });
 
+// Also listen for when content is dynamically loaded
+if (typeof window !== 'undefined') {
+    // Create a custom event listener for when content is loaded
+    window.addEventListener('userDashboardContentLoaded', function() {
+        console.log('🔄 User dashboard content loaded event triggered');
+        if (typeof userDashboardData !== 'undefined' && userDashboardData) {
+            userDashboardData.loadAllData().catch(error => {
+                console.error('❌ Error loading dashboard data:', error);
+            });
+        }
+    });
+}
+
 // Export for use in other scripts
 window.userDashboardData = userDashboardData;
-

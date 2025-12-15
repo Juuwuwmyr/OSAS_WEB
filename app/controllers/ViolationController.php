@@ -18,29 +18,25 @@ class ViolationController extends Controller {
     public function index() {
         $filter = $this->getGet('filter', 'all');
         $search = $this->getGet('search', '');
+        $studentId = $this->getGet('student_id', '');
         
         try {
-            $violations = $this->model->getAllWithStudentInfo($filter, $search);
+            $violations = $this->model->getAllWithStudentInfo($filter, $search, $studentId);
             
-            // Log for debugging
-            error_log("ViolationsController: Retrieved " . count($violations) . " violations");
+            error_log("ViolationsController: Retrieved " . count($violations) . " violations" . ($studentId ? " for student_id: $studentId" : ""));
             
-            // Always return success, even if array is empty
-            // This helps distinguish between "no data" and "error"
             $response = [
                 'status' => 'success',
                 'message' => count($violations) > 0 ? 'Violations retrieved successfully' : 'No violations found',
                 'violations' => $violations,
-                'data' => $violations, // Also include as 'data' for backward compatibility
+                'data' => $violations,
                 'count' => count($violations)
             ];
             
-            // Log the response structure for debugging
             error_log("ViolationsController: Response structure - status: " . $response['status'] . ", count: " . $response['count']);
             
             $this->json($response);
         } catch (Exception $e) {
-            // Log the full error
             error_log("ViolationsController Error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             

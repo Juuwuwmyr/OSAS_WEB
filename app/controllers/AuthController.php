@@ -28,25 +28,53 @@ class AuthController extends Controller {
         $user = $this->model->authenticate($username, $password);
 
         if ($user) {
-            // Set session variables
+            $studentId = null;
+            $studentIdCode = null;
+            
+            if ($user['role'] === 'user') {
+                require_once __DIR__ . '/../models/StudentModel.php';
+                $studentModel = new StudentModel();
+                try {
+                    $student = $studentModel->query(
+                        "SELECT id, student_id FROM students WHERE user_id = ? LIMIT 1",
+                        [$user['id']]
+                    );
+                    if (!empty($student)) {
+                        $studentId = $student[0]['id'];
+                        $studentIdCode = $student[0]['student_id'];
+                    }
+                } catch (Exception $e) {
+                    error_log("Error fetching student_id: " . $e->getMessage());
+                }
+            }
+            
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
+            if ($studentId) {
+                $_SESSION['student_id'] = $studentId;
+                $_SESSION['student_id_code'] = $studentIdCode;
+            }
 
             $expiryTime = time() + ($remember ? 30*24*60*60 : 6*60*60);
 
-            // Always set cookies for session persistence (even without remember me)
-            // This ensures the session persists across page loads
             setcookie("user_id", $user['id'], $expiryTime, "/", "", false, false);
             setcookie("username", $user['username'], $expiryTime, "/", "", false, false);
             setcookie("role", $user['role'], $expiryTime, "/", "", false, false);
+            if ($studentId) {
+                setcookie("student_id", $studentId, $expiryTime, "/", "", false, false);
+                setcookie("student_id_code", $studentIdCode, $expiryTime, "/", "", false, false);
+            }
 
-            $this->success('Login successful', [
+            $responseData = [
                 'role' => $user['role'],
                 'name' => $user['username'],
-                'studentId' => $user['id'],
+                'studentId' => $studentId,
+                'studentIdCode' => $studentIdCode,
                 'expires' => $expiryTime
-            ]);
+            ];
+            
+            $this->success('Login successful', $responseData);
         } else {
             $this->error('Invalid username or password.');
         }

@@ -33,11 +33,11 @@ require_once __DIR__ . '/../../core/View.php';
             </button>
           </div>
           <div class="profile-info">
-            <h2 id="userName">John Doe</h2>
+            <h2 id="userName">Loading...</h2>
             <p id="userRole">Student</p>
-            <p id="studentId">Student ID: 2024-001</p>
+            <p id="studentId">Student ID: Loading...</p>
             <div class="profile-status">
-              <span class="status-badge good">Good Standing</span>
+              <span class="status-badge good" id="profileStatusBadge">Loading...</span>
             </div>
           </div>
         </div>
@@ -54,27 +54,27 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="info-grid">
           <div class="info-item">
             <label>Full Name:</label>
-            <span id="fullName">John Doe</span>
+            <span id="fullName">Loading...</span>
           </div>
           <div class="info-item">
             <label>Student ID:</label>
-            <span id="studentIdValue">2024-001</span>
+            <span id="studentIdValue">Loading...</span>
           </div>
           <div class="info-item">
             <label>Email:</label>
-            <span id="email">john.doe@student.edu</span>
+            <span id="email">Loading...</span>
           </div>
           <div class="info-item">
             <label>Phone:</label>
-            <span id="phone">+1 (555) 123-4567</span>
+            <span id="phone">Loading...</span>
           </div>
           <div class="info-item">
             <label>Date of Birth:</label>
-            <span id="dateOfBirth">January 15, 2005</span>
+            <span id="dateOfBirth">Loading...</span>
           </div>
           <div class="info-item">
             <label>Gender:</label>
-            <span id="gender">Male</span>
+            <span id="gender">Loading...</span>
           </div>
         </div>
       </div>
@@ -90,27 +90,27 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="info-grid">
           <div class="info-item">
             <label>Department:</label>
-            <span id="department">Computer Science</span>
+            <span id="department">Loading...</span>
           </div>
           <div class="info-item">
             <label>Year Level:</label>
-            <span id="yearLevel">3rd Year</span>
+            <span id="yearLevel">Loading...</span>
           </div>
           <div class="info-item">
             <label>Section:</label>
-            <span id="section">CS-3A</span>
+            <span id="section">Loading...</span>
           </div>
           <div class="info-item">
             <label>Advisor:</label>
-            <span id="advisor">Prof. Sarah Wilson</span>
+            <span id="advisor">N/A</span>
           </div>
           <div class="info-item">
             <label>Enrollment Date:</label>
-            <span id="enrollmentDate">August 2022</span>
+            <span id="enrollmentDate">Loading...</span>
           </div>
           <div class="info-item">
             <label>Expected Graduation:</label>
-            <span id="graduationDate">May 2025</span>
+            <span id="graduationDate">N/A</span>
           </div>
         </div>
       </div>
@@ -120,36 +120,10 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="section-header">
           <h3><i class='bx bxs-shield-x'></i> Violation Summary</h3>
         </div>
-        <div class="violation-summary-cards">
-          <div class="summary-card">
-            <div class="card-icon improper-uniform">
-              <i class='bx bxs-t-shirt'></i>
-            </div>
-            <div class="card-content">
-              <h4>Improper Uniform</h4>
-              <p class="count">1 violation</p>
-              <p class="last-violation">Last: 2 weeks ago</p>
-            </div>
-          </div>
-          <div class="summary-card">
-            <div class="card-icon improper-footwear">
-              <i class='bx bxs-shoe'></i>
-            </div>
-            <div class="card-content">
-              <h4>Improper Footwear</h4>
-              <p class="count">1 violation</p>
-              <p class="last-violation">Last: 1 month ago</p>
-            </div>
-          </div>
-          <div class="summary-card">
-            <div class="card-icon no-id">
-              <i class='bx bxs-id-card'></i>
-            </div>
-            <div class="card-content">
-              <h4>No ID Card</h4>
-              <p class="count">1 violation</p>
-              <p class="last-violation">Last: 3 weeks ago</p>
-            </div>
+        <div class="violation-summary-cards" id="profileViolationSummary">
+          <div style="text-align: center; padding: 40px;">
+            <div class="loading-spinner"></div>
+            <p>Loading violation summary...</p>
           </div>
         </div>
       </div>
@@ -165,15 +139,15 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="info-grid">
           <div class="info-item">
             <label>Address:</label>
-            <span id="address">123 University Ave, City, State 12345</span>
+            <span id="address">Loading...</span>
           </div>
           <div class="info-item">
             <label>Emergency Contact:</label>
-            <span id="emergencyContact">Jane Doe (Mother) - +1 (555) 987-6543</span>
+            <span id="emergencyContact">N/A</span>
           </div>
           <div class="info-item">
             <label>Guardian:</label>
-            <span id="guardian">Robert Doe (Father)</span>
+            <span id="guardian">N/A</span>
           </div>
         </div>
       </div>
@@ -214,97 +188,6 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </main>
   
-  <script>
-  // Load user profile data
-  document.addEventListener('DOMContentLoaded', function() {
-    loadUserProfile();
-  });
-  
-  function loadUserProfile() {
-    // Get user session data
-    const userSession = localStorage.getItem('userSession');
-    if (userSession) {
-      const session = JSON.parse(userSession);
-      
-      // Update profile information
-      document.getElementById('userName').textContent = session.name;
-      if (session.studentId) {
-        document.getElementById('studentId').textContent = `Student ID: ${session.studentId}`;
-        document.getElementById('studentIdValue').textContent = session.studentId;
-      }
-    }
-  }
-  
-  function editProfile() {
-    showEditModal('Edit Profile', 'personal');
-  }
-  
-  function editPersonalInfo() {
-    showEditModal('Edit Personal Information', 'personal');
-  }
-  
-  function editAcademicInfo() {
-    showEditModal('Edit Academic Information', 'academic');
-  }
-  
-  function editContactInfo() {
-    showEditModal('Edit Contact Information', 'contact');
-  }
-  
-  function showEditModal(title, type) {
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('editModal').style.display = 'block';
-    
-    // Populate form based on type
-    if (type === 'personal') {
-      document.getElementById('editFullName').value = document.getElementById('fullName').textContent;
-      document.getElementById('editEmail').value = document.getElementById('email').textContent;
-      document.getElementById('editPhone').value = document.getElementById('phone').textContent;
-    } else if (type === 'contact') {
-      document.getElementById('editAddress').value = document.getElementById('address').textContent;
-    }
-  }
-  
-  function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
-  }
-  
-  function saveProfile() {
-    // Get form data
-    const formData = new FormData(document.getElementById('editForm'));
-    
-    // Update profile information
-    if (formData.get('fullName')) {
-      document.getElementById('fullName').textContent = formData.get('fullName');
-      document.getElementById('userName').textContent = formData.get('fullName');
-    }
-    if (formData.get('email')) {
-      document.getElementById('email').textContent = formData.get('email');
-    }
-    if (formData.get('phone')) {
-      document.getElementById('phone').textContent = formData.get('phone');
-    }
-    if (formData.get('address')) {
-      document.getElementById('address').textContent = formData.get('address');
-    }
-    
-    // Show success message
-    showNotification('Profile updated successfully!', 'success');
-    closeEditModal();
-  }
-  
-  function changeProfilePicture() {
-    showNotification('Profile picture upload feature coming soon!', 'info');
-  }
-  
-  // Close modal when clicking outside
-  window.onclick = function(event) {
-    const modal = document.getElementById('editModal');
-    if (event.target === modal) {
-      modal.style.display = 'none';
-    }
-  }
-  </script>
   <script src="<?= View::asset('js/userProfile.js') ?>"></script>
 
 

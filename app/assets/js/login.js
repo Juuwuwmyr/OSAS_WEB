@@ -161,12 +161,21 @@ function handleLoginFormSubmit(e) {
                 const sessionData = {
                     name: data.name,
                     role: data.role,
+                    user_id: data.user_id || data.studentId,
                     studentId: data.studentId,
+                    studentIdCode: data.studentIdCode,
                     expires: data.expires * 1000,
                     theme: darkMode ? 'dark' : 'light'
                 };
 
                 localStorage.setItem('userSession', JSON.stringify(sessionData));
+                
+                if (data.studentId) {
+                    localStorage.setItem('student_id', data.studentId);
+                    if (data.studentIdCode) {
+                        localStorage.setItem('student_id_code', data.studentIdCode);
+                    }
+                }
 
                 setTimeout(() => {
                     if (data.role === 'admin') {

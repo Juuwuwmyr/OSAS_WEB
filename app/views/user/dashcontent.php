@@ -34,46 +34,6 @@ require_once __DIR__ . '/../../core/View.php';
       <div style="text-align: center; padding: 40px;">
         <div class="loading-spinner"></div>
         <p>Loading announcements...</p>
-      </div><div class="announcement-item urgent">
-        <div class="announcement-icon">
-          <i class='bx bxs-error-circle'></i>
-        </div>
-        <div class="announcement-details">
-          <h4>Important: New Dress Code Policy</h4>
-          <p>Effective immediately, all students must wear proper uniform and footwear. ID cards are mandatory at all times.</p>
-          <span class="announcement-time">2 hours ago</span>
-        </div>
-        <div class="announcement-actions">
-          <button class="btn-read-more">Read More</button>
-        </div>
-      </div>
-      
-      <div class="announcement-item">
-        <div class="announcement-icon">
-          <i class='bx bxs-info-circle'></i>
-        </div>
-        <div class="announcement-details">
-          <h4>ID Card Replacement Schedule</h4>
-          <p>Students who have lost their ID cards can get replacements every Tuesday and Thursday from 9 AM to 3 PM.</p>
-          <span class="announcement-time">1 day ago</span>
-        </div>
-        <div class="announcement-actions">
-          <button class="btn-read-more">Read More</button>
-        </div>
-      </div>
-      
-      <div class="announcement-item">
-        <div class="announcement-icon">
-          <i class='bx bxs-bell'></i>
-        </div>
-        <div class="announcement-details">
-          <h4>Uniform Guidelines Update</h4>
-          <p>Please ensure your uniform is clean, properly fitted, and follows the school's dress code standards.</p>
-          <span class="announcement-time">3 days ago</span>
-        </div>
-        <div class="announcement-actions">
-          <button class="btn-read-more">Read More</button>
-        </div>
       </div>
     </div>
   </div>
@@ -118,47 +78,10 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-refresh'></i>
         <i class='bx bx-filter'></i>
       </div>
-      <div class="violation-summary">
-        <div class="violation-type">
-          <div class="violation-icon improper-uniform">
-            <i class='bx bxs-t-shirt'></i>
-          </div>
-          <div class="violation-details">
-            <h4>Improper Uniform</h4>
-            <p>Violations: <span class="count">1</span></p>
-            <span class="last-violation">Last: 2 weeks ago</span>
-          </div>
-          <div class="violation-status">
-            <span class="status resolved">Permitted</span>
-          </div>
-        </div>
-
-        <div class="violation-type">
-          <div class="violation-icon improper-footwear">
-            <i class='bx bxs-shoe'></i>
-          </div>
-          <div class="violation-details">
-            <h4>Improper Footwear</h4>
-            <p>Violations: <span class="count">1</span></p>
-            <span class="last-violation">Last: 1 month ago</span>
-          </div>
-          <div class="violation-status">
-            <span class="status resolved">Permitted</span>
-          </div>
-        </div>
-
-        <div class="violation-type">
-          <div class="violation-icon no-id">
-            <i class='bx bxs-id-card'></i>
-          </div>
-          <div class="violation-details">
-            <h4>No ID Card</h4>
-            <p>Violations: <span class="count">1</span></p>
-            <span class="last-violation">Last: 3 weeks ago</span>
-          </div>
-          <div class="violation-status">
-            <span class="status resolved">Permitted</span>
-          </div>
+      <div class="violation-summary" id="violationSummary">
+        <div style="text-align: center; padding: 40px;">
+          <div class="loading-spinner"></div>
+          <p>Loading violation summary...</p>
         </div>
       </div>
     </div>
@@ -179,44 +102,11 @@ require_once __DIR__ . '/../../core/View.php';
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="recentViolationsTableBody">
           <tr>
-            <td>2024-01-15</td>
-            <td>
-              <div class="violation-info">
-                <i class='bx bxs-t-shirt'></i>
-                <span>Improper Uniform</span>
-              </div>
-            </td>
-            <td><span class="status resolved">Permitted</span></td>
-            <td>
-              <button class="btn-view-details">View Details</button>
-            </td>
-          </tr>
-          <tr>
-            <td>2023-12-20</td>
-            <td>
-              <div class="violation-info">
-                <i class='bx bxs-shoe'></i>
-                <span>Improper Footwear</span>
-              </div>
-            </td>
-            <td><span class="status resolved">Permitted</span></td>
-            <td>
-              <button class="btn-view-details">View Details</button>
-            </td>
-          </tr>
-          <tr>
-            <td>2023-12-05</td>
-            <td>
-              <div class="violation-info">
-                <i class='bx bxs-id-card'></i>
-                <span>No ID Card</span>
-              </div>
-            </td>
-            <td><span class="status resolved">Permitted</span></td>
-            <td>
-              <button class="btn-view-details">View Details</button>
+            <td colspan="4" style="text-align: center; padding: 40px;">
+              <div class="loading-spinner"></div>
+              <p>Loading violations...</p>
             </td>
           </tr>
         </tbody>
