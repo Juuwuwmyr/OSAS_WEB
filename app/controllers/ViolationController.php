@@ -204,5 +204,118 @@ class ViolationController extends Controller {
             $this->error('Failed to delete violation: ' . $e->getMessage());
         }
     }
+
+    public function import() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $violationsJson = $this->getPost('violations', '');
+        if (empty($violationsJson)) {
+            $this->error('No violations data provided.');
+        }
+
+        $violations = json_decode($violationsJson, true);
+        if (!is_array($violations) || empty($violations)) {
+            $this->error('Invalid violations data format.');
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($violations as $index => $violation) {
+            $studentId = $this->sanitize($violation['studentId'] ?? '');
+            $violationType = $this->sanitize($violation['violationType'] ?? '');
+            $date = $this->sanitize($violation['date'] ?? '');
+            $description = $this->sanitize($violation['description'] ?? '');
+            $status = in_array(strtolower($violation['status'] ?? 'warning'), ['warning', 'resolved', 'pending']) 
+                ? strtolower($violation['status']) 
+                : 'warning';
+            $severity = $this->sanitize($violation['severity'] ?? 'minor');
+            $location = $this->sanitize($violation['location'] ?? '');
+
+            if (empty($studentId) || empty($violationType) || empty($date)) {
+                $skipped++;
+                $errors[] = "Row " . ($index + 1) . ": Missing required fields (Student ID, Violation Type, or Date)";
+                continue;
+            }
+
+            // Get student info
+            try {
+                $student = $this->studentModel->query(
+                    "SELECT s.first_name, s.middle_name, s.last_name, 
+                            COALESCE(d.department_name, s.department, 'N/A') as department_name,
+                            s.department as department_code,
+                            s.section_id 
+                     FROM students s
+                     LEFT JOIN departments d ON s.department = d.department_code
+                     WHERE s.student_id = ?",
+                    [$studentId]
+                );
+            } catch (Exception $e) {
+                $skipped++;
+                $errors[] = "Row " . ($index + 1) . ": Error querying student - " . $e->getMessage();
+                continue;
+            }
+
+            if (empty($student)) {
+                $skipped++;
+                $errors[] = "Row " . ($index + 1) . ": Student ID '{$studentId}' not found";
+                continue;
+            }
+
+            $student = $student[0];
+            $department = !empty($student['department_code']) ? $student['department_code'] : 
+                          (!empty($student['department_name']) && $student['department_name'] !== 'N/A' ? $student['department_name'] : 'N/A');
+
+            // Parse date
+            $violationDate = date('Y-m-d', strtotime($date));
+            if ($violationDate === '1970-01-01' || !$violationDate) {
+                $violationDate = date('Y-m-d');
+            }
+
+            // Parse time (default to current time if not provided)
+            $violationTime = date('H:i:s');
+
+            try {
+                $caseId = $this->model->generateCaseId();
+                
+                $data = [
+                    'case_id' => $caseId,
+                    'student_id' => $studentId,
+                    'violation_type' => $violationType,
+                    'violation_level' => $severity,
+                    'department' => $department,
+                    'section' => $student['section_id'] ?? '',
+                    'violation_date' => $violationDate,
+                    'violation_time' => $violationTime,
+                    'location' => $location ?: 'N/A',
+                    'reported_by' => 'System Import',
+                    'status' => $status,
+                    'notes' => $description ?: null,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+
+                $this->model->create($data);
+                $imported++;
+            } catch (Exception $e) {
+                $skipped++;
+                $errors[] = "Row " . ($index + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        $message = "Imported {$imported} violation(s)";
+        if ($skipped > 0) {
+            $message .= ", skipped {$skipped}";
+        }
+
+        $this->success($message, [
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'total' => count($violations),
+            'errors' => $errors
+        ]);
+    }
 }
 

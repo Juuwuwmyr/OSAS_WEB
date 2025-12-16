@@ -35,6 +35,9 @@ switch ($action) {
     case 'stats':
         $controller->stats();
         break;
+    case 'import':
+        $controller->import();
+        break;
     default:
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $controller->index();

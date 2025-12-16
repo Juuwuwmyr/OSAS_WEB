@@ -630,6 +630,788 @@ function initDepartmentModule() {
     });
   }
 
+  // --- Export functionality ---
+  const btnExport = document.getElementById('btnExport');
+  const exportModal = document.getElementById('exportModal');
+  const exportModalOverlay = document.getElementById('exportModalOverlay');
+  const closeExportModal = document.getElementById('closeExportModal');
+  const cancelExportModal = document.getElementById('cancelExportModal');
+  const exportFormatSelect = document.getElementById('exportFormat');
+  const confirmExportBtn = document.getElementById('confirmExportBtn');
+
+  // Open export modal
+  if (btnExport) {
+    btnExport.addEventListener('click', function() {
+      if (departments.length === 0) {
+        alert('No departments to export. Please add departments first.');
+        return;
+      }
+      if (exportModal) {
+        exportModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Reset select
+        if (exportFormatSelect) {
+          exportFormatSelect.value = '';
+        }
+      }
+    });
+  }
+
+  // Close export modal
+  function closeExportModalFunc() {
+    if (exportModal) {
+      exportModal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+      // Reset select
+      if (exportFormatSelect) {
+        exportFormatSelect.value = '';
+      }
+    }
+  }
+
+  if (closeExportModal) {
+    closeExportModal.addEventListener('click', closeExportModalFunc);
+  }
+
+  if (cancelExportModal) {
+    cancelExportModal.addEventListener('click', closeExportModalFunc);
+  }
+
+  if (exportModalOverlay) {
+    exportModalOverlay.addEventListener('click', closeExportModalFunc);
+  }
+
+  // Escape key to close export modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && exportModal && exportModal.classList.contains('active')) {
+      closeExportModalFunc();
+    }
+  });
+
+  // Get filtered departments for export
+  function getFilteredDepartments() {
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+    const filterValue = filterSelect ? filterSelect.value : 'all';
+    
+    return departments.filter(d => {
+      const matchesSearch = d.name.toLowerCase().includes(searchTerm) || 
+                           d.code.toLowerCase().includes(searchTerm) ||
+                           d.hod.toLowerCase().includes(searchTerm);
+      const matchesFilter = filterValue === 'all' || d.status === filterValue;
+      return matchesSearch && matchesFilter;
+    });
+  }
+
+  // Export to PDF
+  function exportToPDF() {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const filteredDepts = getFilteredDepartments();
+
+      // Add title
+      doc.setFontSize(18);
+      doc.text('Departments Report', 14, 20);
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, 14, 28);
+
+      // Prepare table data
+      const tableData = filteredDepts.map(dept => [
+        dept.id,
+        `${dept.name} (${dept.code})`,
+        dept.hod || 'N/A',
+        dept.studentCount || 0,
+        dept.date,
+        dept.status === 'active' ? 'Active' : 'Archived'
+      ]);
+
+      // Add table
+      doc.autoTable({
+        head: [['ID', 'Department', 'Head of Dept', 'Students', 'Date Created', 'Status']],
+        body: tableData,
+        startY: 35,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { top: 35 }
+      });
+
+      // Save PDF
+      const fileName = `Departments_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      closeExportModalFunc();
+      alert('PDF exported successfully!');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert('Error exporting to PDF. Please try again.');
+    }
+  }
+
+  // Export to Excel
+  function exportToExcel() {
+    try {
+      const filteredDepts = getFilteredDepartments();
+      
+      // Prepare data
+      const data = filteredDepts.map(dept => ({
+        'ID': dept.id,
+        'Department Name': dept.name,
+        'Department Code': dept.code,
+        'Head of Department': dept.hod || 'N/A',
+        'Student Count': dept.studentCount || 0,
+        'Date Created': dept.date,
+        'Status': dept.status === 'active' ? 'Active' : 'Archived',
+        'Description': dept.description || ''
+      }));
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 5 },   // ID
+        { wch: 25 },  // Department Name
+        { wch: 15 },  // Department Code
+        { wch: 25 },  // Head of Department
+        { wch: 12 },  // Student Count
+        { wch: 15 },  // Date Created
+        { wch: 10 },  // Status
+        { wch: 40 }   // Description
+      ];
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Departments');
+
+      // Generate file name
+      const fileName = `Departments_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(wb, fileName);
+      
+      closeExportModalFunc();
+      alert('Excel file exported successfully!');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Error exporting to Excel. Please try again.');
+    }
+  }
+
+  // Export to Word
+  function exportToWord() {
+    try {
+      const filteredDepts = getFilteredDepartments();
+      
+      // Create Word document content
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Departments Report</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Arial, sans-serif;
+              margin: 40px;
+              line-height: 1.6;
+            }
+            h1 {
+              color: #333;
+              border-bottom: 3px solid #4285f4;
+              padding-bottom: 10px;
+              margin-bottom: 10px;
+            }
+            .report-info {
+              color: #666;
+              margin-bottom: 30px;
+              font-size: 14px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            th {
+              background-color: #4285f4;
+              color: white;
+              padding: 12px;
+              text-align: left;
+              font-weight: 600;
+            }
+            td {
+              padding: 10px 12px;
+              border-bottom: 1px solid #e0e0e0;
+            }
+            tr:nth-child(even) {
+              background-color: #f5f5f5;
+            }
+            tr:hover {
+              background-color: #e8f0fe;
+            }
+            .status-active {
+              color: #2e7d32;
+              font-weight: 600;
+            }
+            .status-archived {
+              color: #c62828;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Departments Report</h1>
+          <div class="report-info">
+            Generated on: ${new Date().toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+            <br>
+            Total Departments: ${filteredDepts.length}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Department Name</th>
+                <th>Code</th>
+                <th>Head of Department</th>
+                <th>Student Count</th>
+                <th>Date Created</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      filteredDepts.forEach(dept => {
+        htmlContent += `
+          <tr>
+            <td>${dept.id}</td>
+            <td>${dept.name}</td>
+            <td>${dept.code}</td>
+            <td>${dept.hod || 'N/A'}</td>
+            <td>${dept.studentCount || 0}</td>
+            <td>${dept.date}</td>
+            <td class="status-${dept.status}">${dept.status === 'active' ? 'Active' : 'Archived'}</td>
+          </tr>
+        `;
+      });
+
+      htmlContent += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      // Create blob and download
+      const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Departments_Report_${new Date().toISOString().split('T')[0]}.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      closeExportModalFunc();
+      alert('Word document exported successfully!');
+    } catch (error) {
+      console.error('Error exporting to Word:', error);
+      alert('Error exporting to Word. Please try again.');
+    }
+  }
+
+  // Export to CSV
+  function exportToCSV() {
+    try {
+      const filteredDepts = getFilteredDepartments();
+      
+      // Prepare CSV headers
+      const headers = ['ID', 'Department Name', 'Department Code', 'Head of Department', 'Student Count', 'Date Created', 'Status', 'Description'];
+      
+      // Prepare CSV rows
+      const rows = filteredDepts.map(dept => [
+        dept.id,
+        `"${dept.name.replace(/"/g, '""')}"`,
+        dept.code,
+        `"${(dept.hod || 'N/A').replace(/"/g, '""')}"`,
+        dept.studentCount || 0,
+        dept.date,
+        dept.status === 'active' ? 'Active' : 'Archived',
+        `"${(dept.description || '').replace(/"/g, '""')}"`
+      ]);
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+      
+      // Create blob and download
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Departments_Report_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      closeExportModalFunc();
+      alert('CSV file exported successfully!');
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      alert('Error exporting to CSV. Please try again.');
+    }
+  }
+
+  // Export to JSON
+  function exportToJSON() {
+    try {
+      const filteredDepts = getFilteredDepartments();
+      
+      // Prepare JSON data
+      const jsonData = {
+        exportDate: new Date().toISOString(),
+        totalDepartments: filteredDepts.length,
+        departments: filteredDepts.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+          code: dept.code,
+          headOfDepartment: dept.hod || 'N/A',
+          studentCount: dept.studentCount || 0,
+          dateCreated: dept.date,
+          status: dept.status,
+          description: dept.description || ''
+        }))
+      };
+      
+      // Create blob and download
+      const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Departments_Report_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      closeExportModalFunc();
+      alert('JSON file exported successfully!');
+    } catch (error) {
+      console.error('Error exporting to JSON:', error);
+      alert('Error exporting to JSON. Please try again.');
+    }
+  }
+
+  // Handle confirm export button
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function() {
+      if (!exportFormatSelect || !exportFormatSelect.value) {
+        alert('Please select an export format.');
+        return;
+      }
+
+      const format = exportFormatSelect.value;
+
+      switch(format) {
+        case 'pdf':
+          exportToPDF();
+          break;
+        case 'excel':
+          exportToExcel();
+          break;
+        case 'word':
+          exportToWord();
+          break;
+        case 'csv':
+          exportToCSV();
+          break;
+        case 'json':
+          exportToJSON();
+          break;
+        default:
+          alert('Unknown export format');
+      }
+    });
+  }
+
+  // --- Import functionality ---
+  const btnImport = document.getElementById('btnImport');
+  const importModal = document.getElementById('importModal');
+  const importModalOverlay = document.getElementById('importModalOverlay');
+  const closeImportModal = document.getElementById('closeImportModal');
+  const cancelImportModal = document.getElementById('cancelImportModal');
+  const importFileInput = document.getElementById('importFile');
+  const confirmImportBtn = document.getElementById('confirmImportBtn');
+  const selectedFileName = document.getElementById('selectedFileName');
+  const importPreview = document.getElementById('importPreview');
+  const previewTable = document.getElementById('previewTable');
+
+  let importData = [];
+
+  // Open import modal
+  if (btnImport) {
+    btnImport.addEventListener('click', function() {
+      if (importModal) {
+        importModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Reset form
+        if (importFileInput) {
+          importFileInput.value = '';
+        }
+        if (selectedFileName) {
+          selectedFileName.style.display = 'none';
+        }
+        if (importPreview) {
+          importPreview.style.display = 'none';
+        }
+        if (confirmImportBtn) {
+          confirmImportBtn.disabled = true;
+        }
+        importData = [];
+      }
+    });
+  }
+
+  // Close import modal
+  function closeImportModalFunc() {
+    if (importModal) {
+      importModal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+      // Reset form
+      if (importFileInput) {
+        importFileInput.value = '';
+      }
+      if (selectedFileName) {
+        selectedFileName.style.display = 'none';
+      }
+      if (importPreview) {
+        importPreview.style.display = 'none';
+      }
+      if (confirmImportBtn) {
+        confirmImportBtn.disabled = true;
+      }
+      importData = [];
+    }
+  }
+
+  if (closeImportModal) {
+    closeImportModal.addEventListener('click', closeImportModalFunc);
+  }
+
+  if (cancelImportModal) {
+    cancelImportModal.addEventListener('click', closeImportModalFunc);
+  }
+
+  if (importModalOverlay) {
+    importModalOverlay.addEventListener('click', closeImportModalFunc);
+  }
+
+  // Escape key to close import modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && importModal && importModal.classList.contains('active')) {
+      closeImportModalFunc();
+    }
+  });
+
+  // Handle file selection
+  if (importFileInput) {
+    importFileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = [
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      const validExtensions = ['.csv', '.xls', '.xlsx'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+      if (!validExtensions.includes(fileExtension) && !validTypes.includes(file.type)) {
+        alert('Invalid file type. Please upload a CSV or Excel file (.csv, .xls, .xlsx)');
+        this.value = '';
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit.');
+        this.value = '';
+        return;
+      }
+
+      // Show selected file name
+      if (selectedFileName) {
+        selectedFileName.innerHTML = `<i class='bx bx-file'></i> ${file.name}`;
+        selectedFileName.style.display = 'flex';
+      }
+
+      // Read and parse file
+      parseImportFile(file);
+    });
+  }
+
+  // Parse import file
+  function parseImportFile(file) {
+    const reader = new FileReader();
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+    reader.onload = function(e) {
+      try {
+        if (fileExtension === '.csv') {
+          parseCSV(e.target.result);
+        } else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
+          parseExcel(e.target.result, file);
+        }
+      } catch (error) {
+        console.error('Error parsing file:', error);
+        alert('Error parsing file. Please check the file format and try again.');
+      }
+    };
+
+    if (fileExtension === '.csv') {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  // Parse CSV file
+  function parseCSV(csvText) {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+      alert('File must contain at least a header row and one data row.');
+      return;
+    }
+
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    // Find column indices
+    const nameIdx = findColumnIndex(headers, ['department name', 'name', 'department_name']);
+    const codeIdx = findColumnIndex(headers, ['department code', 'code', 'department_code']);
+    const hodIdx = findColumnIndex(headers, ['head of department', 'hod', 'head_of_department']);
+    const descIdx = findColumnIndex(headers, ['description', 'desc']);
+    const statusIdx = findColumnIndex(headers, ['status']);
+
+    if (nameIdx === -1 || codeIdx === -1) {
+      alert('Required columns not found. Please ensure the file contains "Department Name" and "Department Code" columns.');
+      return;
+    }
+
+    // Parse data rows
+    importData = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length < 2) continue;
+
+      const dept = {
+        name: values[nameIdx]?.trim() || '',
+        code: values[codeIdx]?.trim() || '',
+        hod: hodIdx >= 0 ? (values[hodIdx]?.trim() || '') : '',
+        description: descIdx >= 0 ? (values[descIdx]?.trim() || '') : '',
+        status: statusIdx >= 0 ? (values[statusIdx]?.trim().toLowerCase() || 'active') : 'active'
+      };
+
+      if (dept.name && dept.code) {
+        importData.push(dept);
+      }
+    }
+
+    if (importData.length === 0) {
+      alert('No valid data found in the file.');
+      return;
+    }
+
+    showPreview();
+  }
+
+  // Parse CSV line (handles quoted values)
+  function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  }
+
+  // Parse Excel file
+  function parseExcel(arrayBuffer, file) {
+    try {
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+      if (jsonData.length < 2) {
+        alert('File must contain at least a header row and one data row.');
+        return;
+      }
+
+      // Parse header
+      const headers = jsonData[0].map(h => String(h || '').trim().toLowerCase());
+      
+      // Find column indices
+      const nameIdx = findColumnIndex(headers, ['department name', 'name', 'department_name']);
+      const codeIdx = findColumnIndex(headers, ['department code', 'code', 'department_code']);
+      const hodIdx = findColumnIndex(headers, ['head of department', 'hod', 'head_of_department']);
+      const descIdx = findColumnIndex(headers, ['description', 'desc']);
+      const statusIdx = findColumnIndex(headers, ['status']);
+
+      if (nameIdx === -1 || codeIdx === -1) {
+        alert('Required columns not found. Please ensure the file contains "Department Name" and "Department Code" columns.');
+        return;
+      }
+
+      // Parse data rows
+      importData = [];
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row || row.length < 2) continue;
+
+        const dept = {
+          name: String(row[nameIdx] || '').trim(),
+          code: String(row[codeIdx] || '').trim(),
+          hod: hodIdx >= 0 ? String(row[hodIdx] || '').trim() : '',
+          description: descIdx >= 0 ? String(row[descIdx] || '').trim() : '',
+          status: statusIdx >= 0 ? String(row[statusIdx] || '').trim().toLowerCase() || 'active' : 'active'
+        };
+
+        if (dept.name && dept.code) {
+          importData.push(dept);
+        }
+      }
+
+      if (importData.length === 0) {
+        alert('No valid data found in the file.');
+        return;
+      }
+
+      showPreview();
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      alert('Error parsing Excel file. Please check the file format and try again.');
+    }
+  }
+
+  // Find column index by possible names
+  function findColumnIndex(headers, possibleNames) {
+    for (let name of possibleNames) {
+      const idx = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  // Show preview of imported data
+  function showPreview() {
+    if (!importPreview || !previewTable || importData.length === 0) return;
+
+    const previewRows = importData.slice(0, 5);
+    let html = '<table><thead><tr>';
+    html += '<th>Department Name</th><th>Code</th><th>Head of Dept</th><th>Status</th>';
+    html += '</tr></thead><tbody>';
+
+    previewRows.forEach(row => {
+      html += '<tr>';
+      html += `<td>${row.name}</td>`;
+      html += `<td>${row.code}</td>`;
+      html += `<td>${row.hod || 'N/A'}</td>`;
+      html += `<td>${row.status}</td>`;
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    if (importData.length > 5) {
+      html += `<p style="margin-top: 12px; color: #666; font-size: 13px;">... and ${importData.length - 5} more rows</p>`;
+    }
+
+    previewTable.innerHTML = html;
+    importPreview.style.display = 'block';
+
+    if (confirmImportBtn) {
+      confirmImportBtn.disabled = false;
+    }
+  }
+
+  // Handle import confirmation
+  if (confirmImportBtn) {
+    confirmImportBtn.addEventListener('click', async function() {
+      if (importData.length === 0) {
+        alert('No data to import.');
+        return;
+      }
+
+      // Disable button and show loading
+      this.disabled = true;
+      this.classList.add('loading');
+      const originalText = this.innerHTML;
+      this.innerHTML = '<i class="bx bx-loader-alt"></i> Importing...';
+
+      try {
+        const formData = new FormData();
+        formData.append('departments', JSON.stringify(importData));
+
+        const response = await fetch('../api/departments.php?action=import', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          alert(`Successfully imported ${result.data.imported || importData.length} department(s)!`);
+          closeImportModalFunc();
+          loadDepartments(currentView);
+          loadStats();
+        } else {
+          alert('Error: ' + result.message);
+          this.disabled = false;
+          this.classList.remove('loading');
+          this.innerHTML = originalText;
+        }
+      } catch (error) {
+        console.error('Error importing departments:', error);
+        alert('Error importing departments. Please try again.');
+        this.disabled = false;
+        this.classList.remove('loading');
+        this.innerHTML = originalText;
+      }
+    });
+  }
+
   console.log('✅ Department module ready!');
 }
 

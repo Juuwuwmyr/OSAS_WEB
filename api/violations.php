@@ -25,7 +25,14 @@ require_once __DIR__ . '/../app/controllers/ViolationController.php';
 try {
     $controller = new ViolationController();
     $method = $_SERVER['REQUEST_METHOD'];
+    $action = $_GET['action'] ?? '';
     $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+    // Handle import action
+    if ($action === 'import') {
+        $controller->import();
+        exit;
+    }
 
     switch ($method) {
         case 'GET':

@@ -954,3 +954,800 @@ body.dark {
     justify-content: center;
   }
 }
+
+/* ========================================= */
+/*     EXPORT/IMPORT MODAL STYLES (SHARED)   */
+/* ========================================= */
+/* These styles apply to export/import modals across all pages */
+.modal-container.export-modal-container {
+  max-width: 480px !important;
+}
+
+.modal-container.import-modal-container {
+  max-width: 600px !important;
+}
+
+/* Export/Import Modal Header - Match Sections Modal Style */
+.modal-container.export-modal-container .modal-header,
+.modal-container.import-modal-container .modal-header {
+  padding: 28px 32px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--light);
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.modal-container.export-modal-container .modal-header h2,
+.modal-container.import-modal-container .modal-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.modal-container.export-modal-container .close-btn,
+.modal-container.import-modal-container .close-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: var(--grey);
+  color: var(--dark-grey);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s ease;
+}
+
+.modal-container.export-modal-container .close-btn:hover,
+.modal-container.import-modal-container .close-btn:hover {
+  background: var(--red);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modal-container.export-modal-container .modal-body,
+.modal-container.import-modal-container .modal-body {
+  padding: 36px;
+  background: var(--light);
+  max-height: calc(90vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Ensure scrollbar stays inside */
+  padding-right: 28px;
+  margin-right: 0;
+}
+
+/* Custom Scrollbar for Modal Body - Inside the modal */
+.modal-container.export-modal-container .modal-body::-webkit-scrollbar,
+.modal-container.import-modal-container .modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-container.export-modal-container .modal-body::-webkit-scrollbar-track,
+.modal-container.import-modal-container .modal-body::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.modal-container.export-modal-container .modal-body::-webkit-scrollbar-thumb,
+.modal-container.import-modal-container .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.modal-container.export-modal-container .modal-body::-webkit-scrollbar-thumb:hover,
+.modal-container.import-modal-container .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.modal-container.export-modal-container .modal-body,
+.modal-container.import-modal-container .modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.export-description {
+  margin-bottom: 28px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.export-form-group {
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.export-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.export-label i {
+  font-size: 20px;
+  color: var(--gold);
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.2) 100%);
+  padding: 8px;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+}
+
+.export-label:hover i {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+  color: var(--dark);
+}
+
+.export-select {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  border-radius: 14px;
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--poppins);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.08);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23FFD700' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  padding-right: 48px;
+  position: relative;
+}
+
+.export-select:hover {
+  border-color: var(--gold);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
+  transform: translateY(-2px);
+  background-color: var(--light);
+}
+
+.export-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 
+    0 0 0 4px rgba(255, 215, 0, 0.15),
+    0 4px 20px rgba(255, 215, 0, 0.2);
+  background-color: var(--light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23FFA500' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+}
+
+.export-select option {
+  padding: 14px 18px;
+  font-size: 15px;
+  background: var(--light);
+  color: var(--dark);
+  font-family: var(--poppins);
+  transition: all 0.2s ease;
+}
+
+.export-select option:hover,
+.export-select option:checked {
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.1) 100%);
+  color: var(--dark);
+  font-weight: 600;
+}
+
+/* Modal body improvements */
+.modal-container.export-modal-container .modal-body,
+.modal-container.import-modal-container .modal-body {
+  animation: fadeInUp 0.4s ease-out 0.1s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state for export button */
+.btn-primary.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn-primary.loading i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Import Modal Specific Styles */
+.modal-container.import-modal-container .modal-body {
+  max-height: calc(90vh - 180px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Ensure scrollbar stays inside */
+  padding-right: 28px;
+  margin-right: 0;
+}
+
+.import-form-group {
+  margin-bottom: 24px;
+}
+
+.file-upload-wrapper {
+  position: relative;
+  margin-top: 12px;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  border: 2px dashed rgba(255, 215, 0, 0.4);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.05) 100%);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-label::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.file-upload-label:hover {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.1) 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.25);
+}
+
+.file-upload-label:hover::before {
+  opacity: 0.1;
+}
+
+.file-upload-label i {
+  font-size: 48px;
+  color: var(--gold);
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+}
+
+.file-upload-label:hover i {
+  transform: scale(1.15) rotate(5deg);
+  color: #FFA500;
+  filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.5));
+}
+
+.file-upload-text {
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 6px;
+  font-size: 15px;
+  position: relative;
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+.file-upload-label:hover .file-upload-text {
+  color: var(--dark);
+}
+
+.file-upload-hint {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.selected-file-name {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.15) 100%);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  color: var(--dark);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selected-file-name i {
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.import-info-box {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.08) 100%);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.1);
+}
+
+.import-info-box h4 {
+  margin: 0 0 12px 0;
+  color: var(--dark);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.import-info-box h4 i {
+  color: var(--gold);
+  font-size: 20px;
+  background: rgba(255, 215, 0, 0.2);
+  padding: 6px;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-info-box ul {
+  margin: 0;
+  padding-left: 24px;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.import-info-box ul li {
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.import-info-box ul li::marker {
+  color: var(--gold);
+}
+
+.import-info-box ul li strong {
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.import-preview {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(to bottom, var(--light) 0%, var(--grey) 100%);
+  border-radius: 12px;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Preview */
+.import-preview::-webkit-scrollbar {
+  width: 8px;
+}
+
+.import-preview::-webkit-scrollbar-track {
+  background: var(--grey);
+  border-radius: 8px;
+}
+
+.import-preview::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+  border-radius: 8px;
+  border: 1px solid var(--grey);
+}
+
+.import-preview::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%);
+}
+
+.import-preview {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--grey);
+}
+
+.import-preview h4 {
+  margin: 0 0 16px 0;
+  color: var(--dark);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.import-preview h4::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+  border-radius: 2px;
+}
+
+.preview-table {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.preview-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--light);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.preview-table th {
+  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+  font-weight: 600;
+  color: var(--dark);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.preview-table tr {
+  transition: all 0.2s ease;
+}
+
+.preview-table tr:hover {
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255, 215, 0, 0.1) 100%);
+  transform: scale(1.01);
+}
+
+.preview-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Additional polish for buttons in modals */
+.form-actions .btn-outline,
+.form-actions .btn-primary {
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.1);
+}
+
+.form-actions .btn-outline:active,
+.form-actions .btn-primary:active {
+  transform: translateY(0) scale(0.97);
+  transition: all 0.1s ease;
+}
+
+/* Smooth transitions for all interactive elements */
+.export-select,
+.file-upload-label,
+.btn-outline,
+.btn-primary {
+  will-change: transform;
+}
+
+/* Focus visible for accessibility */
+.export-select:focus-visible,
+.btn-outline:focus-visible,
+.btn-primary:focus-visible {
+  outline: 3px solid rgba(255, 215, 0, 0.5);
+  outline-offset: 2px;
+}
+
+/* ========================================= */
+/*         EXPORT/IMPORT MODAL BASE          */
+/* ========================================= */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-container {
+  position: relative;
+  background: var(--light);
+  width: 90%;
+  max-width: 600px;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2001;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(0) scale(1);
+}
+
+/* Ensure export/import modal containers have proper overflow */
+.modal-container.export-modal-container,
+.modal-container.import-modal-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  padding: 32px 36px 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: linear-gradient(to bottom, var(--light) 0%, rgba(255, 255, 255, 0.95) 100%);
+  z-index: 1;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.close-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: var(--grey);
+  color: var(--dark-grey);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: var(--red);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.form-actions {
+  padding: 24px 36px 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: var(--light);
+  margin-top: auto;
+}
+
+.modal-container.export-modal-container .form-actions,
+.modal-container.import-modal-container .form-actions {
+  padding: 24px 32px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: var(--light);
+  margin-top: auto;
+}
+
+/* Dark Mode Support for Modals */
+body.dark .modal-container {
+  background: var(--light);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+body.dark .modal-container.export-modal-container,
+body.dark .modal-container.import-modal-container {
+  background: var(--light);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+body.dark .modal-header {
+  background: linear-gradient(to bottom, var(--light) 0%, rgba(26, 26, 26, 0.95) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .modal-container.export-modal-container .modal-header,
+body.dark .modal-container.import-modal-container .modal-header {
+  background: linear-gradient(to bottom, var(--light) 0%, rgba(26, 26, 26, 0.95) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .modal-header h2 {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.dark .modal-container.export-modal-container .modal-header h2,
+body.dark .modal-container.import-modal-container .modal-header h2 {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.dark .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--dark-grey);
+}
+
+body.dark .modal-container.export-modal-container .close-btn,
+body.dark .modal-container.import-modal-container .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--dark-grey);
+}
+
+body.dark .close-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
+  color: white;
+}
+
+body.dark .modal-container.export-modal-container .close-btn:hover,
+body.dark .modal-container.import-modal-container .close-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
+  color: white;
+}
+
+body.dark .modal-body {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.5) 0%, var(--light) 100%);
+}
+
+body.dark .modal-container.export-modal-container .modal-body,
+body.dark .modal-container.import-modal-container .modal-body {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.5) 0%, var(--light) 100%);
+}
+
+body.dark .form-actions {
+  background: var(--light);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark .modal-container.export-modal-container .form-actions,
+body.dark .modal-container.import-modal-container .form-actions {
+  background: var(--light);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark .modal-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark .modal-container.export-modal-container .modal-body::-webkit-scrollbar-thumb,
+body.dark .modal-container.import-modal-container .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark .modal-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+body.dark .modal-container.export-modal-container .modal-body::-webkit-scrollbar-thumb:hover,
+body.dark .modal-container.import-modal-container .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

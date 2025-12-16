@@ -1041,6 +1041,535 @@ function initStudentsModule() {
                 });
                 renderStudents();
             }
+
+            // --- Export functionality ---
+            const btnExport = document.getElementById('btnExportStudents');
+            const exportModal = document.getElementById('exportModal');
+            const exportModalOverlay = document.getElementById('exportModalOverlay');
+            const closeExportModal = document.getElementById('closeExportModal');
+            const cancelExportModal = document.getElementById('cancelExportModal');
+            const exportFormatSelect = document.getElementById('exportFormat');
+            const confirmExportBtn = document.getElementById('confirmExportBtn');
+
+            function getFilteredStudents() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const filterValue = filterSelect ? filterSelect.value : 'all';
+                
+                return students.filter(s => {
+                    const fullName = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
+                    const matchesSearch = fullName.includes(searchTerm) || 
+                                         (s.studentId || '').toLowerCase().includes(searchTerm) ||
+                                         (s.department || '').toLowerCase().includes(searchTerm);
+                    const matchesFilter = filterValue === 'all' || s.status === filterValue;
+                    return matchesSearch && matchesFilter;
+                });
+            }
+
+            function exportToPDF() {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const filteredStudents = getFilteredStudents();
+
+                    doc.setFontSize(18);
+                    doc.text('Students Report', 14, 20);
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    })}`, 14, 28);
+
+                    const tableData = filteredStudents.map(student => [
+                        student.studentId || student.id,
+                        `${student.firstName || ''} ${student.lastName || ''}`,
+                        student.department || 'N/A',
+                        student.section || 'N/A',
+                        student.email || 'N/A',
+                        student.status === 'active' ? 'Active' : (student.status === 'graduating' ? 'Graduating' : 'Inactive')
+                    ]);
+
+                    doc.autoTable({
+                        head: [['Student ID', 'Name', 'Department', 'Section', 'Email', 'Status']],
+                        body: tableData,
+                        startY: 35,
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+                        alternateRowStyles: { fillColor: [245, 245, 245] },
+                        margin: { top: 35 }
+                    });
+
+                    doc.save(`Students_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+                    closeExportModalFunc();
+                    alert('PDF exported successfully!');
+                } catch (error) {
+                    console.error('Error exporting to PDF:', error);
+                    alert('Error exporting to PDF. Please try again.');
+                }
+            }
+
+            function exportToExcel() {
+                try {
+                    const filteredStudents = getFilteredStudents();
+                    const data = filteredStudents.map(student => ({
+                        'Student ID': student.studentId || student.id,
+                        'First Name': student.firstName || '',
+                        'Middle Name': student.middleName || '',
+                        'Last Name': student.lastName || '',
+                        'Department': student.department || '',
+                        'Section': student.section || '',
+                        'Email': student.email || '',
+                        'Phone': student.phone || '',
+                        'Status': student.status || 'active'
+                    }));
+
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    ws['!cols'] = [
+                        { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                        { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 12 }
+                    ];
+                    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+                    XLSX.writeFile(wb, `Students_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    closeExportModalFunc();
+                    alert('Excel file exported successfully!');
+                } catch (error) {
+                    console.error('Error exporting to Excel:', error);
+                    alert('Error exporting to Excel. Please try again.');
+                }
+            }
+
+            function exportToWord() {
+                try {
+                    const filteredStudents = getFilteredStudents();
+                    let htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Students Report</title><style>
+                        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                        h1 { color: #333; border-bottom: 3px solid #4285f4; padding-bottom: 10px; margin-bottom: 10px; }
+                        .report-info { color: #666; margin-bottom: 30px; font-size: 14px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                        th { background-color: #4285f4; color: white; padding: 12px; text-align: left; font-weight: 600; }
+                        td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
+                        tr:nth-child(even) { background-color: #f5f5f5; }
+                        tr:hover { background-color: #e8f0fe; }
+                    </style></head><body>
+                        <h1>Students Report</h1>
+                        <div class="report-info">Generated on: ${new Date().toLocaleDateString('en-US', { 
+                            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}<br>Total Students: ${filteredStudents.length}</div>
+                        <table><thead><tr><th>Student ID</th><th>Name</th><th>Department</th><th>Section</th><th>Email</th><th>Status</th></tr></thead><tbody>`;
+
+                    filteredStudents.forEach(student => {
+                        htmlContent += `<tr>
+                            <td>${student.studentId || student.id}</td>
+                            <td>${student.firstName || ''} ${student.lastName || ''}</td>
+                            <td>${student.department || 'N/A'}</td>
+                            <td>${student.section || 'N/A'}</td>
+                            <td>${student.email || 'N/A'}</td>
+                            <td>${student.status || 'active'}</td>
+                        </tr>`;
+                    });
+
+                    htmlContent += `</tbody></table></body></html>`;
+                    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Students_Report_${new Date().toISOString().split('T')[0]}.doc`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    closeExportModalFunc();
+                    alert('Word document exported successfully!');
+                } catch (error) {
+                    console.error('Error exporting to Word:', error);
+                    alert('Error exporting to Word. Please try again.');
+                }
+            }
+
+            function exportToCSV() {
+                try {
+                    const filteredStudents = getFilteredStudents();
+                    const headers = ['Student ID', 'First Name', 'Middle Name', 'Last Name', 'Department', 'Section', 'Email', 'Phone', 'Status'];
+                    const rows = filteredStudents.map(student => [
+                        student.studentId || student.id,
+                        `"${(student.firstName || '').replace(/"/g, '""')}"`,
+                        `"${(student.middleName || '').replace(/"/g, '""')}"`,
+                        `"${(student.lastName || '').replace(/"/g, '""')}"`,
+                        `"${(student.department || '').replace(/"/g, '""')}"`,
+                        `"${(student.section || '').replace(/"/g, '""')}"`,
+                        `"${(student.email || '').replace(/"/g, '""')}"`,
+                        `"${(student.phone || '').replace(/"/g, '""')}"`,
+                        student.status || 'active'
+                    ]);
+                    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Students_Report_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    closeExportModalFunc();
+                    alert('CSV file exported successfully!');
+                } catch (error) {
+                    console.error('Error exporting to CSV:', error);
+                    alert('Error exporting to CSV. Please try again.');
+                }
+            }
+
+            function exportToJSON() {
+                try {
+                    const filteredStudents = getFilteredStudents();
+                    const jsonData = {
+                        exportDate: new Date().toISOString(),
+                        totalStudents: filteredStudents.length,
+                        students: filteredStudents.map(student => ({
+                            studentId: student.studentId || student.id,
+                            firstName: student.firstName || '',
+                            middleName: student.middleName || '',
+                            lastName: student.lastName || '',
+                            department: student.department || '',
+                            section: student.section || '',
+                            email: student.email || '',
+                            phone: student.phone || '',
+                            status: student.status || 'active'
+                        }))
+                    };
+                    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Students_Report_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    closeExportModalFunc();
+                    alert('JSON file exported successfully!');
+                } catch (error) {
+                    console.error('Error exporting to JSON:', error);
+                    alert('Error exporting to JSON. Please try again.');
+                }
+            }
+
+            function closeExportModalFunc() {
+                if (exportModal) {
+                    exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                    if (exportFormatSelect) exportFormatSelect.value = '';
+                }
+            }
+
+            if (btnExport) {
+                btnExport.addEventListener('click', function() {
+                    if (students.length === 0) {
+                        alert('No students to export. Please add students first.');
+                        return;
+                    }
+                    if (exportModal) {
+                        exportModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                        if (exportFormatSelect) exportFormatSelect.value = '';
+                    }
+                });
+            }
+
+            if (closeExportModal) closeExportModal.addEventListener('click', closeExportModalFunc);
+            if (cancelExportModal) cancelExportModal.addEventListener('click', closeExportModalFunc);
+            if (exportModalOverlay) exportModalOverlay.addEventListener('click', closeExportModalFunc);
+
+            if (confirmExportBtn) {
+                confirmExportBtn.addEventListener('click', function() {
+                    if (!exportFormatSelect || !exportFormatSelect.value) {
+                        alert('Please select an export format.');
+                        return;
+                    }
+                    switch(exportFormatSelect.value) {
+                        case 'pdf': exportToPDF(); break;
+                        case 'excel': exportToExcel(); break;
+                        case 'word': exportToWord(); break;
+                        case 'csv': exportToCSV(); break;
+                        case 'json': exportToJSON(); break;
+                        default: alert('Unknown export format');
+                    }
+                });
+            }
+
+            // Import functionality
+            const btnImport = document.getElementById('btnImportStudents');
+            const importModal = document.getElementById('importModal');
+            const importModalOverlay = document.getElementById('importModalOverlay');
+            const closeImportModal = document.getElementById('closeImportModal');
+            const cancelImportModal = document.getElementById('cancelImportModal');
+            const importFileInput = document.getElementById('importFile');
+            const confirmImportBtn = document.getElementById('confirmImportBtn');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const importPreview = document.getElementById('importPreview');
+            const previewTable = document.getElementById('previewTable');
+            let importData = [];
+
+            function closeImportModalFunc() {
+                if (importModal) {
+                    importModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                    if (importFileInput) importFileInput.value = '';
+                    if (selectedFileName) selectedFileName.style.display = 'none';
+                    if (importPreview) importPreview.style.display = 'none';
+                    if (confirmImportBtn) confirmImportBtn.disabled = true;
+                    importData = [];
+                }
+            }
+
+            if (btnImport) {
+                btnImport.addEventListener('click', function() {
+                    if (importModal) {
+                        importModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                        if (importFileInput) importFileInput.value = '';
+                        if (selectedFileName) selectedFileName.style.display = 'none';
+                        if (importPreview) importPreview.style.display = 'none';
+                        if (confirmImportBtn) confirmImportBtn.disabled = true;
+                        importData = [];
+                    }
+                });
+            }
+
+            if (closeImportModal) closeImportModal.addEventListener('click', closeImportModalFunc);
+            if (cancelImportModal) cancelImportModal.addEventListener('click', closeImportModalFunc);
+            if (importModalOverlay) importModalOverlay.addEventListener('click', closeImportModalFunc);
+
+            if (importFileInput) {
+                importFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const validExtensions = ['.csv', '.xls', '.xlsx'];
+                    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                    if (!validExtensions.includes(fileExtension)) {
+                        alert('Invalid file type. Please upload a CSV or Excel file.');
+                        this.value = '';
+                        return;
+                    }
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size exceeds 10MB limit.');
+                        this.value = '';
+                        return;
+                    }
+                    if (selectedFileName) {
+                        selectedFileName.innerHTML = `<i class='bx bx-file'></i> ${file.name}`;
+                        selectedFileName.style.display = 'flex';
+                    }
+                    parseImportFile(file);
+                });
+            }
+
+            function parseImportFile(file) {
+                const reader = new FileReader();
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                reader.onload = function(e) {
+                    try {
+                        if (fileExtension === '.csv') {
+                            parseCSV(e.target.result);
+                        } else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
+                            parseExcel(e.target.result, file);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing file:', error);
+                        alert('Error parsing file. Please check the file format.');
+                    }
+                };
+                if (fileExtension === '.csv') {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
+            }
+
+            function parseCSV(csvText) {
+                const lines = csvText.split('\n').filter(line => line.trim());
+                if (lines.length < 2) {
+                    alert('File must contain at least a header row and one data row.');
+                    return;
+                }
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').toLowerCase());
+                const studentIdIdx = findColumnIndex(headers, ['student id', 'student_id', 'id']);
+                const firstNameIdx = findColumnIndex(headers, ['first name', 'firstname', 'first_name', 'fname']);
+                const lastNameIdx = findColumnIndex(headers, ['last name', 'lastname', 'last_name', 'lname']);
+                const middleNameIdx = findColumnIndex(headers, ['middle name', 'middlename', 'middle_name', 'mname']);
+                const deptIdx = findColumnIndex(headers, ['department', 'dept', 'department code']);
+                const sectionIdx = findColumnIndex(headers, ['section', 'section code']);
+                const emailIdx = findColumnIndex(headers, ['email', 'email address']);
+                const phoneIdx = findColumnIndex(headers, ['phone', 'phone number', 'contact']);
+                const statusIdx = findColumnIndex(headers, ['status']);
+
+                if (studentIdIdx === -1 || firstNameIdx === -1 || lastNameIdx === -1) {
+                    alert('Required columns not found. Please ensure the file contains "Student ID", "First Name", and "Last Name" columns.');
+                    return;
+                }
+
+                importData = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = parseCSVLine(lines[i]);
+                    const student = {
+                        studentId: values[studentIdIdx]?.trim() || '',
+                        firstName: values[firstNameIdx]?.trim() || '',
+                        lastName: values[lastNameIdx]?.trim() || '',
+                        middleName: middleNameIdx >= 0 ? (values[middleNameIdx]?.trim() || '') : '',
+                        department: deptIdx >= 0 ? (values[deptIdx]?.trim() || '') : '',
+                        section: sectionIdx >= 0 ? (values[sectionIdx]?.trim() || '') : '',
+                        email: emailIdx >= 0 ? (values[emailIdx]?.trim() || '') : '',
+                        phone: phoneIdx >= 0 ? (values[phoneIdx]?.trim() || '') : '',
+                        status: statusIdx >= 0 ? (values[statusIdx]?.trim().toLowerCase() || 'active') : 'active'
+                    };
+                    if (student.studentId && student.firstName && student.lastName) {
+                        importData.push(student);
+                    }
+                }
+                if (importData.length === 0) {
+                    alert('No valid data found in the file.');
+                    return;
+                }
+                showPreview();
+            }
+
+            function parseCSVLine(line) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                return values;
+            }
+
+            function parseExcel(arrayBuffer, file) {
+                try {
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    if (jsonData.length < 2) {
+                        alert('File must contain at least a header row and one data row.');
+                        return;
+                    }
+                    const headers = jsonData[0].map(h => String(h || '').trim().toLowerCase());
+                    const studentIdIdx = findColumnIndex(headers, ['student id', 'student_id', 'id']);
+                    const firstNameIdx = findColumnIndex(headers, ['first name', 'firstname', 'first_name', 'fname']);
+                    const lastNameIdx = findColumnIndex(headers, ['last name', 'lastname', 'last_name', 'lname']);
+                    const middleNameIdx = findColumnIndex(headers, ['middle name', 'middlename', 'middle_name', 'mname']);
+                    const deptIdx = findColumnIndex(headers, ['department', 'dept', 'department code']);
+                    const sectionIdx = findColumnIndex(headers, ['section', 'section code']);
+                    const emailIdx = findColumnIndex(headers, ['email', 'email address']);
+                    const phoneIdx = findColumnIndex(headers, ['phone', 'phone number', 'contact']);
+                    const statusIdx = findColumnIndex(headers, ['status']);
+
+                    if (studentIdIdx === -1 || firstNameIdx === -1 || lastNameIdx === -1) {
+                        alert('Required columns not found. Please ensure the file contains "Student ID", "First Name", and "Last Name" columns.');
+                        return;
+                    }
+
+                    importData = [];
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || row.length < 1) continue;
+                        const student = {
+                            studentId: String(row[studentIdIdx] || '').trim(),
+                            firstName: String(row[firstNameIdx] || '').trim(),
+                            lastName: String(row[lastNameIdx] || '').trim(),
+                            middleName: middleNameIdx >= 0 ? String(row[middleNameIdx] || '').trim() : '',
+                            department: deptIdx >= 0 ? String(row[deptIdx] || '').trim() : '',
+                            section: sectionIdx >= 0 ? String(row[sectionIdx] || '').trim() : '',
+                            email: emailIdx >= 0 ? String(row[emailIdx] || '').trim() : '',
+                            phone: phoneIdx >= 0 ? String(row[phoneIdx] || '').trim() : '',
+                            status: statusIdx >= 0 ? String(row[statusIdx] || '').trim().toLowerCase() || 'active' : 'active'
+                        };
+                        if (student.studentId && student.firstName && student.lastName) {
+                            importData.push(student);
+                        }
+                    }
+                    if (importData.length === 0) {
+                        alert('No valid data found in the file.');
+                        return;
+                    }
+                    showPreview();
+                } catch (error) {
+                    console.error('Error parsing Excel file:', error);
+                    alert('Error parsing Excel file. Please check the file format.');
+                }
+            }
+
+            function findColumnIndex(headers, possibleNames) {
+                for (let name of possibleNames) {
+                    const idx = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            }
+
+            function showPreview() {
+                if (!importPreview || !previewTable || importData.length === 0) return;
+                const previewRows = importData.slice(0, 5);
+                let html = '<table><thead><tr><th>Student ID</th><th>First Name</th><th>Last Name</th><th>Department</th><th>Status</th></tr></thead><tbody>';
+                previewRows.forEach(row => {
+                    html += `<tr><td>${row.studentId}</td><td>${row.firstName}</td><td>${row.lastName}</td><td>${row.department || 'N/A'}</td><td>${row.status}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                if (importData.length > 5) {
+                    html += `<p style="margin-top: 12px; color: #666; font-size: 13px;">... and ${importData.length - 5} more rows</p>`;
+                }
+                previewTable.innerHTML = html;
+                importPreview.style.display = 'block';
+                if (confirmImportBtn) confirmImportBtn.disabled = false;
+            }
+
+            if (confirmImportBtn) {
+                confirmImportBtn.addEventListener('click', async function() {
+                    if (importData.length === 0) {
+                        alert('No data to import.');
+                        return;
+                    }
+                    this.disabled = true;
+                    this.classList.add('loading');
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bx bx-loader-alt"></i> Importing...';
+                    try {
+                        const formData = new FormData();
+                        formData.append('students', JSON.stringify(importData));
+                        const response = await fetch('../api/students.php?action=import', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            alert(`Successfully imported ${result.data.imported || importData.length} student(s)!`);
+                            closeImportModalFunc();
+                            fetchStudents();
+                            fetchStats();
+                        } else {
+                            alert('Error: ' + result.message);
+                            this.disabled = false;
+                            this.classList.remove('loading');
+                            this.innerHTML = originalText;
+                        }
+                    } catch (error) {
+                        console.error('Error importing students:', error);
+                        alert('Error importing students. Please try again.');
+                        this.disabled = false;
+                        this.classList.remove('loading');
+                        this.innerHTML = originalText;
+                    }
+                });
+            }
         }
 
         // Start initialization
