@@ -1,0 +1,7 @@
+# Rewrite rules
+RewriteEngine On
+
+# Allow direct access to assets
+RewriteCond %{REQUEST_URI} ^/app/assets/
+RewriteRule ^(.*)$ app/assets/$1 [L]
+
