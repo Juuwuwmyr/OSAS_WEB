@@ -45,6 +45,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./app/assets/styles/login.css">
     <style>
+        
         /* Error toast styles */
         .error-toast {
             position: fixed;
