@@ -20,15 +20,7 @@ if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
 }
 
 // Also check session (fallback)
-if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === 'admin') {
-        header('Location: includes/dashboard.php');
-        exit;
-    } elseif ($_SESSION['role'] === 'user') {
-        header('Location: includes/user_dashboard.php');
-        exit;
-    }
-}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

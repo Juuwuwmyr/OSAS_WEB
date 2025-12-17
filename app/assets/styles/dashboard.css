@@ -31,8 +31,11 @@ li {
   --name: #7a7979;
 }
 
-html {
-  overflow-x: hidden;
+/* REMOVE OUTER SCROLLBAR */
+html, body {
+  height: 100%;
+  overflow: hidden; /* Removes outer scrollbar */
+  font-family: var(--poppins);
 }
 
 body.dark {
@@ -46,7 +49,7 @@ body.dark {
 
 body {
   background: var(--grey);
-  overflow-x: hidden;
+  display: flex;
 }
 
 /* SIDEBAR */
@@ -55,17 +58,17 @@ body {
   top: 0;
   left: 0;
   width: 280px;
-  height: 100%;
+  height: 100vh; /* Use viewport height */
   background: var(--light);
   z-index: 2000;
   font-family: var(--lato);
   transition: .3s ease;
-  overflow-x: hidden;
-  scrollbar-width: none;
+  overflow-y: auto; /* Allow scrolling inside sidebar only */
+  scrollbar-width: none; /* Firefox */
 }
 
-#sidebar::--webkit-scrollbar {
-  display: none;
+#sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 #sidebar.hide {
@@ -172,20 +175,21 @@ body {
   justify-content: center;
 }
 
-/* CONTENT */
+/* CONTENT WRAPPER - FIXED HEIGHT WITH SCROLL */
 #content {
   position: relative;
-  width: calc(100% - 280px);
-  left: 280px;
+  flex: 1;
+  margin-left: 280px;
+  height: 100vh;
+  overflow-y: auto; /* Only content area scrolls */
   transition: .3s ease;
 }
 
-#sidebar.hide~#content {
-  width: calc(100% - 60px);
-  left: 60px;
+#sidebar.hide ~ #content {
+  margin-left: 60px;
 }
 
-/* NAVBAR */
+/* NAVBAR - FIXED AT TOP */
 #content nav {
   height: 56px;
   background: var(--light);
@@ -194,10 +198,16 @@ body {
   align-items: center;
   grid-gap: 24px;
   font-family: var(--lato);
-  position: sticky;
+  position: fixed; /* Changed from sticky to fixed */
   top: 0;
-  left: 0;
+  left: 280px; /* Match sidebar width */
+  right: 0; /* Extend to right edge */
   z-index: 1000;
+  transition: .3s ease;
+}
+
+#sidebar.hide ~ #content nav {
+  left: 60px; /* Adjust when sidebar is collapsed */
 }
 
 #content nav::before {
@@ -323,6 +333,12 @@ body {
   left: calc(100% - (25px - 4px) - 2px);
 }
 
+/* MAIN CONTENT AREA - PUSHED DOWN BELOW NAVBAR */
+#content main {
+  padding: 80px 24px 24px; /* Top padding to clear fixed navbar */
+  min-height: calc(100vh - 56px); /* Ensure content fills space */
+}
+
 /* RESPONSIVE */
 @media screen and (max-width: 768px) {
   #sidebar {
@@ -330,7 +346,10 @@ body {
   }
 
   #content {
-    width: calc(100% - 60px);
+    margin-left: 200px;
+  }
+
+  #content nav {
     left: 200px;
   }
 
