@@ -15,8 +15,9 @@ if (!headers_sent()) {
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    ob_end_clean(); // Clear any output
+    ob_clean(); // Clear any output but keep buffer active
     http_response_code(200);
+    ob_end_flush();
     exit;
 }
 
@@ -53,12 +54,13 @@ foreach ($db_paths as $path) {
 }
 
 if (!$db_loaded) {
-    ob_end_clean(); // Clear any output
+    ob_clean(); // Clear any output but keep buffer active
     $error_msg = 'Database configuration file not found.';
     if ($db_error) {
         $error_msg .= ' Error: ' . $db_error;
     }
     echo json_encode(['status' => 'error', 'message' => $error_msg]);
+    ob_end_flush();
     exit;
 }
 
@@ -78,34 +80,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     
     // Basic validation
     if (empty($first_name) || empty($last_name) || empty($email) || empty($username) || empty($password)) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'All required fields must be filled out.']);
+        ob_end_flush();
         exit;
     }
     
     // Validate email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Please enter a valid email address.']);
+        ob_end_flush();
         exit;
     }
     
     // Check database connection
     if (!isset($conn) || ($conn && $conn->connect_error)) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed. Please try again later.']);
+        ob_end_flush();
         exit;
     }
 
     // Check for existing username/email
     $check = $conn->prepare("SELECT * FROM users WHERE email = ? OR username = ?");
     if (!$check) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . ($conn->error ?? 'Unknown error')]);
+        ob_end_flush();
         exit;
     }
     $check->bind_param("ss", $email, $username);
@@ -113,35 +119,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $check->get_result();
 
     if ($result && $result->num_rows > 0) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(409); // Conflict
         echo json_encode(['status' => 'error', 'message' => 'Email or username already exists.']);
         $check->close();
+        ob_end_flush();
         exit;
     }
 
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert user
+    // Combine first_name and last_name into full_name (matching database schema)
+    $full_name = trim($first_name . ' ' . $last_name);
+
+    // Insert user - matching actual database schema: student_id, full_name, email, username, password, role
     $insert = $conn->prepare("
-        INSERT INTO users (student_id, first_name, last_name, department, email, username, password, role)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (student_id, full_name, email, username, password, role)
+        VALUES (?, ?, ?, ?, ?, ?)
     ");
     if (!$insert) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . ($conn->error ?? 'Unknown error')]);
         $check->close();
+        ob_end_flush();
         exit;
     }
 
     $insert->bind_param(
-        "ssssssss",
+        "ssssss",
         $student_id,
-        $first_name,
-        $last_name,
-        $department,
+        $full_name,
         $email,
         $username,
         $hashedPassword,
@@ -149,21 +158,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     );
 
     if ($insert->execute()) {
-        ob_end_clean();
+        ob_clean();
         http_response_code(201);
         echo json_encode(['status' => 'success', 'message' => 'Account created successfully!']);
     } else {
-        ob_end_clean();
+        ob_clean();
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Failed to register user: ' . ($insert->error ?? 'Unknown error')]);
+        $error_msg = 'Failed to register user.';
+        if ($insert->error) {
+            $error_msg .= ' Error: ' . $insert->error;
+        } elseif ($conn->error) {
+            $error_msg .= ' Error: ' . $conn->error;
+        }
+        echo json_encode(['status' => 'error', 'message' => $error_msg]);
     }
 
     $check->close();
     $insert->close();
+    ob_end_flush();
+    exit;
 } else {
-    ob_end_clean();
+    ob_clean();
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed.']);
+    ob_end_flush();
+    exit;
 }
-ob_end_flush();
 ?>
