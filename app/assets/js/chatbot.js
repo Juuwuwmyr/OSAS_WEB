@@ -81,12 +81,14 @@ class Chatbot {
 
         try {
             // Fetch data from all existing APIs in parallel
-            const [studentsRes, departmentsRes, sectionsRes, violationsRes, studentsStatsRes] = await Promise.allSettled([
+            const [studentsRes, departmentsRes, sectionsRes, violationsRes, studentsStatsRes, announcementsRes, reportsRes] = await Promise.allSettled([
                 fetch(this.apiBase + 'students.php').catch(() => null), // Get students list
                 fetch(this.apiBase + 'departments.php').catch(() => null),
                 fetch(this.apiBase + 'sections.php').catch(() => null),
                 fetch(this.apiBase + 'violations.php').catch(() => null),
-                fetch(this.apiBase + 'students.php?action=stats').catch(() => null) // Get students stats
+                fetch(this.apiBase + 'students.php?action=stats').catch(() => null), // Get students stats
+                fetch(this.apiBase + 'announcements.php').catch(() => null), // Get announcements
+                fetch(this.apiBase + 'reports.php').catch(() => null) // Get reports
             ]);
 
             const context = {
@@ -95,6 +97,8 @@ class Chatbot {
                 sections: [],
                 recent_students: [],
                 recent_violations: [],
+                recent_announcements: [],
+                recent_reports: [],
                 user_info: null
             };
 
@@ -218,6 +222,64 @@ class Chatbot {
                 }
             }
 
+            // Parse announcements data
+            if (announcementsRes.status === 'fulfilled' && announcementsRes.value && announcementsRes.value.ok) {
+                try {
+                    const announcementsData = await announcementsRes.value.json();
+                    // Handle different response formats
+                    let announcements = [];
+                    if (Array.isArray(announcementsData)) {
+                        announcements = announcementsData;
+                    } else if (announcementsData.data && Array.isArray(announcementsData.data)) {
+                        announcements = announcementsData.data;
+                    } else if (announcementsData.announcements && Array.isArray(announcementsData.announcements)) {
+                        announcements = announcementsData.announcements;
+                    }
+                    
+                    context.recent_announcements = announcements.slice(0, 10).map(a => ({
+                        id: a.id || a.announcementId || a.announcement_id || '',
+                        title: a.title || a.announcementTitle || a.announcement_title || '',
+                        content: a.content || a.description || a.body || '',
+                        audience: a.audience || a.targetAudience || a.target_audience || '',
+                        status: a.status || '',
+                        date: a.createdAt || a.created_at || a.dateCreated || a.date_created || '',
+                        author: a.author || a.createdBy || a.created_by || ''
+                    }));
+                    context.stats.announcements = announcements.length;
+                } catch (e) {
+                    console.warn('Error parsing announcements data:', e);
+                }
+            }
+
+            // Parse reports data
+            if (reportsRes.status === 'fulfilled' && reportsRes.value && reportsRes.value.ok) {
+                try {
+                    const reportsData = await reportsRes.value.json();
+                    // Handle different response formats
+                    let reports = [];
+                    if (Array.isArray(reportsData)) {
+                        reports = reportsData;
+                    } else if (reportsData.data && Array.isArray(reportsData.data)) {
+                        reports = reportsData.data;
+                    } else if (reportsData.reports && Array.isArray(reportsData.reports)) {
+                        reports = reportsData.reports;
+                    }
+                    
+                    context.recent_reports = reports.slice(0, 10).map(r => ({
+                        id: r.id || r.reportId || r.report_id || '',
+                        title: r.title || r.reportTitle || r.report_title || '',
+                        type: r.type || r.reportType || r.report_type || '',
+                        description: r.description || r.summary || '',
+                        status: r.status || '',
+                        date: r.createdAt || r.created_at || r.dateCreated || r.date_created || '',
+                        generated_by: r.generatedBy || r.generated_by || r.createdBy || r.created_by || ''
+                    }));
+                    context.stats.reports = reports.length;
+                } catch (e) {
+                    console.warn('Error parsing reports data:', e);
+                }
+            }
+
             // Get user info from session (if available)
             // This would need to be passed from the backend or stored in a cookie
             // For now, we'll leave it null
@@ -253,7 +315,9 @@ class Chatbot {
             formatted += `- Total Students: ${context.stats.students || 0}\n`;
             formatted += `- Total Departments: ${context.stats.departments || 0}\n`;
             formatted += `- Total Sections: ${context.stats.sections || 0}\n`;
-            formatted += `- Total Violations: ${context.stats.violations || 0}\n\n`;
+            formatted += `- Total Violations: ${context.stats.violations || 0}\n`;
+            formatted += `- Total Announcements: ${context.stats.announcements || 0}\n`;
+            formatted += `- Total Reports: ${context.stats.reports || 0}\n\n`;
         }
 
         // Add departments list
@@ -292,6 +356,32 @@ class Chatbot {
             formatted += '\n';
         }
 
+        // Add recent announcements
+        if (context.recent_announcements && context.recent_announcements.length > 0) {
+            formatted += 'RECENT ANNOUNCEMENTS (Sample):\n';
+            context.recent_announcements.slice(0, 5).forEach(announcement => {
+                formatted += `- "${announcement.title}" (Audience: ${announcement.audience}, Status: ${announcement.status})\n`;
+                if (announcement.content && announcement.content.length > 0) {
+                    const preview = announcement.content.substring(0, 100).replace(/\n/g, ' ');
+                    formatted += `  Preview: ${preview}${announcement.content.length > 100 ? '...' : ''}\n`;
+                }
+            });
+            formatted += '\n';
+        }
+
+        // Add recent reports
+        if (context.recent_reports && context.recent_reports.length > 0) {
+            formatted += 'RECENT REPORTS (Sample):\n';
+            context.recent_reports.slice(0, 5).forEach(report => {
+                formatted += `- ${report.title} (Type: ${report.type}, Status: ${report.status})\n`;
+                if (report.description && report.description.length > 0) {
+                    const preview = report.description.substring(0, 80).replace(/\n/g, ' ');
+                    formatted += `  Description: ${preview}${report.description.length > 80 ? '...' : ''}\n`;
+                }
+            });
+            formatted += '\n';
+        }
+
         // Add user-specific info
         if (context.user_info) {
             formatted += 'CURRENT USER:\n';
@@ -303,7 +393,12 @@ class Chatbot {
         }
 
         formatted += '=== END OF DATABASE INFORMATION ===\n';
-        formatted += '\nUse this information to answer questions about the OSAS system. If asked about specific data, refer to the information above.\n';
+        formatted += '\nUse this information to answer questions about the OSAS system. You can answer questions about:\n';
+        formatted += '- Students, Departments, Sections, and Violations\n';
+        formatted += '- Announcements (their titles, content, audience, and status)\n';
+        formatted += '- Reports (their types, descriptions, and status)\n';
+        formatted += '- System statistics and data\n';
+        formatted += 'If asked about specific data, refer to the information above.\n';
 
         return formatted;
     }
@@ -312,7 +407,7 @@ class Chatbot {
         // Create chatbot button
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
-        chatbotButton.innerHTML = '<i class="bx bx-message-rounded-dots" aria-hidden="true"></i>';
+        chatbotButton.innerHTML = '<i class="bx bx-message-square-dots" aria-hidden="true"></i>';
         chatbotButton.title = 'Open Chatbot';
         chatbotButton.setAttribute('aria-label', 'Open Chatbot');
         document.body.appendChild(chatbotButton);
@@ -333,7 +428,7 @@ class Chatbot {
             <div class="chatbot-prompts-top" id="chatbot-prompts-top">
                 <div class="prompts-top-header">
                     <div class="prompts-top-title">
-                        <i class="bx bx-bulb" aria-hidden="true"></i>
+                        <i class="bx bx-sparkles" aria-hidden="true"></i>
                         <span>Quick Prompts</span>
                     </div>
                     <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts" aria-label="Toggle prompts">
@@ -360,7 +455,7 @@ class Chatbot {
                                 <li>System navigation and features</li>
                             </ul>
                             <p style="margin-top: 12px; font-size: 13px; opacity: 0.8;">
-                                <i class="bx bx-bulb" style="font-size: 14px;"></i> 
+                                <i class="bx bx-sparkles" style="font-size: 14px;"></i> 
                                 Check the <strong>Quick Prompts</strong> above for suggested questions!
                             </p>
                         </div>
@@ -375,7 +470,7 @@ class Chatbot {
                     autocomplete="off"
                 />
                 <button id="chatbot-send" aria-label="Send message">
-                    <i class="bx bx-send" aria-hidden="true"></i>
+                    <i class="bx bx-paper-plane" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="chatbot-loading" id="chatbot-loading" style="display: none;">
@@ -403,7 +498,7 @@ class Chatbot {
             <div class="prompt-selector-content">
                 <div class="prompt-selector-header">
                     <div class="prompt-selector-title">
-                        <i class="bx bx-bulb" aria-hidden="true"></i>
+                        <i class="bx bx-sparkles" aria-hidden="true"></i>
                         <span>Select a Prompt</span>
                     </div>
                     <button class="prompt-selector-close" id="prompt-selector-close" aria-label="Close">
@@ -659,9 +754,16 @@ class Chatbot {
 
             // Build conversation context for Puter.js
             let conversationContext = "You are a helpful assistant for the OSAS (Office of Student Affairs System). ";
-            conversationContext += "You help users with questions about students, departments, sections, violations, and reports. ";
+            conversationContext += "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
             conversationContext += "Be friendly, professional, and concise in your responses.\n";
-            conversationContext += "You have access to the system's database information to answer questions accurately.\n\n";
+            conversationContext += "You have access to the system's database information to answer questions accurately.\n";
+            conversationContext += "You can answer questions about:\n";
+            conversationContext += "- Student information, statistics, and management\n";
+            conversationContext += "- Department and section details\n";
+            conversationContext += "- Violation records and statistics\n";
+            conversationContext += "- Announcements (titles, content, audience, status, dates)\n";
+            conversationContext += "- Reports (types, descriptions, status, generation dates)\n";
+            conversationContext += "- System navigation and features\n\n";
             conversationContext += "IMPORTANT SYSTEM INFORMATION:\n";
             conversationContext += "- System Owner/Administrator/Head: Cedrick H. Almarez\n";
             conversationContext += "- Always remember and acknowledge this when asked about system ownership, administration, or leadership.\n\n";
@@ -792,7 +894,7 @@ class Chatbot {
         messageDiv.className = `chatbot-message ${role}`;
 
         const icon = role === 'user' 
-            ? '<i class="bx bx-user"></i>' 
+            ? '<i class="bx bx-user-circle"></i>' 
             : '<i class="bx bx-bot"></i>';
 
         // Format content with lists and proper formatting
