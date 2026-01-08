@@ -8,7 +8,7 @@
 
 body.dark {
   /* Keep your existing variables */
-  --border: #444444; /* Add this line for dark mode */
+  --border: #5A5A5A; /* Lighter border for dark mode */
 }
 
 /* ========================================= */

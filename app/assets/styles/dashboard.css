@@ -29,18 +29,18 @@ li {
 :root {
   --poppins: 'Poppins', sans-serif;
   --lato: 'Lato', sans-serif;
-  --light: #FFFFFF;
+  --light: #FAFAF8;
   --gold: #FFD700;
   --light-gold: #FFF9D6;
-  --grey: #F5F5F5;
-  --dark-grey: #AAAAAA;
-  --dark: #000000;
+  --grey: #F0F0ED;
+  --dark-grey: #888888;
+  --dark: #1A1A1A;
   --red: #DB504A;
   --yellow: #FFCE26;
   --light-yellow: #FFF2C6;
   --orange: #FD7238;
   --light-orange: #FFE0D3;
-  --name: #7a7979;
+  --name: #6a6a6a;
 }
 
 /* Prevent any outer scrollbar - MUST BE FIRST */
@@ -60,12 +60,14 @@ html::-webkit-scrollbar {
 }
 
 body.dark {
-  --light: #121212;
-  --grey: #1A1A1A;
+  --light: #2D2D2D;
+  --grey: #3A3A3A;
   --dark: #FFFFFF;
   --gold: #FFC600;
-  --light-gold: #3A3A2A;
-  --name: #e7e7e7;
+  --light-gold: #4A4A3A;
+  --name: #E0E0E0;
+  --dark-grey: #B0B0B0;
+  --border: #4A4A4A;
 }
 
 body {
