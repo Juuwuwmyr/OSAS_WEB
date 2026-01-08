@@ -872,7 +872,8 @@ body.dark {
   animation: modalSlideIn 0.4s ease-out;
   z-index: 2001;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .Reports-modal-container.wide {
@@ -896,10 +897,9 @@ body.dark {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
   background: var(--light);
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .Reports-modal-header h2 {
@@ -942,6 +942,31 @@ body.dark {
 
 #ReportsGenerateForm {
   padding: 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+#ReportsGenerateForm::-webkit-scrollbar {
+  width: 8px;
+}
+
+#ReportsGenerateForm::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+#ReportsGenerateForm::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+#ReportsGenerateForm::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
 }
 
 .Reports-form-row {
@@ -1129,6 +1154,31 @@ input[type="checkbox"]:checked + .toggle-label::after {
 
 .report-details-content {
   padding: 0 32px 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+.report-details-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.report-details-content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.report-details-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.report-details-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
 }
 
 .report-header {

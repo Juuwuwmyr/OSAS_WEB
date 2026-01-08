@@ -836,7 +836,8 @@ body.dark {
   animation: modalSlideIn 0.4s ease-out;
   z-index: 2001;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalSlideIn {
@@ -859,6 +860,7 @@ body.dark {
   background: var(--light);
   z-index: 1;
   position: relative;
+  flex-shrink: 0;
 }
 
 .Violations-modal-header h2 {
@@ -932,6 +934,31 @@ body.dark {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+#ViolationRecordForm::-webkit-scrollbar {
+  width: 8px;
+}
+
+#ViolationRecordForm::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+#ViolationRecordForm::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+#ViolationRecordForm::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
 }
 
 /* Student Search Enhancement */
@@ -1484,6 +1511,31 @@ body.dark {
 
 .violation-details-content {
   padding: 0 32px 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+.violation-details-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.violation-details-content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.violation-details-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.violation-details-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
 }
 
 /* Case Header */

@@ -686,7 +686,8 @@ body.dark {
   animation: modalSlideIn 0.4s ease-out;
   z-index: 2001;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalSlideIn {
@@ -706,10 +707,9 @@ body.dark {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
   background: var(--light);
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .sections-modal-header h2 {
@@ -745,6 +745,33 @@ body.dark {
 /* ========================================= */
 #sectionsForm {
   padding: 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+#sectionsForm::-webkit-scrollbar {
+  width: 8px;
+}
+
+#sectionsForm::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+#sectionsForm::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+#sectionsForm::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
 }
 
 .sections-form-group {
@@ -786,6 +813,7 @@ body.dark {
   margin-top: 32px;
   padding-top: 24px;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .sections-btn-outline,
