@@ -287,6 +287,7 @@ class Chatbot {
         chatbotButton.id = 'chatbot-button';
         chatbotButton.innerHTML = '<i class="bx bx-message-rounded-dots"></i>';
         chatbotButton.title = 'Open Chatbot';
+        chatbotButton.setAttribute('aria-label', 'Open Chatbot');
         document.body.appendChild(chatbotButton);
 
         // Create chatbot panel
@@ -393,18 +394,18 @@ class Chatbot {
 
     loadQuickPrompts() {
         const quickPrompts = [
-            'How many students are in the system?',
-            'Show me violation statistics',
-            'What departments exist?',
-            'Help me understand the system',
-            'What sections are available?',
-            'Tell me about recent violations',
-            'How do I manage students?',
-            'What are the system features?',
-            'How to add a new student?',
-            'View my violations',
-            'Department management guide',
-            'System navigation help'
+            { text: 'How many students are in the system?', icon: 'bx-group' },
+            { text: 'Show me violation statistics', icon: 'bx-bar-chart-alt-2' },
+            { text: 'What departments exist?', icon: 'bx-building' },
+            { text: 'Help me understand the system', icon: 'bx-help-circle' },
+            { text: 'What sections are available?', icon: 'bx-list-ul' },
+            { text: 'Tell me about recent violations', icon: 'bx-shield-x' },
+            { text: 'How do I manage students?', icon: 'bx-user-plus' },
+            { text: 'What are the system features?', icon: 'bx-cog' },
+            { text: 'How to add a new student?', icon: 'bx-user-plus' },
+            { text: 'View my violations', icon: 'bx-shield-x' },
+            { text: 'Department management guide', icon: 'bx-building-house' },
+            { text: 'System navigation help', icon: 'bx-navigation' }
         ];
 
         const promptsGrid = document.getElementById('prompts-top-grid');
@@ -420,9 +421,9 @@ class Chatbot {
         quickPrompts.forEach(prompt => {
             const promptItem = document.createElement('div');
             promptItem.className = 'prompt-top-item';
-            promptItem.textContent = prompt;
+            promptItem.innerHTML = `<i class="bx ${prompt.icon}"></i><span>${prompt.text}</span>`;
             promptItem.addEventListener('click', () => {
-                this.usePrompt(prompt);
+                this.usePrompt(prompt.text);
             });
             promptsGrid.appendChild(promptItem);
         });
