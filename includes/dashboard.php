@@ -35,6 +35,7 @@ if ($_SESSION['role'] !== 'admin') {
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="../app/assets/styles/dashboard.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
+  <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
 </head>
@@ -43,6 +44,7 @@ if ($_SESSION['role'] !== 'admin') {
   <?php
   require_once __DIR__ . '/../app/core/View.php';
   View::partial('admin_sidebar');
+  View::partial('settings_modal');
   ?>
 
   <!-- CONTENT -->
@@ -75,6 +77,7 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="../app/assets/js/reports.js"></script>
   <script src="../app/assets/js/announcement.js"></script>
   <script src="../app/assets/js/chatbot.js"></script>
+  <script src="../app/assets/js/settings.js"></script>
 </body>
 
 </html>

@@ -944,7 +944,12 @@ function initViolationsModule() {
             
             if (editId) {
                 // Edit mode
-                modalTitle.textContent = 'Edit Violation';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Edit Violation';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Edit Violation</span>';
+                }
                 const violation = violations.find(v => v.id === editId);
                 if (violation) {
                     // Populate student info
@@ -978,7 +983,12 @@ function initViolationsModule() {
                 recordModal.dataset.editingId = editId;
             } else {
                 // Add new mode
-                modalTitle.textContent = 'Record New Violation';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Record New Violation';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Record New Violation</span>';
+                }
                 if (form) {
                     form.reset();
                     // Re-set default values after reset

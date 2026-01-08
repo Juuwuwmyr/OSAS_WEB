@@ -213,7 +213,10 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Violations-modal-overlay" id="ViolationModalOverlay"></div>
     <div class="Violations-modal-container">
       <div class="Violations-modal-header">
-        <h2 id="violationModalTitle">Record New Violation</h2>
+        <h2 id="violationModalTitle">
+          <i class='bx bxs-shield-x'></i>
+          <span>Record New Violation</span>
+        </h2>
         <button class="Violations-close-btn" id="closeRecordModal">
           <i class='bx bx-x'></i>
         </button>
@@ -417,7 +420,10 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Violations-modal-overlay" id="DetailsModalOverlay"></div>
     <div class="Violations-modal-container">
       <div class="Violations-modal-header">
-        <h2>Violation Details</h2>
+        <h2>
+          <i class='bx bxs-info-circle'></i>
+          <span>Violation Details</span>
+        </h2>
         <button class="Violations-close-btn" id="closeDetailsModal">
           <i class='bx bx-x'></i>
         </button>

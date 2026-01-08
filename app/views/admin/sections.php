@@ -193,7 +193,10 @@ if ($deptResult && $deptResult->num_rows > 0) {
       <div class="sections-modal-overlay" id="sectionsModalOverlay"></div>
       <div class="sections-modal-container">
         <div class="sections-modal-header">
-          <h2 id="sectionsModalTitle">Add New Section</h2>
+          <h2 id="sectionsModalTitle">
+            <i class='bx bxs-layer'></i>
+            <span>Add New Section</span>
+          </h2>
           <button class="sections-close-btn" id="closeSectionsModal">
             <i class='bx bx-x'></i>
           </button>

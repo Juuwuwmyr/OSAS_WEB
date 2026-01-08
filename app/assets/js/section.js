@@ -322,7 +322,12 @@ function initSectionsModule() {
             const form = document.getElementById('sectionsForm');
             
             if (editId) {
-                modalTitle.textContent = 'Edit Section';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Edit Section';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Edit Section</span>';
+                }
                 const section = sections.find(s => s.id == editId);
                 if (section) {
                     document.getElementById('sectionName').value = section.name || '';
@@ -333,7 +338,12 @@ function initSectionsModule() {
                 }
                 modal.dataset.editingId = editId;
             } else {
-                modalTitle.textContent = 'Add New Section';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Add New Section';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Add New Section</span>';
+                }
                 if (form) form.reset();
                 delete modal.dataset.editingId;
             }

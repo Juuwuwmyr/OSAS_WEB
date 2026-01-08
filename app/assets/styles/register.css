@@ -15,14 +15,16 @@
             min-height: 100vh;
             background-color: #F5F5F2;
             background-image: 
+                /* Background image - educational/student theme */
+                url('../img/background.jpg'),
                 radial-gradient(circle at 15% 15%, rgba(255, 215, 0, 0.3) 0%, transparent 45%),
                 radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.25) 0%, transparent 45%),
                 radial-gradient(circle at 50% 25%, rgba(184, 134, 11, 0.2) 0%, transparent 35%),
                 radial-gradient(circle at 25% 75%, rgba(255, 215, 0, 0.15) 0%, transparent 55%),
                 radial-gradient(circle at 75% 25%, rgba(212, 175, 55, 0.12) 0%, transparent 40%),
                 linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 248, 0.85) 30%, rgba(255, 255, 255, 0.9) 70%, rgba(248, 248, 248, 0.85) 100%);
-            background-size: cover;
-            background-position: center;
+            background-size: cover, cover, cover, cover, cover, cover, cover;
+            background-position: center, center, center, center, center, center, center;
             background-repeat: no-repeat;
             background-attachment: fixed;
             transition: all 0.3s ease;
@@ -38,20 +40,36 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(245, 245, 242, 0.75);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.80) 0%, rgba(255, 255, 255, 0.75) 100%);
             z-index: -1;
             pointer-events: none;
         }
 
         body.dark-mode {
             background-color: #0F0F0F;
-            background-image: none;
+            background-image: 
+                /* Background image - same image for dark mode */
+                url('../img/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: #FFFFFF;
             animation: none;
         }
 
+        /* Dark mode overlay - darker for better contrast */
         body.dark-mode::before {
-            display: none;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(15, 15, 15, 0.95) 0%, rgba(20, 20, 20, 0.92) 100%);
+            z-index: -1;
+            pointer-events: none;
+            display: block;
         }
 
         .signup-container {

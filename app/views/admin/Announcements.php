@@ -75,7 +75,9 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="modal-panel">
       <header class="modal-header">
         <h3 id="modalTitle"><i class='bx bxs-megaphone'></i> Add New Announcement</h3>
-        <button class="modal-close" onclick="closeAnnouncementModal()">&times;</button>
+        <button class="modal-close" onclick="closeAnnouncementModal()">
+          <i class='bx bx-x'></i>
+        </button>
       </header>
 
       <form id="announcementForm" onsubmit="event.preventDefault(); saveAnnouncement();">

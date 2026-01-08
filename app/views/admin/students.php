@@ -215,7 +215,10 @@ require_once '../../config/db_connect.php';
     <div class="Students-modal-overlay" id="StudentsModalOverlay"></div>
     <div class="Students-modal-container">
       <div class="Students-modal-header">
-        <h2 id="StudentsModalTitle">Add New Student</h2>
+        <h2 id="StudentsModalTitle">
+          <i class='bx bxs-group'></i>
+          <span>Add New Student</span>
+        </h2>
         <button class="Students-close-btn" id="closeStudentsModal">
           <i class='bx bx-x'></i>
         </button>

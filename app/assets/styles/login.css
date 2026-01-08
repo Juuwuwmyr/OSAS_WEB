@@ -9,6 +9,8 @@
      min-height: 100vh;
      background-color: #F5F5F2;
      background-image: 
+         /* Background image - educational/student theme */
+         url('../img/background.jpg'),
          /* Sophisticated geometric patterns */
          url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><defs><pattern id="geometric-pattern" width="200" height="200" patternUnits="userSpaceOnUse"><path d="M100,20 L180,60 L180,140 L100,180 L20,140 L20,60 Z" fill="none" stroke="%23FFD700" stroke-width="2" opacity="0.06"/><circle cx="100" cy="100" r="40" fill="none" stroke="%23D4AF37" stroke-width="1.5" opacity="0.05"/><circle cx="100" cy="100" r="20" fill="none" stroke="%23B8860B" stroke-width="1" opacity="0.08"/><rect x="60" y="60" width="80" height="80" fill="none" stroke="%23FFD700" stroke-width="1" opacity="0.04" transform="rotate(45 100 100)"/></pattern><pattern id="floating-elements" width="120" height="120" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="4" fill="%23FFD700" opacity="0.1"/><circle cx="90" cy="90" r="3" fill="%23D4AF37" opacity="0.08"/><circle cx="60" cy="15" r="3.5" fill="%23B8860B" opacity="0.06"/><circle cx="15" cy="75" r="2.5" fill="%23FFD700" opacity="0.09"/><circle cx="105" cy="45" r="2" fill="%23D4AF37" opacity="0.07"/></pattern><pattern id="wave-pattern" width="300" height="100" patternUnits="userSpaceOnUse"><path d="M0,50 Q75,10 150,50 T300,50" stroke="%23FFD700" stroke-width="2" fill="none" opacity="0.03"/><path d="M0,70 Q75,30 150,70 T300,70" stroke="%23D4AF37" stroke-width="1.5" fill="none" opacity="0.04"/></pattern></defs><rect width="800" height="800" fill="url(%23geometric-pattern)"/><rect width="800" height="800" fill="url(%23floating-elements)"/><rect width="800" height="800" fill="url(%23wave-pattern)"/></svg>'),
          /* Enhanced gradient layers for depth and richness */
@@ -18,8 +20,8 @@
          radial-gradient(circle at 25% 75%, rgba(255, 215, 0, 0.15) 0%, transparent 55%),
          radial-gradient(circle at 75% 25%, rgba(212, 175, 55, 0.12) 0%, transparent 40%),
          linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 248, 0.85) 30%, rgba(255, 255, 255, 0.9) 70%, rgba(248, 248, 248, 0.85) 100%);
-     background-size: cover;
-     background-position: center;
+     background-size: cover, cover, cover, cover, cover, cover, cover;
+     background-position: center, center, center, center, center, center, center;
      background-repeat: no-repeat;
      background-attachment: fixed;
      transition: all 0.3s ease;
@@ -35,20 +37,36 @@
      left: 0;
      right: 0;
      bottom: 0;
-     background: rgba(245, 245, 242, 0.75);
+     background: linear-gradient(135deg, rgba(255, 255, 255, 0.80) 0%, rgba(255, 255, 255, 0.75) 100%);
      z-index: 0;
+     pointer-events: none;
  }
-
 
  body.dark-mode {
      background-color: #0F0F0F;
-     background-image: none;
+     background-image: 
+         /* Background image - same image for dark mode */
+         url('../img/background.jpg');
+     background-size: cover;
+     background-position: center;
+     background-repeat: no-repeat;
+     background-attachment: fixed;
      color: #FFFFFF;
      animation: none;
  }
 
+ /* Dark mode overlay - darker for better contrast */
  body.dark-mode::before {
-     display: none;
+     content: '';
+     position: absolute;
+     top: 0;
+     left: 0;
+     right: 0;
+     bottom: 0;
+     background: linear-gradient(135deg, rgba(15, 15, 15, 0.95) 0%, rgba(20, 20, 20, 0.92) 100%);
+     z-index: 0;
+     pointer-events: none;
+     display: block;
  }
 
  /* Login container */

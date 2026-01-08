@@ -452,7 +452,10 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-modal-overlay" id="DetailsModalOverlay"></div>
     <div class="Reports-modal-container wide">
       <div class="Reports-modal-header">
-        <h2>Report Details</h2>
+        <h2>
+          <i class='bx bxs-file-blank'></i>
+          <span>Report Details</span>
+        </h2>
         <div class="modal-actions">
           <button class="Reports-action-btn export">
             <i class='bx bx-download'></i> Export

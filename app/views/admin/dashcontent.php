@@ -66,7 +66,9 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="modal-panel" role="dialog" aria-modal="true">
         <header class="modal-header">
           <h3><i class='bx bxs-megaphone'></i> Add New Announcement</h3>
-          <button class="modal-close" onclick="closeAddModal()">&times;</button>
+          <button class="modal-close" onclick="closeAddModal()">
+            <i class='bx bx-x'></i>
+          </button>
         </header>
 
         <form id="addAnnForm" onsubmit="event.preventDefault(); addAnnouncement();">

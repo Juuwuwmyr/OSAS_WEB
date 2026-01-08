@@ -216,7 +216,12 @@ function initDepartmentModule() {
     
     if (editId) {
       // Edit mode
-      modalTitle.textContent = 'Edit Department';
+      const span = modalTitle.querySelector('span');
+      if (span) {
+        span.textContent = 'Edit Department';
+      } else {
+        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Edit Department</span>';
+      }
       const dept = departments.find(d => d.id === editId);
       if (dept) {
         document.getElementById('deptName').value = dept.name;
@@ -229,7 +234,12 @@ function initDepartmentModule() {
       modal.dataset.editingDbId = dept ? dept.dbId : null;
     } else {
       // Add mode
-      modalTitle.textContent = 'Add New Department';
+      const span = modalTitle.querySelector('span');
+      if (span) {
+        span.textContent = 'Add New Department';
+      } else {
+        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Add New Department</span>';
+      }
       if (form) form.reset();
       delete modal.dataset.editingId;
       delete modal.dataset.editingDbId;

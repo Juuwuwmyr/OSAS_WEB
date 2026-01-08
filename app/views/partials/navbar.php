@@ -13,7 +13,7 @@ if (isset($role) && $role === 'user') {
     <i class='bx bxs-bell'></i>
     <span class="num"><?= isset($notificationCount) ? $notificationCount : '1' ?></span>
   </a>
-  <a href="#" class="nav-settings" data-page="<?= isset($role) && $role === 'admin' ? 'admin_page/settings' : '' ?>" title="Settings">
+  <a href="#" class="nav-settings" id="openSettingsModal" title="Settings">
     <i class='bx bxs-cog'></i>
   </a>
   <a href="#" class="profile">

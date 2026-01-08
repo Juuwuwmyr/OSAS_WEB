@@ -189,7 +189,10 @@ include '../../config/db_connect.php';
       <div class="modal-overlay" id="modalOverlay"></div>
       <div class="modal-container">
         <div class="modal-header">
-          <h2 id="modalTitle">Add New Department</h2>
+          <h2 id="modalTitle">
+            <i class='bx bxs-building'></i>
+            <span>Add New Department</span>
+          </h2>
           <button class="close-btn" id="closeModal">
             <i class='bx bx-x'></i>
           </button>

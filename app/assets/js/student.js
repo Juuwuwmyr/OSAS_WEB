@@ -569,7 +569,12 @@ function initStudentsModule() {
             await loadDepartments();
             
             if (editId) {
-                modalTitle.textContent = 'Edit Student';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Edit Student';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-group\'></i><span>Edit Student</span>';
+                }
                 const student = allStudents.find(s => s.id === editId);
                 if (student) {
                     document.getElementById('studentId').value = student.studentId || '';
@@ -617,7 +622,12 @@ function initStudentsModule() {
                     }
                 }
             } else {
-                modalTitle.textContent = 'Add New Student';
+                const span = modalTitle.querySelector('span');
+                if (span) {
+                    span.textContent = 'Add New Student';
+                } else {
+                    modalTitle.innerHTML = '<i class=\'bx bxs-group\'></i><span>Add New Student</span>';
+                }
                 if (form) form.reset();
                 // Reset image preview
                 const previewImg = document.querySelector('.Students-preview-img');
