@@ -519,6 +519,249 @@
             color: #2D88FF;
         }
 
+        /* Enhanced Social Buttons */
+        .social-button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .social-button:hover::before {
+            left: 100%;
+        }
+
+        .social-button.google:hover {
+            background: rgba(219, 68, 55, 0.1);
+            border-color: #DB4437;
+        }
+
+        .social-button.facebook:hover {
+            background: rgba(24, 119, 242, 0.1);
+            border-color: #1877F2;
+        }
+
+        .dark-mode .social-button.google:hover {
+            background: rgba(219, 68, 55, 0.2);
+        }
+
+        .dark-mode .social-button.facebook:hover {
+            background: rgba(24, 119, 242, 0.2);
+        }
+
+        /* Loading spinner for social buttons */
+        .social-button .spinner,
+        .social-button .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Social Modal Styles */
+        .social-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .social-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .social-modal {
+            background: #fff;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .social-modal-overlay.show .social-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .dark-mode .social-modal {
+            background: #1A1A1A;
+        }
+
+        .social-modal-header {
+            padding: 24px;
+            text-align: center;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .social-modal-header i {
+            font-size: 36px;
+        }
+
+        .social-modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .social-modal-body {
+            padding: 24px 28px;
+            text-align: center;
+        }
+
+        .social-modal-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .dark-mode .social-modal-icon {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+        }
+
+        .social-modal-icon i {
+            font-size: 28px;
+            color: #D4AF37;
+        }
+
+        .social-modal-body h4 {
+            margin: 0 0 12px;
+            color: #1A1A1A;
+            font-size: 1.2rem;
+        }
+
+        .dark-mode .social-modal-body h4 {
+            color: #fff;
+        }
+
+        .social-modal-body p {
+            margin: 0 0 16px;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .dark-mode .social-modal-body p {
+            color: #aaa;
+        }
+
+        .social-modal-body ol {
+            text-align: left;
+            margin: 0 0 20px;
+            padding-left: 20px;
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .dark-mode .social-modal-body ol {
+            color: #bbb;
+        }
+
+        .social-modal-note {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            font-size: 0.85rem;
+            color: #8B7355;
+        }
+
+        .dark-mode .social-modal-note {
+            background: rgba(212, 175, 55, 0.15);
+            color: #D4AF37;
+        }
+
+        .social-modal-note i {
+            font-size: 18px;
+            color: #D4AF37;
+        }
+
+        .social-modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .social-modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .social-modal-btn.secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .social-modal-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .dark-mode .social-modal-btn.secondary {
+            background: #2a2a2a;
+            color: #ccc;
+        }
+
+        .dark-mode .social-modal-btn.secondary:hover {
+            background: #333;
+        }
+
+        .social-modal-btn.primary {
+            background: #D4AF37;
+            color: #fff;
+        }
+
+        .social-modal-btn.primary:hover {
+            background: #B8860B;
+            transform: translateY(-2px);
+        }
+
         /* Signup footer */
         .signup-footer {
             text-align: center;

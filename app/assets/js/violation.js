@@ -2105,12 +2105,8 @@ function initViolationsModule() {
                 // Add refresh button to header
                 addRefreshButton();
 
-                console.log('✅ Violations module initialized successfully!');
-
                 // Update stats after data is loaded
                 updateStats();
-
-                showNotification(`Violations system loaded successfully! (${violationsData.length} violations, ${studentsData.length} students)`, 'success');
 
             } catch (error) {
                 console.error('❌ Error initializing data:', error);

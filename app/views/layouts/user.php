@@ -1,6 +1,7 @@
 ﻿<?php
 // Start session and check authentication
-session_start();
+require_once __DIR__ . '/../../core/Session.php';
+Session::start();
 
 // Check if user is logged in - check cookies first (more reliable)
 if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {

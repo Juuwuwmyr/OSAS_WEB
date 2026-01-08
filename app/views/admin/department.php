@@ -28,11 +28,11 @@ include '../../config/db_connect.php';
           <p class="page-subtitle">Manage all academic departments in the institution</p>
         </div>
         <div class="breadcrumb-wrapper">
-          <nav class="breadcrumb">
+          <div class="breadcrumb">
             <a href="#" class="breadcrumb-item">Dashboard</a>
             <i class='bx bx-chevron-right'></i>
             <span class="breadcrumb-item active">Departments</span>
-          </nav>
+          </div>
         </div>
       </div>
 

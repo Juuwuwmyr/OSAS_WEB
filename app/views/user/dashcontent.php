@@ -3,23 +3,27 @@ require_once __DIR__ . '/../../core/View.php';
 ?>
 <!-- User Dashboard Content -->
 <main>
-  <div class="head-title">
-    <div class="left">
-      <h1>My Dashboard</h1>
-      <ul class="breadcrumb">
-        <li>
-          <a href="#">Dashboard</a>
-        </li>
-        <li><i class='bx bx-chevron-right'></i></li>
-        <li>
-          <a class="active" href="#">My Profile</a>
-        </li>
-      </ul>
+  <!-- Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="page-title">My Dashboard</h1>
+        <p class="page-subtitle">Overview of your violations and account information</p>
+      </div>
+      <div class="breadcrumb-wrapper">
+        <div class="breadcrumb">
+          <a href="#" class="breadcrumb-item">Dashboard</a>
+          <i class='bx bx-chevron-right'></i>
+          <span class="breadcrumb-item active">My Profile</span>
+        </div>
+      </div>
     </div>
-    <a href="#" class="btn-download">
-      <i class='bx bxs-download'></i>
-      <span class="text">Download Report</span>
-    </a>
+    <div class="header-actions">
+      <a href="#" class="btn-download">
+        <i class='bx bxs-download'></i>
+        <span class="text">Download Report</span>
+      </a>
+    </div>
   </div>
 
   <!-- Announcements Section -->

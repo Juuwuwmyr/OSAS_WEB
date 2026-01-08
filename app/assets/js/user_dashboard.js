@@ -4,8 +4,9 @@
 
 // DOM Elements
 const allSideMenu = document.querySelectorAll('#sidebar .side-menu.top li a');
-const menuBar = document.querySelector('#content nav .bx.bx-menu');
+const menuBar = document.querySelector('.sidebar-toggle-logo') || document.querySelector('#sidebar .sidebar-close-icon') || document.querySelector('#sidebar .sidebar-menu-toggle') || document.querySelector('#content nav .bx.bx-menu');
 const sidebar = document.getElementById('sidebar');
+const sidebarCloseIcon = document.querySelector('#sidebar .sidebar-close-icon');
 const searchButton = document.querySelector('#content nav form .form-input button');
 const searchButtonIcon = document.querySelector('#content nav form .form-input button .bx');
 const searchForm = document.querySelector('#content nav form');
@@ -918,10 +919,25 @@ function initializeCharts() {
   }
 }
 
-// Toggle sidebar
-menuBar.addEventListener('click', function () {
-  sidebar.classList.toggle('hide');
-});
+// Toggle sidebar - Logo click
+const logoToggle = document.querySelector('.sidebar-toggle-logo');
+if (logoToggle) {
+  logoToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    sidebar.classList.toggle('hide');
+    localStorage.setItem('sidebarHidden', sidebar.classList.contains('hide'));
+  });
+}
+
+// Toggle sidebar with close icon
+const closeIcon = document.querySelector('#sidebar .sidebar-close-icon');
+if (closeIcon) {
+  closeIcon.addEventListener('click', function (e) {
+    e.stopPropagation();
+    sidebar.classList.add('hide');
+    localStorage.setItem('sidebarHidden', true);
+  });
+}
 
 // Search button functionality for mobile
 searchButton.addEventListener('click', function (e) {
@@ -941,6 +957,15 @@ switchMode.addEventListener('change', function () {
     document.body.classList.remove('dark');
   }
 });
+
+// Settings icon in navbar (for user dashboard, show alert since no settings page)
+const navSettings = document.querySelector('.nav-settings');
+if (navSettings) {
+  navSettings.addEventListener('click', function (e) {
+    e.preventDefault();
+    alert('Settings page coming soon!');
+  });
+}
 
 // Responsive adjustments on load
 if (window.innerWidth < 768) {

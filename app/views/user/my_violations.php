@@ -1,5 +1,6 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
+
 ?>
 <!-- My Violations Page -->
 <main>

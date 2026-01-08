@@ -9,20 +9,24 @@ function getAPIBasePath() {
     const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
     const projectBase = pathMatch ? pathMatch[1] : '';
     
+    let apiBase = '';
+    
     if (projectBase) {
-        return projectBase + '/api/';
+        apiBase = projectBase + '/api/';
+    } else if (currentPath.includes('/app/views/')) {
+        apiBase = '../../api/';
+    } else if (currentPath.includes('/includes/')) {
+        apiBase = '../api/';
+    } else {
+        apiBase = 'api/';
     }
     
-    if (currentPath.includes('/app/views/')) {
-        return '../../api/';
-    } else if (currentPath.includes('/includes/')) {
-        return '../api/';
-    } else {
-        return 'api/';
-    }
+    console.log('🔗 API Base Path detected:', apiBase, 'from:', currentPath);
+    return apiBase;
 }
 
 const API_BASE = getAPIBasePath();
+console.log('🌐 Using API Base:', API_BASE);
 
 // Dashboard Data Manager
 class DashboardData {
@@ -32,13 +36,24 @@ class DashboardData {
             departments: 0,
             sections: 0,
             violations: 0,
-            violators: 0
+            violators: 0,
+            penalties: 0
         };
         this.violations = [];
         this.students = [];
         this.departments = [];
         this.sections = [];
         this.announcements = [];
+        this.dashcontents = [];
+        this.topViolators = [];
+        // Store chart instances to prevent flickering
+        this.charts = {
+            violationTypes: null,
+            departmentViolations: null,
+            monthlyTrends: null
+        };
+        // Flag to prevent multiple chart updates
+        this.chartsUpdating = false;
     }
 
     /**
@@ -47,69 +62,273 @@ class DashboardData {
     async loadAllData() {
         try {
             console.log('📊 Loading dashboard data from database...');
+            console.log('🔗 API Base:', API_BASE);
             
-            // Load all data in parallel
-            const [studentsRes, departmentsRes, sectionsRes, violationsRes, announcementsRes] = await Promise.allSettled([
+            // Load dashboard stats (includes violations data)
+            const [dashboardStatsRes, studentsRes, departmentsRes, sectionsRes, announcementsRes, dashcontentsRes, violationsRes] = await Promise.allSettled([
+                fetch(API_BASE + 'dashboard_stats.php'),
                 fetch(API_BASE + 'students.php'),
                 fetch(API_BASE + 'departments.php'),
                 fetch(API_BASE + 'sections.php'),
-                fetch(API_BASE + 'violations.php'),
-                fetch(API_BASE + 'announcements.php?action=active&limit=5')
+                fetch(API_BASE + 'announcements.php?action=active&limit=5'),
+                fetch(API_BASE + 'dashcontents.php?action=active&audience=admin'),
+                fetch(API_BASE + 'violations.php')  // Load all violations for charts
             ]);
-
-            // Parse students
-            if (studentsRes.status === 'fulfilled' && studentsRes.value && studentsRes.value.ok) {
-                const data = await studentsRes.value.json();
-                this.students = data.data || data.students || [];
-                this.stats.students = this.students.length;
+            
+            // Parse dashboard stats (violations, violators, recent violations, top violators)
+            if (dashboardStatsRes.status === 'fulfilled' && dashboardStatsRes.value) {
+                try {
+                    if (dashboardStatsRes.value.ok) {
+                        const statsData = await dashboardStatsRes.value.json();
+                        console.log('📊 Dashboard stats response:', statsData);
+                        if (statsData.data && statsData.data.stats) {
+                            this.stats.violations = statsData.data.stats.violations || 0;
+                            this.stats.violators = statsData.data.stats.violators || 0;
+                            this.stats.students = statsData.data.stats.students || 0;
+                            this.stats.departments = statsData.data.stats.departments || 0;
+                            this.stats.sections = statsData.data.stats.sections || 0;
+                            this.stats.penalties = statsData.data.stats.penalties || 0;
+                            
+                            // Process recent violations - map database fields to expected format
+                            const recentViolations = statsData.data.recentViolations || [];
+                            this.violations = recentViolations.map(v => {
+                                const violationType = v.violation_type || 'Other';
+                                const violationDate = v.violation_date || v.created_at || '';
+                                
+                                return {
+                                    ...v,
+                                    violationType: violationType,
+                                    violation_type: violationType,
+                                    studentId: v.student_id || '',
+                                    student_id: v.student_id || '',
+                                    studentName: `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Unknown',
+                                    firstName: v.first_name || '',
+                                    lastName: v.last_name || '',
+                                    studentDept: v.department || '',
+                                    student_dept: v.department || '',
+                                    violationDate: violationDate,
+                                    violation_date: violationDate,
+                                    dateReported: violationDate,
+                                    studentImage: v.avatar || '',
+                                    avatar: v.avatar || '',
+                                    status: v.status || 'pending'
+                                };
+                            });
+                            
+                            this.topViolators = statsData.data.topViolators || [];
+                            console.log('✅ Dashboard stats loaded:', this.stats);
+                            console.log('✅ Violations loaded:', this.violations.length);
+                            console.log('✅ Top violators loaded:', this.topViolators.length);
+                        } else {
+                            console.warn('⚠️ Dashboard stats data structure unexpected:', statsData);
+                        }
+                    } else {
+                        const errorText = await dashboardStatsRes.value.text();
+                        console.warn('⚠️ Dashboard stats API error:', dashboardStatsRes.value.status, dashboardStatsRes.value.statusText);
+                        console.warn('Error response:', errorText);
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing dashboard stats:', e);
+                    console.error('Error stack:', e.stack);
+                }
+            } else {
+                console.error('❌ Dashboard stats fetch failed:', dashboardStatsRes.reason);
             }
 
-            // Parse departments
-            if (departmentsRes.status === 'fulfilled' && departmentsRes.value && departmentsRes.value.ok) {
-                const data = await departmentsRes.value.json();
-                this.departments = data.data || data.departments || [];
-                this.stats.departments = this.departments.length;
+            // Parse students (only if stats didn't already set it)
+            if (this.stats.students === 0 && studentsRes.status === 'fulfilled' && studentsRes.value) {
+                try {
+                    if (studentsRes.value.ok) {
+                        const data = await studentsRes.value.json();
+                        console.log('📊 Students response:', data);
+                        this.students = data.data || data.students || [];
+                        this.stats.students = this.students.length;
+                        console.log('✅ Students loaded:', this.stats.students);
+                    } else {
+                        console.warn('⚠️ Students API error:', studentsRes.value.status, studentsRes.value.statusText);
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing students:', e);
+                }
+            } else if (studentsRes.status === 'rejected') {
+                console.error('❌ Students fetch failed:', studentsRes.reason);
             }
 
-            // Parse sections
-            if (sectionsRes.status === 'fulfilled' && sectionsRes.value && sectionsRes.value.ok) {
-                const data = await sectionsRes.value.json();
-                this.sections = data.data || data.sections || [];
-                this.stats.sections = this.sections.length;
+            // Parse departments (only if stats didn't already set it)
+            if (this.stats.departments === 0 && departmentsRes.status === 'fulfilled' && departmentsRes.value) {
+                try {
+                    if (departmentsRes.value.ok) {
+                        const data = await departmentsRes.value.json();
+                        console.log('📊 Departments response:', data);
+                        this.departments = data.data || data.departments || [];
+                        this.stats.departments = this.departments.length;
+                        console.log('✅ Departments loaded:', this.stats.departments);
+                    } else {
+                        console.warn('⚠️ Departments API error:', departmentsRes.value.status, departmentsRes.value.statusText);
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing departments:', e);
+                }
+            } else if (departmentsRes.status === 'rejected') {
+                console.error('❌ Departments fetch failed:', departmentsRes.reason);
             }
 
-            // Parse violations
-            if (violationsRes.status === 'fulfilled' && violationsRes.value && violationsRes.value.ok) {
-                const data = await violationsRes.value.json();
-                this.violations = data.data || data.violations || [];
-                this.stats.violations = this.violations.length;
-                
-                // Count unique violators
-                const uniqueViolators = new Set(this.violations.map(v => v.studentId || v.student_id).filter(Boolean));
-                this.stats.violators = uniqueViolators.size;
+            // Parse sections (only if stats didn't already set it)
+            if (this.stats.sections === 0 && sectionsRes.status === 'fulfilled' && sectionsRes.value) {
+                try {
+                    if (sectionsRes.value.ok) {
+                        const data = await sectionsRes.value.json();
+                        console.log('📊 Sections response:', data);
+                        this.sections = data.data || data.sections || [];
+                        this.stats.sections = this.sections.length;
+                        console.log('✅ Sections loaded:', this.stats.sections);
+                    } else {
+                        console.warn('⚠️ Sections API error:', sectionsRes.value.status, sectionsRes.value.statusText);
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing sections:', e);
+                }
+            } else if (sectionsRes.status === 'rejected') {
+                console.error('❌ Sections fetch failed:', sectionsRes.reason);
             }
 
             // Parse announcements
-            if (announcementsRes.status === 'fulfilled' && announcementsRes.value && announcementsRes.value.ok) {
+            if (announcementsRes.status === 'fulfilled' && announcementsRes.value) {
                 try {
-                    const data = await announcementsRes.value.json();
-                    this.announcements = data.data || data.announcements || [];
+                    if (announcementsRes.value.ok) {
+                        const data = await announcementsRes.value.json();
+                        console.log('📊 Announcements response:', data);
+                        this.announcements = data.data || data.announcements || [];
+                        console.log('✅ Announcements loaded:', this.announcements.length);
+                    } else {
+                        console.warn('⚠️ Announcements API error:', announcementsRes.value.status, announcementsRes.value.statusText);
+                    }
                 } catch (e) {
-                    console.warn('Error parsing announcements data:', e);
+                    console.error('❌ Error parsing announcements:', e);
                 }
+            } else {
+                console.error('❌ Announcements fetch failed:', announcementsRes.reason);
+            }
+
+            // Parse dashcontents
+            if (dashcontentsRes.status === 'fulfilled' && dashcontentsRes.value) {
+                try {
+                    if (dashcontentsRes.value.ok) {
+                        const data = await dashcontentsRes.value.json();
+                        console.log('📊 Dashcontents response:', data);
+                        this.dashcontents = data.data || [];
+                        console.log('✅ Dashcontents loaded:', this.dashcontents.length);
+                        console.log('📋 Dashcontents data:', this.dashcontents);
+                    } else {
+                        const errorText = await dashcontentsRes.value.text().catch(() => 'Unknown error');
+                        console.warn('⚠️ Dashcontents API error:', dashcontentsRes.value.status, dashcontentsRes.value.statusText);
+                        console.warn('Error response:', errorText);
+                        this.dashcontents = [];
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing dashcontents:', e);
+                    console.error('Error stack:', e.stack);
+                    this.dashcontents = [];
+                }
+            } else {
+                console.error('❌ Dashcontents fetch failed:', dashcontentsRes.reason);
+                this.dashcontents = [];
+            }
+
+            // Parse violations for charts (load ALL violations, not just recent ones)
+            if (violationsRes.status === 'fulfilled' && violationsRes.value) {
+                try {
+                    if (violationsRes.value.ok) {
+                        const data = await violationsRes.value.json();
+                        console.log('📊 Violations API response:', data);
+                        // Use violations from API response (for charts)
+                        const apiViolations = data.violations || data.data || [];
+                        if (apiViolations.length > 0) {
+                            // Merge with existing violations, avoiding duplicates
+                            const existingIds = new Set(this.violations.map(v => v.id || v.case_id || v.caseId));
+                            apiViolations.forEach(v => {
+                                const id = v.id || v.case_id || v.caseId;
+                                if (!existingIds.has(id)) {
+                                    // Map API response format to expected format
+                                    this.violations.push({
+                                        ...v,
+                                        violationType: v.violationType || v.violation_type || v.violationTypeLabel || 'Other',
+                                        violation_type: v.violation_type || v.violationType || 'Other',
+                                        violationDate: v.violationDate || v.violation_date || v.dateReported || v.date || '',
+                                        violation_date: v.violation_date || v.violationDate || '',
+                                        studentDept: v.studentDept || v.student_dept || v.department || '',
+                                        student_dept: v.student_dept || v.studentDept || '',
+                                        dateReported: v.dateReported || v.violationDate || v.violation_date || v.date || ''
+                                    });
+                                }
+                            });
+                            console.log('✅ Violations loaded for charts:', apiViolations.length);
+                            console.log('📊 Total violations for charts:', this.violations.length);
+                        } else {
+                            console.warn('⚠️ No violations returned from API');
+                        }
+                    } else {
+                        const errorText = await violationsRes.value.text().catch(() => 'Unknown error');
+                        console.warn('⚠️ Violations API error:', violationsRes.value.status, violationsRes.value.statusText);
+                        console.warn('Error response:', errorText);
+                    }
+                } catch (e) {
+                    console.error('❌ Error parsing violations:', e);
+                    console.error('Error stack:', e.stack);
+                }
+            } else {
+                console.error('❌ Violations fetch failed:', violationsRes.reason);
             }
 
             console.log('✅ Dashboard data loaded:', this.stats);
+            console.log('📊 Final stats:', {
+                students: this.stats.students,
+                departments: this.stats.departments,
+                sections: this.stats.sections,
+                violations: this.stats.violations,
+                violators: this.stats.violators,
+                violationsArrayLength: this.violations.length
+            });
             
-            // Update UI with real data
-            this.updateStats();
-            this.updateCharts();
-            this.updateRecentViolators();
-            this.updateTopViolators();
-            this.updateAnnouncements();
+            // Mark data as loaded
+            if (typeof window !== 'undefined') {
+                window.dashboardDataLoaded = true;
+            }
+            
+            // Update UI with real data (with retry logic)
+            setTimeout(() => {
+                console.log('🔄 Updating UI elements...');
+                this.updateStats();
+                this.updateCharts();
+                this.updateRecentViolators();
+                this.updateTopViolators();
+                this.updateDashcontents(); // Update tips first
+                this.updateAnnouncements(); // Then update announcements (which will show guidelines if no announcements)
+            }, 300);
+            
+            // Also retry after a longer delay in case elements aren't ready
+            setTimeout(() => {
+                const statsBoxes = document.querySelectorAll('.box-info li');
+                if (statsBoxes.length === 0) {
+                    console.warn('⚠️ Stats boxes not found, retrying updateStats...');
+                    this.updateStats();
+                } else {
+                    // Verify stats were updated
+                    const firstStat = statsBoxes[0].querySelector('h3');
+                    if (firstStat && firstStat.textContent === '10') {
+                        console.warn('⚠️ Stats still showing placeholder values, forcing update...');
+                        this.updateStats();
+                    }
+                }
+            }, 1500);
 
         } catch (error) {
             console.error('❌ Error loading dashboard data:', error);
+            console.error('Error stack:', error.stack);
+            // Still try to update with whatever data we have
+            setTimeout(() => {
+                this.updateStats();
+            }, 100);
         }
     }
 
@@ -117,36 +336,67 @@ class DashboardData {
      * Update statistics boxes
      */
     updateStats() {
+        console.log('📊 Updating dashboard stats:', this.stats);
+        
         const statsBoxes = document.querySelectorAll('.box-info li');
+        console.log(`Found ${statsBoxes.length} stat boxes`);
         
         if (statsBoxes.length >= 4) {
             // Violators
             const violatorsBox = statsBoxes[0];
             if (violatorsBox) {
                 const h3 = violatorsBox.querySelector('h3');
-                if (h3) h3.textContent = this.stats.violators || 0;
+                if (h3) {
+                    h3.textContent = this.stats.violators || 0;
+                    console.log('✅ Updated violators:', this.stats.violators || 0);
+                } else {
+                    console.warn('⚠️ Violators h3 not found');
+                }
             }
 
             // Students
             const studentsBox = statsBoxes[1];
             if (studentsBox) {
                 const h3 = studentsBox.querySelector('h3');
-                if (h3) h3.textContent = this.stats.students || 0;
+                if (h3) {
+                    h3.textContent = this.stats.students || 0;
+                    console.log('✅ Updated students:', this.stats.students || 0);
+                } else {
+                    console.warn('⚠️ Students h3 not found');
+                }
             }
 
             // Departments
             const departmentsBox = statsBoxes[2];
             if (departmentsBox) {
                 const h3 = departmentsBox.querySelector('h3');
-                if (h3) h3.textContent = this.stats.departments || 0;
+                if (h3) {
+                    h3.textContent = this.stats.departments || 0;
+                    console.log('✅ Updated departments:', this.stats.departments || 0);
+                } else {
+                    console.warn('⚠️ Departments h3 not found');
+                }
             }
 
-            // Penalties (using violations count)
+            // Penalties
             const penaltiesBox = statsBoxes[3];
             if (penaltiesBox) {
                 const h3 = penaltiesBox.querySelector('h3');
-                if (h3) h3.textContent = this.stats.violations || 0;
+                if (h3) {
+                    h3.textContent = this.stats.penalties || 0;
+                    console.log('✅ Updated penalties:', this.stats.penalties || 0);
+                } else {
+                    console.warn('⚠️ Penalties h3 not found');
+                }
             }
+        } else {
+            console.warn(`⚠️ Expected 4 stat boxes, found ${statsBoxes.length}. Retrying in 500ms...`);
+            // Retry if boxes not found yet
+            setTimeout(() => {
+                if (document.querySelectorAll('.box-info li').length >= 4) {
+                    this.updateStats();
+                }
+            }, 500);
         }
     }
 
@@ -154,26 +404,57 @@ class DashboardData {
      * Update charts with real data
      */
     updateCharts() {
-        // Destroy existing charts
-        if (typeof Chart !== 'undefined') {
-            Chart.helpers.each(Chart.instances, (instance) => {
-                instance.destroy();
-            });
+        // Prevent multiple simultaneous updates
+        if (this.chartsUpdating) {
+            console.log('⏸️ Charts already updating, skipping...');
+            return;
         }
 
-        // Process violation data for charts
-        const violationTypes = this.processViolationTypes();
-        const departmentViolations = this.processDepartmentViolations();
-        const monthlyTrends = this.processMonthlyTrends();
+        console.log('📊 Updating charts with', this.violations.length, 'violations');
+        
+        // Check if canvas elements exist
+        const violationTypesCanvas = document.getElementById('violationTypesChart');
+        const departmentCanvas = document.getElementById('departmentViolationsChart');
+        const monthlyCanvas = document.getElementById('monthlyTrendsChart');
+        
+        if (!violationTypesCanvas && !departmentCanvas && !monthlyCanvas) {
+            console.warn('⚠️ Chart canvases not found, retrying in 500ms...');
+            setTimeout(() => this.updateCharts(), 500);
+            return;
+        }
+        
+        this.chartsUpdating = true;
+        
+        // Wait a bit to ensure canvas elements are ready
+        setTimeout(() => {
+            try {
+                // Process violation data for charts
+                const violationTypes = this.processViolationTypes();
+                const departmentViolations = this.processDepartmentViolations();
+                const monthlyTrends = this.processMonthlyTrends();
 
-        // Update Violation Types Chart
-        this.updateViolationTypesChart(violationTypes);
+                // Update Violation Types Chart
+                if (violationTypesCanvas) {
+                    this.updateViolationTypesChart(violationTypes);
+                }
 
-        // Update Department Violations Chart
-        this.updateDepartmentViolationsChart(departmentViolations);
+                // Update Department Violations Chart
+                if (departmentCanvas) {
+                    this.updateDepartmentViolationsChart(departmentViolations);
+                }
 
-        // Update Monthly Trends Chart
-        this.updateMonthlyTrendsChart(monthlyTrends);
+                // Update Monthly Trends Chart
+                if (monthlyCanvas) {
+                    this.updateMonthlyTrendsChart(monthlyTrends);
+                }
+                
+                console.log('✅ Charts updated successfully');
+            } catch (error) {
+                console.error('❌ Error updating charts:', error);
+            } finally {
+                this.chartsUpdating = false;
+            }
+        }, 300);
     }
 
     /**
@@ -182,9 +463,19 @@ class DashboardData {
     processViolationTypes() {
         const types = {};
         
+        if (!this.violations || this.violations.length === 0) {
+            console.warn('⚠️ No violations data to process for chart');
+            return {
+                labels: ['No Data'],
+                data: [1]
+            };
+        }
+        
         this.violations.forEach(violation => {
-            const type = violation.violationType || violation.violation_type || 'Other';
-            types[type] = (types[type] || 0) + 1;
+            const type = violation.violationType || violation.violation_type || violation.violationTypeLabel || 'Other';
+            // Normalize type names
+            const normalizedType = type.toLowerCase().replace(/\s+/g, '_');
+            types[normalizedType] = (types[normalizedType] || 0) + 1;
         });
 
         // Get top 5 types
@@ -192,8 +483,24 @@ class DashboardData {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
 
+        if (sorted.length === 0) {
+            return {
+                labels: ['No Data'],
+                data: [1]
+            };
+        }
+
+        // Format labels for display
+        const typeLabels = {
+            'improper_uniform': 'Improper Uniform',
+            'no_id': 'No ID',
+            'improper_footwear': 'Improper Footwear',
+            'misconduct': 'Misconduct',
+            'other': 'Other'
+        };
+
         return {
-            labels: sorted.map(([label]) => label),
+            labels: sorted.map(([label]) => typeLabels[label] || label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
             data: sorted.map(([, count]) => count)
         };
     }
@@ -204,6 +511,14 @@ class DashboardData {
     processDepartmentViolations() {
         const deptViolations = {};
         
+        if (!this.violations || this.violations.length === 0) {
+            console.warn('⚠️ No violations data to process for department chart');
+            return {
+                labels: ['No Data'],
+                data: [0]
+            };
+        }
+        
         this.violations.forEach(violation => {
             const dept = violation.studentDept || violation.student_dept || violation.department || 'Unknown';
             deptViolations[dept] = (deptViolations[dept] || 0) + 1;
@@ -213,6 +528,13 @@ class DashboardData {
         const sorted = Object.entries(deptViolations)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6);
+
+        if (sorted.length === 0) {
+            return {
+                labels: ['No Data'],
+                data: [0]
+            };
+        }
 
         return {
             labels: sorted.map(([label]) => label),
@@ -230,16 +552,29 @@ class DashboardData {
         };
 
         this.violations.forEach(violation => {
-            const dateStr = violation.violationDate || violation.violation_date || violation.dateReported || '';
+            const dateStr = violation.violationDate || violation.violation_date || violation.dateReported || violation.created_at || violation.date || '';
             if (dateStr) {
                 try {
-                    const date = new Date(dateStr);
-                    const month = date.toLocaleString('en-US', { month: 'short' });
-                    if (monthlyData.hasOwnProperty(month)) {
-                        monthlyData[month]++;
+                    // Handle different date formats
+                    let date;
+                    if (dateStr.includes('T')) {
+                        date = new Date(dateStr);
+                    } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        // YYYY-MM-DD format
+                        date = new Date(dateStr + 'T00:00:00');
+                    } else {
+                        date = new Date(dateStr);
+                    }
+                    
+                    if (!isNaN(date.getTime())) {
+                        const month = date.toLocaleString('en-US', { month: 'short' });
+                        if (monthlyData.hasOwnProperty(month)) {
+                            monthlyData[month]++;
+                        }
                     }
                 } catch (e) {
                     // Invalid date, skip
+                    console.warn('Invalid date format:', dateStr, e);
                 }
             }
         });
@@ -255,12 +590,35 @@ class DashboardData {
      */
     updateViolationTypesChart(data) {
         const ctx = document.getElementById('violationTypesChart');
-        if (!ctx || typeof Chart === 'undefined') return;
+        if (!ctx || typeof Chart === 'undefined') {
+            console.warn('⚠️ Chart canvas or Chart.js not available');
+            return;
+        }
+
+        // Destroy existing chart instance if it exists
+        if (this.charts.violationTypes) {
+            this.charts.violationTypes.destroy();
+            this.charts.violationTypes = null;
+        }
 
         const isDark = document.body.classList.contains('dark');
         const textColor = isDark ? '#ffffff' : '#333333';
 
-        new Chart(ctx, {
+        // Only create chart if we have real data (not just "No Data" placeholder)
+        if (data.labels.length === 0 || 
+            data.data.length === 0 || 
+            (data.labels.length === 1 && data.labels[0] === 'No Data') ||
+            data.data.every(d => d === 0)) {
+            console.warn('⚠️ No violation type data to display');
+            // Show placeholder message instead of chart
+            const chartContainer = ctx.closest('.chart-container');
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">No violation data available</div>';
+            }
+            return;
+        }
+
+        this.charts.violationTypes = new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: data.labels.length > 0 ? data.labels : ['No Data'],
@@ -311,14 +669,37 @@ class DashboardData {
      */
     updateDepartmentViolationsChart(data) {
         const ctx = document.getElementById('departmentViolationsChart');
-        if (!ctx || typeof Chart === 'undefined') return;
+        if (!ctx || typeof Chart === 'undefined') {
+            console.warn('⚠️ Department chart canvas or Chart.js not available');
+            return;
+        }
+
+        // Destroy existing chart instance if it exists
+        if (this.charts.departmentViolations) {
+            this.charts.departmentViolations.destroy();
+            this.charts.departmentViolations = null;
+        }
 
         const isDark = document.body.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         const textColor = isDark ? '#ffffff' : '#333333';
         const bgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-        new Chart(ctx, {
+        // Only create chart if we have real data (not just "No Data" placeholder)
+        if (data.labels.length === 0 || 
+            data.data.length === 0 || 
+            (data.labels.length === 1 && data.labels[0] === 'No Data') ||
+            data.data.every(d => d === 0)) {
+            console.warn('⚠️ No department violation data to display');
+            // Show placeholder message instead of chart
+            const chartContainer = ctx.closest('.chart-container');
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">No violation data available</div>';
+            }
+            return;
+        }
+
+        this.charts.departmentViolations = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.labels.length > 0 ? data.labels : ['No Data'],
@@ -364,14 +745,23 @@ class DashboardData {
      */
     updateMonthlyTrendsChart(data) {
         const ctx = document.getElementById('monthlyTrendsChart');
-        if (!ctx || typeof Chart === 'undefined') return;
+        if (!ctx || typeof Chart === 'undefined') {
+            console.warn('⚠️ Monthly trends chart canvas or Chart.js not available');
+            return;
+        }
+
+        // Destroy existing chart instance if it exists
+        if (this.charts.monthlyTrends) {
+            this.charts.monthlyTrends.destroy();
+            this.charts.monthlyTrends = null;
+        }
 
         const isDark = document.body.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         const textColor = isDark ? '#ffffff' : '#333333';
         const bgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-        new Chart(ctx, {
+        this.charts.monthlyTrends = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -467,30 +857,43 @@ class DashboardData {
      */
     updateTopViolators() {
         const violatorList = document.querySelector('.violators .violator-list');
-        if (!violatorList) return;
+        if (!violatorList) {
+            console.warn('⚠️ Top violators list not found');
+            return;
+        }
 
-        // Count violations per student
-        const studentViolations = {};
-        this.violations.forEach(violation => {
-            const studentId = violation.studentId || violation.student_id;
-            if (studentId) {
-                if (!studentViolations[studentId]) {
-                    studentViolations[studentId] = {
-                        id: studentId,
-                        name: violation.studentName || 
-                              `${violation.firstName || ''} ${violation.lastName || ''}`.trim() || 
-                              'Unknown Student',
-                        count: 0
-                    };
+        let topViolators = [];
+
+        // Use topViolators from stats API if available
+        if (this.topViolators && this.topViolators.length > 0) {
+            topViolators = this.topViolators.map(v => ({
+                name: `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Unknown Student',
+                count: v.violation_count || 0
+            }));
+        } else {
+            // Fallback: Count violations per student from violations array
+            const studentViolations = {};
+            this.violations.forEach(violation => {
+                const studentId = violation.studentId || violation.student_id;
+                if (studentId) {
+                    if (!studentViolations[studentId]) {
+                        studentViolations[studentId] = {
+                            id: studentId,
+                            name: violation.studentName || 
+                                  `${violation.firstName || ''} ${violation.lastName || ''}`.trim() || 
+                                  'Unknown Student',
+                            count: 0
+                        };
+                    }
+                    studentViolations[studentId].count++;
                 }
-                studentViolations[studentId].count++;
-            }
-        });
+            });
 
-        // Sort by violation count and get top 5
-        const topViolators = Object.values(studentViolations)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 5);
+            // Sort by violation count and get top 5
+            topViolators = Object.values(studentViolations)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+        }
 
         violatorList.innerHTML = '';
 
@@ -500,8 +903,9 @@ class DashboardData {
         }
 
         topViolators.forEach((violator, index) => {
-            const priority = violator.count >= 10 ? 'high-priority' :
-                            violator.count >= 5 ? 'medium-priority' : 'low-priority';
+            const count = violator.count || violator.violation_count || 0;
+            const priority = count >= 10 ? 'high-priority' :
+                            count >= 5 ? 'medium-priority' : 'low-priority';
 
             const li = document.createElement('li');
             li.className = priority;
@@ -509,12 +913,14 @@ class DashboardData {
                 <div class="violator-info">
                     <span class="rank">${index + 1}</span>
                     <span class="name">${this.escapeHtml(violator.name)}</span>
-                    <span class="violations">${violator.count} violation${violator.count !== 1 ? 's' : ''}</span>
+                    <span class="violations">${count} violation${count !== 1 ? 's' : ''}</span>
                 </div>
                 <i class='bx bx-chevron-right'></i>
             `;
             violatorList.appendChild(li);
         });
+        
+        console.log('✅ Top violators updated:', topViolators.length);
     }
 
     /**
@@ -522,20 +928,64 @@ class DashboardData {
      */
     updateAnnouncements() {
         const announcementsContent = document.getElementById('announcementsContent');
-        if (!announcementsContent) return;
+        if (!announcementsContent) {
+            console.warn('⚠️ announcementsContent element not found');
+            return;
+        }
 
+        console.log('🔄 Updating announcements...', {
+            announcementsCount: this.announcements.length,
+            dashcontentsCount: this.dashcontents.length
+        });
+
+        // Clear content first
+        announcementsContent.innerHTML = '';
+
+        // If no announcements, check for guidelines from dashcontents
         if (this.announcements.length === 0) {
+            const guidelines = (this.dashcontents || []).filter(dc => 
+                dc.content_type === 'guideline' && 
+                (dc.target_audience === 'admin' || dc.target_audience === 'both') &&
+                dc.status === 'active'
+            );
+            
+            console.log('📋 Found guidelines:', guidelines.length);
+            
+            if (guidelines.length > 0) {
+                // Show guidelines as announcements
+                guidelines.forEach(guideline => {
+                    const item = document.createElement('div');
+                    item.className = 'announcement-item';
+                    item.innerHTML = `
+                        <div class="announcement-icon">
+                            <i class='bx ${guideline.icon || 'bxs-info-circle'}'></i>
+                        </div>
+                        <div class="announcement-details">
+                            <h4>${this.escapeHtml(guideline.title || '')}</h4>
+                            <p>${this.escapeHtml(guideline.content || '')}</p>
+                        </div>
+                        <div class="announcement-actions">
+                            <button class="btn-read-more" onclick="void(0)">Read More</button>
+                        </div>
+                    `;
+                    announcementsContent.appendChild(item);
+                });
+                console.log('✅ Guidelines displayed as announcements');
+                return;
+            }
+            
+            // If no announcements and no guidelines, show empty state
             announcementsContent.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--dark-grey);">
                     <i class='bx bx-info-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
                     <p>No announcements available</p>
                 </div>
             `;
+            console.log('⚠️ No announcements or guidelines to display');
             return;
         }
 
-        announcementsContent.innerHTML = '';
-
+        // Display actual announcements
         this.announcements.forEach(announcement => {
             const typeClass = announcement.type || 'info';
             const iconClass = typeClass === 'urgent' ? 'bxs-error-circle' : 
@@ -559,6 +1009,37 @@ class DashboardData {
             `;
             announcementsContent.appendChild(item);
         });
+    }
+
+    /**
+     * Update dashcontents display
+     */
+    updateDashcontents() {
+        // Update tips and guidelines in admin dashboard
+        const tipsContainer = document.querySelector('.tips-container .tips-content');
+        if (tipsContainer) {
+            const tips = this.dashcontents.filter(dc => 
+                dc.content_type === 'tip' && 
+                (dc.target_audience === 'admin' || dc.target_audience === 'both') &&
+                dc.status === 'active'
+            );
+            if (tips.length > 0) {
+                tipsContainer.innerHTML = tips.map(tip => `
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class='bx ${tip.icon || 'bxs-info-circle'}'></i>
+                        </div>
+                        <div class="tip-details">
+                            <h4>${this.escapeHtml(tip.title || '')}</h4>
+                            <p>${this.escapeHtml(tip.content || '')}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Guidelines are now handled in updateAnnouncements() method
+        // This method only handles tips display
     }
 
     /**
@@ -620,35 +1101,127 @@ class DashboardData {
 let dashboardDataInstance = null;
 
 function initDashboardData() {
-    if (!dashboardDataInstance) {
-        dashboardDataInstance = new DashboardData();
+    // Prevent multiple initialization attempts (but allow reset)
+    if (window.initDashboardDataAttempted) {
+        console.log('⏸️ Dashboard data initialization already attempted');
+        // But still try to load if data isn't loaded yet
+        if (dashboardDataInstance && (!window.dashboardDataLoaded || dashboardDataInstance.stats.students === 0)) {
+            console.log('🔄 Data not loaded yet, forcing load...');
+            dashboardDataInstance.loadAllData().catch(error => {
+                console.error('❌ Error loading dashboard data:', error);
+            });
+        }
+        return;
     }
     
-    // Wait for dashboard content to load
+    console.log('🔄 Initializing dashboard data...');
+    window.initDashboardDataAttempted = true;
+    
+    if (!dashboardDataInstance) {
+        dashboardDataInstance = new DashboardData();
+        window.dashboardDataInstance = dashboardDataInstance; // Make it globally accessible
+    }
+    
+    // Wait for dashboard content to load (check multiple times)
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
     const checkInterval = setInterval(() => {
+        attempts++;
         const dashcontent = document.querySelector('.box-info');
-        if (dashcontent) {
+        const mainContent = document.querySelector('#main-content');
+        
+        if (dashcontent && mainContent && mainContent.innerHTML.trim() !== '') {
             clearInterval(checkInterval);
-            dashboardDataInstance.loadAllData();
+            console.log('✅ Dashboard content found, loading data...');
+            dashboardDataInstance.loadAllData().catch(error => {
+                console.error('❌ Error loading dashboard data:', error);
+                window.initDashboardDataAttempted = false; // Allow retry on error
+            });
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.warn('⚠️ Dashboard content not found after max attempts, trying anyway...');
+            // Try to load anyway - might work if content is there but selector is different
+            dashboardDataInstance.loadAllData().catch(error => {
+                console.error('❌ Error loading dashboard data:', error);
+                window.initDashboardDataAttempted = false; // Allow retry on error
+            });
         }
     }, 100);
     
-    // Also try after a delay
+    // Also try after a longer delay as fallback
     setTimeout(() => {
-        if (dashboardDataInstance && document.querySelector('.box-info')) {
-            dashboardDataInstance.loadAllData();
+        const dashcontent = document.querySelector('.box-info');
+        if (dashboardDataInstance && dashcontent && !dashboardDataInstance.stats.students) {
+            console.log('🔄 Fallback: Loading dashboard data...');
+            dashboardDataInstance.loadAllData().catch(error => {
+                console.error('❌ Error loading dashboard data:', error);
+            });
         }
-    }, 500);
+    }, 1000);
 }
 
 // Export for global use
 window.DashboardData = DashboardData;
 window.initDashboardData = initDashboardData;
 
+// Watch for content changes (for dynamically loaded content)
+let dataLoadDebounce = null;
+
+function watchForDashboardContent() {
+    const observer = new MutationObserver((mutations) => {
+        const dashcontent = document.querySelector('.box-info');
+        if (dashcontent && dashboardDataInstance) {
+            // Check if this is a new content load (content changed significantly)
+            const hasContent = dashcontent.querySelectorAll('li').length > 0;
+            const isDataLoaded = window.dashboardDataLoaded || 
+                                (dashboardDataInstance.stats.students > 0 || dashboardDataInstance.stats.violations > 0);
+            
+            if (hasContent && !isDataLoaded) {
+                // Debounce to prevent multiple rapid loads
+                if (dataLoadDebounce) {
+                    clearTimeout(dataLoadDebounce);
+                }
+                
+                dataLoadDebounce = setTimeout(() => {
+                    // Double-check data isn't loaded
+                    if (dashboardDataInstance.stats.students > 0 || dashboardDataInstance.stats.violations > 0) {
+                        window.dashboardDataLoaded = true;
+                        return;
+                    }
+                    
+                    // Content was added, try to load data
+                    console.log('🔍 Dashboard content detected, loading data...');
+                    dashboardDataInstance.loadAllData().then(() => {
+                        if (typeof window !== 'undefined') {
+                            window.dashboardDataLoaded = true;
+                        }
+                    }).catch(error => {
+                        console.error('❌ Error loading dashboard data:', error);
+                    });
+                }, 500);
+            }
+        }
+    });
+
+    // Observe the main content container
+    const mainContent = document.querySelector('#main-content');
+    if (mainContent) {
+        observer.observe(mainContent, {
+            childList: true,
+            subtree: true
+        });
+    }
+}
+
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDashboardData);
+    document.addEventListener('DOMContentLoaded', () => {
+        initDashboardData();
+        watchForDashboardContent();
+    });
 } else {
     initDashboardData();
+    watchForDashboardContent();
 }
 

@@ -21,11 +21,11 @@ require_once __DIR__ . '/../../core/View.php';
         <p class="page-subtitle">Manage system configuration and preferences</p>
       </div>
       <div class="breadcrumb-wrapper">
-        <nav class="breadcrumb">
+        <div class="breadcrumb">
           <a href="#" class="breadcrumb-item">Dashboard</a>
           <i class='bx bx-chevron-right'></i>
           <span class="breadcrumb-item active">Settings</span>
-        </nav>
+        </div>
       </div>
     </div>
   </div>

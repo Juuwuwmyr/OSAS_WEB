@@ -2,15 +2,14 @@
 /**
  * Logout - Destroys session and redirects to login
  */
-session_start();
+require_once __DIR__ . '/../../core/Session.php';
+Session::start();
 
 // Clear session data first
 $_SESSION = array();
 
-// Destroy session
-if (session_status() === PHP_SESSION_ACTIVE) {
-    session_destroy();
-}
+// Destroy session using Session helper
+Session::destroy();
 
 // Clear all cookies (must match the path and domain used when setting them)
 $cookies = ['user_id', 'username', 'role', 'student_id', 'student_id_code'];

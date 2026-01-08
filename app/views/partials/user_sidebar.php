@@ -1,13 +1,31 @@
 ﻿<?php
 require_once __DIR__ . '/../../core/View.php';
+// Get user profile image or default
+$userImage = View::asset('img/default.png');
+if (file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
+    $userImage = View::asset('img/user.jpg');
+}
+$username = $_SESSION['username'] ?? 'User';
+$role = $_SESSION['role'] ?? 'user';
 ?>
 <!-- SIDEBAR -->
 <section id="sidebar">
-  <a href="#" class="brand">
-    <img src="<?= View::asset('img/default.png') ?>" alt="Crown Icon"
-      style="width: 38px; height: 38px; vertical-align: middle; margin-right: 24px; margin-left: 10px;">
-    <span class="text">Osas System</span>
-  </a>
+  <!-- Sidebar Header with Logo -->
+  <div class="sidebar-header">
+    <div class="sidebar-logo-section">
+      <img src="<?= View::asset('img/default.png') ?>" alt="Osas Logo" class="sidebar-logo sidebar-toggle-logo" style="cursor: pointer;">
+      <span class="sidebar-title">E-Osas</span>
+      <i class='bx bx-chevron-left sidebar-close-icon'></i>
+    </div>
+    <div class="sidebar-search-section">
+      <form action="#" class="sidebar-search-form">
+        <div class="sidebar-form-input">
+          <i class='bx bx-search'></i>
+          <input type="search" placeholder="Search..." class="sidebar-search-input">
+        </div>
+      </form>
+    </div>
+  </div>
 
   <ul class="side-menu top">
     <li class="active">
@@ -35,20 +53,13 @@ require_once __DIR__ . '/../../core/View.php';
       </a>
     </li>
   </ul>
-  <ul class="side-menu">
-    <li>
-      <a href="#" class="logout" onclick="alert('Settings page coming soon')">
-        <i class='bx bxs-cog'></i>
-        <span class="text">Settings</span>
-      </a>
-    </li>
-    <li>
-      <a href="#" class="logout" onclick="logout()">
-        <i class='bx bx-log-out'></i>
-        <span class="text">Logout</span>
-      </a>
-    </li>
-  </ul>
+  <!-- Logout Fixed at Bottom -->
+  <div class="sidebar-logout">
+    <a href="#" class="logout" onclick="logout()">
+      <i class='bx bx-log-out'></i>
+      <span class="text">Logout</span>
+    </a>
+  </div>
 </section>
 <!-- SIDEBAR -->
 

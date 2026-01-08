@@ -15,23 +15,27 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- dashboardContent.html -->
   <main>
-    <div class="head-title">
-      <div class="left">
-        <h1>Dashboard</h1>
-        <ul class="breadcrumb">
-          <li>
-            <a href="#">Dashboard</a>
-          </li>
-          <li><i class='bx bx-chevron-right'></i></li>
-          <li>
-            <a class="active" href="#">Home</a>
-          </li>
-        </ul>
+    <!-- Header Section -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Overview of system statistics and recent activities</p>
+        </div>
+        <div class="breadcrumb-wrapper">
+          <div class="breadcrumb">
+            <a href="#" class="breadcrumb-item">Dashboard</a>
+            <i class='bx bx-chevron-right'></i>
+            <span class="breadcrumb-item active">Home</span>
+          </div>
+        </div>
       </div>
-      <a href="#" class="btn-download">
-        <i class='bx bxs-cloud-download'></i>
-        <span class="text">Export PDF</span>
-      </a>
+      <div class="header-actions">
+        <a href="#" class="btn-download">
+          <i class='bx bxs-cloud-download'></i>
+          <span class="text">Export PDF</span>
+        </a>
+      </div>
     </div>
 
     <!-- Announcements Section -->
@@ -49,49 +53,9 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="announcements-content" id="announcementsContent">
-        <div class="announcement-item urgent">
-          <div class="announcement-icon">
-            <i class='bx bxs-error-circle'></i>
-          </div>
-          <div class="announcement-details">
-            <h4>Important: New Violation Policies</h4>
-            <p>Effective immediately, new disciplinary policies have been implemented. Please review the updated
-              guidelines.</p>
-            <span class="announcement-time">2 hours ago</span>
-          </div>
-          <div class="announcement-actions">
-            <button class="btn-read-more">Read More</button>
-          </div>
-        </div>
-
-        <div class="announcement-item">
-          <div class="announcement-icon">
-            <i class='bx bxs-info-circle'></i>
-          </div>
-          <div class="announcement-details">
-            <h4>Violation Exemption</h4>
-            <p>Students are allowed to wear a plain white T-shirt tomorrow due to extreme heat conditions. Regular dress
-              code will resume the following day.</p>
-            <span class="announcement-time">1 hour ago</span>
-          </div>
-          <div class="announcement-actions">
-            <button class="btn-read-more">Read More</button>
-          </div>
-        </div>
-
-        <div class="announcement-item">
-          <div class="announcement-icon">
-            <i class='bx bxs-info-circle'></i>
-          </div>
-          <div class="announcement-details">
-            <h4>Violation Exemption</h4>
-            <p>Due to continuous rain, students are temporarily allowed to wear slippers and bring jackets for comfort.
-              Please return to proper uniform once the weather improves.</p>
-            <span class="announcement-time">3 hours ago</span>
-          </div>
-          <div class="announcement-actions">
-            <button class="btn-read-more">Read More</button>
-          </div>
+        <div style="text-align: center; padding: 40px;">
+          <div class="loading-spinner"></div>
+          <p>Loading announcements...</p>
         </div>
       </div>
     </div>

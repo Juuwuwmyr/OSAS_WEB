@@ -196,6 +196,264 @@ function handleLoginFormSubmit(e) {
         });
 }
 
+// ============================================
+// SOCIAL LOGIN HANDLERS (Firebase)
+// ============================================
+
+// Google Login Handler using Firebase
+async function handleGoogleLogin() {
+    const googleBtn = document.querySelector('.social-button.google');
+    if (googleBtn) {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = `<div class="spinner"></div><span>Connecting to Google...</span>`;
+    }
+
+    try {
+        // Check if Firebase functions are available
+        if (typeof firebaseGoogleSignIn !== 'function') {
+            throw new Error('Firebase is not loaded. Please check your configuration.');
+        }
+
+        const result = await firebaseGoogleSignIn();
+        
+        if (result.success) {
+            showToast('Google login successful! Processing...', 'success');
+            
+            // Send user data to PHP backend for session creation
+            await processSocialLogin(result.user, result.token);
+        } else {
+            if (googleBtn) {
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = `<i class="fab fa-google"></i>Continue with Google`;
+            }
+            
+            if (result.error === 'auth/popup-closed-by-user') {
+                showToast('Login cancelled', 'info');
+            } else if (result.error === 'not_configured') {
+                showToast('Firebase is not configured. Please check firebase-config.js', 'error');
+            } else {
+                showToast(result.message || 'Google login failed', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Google login error:', error);
+        if (googleBtn) {
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = `<i class="fab fa-google"></i>Continue with Google`;
+        }
+        showToast(error.message || 'An error occurred during Google login', 'error');
+    }
+}
+
+// Facebook Login Handler using Firebase
+async function handleFacebookLogin() {
+    const facebookBtn = document.querySelector('.social-button.facebook');
+    if (facebookBtn) {
+        facebookBtn.disabled = true;
+        facebookBtn.innerHTML = `<div class="spinner"></div><span>Connecting to Facebook...</span>`;
+    }
+
+    try {
+        // Check if Firebase functions are available
+        if (typeof firebaseFacebookSignIn !== 'function') {
+            throw new Error('Firebase is not loaded. Please check your configuration.');
+        }
+
+        const result = await firebaseFacebookSignIn();
+        
+        if (result.success) {
+            showToast('Facebook login successful! Processing...', 'success');
+            
+            // Send user data to PHP backend for session creation
+            await processSocialLogin(result.user, result.token);
+        } else {
+            if (facebookBtn) {
+                facebookBtn.disabled = false;
+                facebookBtn.innerHTML = `<i class="fab fa-facebook-f"></i>Continue with Facebook`;
+            }
+            
+            if (result.error === 'auth/popup-closed-by-user') {
+                showToast('Login cancelled', 'info');
+            } else if (result.error === 'not_configured') {
+                showToast('Firebase is not configured. Please check firebase-config.js', 'error');
+            } else {
+                showToast(result.message || 'Facebook login failed', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Facebook login error:', error);
+        if (facebookBtn) {
+            facebookBtn.disabled = false;
+            facebookBtn.innerHTML = `<i class="fab fa-facebook-f"></i>Continue with Facebook`;
+        }
+        showToast(error.message || 'An error occurred during Facebook login', 'error');
+    }
+}
+
+// Process social login - send to PHP backend
+async function processSocialLogin(userData, token) {
+    try {
+        const response = await fetch('./app/views/auth/social_login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                uid: userData.uid,
+                email: userData.email,
+                displayName: userData.displayName,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                photoURL: userData.photoURL,
+                provider: userData.provider,
+                token: token
+            })
+        });
+
+        // Check if response is OK
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error:', response.status, errorText);
+            throw new Error(`Server error: ${response.status} - ${errorText.substring(0, 100)}`);
+        }
+
+        // Get response text first to check if it's JSON
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Invalid JSON response:', responseText);
+            throw new Error('Server returned invalid response. Check console for details.');
+        }
+
+        if (data.status === 'success') {
+            // Store session data
+            const sessionData = {
+                name: data.name,
+                role: data.role,
+                user_id: data.user_id,
+                expires: data.expires * 1000,
+                theme: darkMode ? 'dark' : 'light'
+            };
+
+            localStorage.setItem('userSession', JSON.stringify(sessionData));
+
+            showToast('Login successful! Redirecting...', 'success');
+
+            setTimeout(() => {
+                if (data.role === 'admin') {
+                    window.location.href = './includes/dashboard.php';
+                } else {
+                    window.location.href = './includes/user_dashboard.php';
+                }
+            }, 1000);
+        } else {
+            showToast(data.message || 'Login failed', 'error');
+            
+            // Reset buttons
+            const googleBtn = document.querySelector('.social-button.google');
+            const facebookBtn = document.querySelector('.social-button.facebook');
+            if (googleBtn) {
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = `<i class="fab fa-google"></i>Continue with Google`;
+            }
+            if (facebookBtn) {
+                facebookBtn.disabled = false;
+                facebookBtn.innerHTML = `<i class="fab fa-facebook-f"></i>Continue with Facebook`;
+            }
+        }
+    } catch (error) {
+        console.error('Social login processing error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            userData: userData
+        });
+        
+        const errorMessage = error.message || 'Failed to process login. Please check console for details.';
+        showToast(errorMessage, 'error');
+        
+        // Reset buttons
+        const googleBtn = document.querySelector('.social-button.google');
+        const facebookBtn = document.querySelector('.social-button.facebook');
+        if (googleBtn) {
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = `<i class="fab fa-google"></i>Continue with Google`;
+        }
+        if (facebookBtn) {
+            facebookBtn.disabled = false;
+            facebookBtn.innerHTML = `<i class="fab fa-facebook-f"></i>Continue with Facebook`;
+        }
+    }
+}
+
+// Show social login info modal (Firebase setup)
+function showSocialLoginModal(provider) {
+    const providerName = provider === 'google' ? 'Google' : 'Facebook';
+    const providerColor = provider === 'google' ? '#DB4437' : '#1877F2';
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'social-modal-overlay';
+    modal.innerHTML = `
+        <div class="social-modal">
+            <div class="social-modal-header" style="background: linear-gradient(135deg, #FFCA28, #FF9800)">
+                <i class="fas fa-fire"></i>
+                <h3>Firebase Setup (FREE)</h3>
+            </div>
+            <div class="social-modal-body">
+                <div class="social-modal-icon">
+                    <i class="fab fa-${provider}" style="color: ${providerColor}"></i>
+                </div>
+                <h4>Enable ${providerName} Login</h4>
+                <p>Firebase Authentication is FREE and easy to set up:</p>
+                <ol>
+                    <li>Go to <strong>Firebase Console</strong></li>
+                    <li>Create a new project (disable Analytics)</li>
+                    <li>Click <strong>&lt;/&gt;</strong> to add a web app</li>
+                    <li>Copy the config to <code>firebase-config.js</code></li>
+                    <li>Go to <strong>Authentication → Sign-in method</strong></li>
+                    <li>Enable <strong>${providerName}</strong> provider</li>
+                </ol>
+                <div class="social-modal-note">
+                    <i class="fas fa-check-circle" style="color: #4CAF50"></i>
+                    <span>No credit card required! Firebase free tier is generous.</span>
+                </div>
+            </div>
+            <div class="social-modal-footer">
+                <button class="social-modal-btn secondary" onclick="closeSocialModal()">Close</button>
+                <a href="https://console.firebase.google.com/" 
+                   target="_blank" class="social-modal-btn primary" style="background: linear-gradient(135deg, #FFCA28, #FF9800)">
+                    <i class="fas fa-external-link-alt"></i>
+                    Firebase Console
+                </a>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add animation
+    setTimeout(() => modal.classList.add('show'), 10);
+    
+    // Close on overlay click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeSocialModal();
+        }
+    });
+}
+
+function closeSocialModal() {
+    const modal = document.querySelector('.social-modal-overlay');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
 // Initialize application
 function initApp() {
     console.log('Initializing app...');
@@ -227,6 +485,20 @@ function initApp() {
     if (passwordToggle) {
         passwordToggle.addEventListener('click', togglePasswordVisibility);
         console.log('Password toggle event listener added');
+    }
+
+    // Social login buttons
+    const googleBtn = document.querySelector('.social-button.google');
+    const facebookBtn = document.querySelector('.social-button.facebook');
+
+    if (googleBtn) {
+        googleBtn.addEventListener('click', handleGoogleLogin);
+        console.log('Google login button event listener added');
+    }
+
+    if (facebookBtn) {
+        facebookBtn.addEventListener('click', handleFacebookLogin);
+        console.log('Facebook login button event listener added');
     }
 
     // Listen for system theme changes

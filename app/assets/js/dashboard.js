@@ -1,7 +1,8 @@
 // DOM Elements
 const allSideMenu = document.querySelectorAll('#sidebar .side-menu.top li a');
-const menuBar = document.querySelector('#content nav .bx.bx-menu');
+const menuBar = document.querySelector('.sidebar-toggle-logo') || document.querySelector('#sidebar .sidebar-close-icon') || document.querySelector('#sidebar .sidebar-menu-toggle') || document.querySelector('#content nav .bx.bx-menu');
 const sidebar = document.getElementById('sidebar');
+const sidebarCloseIcon = document.querySelector('#sidebar .sidebar-close-icon');
 const searchButton = document.querySelector('#content nav form .form-input button');
 const searchButtonIcon = document.querySelector('#content nav form .form-input button .bx');
 const searchForm = document.querySelector('#content nav form');
@@ -374,10 +375,39 @@ function loadContent(page) {
             initializeModule(page);
 
             // Initialize dashboard data if dashboard page is loaded
-            if (page === 'admin_page/dashcontent' && typeof initDashboardData === 'function') {
+            if (page === 'admin_page/dashcontent') {
+                // Reset data loaded flag for new content
+                if (typeof window !== 'undefined') {
+                    window.dashboardDataLoaded = false;
+                }
+                
+                // Wait a bit longer for content to be fully rendered
                 setTimeout(() => {
-                    initDashboardData();
-                }, 300);
+                    if (typeof initDashboardData === 'function') {
+                        console.log('🔄 Calling initDashboardData for dashcontent...');
+                        // Reset the init flag to allow re-initialization
+                        if (window.initDashboardDataAttempted !== undefined) {
+                            window.initDashboardDataAttempted = false;
+                        }
+                        initDashboardData();
+                    } else if (window.dashboardDataInstance) {
+                        console.log('🔄 Using existing dashboardDataInstance...');
+                        window.dashboardDataInstance.loadAllData().catch(error => {
+                            console.error('❌ Error loading dashboard data:', error);
+                        });
+                    } else {
+                        console.warn('⚠️ initDashboardData function not found, trying to create instance...');
+                        // Try to create instance if it doesn't exist
+                        if (typeof DashboardData !== 'undefined') {
+                            window.dashboardDataInstance = new DashboardData();
+                            setTimeout(() => {
+                                window.dashboardDataInstance.loadAllData().catch(error => {
+                                    console.error('❌ Error loading dashboard data:', error);
+                                });
+                            }, 500);
+                        }
+                    }
+                }, 600);
             }
 
             console.log(`✅ ${page} loaded successfully`);
@@ -537,13 +567,24 @@ function initializeEventListeners() {
         });
     });
 
-    // Toggle sidebar with animation
-    if (menuBar) {
-        menuBar.addEventListener('click', function () {
+    // Toggle sidebar with animation - Logo click
+    const logoToggle = document.querySelector('.sidebar-toggle-logo');
+    if (logoToggle) {
+        logoToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
             sidebar.classList.toggle('hide');
-
             // Save sidebar state
             localStorage.setItem('sidebarHidden', sidebar.classList.contains('hide'));
+        });
+    }
+
+    // Toggle sidebar with close icon
+    const closeIcon = document.querySelector('#sidebar .sidebar-close-icon');
+    if (closeIcon) {
+        closeIcon.addEventListener('click', function (e) {
+            e.stopPropagation();
+            sidebar.classList.add('hide');
+            localStorage.setItem('sidebarHidden', true);
         });
     }
 
@@ -563,6 +604,30 @@ function initializeEventListeners() {
     if (switchMode) {
         switchMode.addEventListener('change', function () {
             toggleTheme();
+        });
+    }
+
+    // Settings icon in navbar
+    const navSettings = document.querySelector('.nav-settings');
+    if (navSettings) {
+        navSettings.addEventListener('click', function (e) {
+            e.preventDefault();
+            const page = this.getAttribute('data-page');
+            if (page) {
+                // Update active menu item in sidebar
+                allSideMenu.forEach(i => {
+                    if (!i.classList.contains('chatbot-sidebar-btn')) {
+                        i.parentElement.classList.remove('active');
+                    }
+                });
+                // Find and activate settings in sidebar if exists
+                const settingsLink = document.querySelector('[data-page="' + page + '"]');
+                if (settingsLink && settingsLink.parentElement) {
+                    settingsLink.parentElement.classList.add('active');
+                }
+                // Load settings page
+                loadContent(page);
+            }
         });
     }
 

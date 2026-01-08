@@ -3,7 +3,6 @@
  *********************************************************/
 const API_BASE = '/OSAS_WEB/api/';
 
-
 let studentId = null;
 let userViolations = [];
 
@@ -16,6 +15,7 @@ async function initUserViolations() {
     const tbody = document.getElementById('violationsTableBody');
 
     studentId = getStudentId();
+    console.log('Student ID:', studentId); // Debug: check student ID
 
     if (!studentId) {
         tbody.innerHTML = errorRow('Student ID not found. Please login again.');
@@ -34,7 +34,10 @@ function getStudentId() {
 
     // Cookie fallback
     const cookies = Object.fromEntries(
-        document.cookie.split(';').map(c => c.trim().split('='))
+        document.cookie
+            .split(';')
+            .map(c => c.trim().split('='))
+            .map(([k,v]) => [k, decodeURIComponent(v)])
     );
 
     return cookies.student_id || cookies.student_id_code || null;
@@ -57,8 +60,7 @@ async function loadUserViolations() {
     const tbody = document.getElementById('violationsTableBody');
 
     try {
-        const res = await fetch(`${API_BASE}violations.php?student_id=${studentId}`)
-
+        const res = await fetch(`${API_BASE}violations.php?student_id=${studentId}`);
         const json = await res.json();
 
         if (json.status !== 'success') {

@@ -16,30 +16,66 @@
     font-family: Arial, sans-serif !important;
 }
 
-/* Ensure Boxicons font is loaded for icons */
-@font-face {
-    font-family: 'boxicons';
-    src: url('https://unpkg.com/boxicons@2.0.9/fonts/boxicons.woff2') format('woff2'),
-         url('https://unpkg.com/boxicons@2.0.9/fonts/boxicons.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+/* Ensure Boxicons CSS is loaded */
+/* Boxicons CSS should be loaded in the HTML head via CDN */
+/* If icons don't display, ensure this is in the HTML: <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'> */
 
-/* Icon fallback styling */
+/* Icon styling - ensure Boxicons display correctly */
 .bx,
 [class^="bx-"],
 [class*=" bx-"] {
     font-family: 'boxicons' !important;
     speak: none;
-    font-style: normal;
-    font-weight: normal;
+    font-style: normal !important;
+    font-weight: normal !important;
     font-variant: normal;
     text-transform: none;
     line-height: 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    display: inline-block;
+    display: inline-block !important;
+    font-size: inherit;
+}
+
+/* Ensure icons have proper sizing and visibility */
+#chatbot-button i,
+.chatbot-title i,
+.chatbot-close i,
+.prompts-top-title i,
+.prompts-top-toggle i,
+#chatbot-send i,
+.chatbot-message i,
+.prompt-card-icon i {
+    font-size: inherit !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    width: 1em !important;
+    height: 1em !important;
+}
+
+/* Ensure chatbot button icon is visible */
+#chatbot-button i {
+    font-size: 28px !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Ensure prompt card icons are visible */
+.prompt-card-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 8px;
+}
+
+.prompt-card-icon i {
+    font-size: 24px !important;
+    color: var(--gold) !important;
 }
 
 /* Chatbot Button - Professional Design */
@@ -172,16 +208,19 @@
 }
 
 .chatbot-title i {
-    font-size: 22px;
+    font-size: 22px !important;
     animation: float 3s ease-in-out infinite;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     width: 32px;
     height: 32px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     padding: 4px;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
 }
 
 @keyframes float {
@@ -217,9 +256,13 @@
 }
 
 .chatbot-close i {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-size: 20px !important;
 }
 
 /* Chatbot Messages */
@@ -659,16 +702,19 @@ body.dark .chatbot-loading {
 }
 
 .prompts-top-title i {
-    color: var(--gold);
-    font-size: 16px;
+    color: var(--gold) !important;
+    font-size: 16px !important;
     background: rgba(255, 215, 0, 0.15);
     padding: 6px;
     border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     width: 24px;
     height: 24px;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
 }
 
 .prompts-top-toggle {
@@ -688,9 +734,13 @@ body.dark .chatbot-loading {
 }
 
 .prompts-top-toggle i {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-size: 18px !important;
 }
 
 .prompts-top-toggle:hover {
@@ -919,6 +969,24 @@ body.dark .chatbot-loading {
     font-size: 24px;
     margin-bottom: 8px;
     color: var(--gold);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 10px;
+}
+
+.prompt-card-icon i {
+    font-size: 24px !important;
+    color: var(--gold) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'boxicons' !important;
+    font-style: normal !important;
+    font-weight: normal !important;
 }
 
 .prompt-card-title {

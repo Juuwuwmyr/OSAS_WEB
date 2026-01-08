@@ -1,21 +1,16 @@
 <?php
-// Start session
 session_start();
 
-// --------------------
-// AUTHENTICATION CHECK
-// --------------------
-
 // Restore session from cookies if available
-if (!isset($_SESSION['user_id'])) {
-  $_SESSION['user_id'] = 123; // example ID
-  $_SESSION['username'] = 'TestUser';
-  $_SESSION['role'] = 'user';
+if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+    $_SESSION['user_id'] = $_COOKIE['user_id'];
+    $_SESSION['username'] = $_COOKIE['username'] ?? '';
+    $_SESSION['role'] = $_COOKIE['role'];
+    $_SESSION['student_id'] = $_COOKIE['student_id'] ?? null;
+    $_SESSION['student_id_code'] = $_COOKIE['student_id_code'] ?? null;
 }
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-// Redirect if no session
+
+// Redirect if session is missing
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     header('Location: ../index.php');
     exit;
@@ -50,6 +45,10 @@ if (!$student_id) {
 <!DOCTYPE html>
 <html lang="en">
 
+<script>
+    // Inject PHP student ID into JS
+    window.STUDENT_ID = <?= json_encode($student_id) ?>;
+</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,27 +72,11 @@ if (!$student_id) {
 
     <!-- CONTENT -->
     <section id="content">
-        <!-- NAVBAR -->
-        <nav>
-            <i class='bx bx-menu'></i>
-            <a href="#" class="nav-link">Categories</a>
-            <form action="#">
-                <div class="form-input">
-                    <input type="search" placeholder="Search...">
-                    <button type="submit" class="search-btn"><i class='bx bx-search'></i></button>
-                </div>
-            </form>
-            <input type="checkbox" id="switch-mode" hidden>
-            <label for="switch-mode" class="switch-mode"></label>
-            <a href="#" class="notification">
-                <i class='bx bxs-bell'></i>
-                <span class="num">7</span>
-            </a>
-            <a href="#" class="profile">
-                <img src="../app/assets/img/default.png" alt="Profile">
-            </a>
-        </nav>
-        <!-- NAVBAR -->
+        <?php
+        $role = $_SESSION['role'] ?? 'user';
+        $notificationCount = 7;
+        View::partial('navbar', ['role' => $role, 'notificationCount' => $notificationCount]);
+        ?>
 
         <!-- MAIN CONTENT -->
         <div id="main-content" data-student-id="<?= htmlspecialchars($student_id) ?>">

@@ -34,10 +34,37 @@ class Chatbot {
     }
 
     init() {
-        this.createChatbotUI();
-        this.attachEventListeners();
-        // Pre-fetch database context
-        this.fetchDatabaseContext();
+        // Wait for Boxicons to load before creating UI
+        this.waitForBoxicons().then(() => {
+            this.createChatbotUI();
+            this.attachEventListeners();
+            // Pre-fetch database context
+            this.fetchDatabaseContext();
+        });
+    }
+
+    waitForBoxicons() {
+        return new Promise((resolve) => {
+            // Check if Boxicons is already loaded
+            const existingLink = document.querySelector('link[href*="boxicons"]');
+            if (existingLink) {
+                // Wait a bit for the font to load
+                setTimeout(() => resolve(), 200);
+            } else {
+                // Boxicons not found, load it
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css';
+                link.onload = () => {
+                    setTimeout(() => resolve(), 100);
+                };
+                link.onerror = () => {
+                    console.warn('⚠️ Failed to load Boxicons, icons may not display correctly');
+                    resolve(); // Continue even if it fails
+                };
+                document.head.appendChild(link);
+            }
+        });
     }
 
     /**
@@ -285,8 +312,9 @@ class Chatbot {
         // Create chatbot button
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
-        chatbotButton.innerHTML = '<i class="bx bx-message-rounded-dots"></i>';
+        chatbotButton.innerHTML = '<i class="bx bx-message-rounded-dots" aria-hidden="true"></i>';
         chatbotButton.title = 'Open Chatbot';
+        chatbotButton.setAttribute('aria-label', 'Open Chatbot');
         document.body.appendChild(chatbotButton);
 
         // Create chatbot panel
@@ -295,21 +323,21 @@ class Chatbot {
         chatbotPanel.innerHTML = `
             <div class="chatbot-header">
                 <div class="chatbot-title">
-                    <i class="bx bx-bot"></i>
+                    <i class="bx bx-bot" aria-hidden="true"></i>
                     <span>OSAS Assistant</span>
                 </div>
-                <button class="chatbot-close" id="chatbot-close">
-                    <i class="bx bx-x"></i>
+                <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
+                    <i class="bx bx-x" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="chatbot-prompts-top" id="chatbot-prompts-top">
                 <div class="prompts-top-header">
                     <div class="prompts-top-title">
-                        <i class="bx bx-bulb"></i>
+                        <i class="bx bx-bulb" aria-hidden="true"></i>
                         <span>Quick Prompts</span>
                     </div>
-                    <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts">
-                        <i class="bx bx-chevron-up"></i>
+                    <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts" aria-label="Toggle prompts">
+                        <i class="bx bx-chevron-up" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="prompts-top-content" id="prompts-top-content">
@@ -346,8 +374,8 @@ class Chatbot {
                     placeholder="Type your message..." 
                     autocomplete="off"
                 />
-                <button id="chatbot-send">
-                    <i class="bx bx-send"></i>
+                <button id="chatbot-send" aria-label="Send message">
+                    <i class="bx bx-send" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="chatbot-loading" id="chatbot-loading" style="display: none;">
@@ -375,11 +403,11 @@ class Chatbot {
             <div class="prompt-selector-content">
                 <div class="prompt-selector-header">
                     <div class="prompt-selector-title">
-                        <i class="bx bx-bulb"></i>
+                        <i class="bx bx-bulb" aria-hidden="true"></i>
                         <span>Select a Prompt</span>
                     </div>
-                    <button class="prompt-selector-close" id="prompt-selector-close">
-                        <i class="bx bx-x"></i>
+                    <button class="prompt-selector-close" id="prompt-selector-close" aria-label="Close">
+                        <i class="bx bx-x" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="prompt-selector-body" id="prompt-selector-body">
@@ -486,7 +514,7 @@ class Chatbot {
                 const promptCard = document.createElement('div');
                 promptCard.className = 'prompt-card';
                 promptCard.innerHTML = `
-                    <div class="prompt-card-icon"><i class="bx ${category.icon}"></i></div>
+                    <div class="prompt-card-icon"><i class="bx ${category.icon}" aria-hidden="true"></i></div>
                     <div class="prompt-card-title">${prompt.title}</div>
                     <div class="prompt-card-desc">${prompt.desc}</div>
                 `;
@@ -582,6 +610,7 @@ class Chatbot {
                 const icon = toggleBtn.querySelector('i');
                 if (icon) {
                     icon.className = 'bx bx-chevron-down';
+                    icon.setAttribute('aria-hidden', 'true');
                 }
             }
         }
@@ -937,6 +966,7 @@ class Chatbot {
             const icon = toggleBtn.querySelector('i');
             if (icon) {
                 icon.className = isExpanded ? 'bx bx-chevron-down' : 'bx bx-chevron-up';
+                icon.setAttribute('aria-hidden', 'true');
             }
         }
     }
