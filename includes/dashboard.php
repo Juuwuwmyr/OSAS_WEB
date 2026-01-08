@@ -67,8 +67,7 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="../app/assets/js/dashboardData.js"></script>
   <script src="../app/assets/js/modules/dashboardModule.js"></script>
   <script src="../app/assets/js/utils/theme.js"></script>
-
-
+  <script src="../app/assets/js/utils/eyeCare.js"></script>
   
   <script src="../app/assets/js/department.js"></script>
   <script src="../app/assets/js/section.js"></script>

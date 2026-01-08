@@ -500,6 +500,10 @@ body.dark .sidebar-search-input::placeholder {
   justify-content: center;
 }
 
+#sidebar.hide .side-menu li a .text {
+  display: none;
+}
+
 #sidebar.hide .side-menu li a .bx {
   min-width: 40px;
   max-width: 40px;
@@ -731,6 +735,110 @@ body.dark .sidebar-search-input::placeholder {
 
 #content .top-navbar #switch-mode:checked+.switch-mode::before {
   left: calc(100% - (25px - 4px) - 2px);
+}
+
+/* Eye Care Toggle in Navbar */
+#content .top-navbar .eye-care-toggle {
+  font-size: 22px;
+  color: var(--dark);
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 4px;
+  position: relative;
+  user-select: none;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+#content .top-navbar .eye-care-toggle:hover:not(.disabled) {
+  background: var(--grey);
+  color: var(--gold);
+  transform: scale(1.1);
+}
+
+#content .top-navbar .eye-care-toggle.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+#content .top-navbar #eye-care-toggle:checked + .eye-care-toggle:not(.disabled) {
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+#content .top-navbar .eye-care-toggle i {
+  font-size: 22px;
+}
+
+/* Eye Care Overlay Filter - Blue Light Reduction */
+#eye-care-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background: rgba(255, 242, 204, 0.15);
+  filter: sepia(10%) brightness(0.98) contrast(1.05);
+  mix-blend-mode: multiply;
+}
+
+#eye-care-overlay.active {
+  opacity: 1;
+}
+
+/* Eye Care Notification */
+.eye-care-notification {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background: var(--light);
+  color: var(--dark);
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000000;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
+  max-width: 300px;
+  border-left: 4px solid var(--gold);
+}
+
+.eye-care-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.eye-care-notification-success {
+  border-left-color: var(--green);
+}
+
+.eye-care-notification-info {
+  border-left-color: var(--blue);
+}
+
+.eye-care-notification-warning {
+  border-left-color: var(--orange);
+}
+
+body.dark #eye-care-overlay {
+  display: none !important;
+}
+
+body.dark #eye-care-overlay.active {
+  display: none !important;
 }
 
 /* Settings Icon in Navbar */

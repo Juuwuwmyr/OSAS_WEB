@@ -607,6 +607,54 @@ function initializeEventListeners() {
         });
     }
 
+    // Eye Care toggle - only active in light mode
+    // Initialize after a short delay to ensure eyeCare.js is loaded
+    const initEyeCareToggle = () => {
+        const eyeCareToggle = document.getElementById('eye-care-toggle');
+        const eyeCareLabel = document.querySelector('label[for="eye-care-toggle"]');
+        
+        if (eyeCareToggle && typeof toggleEyeCare === 'function') {
+            // Add change event listener
+            eyeCareToggle.addEventListener('change', function () {
+                toggleEyeCare();
+            });
+            console.log('✅ Eye Care toggle initialized');
+        } else if (eyeCareToggle) {
+            // Retry if toggleEyeCare function not yet available
+            setTimeout(initEyeCareToggle, 100);
+        }
+        
+        // Also add click handler to label for better compatibility
+        if (eyeCareLabel) {
+            eyeCareLabel.style.cursor = 'pointer';
+            eyeCareLabel.addEventListener('click', function (e) {
+                // Let the label naturally toggle the checkbox via 'for' attribute
+                // Then manually trigger the toggle function
+                setTimeout(() => {
+                    if (typeof toggleEyeCare === 'function') {
+                        toggleEyeCare();
+                    }
+                }, 10);
+            });
+        }
+    };
+    
+    // Initialize after page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEyeCareToggle);
+    } else {
+        setTimeout(initEyeCareToggle, 100);
+    }
+
+    // Update eye care button state on theme change
+    document.addEventListener('themeChanged', function() {
+        setTimeout(() => {
+            if (typeof updateEyeCareButtonState === 'function') {
+                updateEyeCareButtonState();
+            }
+        }, 100);
+    });
+
     // Settings icon in navbar
     const navSettings = document.querySelector('.nav-settings');
     if (navSettings) {

@@ -86,6 +86,8 @@ if (!$student_id) {
     <!-- CONTENT -->
 
     <!-- JS Scripts -->
+    <script src="../app/assets/js/utils/theme.js"></script>
+    <script src="../app/assets/js/utils/eyeCare.js"></script>
     <script src="../app/assets/js/initModules.js"></script>
     <script src="../app/assets/js/user_dashboard.js"></script>
     <script src="../app/assets/js/userDashboardData.js"></script>

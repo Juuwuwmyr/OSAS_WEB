@@ -9,6 +9,10 @@ if (isset($role) && $role === 'user') {
 <nav class="top-navbar">
   <input type="checkbox" id="switch-mode" hidden>
   <label for="switch-mode" class="switch-mode"></label>
+  <input type="checkbox" id="eye-care-toggle" hidden>
+  <label for="eye-care-toggle" class="eye-care-toggle" title="Eye Care (Light Mode Only)">
+    <i class='bx bx-brightness'></i>
+  </label>
   <a href="#" class="notification">
     <i class='bx bxs-bell'></i>
     <span class="num"><?= isset($notificationCount) ? $notificationCount : '1' ?></span>
