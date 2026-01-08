@@ -1,6 +1,6 @@
 <?php
 /**
- * API Wrapper - Maintains backward compatibility
+ * Reports API Endpoint
  * Routes to MVC Controller
  */
 
@@ -18,43 +18,27 @@ ob_start();
 
 require_once __DIR__ . '/../app/core/Model.php';
 require_once __DIR__ . '/../app/core/Controller.php';
-require_once __DIR__ . '/../app/models/ViolationModel.php';
-require_once __DIR__ . '/../app/models/StudentModel.php';
-require_once __DIR__ . '/../app/controllers/ViolationController.php';
+require_once __DIR__ . '/../app/models/ReportModel.php';
+require_once __DIR__ . '/../app/controllers/ReportController.php';
 
 try {
-    $controller = new ViolationController();
+    $controller = new ReportController();
     $method = $_SERVER['REQUEST_METHOD'];
-    $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
     switch ($method) {
         case 'GET':
-            if ($id > 0) {
-                // Get single violation - would need to implement this
-                $controller->index();
-            } else {
-                $controller->index();
-            }
-            break;
-        case 'POST':
-            $controller->create();
-            break;
-        case 'PUT':
-            $controller->update();
-            break;
-        case 'DELETE':
-            $controller->delete();
+            $controller->index();
             break;
         default:
-            // Output error JSON directly since error() is protected
+            // Output error JSON directly
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
             header('Content-Type: application/json');
-            http_response_code(400);
+            http_response_code(405);
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Invalid request method',
+                'message' => 'Method not allowed. Only GET requests are supported.',
                 'data' => []
             ]);
             exit;
@@ -66,7 +50,7 @@ try {
         ob_end_clean();
     }
     
-    error_log("Violations API Error: " . $e->getMessage());
+    error_log("Reports API Error: " . $e->getMessage());
     error_log("Stack trace: " . $e->getTraceAsString());
     
     header('Content-Type: application/json');
@@ -80,3 +64,4 @@ try {
     ]);
     exit;
 }
+

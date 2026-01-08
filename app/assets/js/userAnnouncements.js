@@ -6,6 +6,7 @@
 // API Base Path
 function getUserAPIBasePath() {
     const currentPath = window.location.pathname;
+<<<<<<< HEAD
     const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
     const projectBase = pathMatch ? pathMatch[1] : '';
     
@@ -23,10 +24,35 @@ function getUserAPIBasePath() {
 }
 
 const USER_API_BASE = getUserAPIBasePath();
+=======
+    const pathParts = currentPath.split('/').filter(p => p);
+    
+    // Find project root (typically the first directory in the path)
+    // For paths like /OSAS_WEB/app/entry/user_dashboard.php
+    // Project root is OSAS_WEB, so API is at /OSAS_WEB/api/
+    if (pathParts.length > 0) {
+        const projectRoot = pathParts[0];
+        return '/' + projectRoot + '/api/';
+    }
+    
+    // Fallback to relative path
+    if (currentPath.includes('/includes/') || currentPath.includes('/app/entry/')) {
+        return '../api/';
+    } else if (currentPath.includes('/app/views/')) {
+        return '../../api/';
+    }
+    
+    return '/api/';
+}
+
+const USER_API_BASE = getUserAPIBasePath();
+console.log('🔗 User Announcements API Base Path:', USER_API_BASE);
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
 
 let announcements = [];
 let readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
 
+<<<<<<< HEAD
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadAnnouncements();
@@ -43,23 +69,105 @@ async function loadAnnouncements() {
         const container = document.querySelector('.announcements-list');
         if (!container) return;
 
+=======
+// Initialize function
+function initializeUserAnnouncements() {
+    loadAnnouncements();
+    
+    // Setup filter listeners
+    setTimeout(() => {
+        const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        if (categoryFilter) categoryFilter.addEventListener('change', filterAnnouncements);
+        if (statusFilter) statusFilter.addEventListener('change', filterAnnouncements);
+    }, 200);
+}
+
+// Initialize immediately if DOM is ready, or wait for it
+function initializeAnnouncementsModule() {
+    // Check if we're on the announcements page
+    const announcementsPage = document.getElementById('announcementsListContainer') || 
+                             document.querySelector('.announcements-list') ||
+                             document.getElementById('categoryFilter');
+    
+    if (announcementsPage) {
+        // Page elements exist, initialize immediately
+        setTimeout(initializeUserAnnouncements, 100);
+    } else if (document.readyState === 'loading') {
+        // Wait for DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeUserAnnouncements, 100);
+        });
+    } else {
+        // DOM ready but page not loaded yet, try again later
+        setTimeout(initializeAnnouncementsModule, 500);
+    }
+}
+
+window.initAnnouncementsModule = initializeUserAnnouncements;
+window.initializeUserAnnouncements = initializeUserAnnouncements;
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initializeAnnouncementsModule, 100);
+}
+
+async function loadAnnouncements() {
+    try {
+        const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+        if (!container) {
+            console.warn('⚠️ Announcements container not found, retrying in 500ms...');
+            setTimeout(loadAnnouncements, 500);
+            return;
+        }
+
+        console.log('🔄 Loading announcements from:', USER_API_BASE + 'announcements.php?action=active');
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
         container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading-spinner"></div><p>Loading announcements...</p></div>';
 
         const response = await fetch(USER_API_BASE + 'announcements.php?action=active');
         if (!response.ok) {
+<<<<<<< HEAD
             throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
+=======
+            const errorText = await response.text();
+            console.error('Response error:', errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const responseText = await response.text();
+        console.log('Announcements API response (first 500 chars):', responseText.substring(0, 500));
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Failed to parse JSON:', e);
+            console.error('Response was:', responseText);
+            throw new Error('Invalid JSON response from announcements API');
+        }
+        
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
         if (data.status === 'error') {
             throw new Error(data.message || 'Failed to load announcements');
         }
 
         announcements = data.data || data.announcements || [];
+<<<<<<< HEAD
         renderAnnouncements();
     } catch (error) {
         console.error('Error loading announcements:', error);
         const container = document.querySelector('.announcements-list');
+=======
+        console.log(`✅ Loaded ${announcements.length} announcements`);
+        renderAnnouncements();
+    } catch (error) {
+        console.error('❌ Error loading announcements:', error);
+        console.error('Error details:', error.message, error.stack);
+        const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
         if (container) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #ef4444;">
@@ -73,8 +181,16 @@ async function loadAnnouncements() {
 }
 
 function renderAnnouncements() {
+<<<<<<< HEAD
     const container = document.querySelector('.announcements-list');
     if (!container) return;
+=======
+    const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+    if (!container) {
+        console.warn('⚠️ Announcements container not found');
+        return;
+    }
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
 
     if (announcements.length === 0) {
         container.innerHTML = `
@@ -273,4 +389,7 @@ window.markAllAsRead = markAllAsRead;
 window.refreshAnnouncements = refreshAnnouncements;
 window.loadMoreAnnouncements = loadMoreAnnouncements;
 window.loadAnnouncements = loadAnnouncements;
+<<<<<<< HEAD
 
+=======
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6

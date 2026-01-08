@@ -55,7 +55,7 @@ require_once __DIR__ . '/../../core/View.php';
   </ul>
   <ul class="side-menu">
     <li>
-      <a href="#" class="logout" onclick="alert('Settings page coming soon')">
+      <a href="#" data-page="admin_page/settings">
         <i class='bx bxs-cog'></i>
         <span class="text">Settings</span>
       </a>

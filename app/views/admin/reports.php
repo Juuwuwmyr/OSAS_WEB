@@ -58,10 +58,10 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
       <div class="Reports-stat-content">
         <h3 class="Reports-stat-title">Total Violations</h3>
-        <div class="Reports-stat-value" id="totalViolationsCount">158</div>
-        <div class="Reports-stat-change positive">
+        <div class="Reports-stat-value" id="totalViolationsCount">0</div>
+        <div class="Reports-stat-change positive" style="display: none;">
           <i class='bx bx-up-arrow-alt'></i>
-          <span>+12% this week</span>
+          <span>Loading...</span>
         </div>
       </div>
     </div>
@@ -72,8 +72,8 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
       <div class="Reports-stat-content">
         <h3 class="Reports-stat-title">Uniform Violations</h3>
-        <div class="Reports-stat-value" id="uniformViolations">74</div>
-        <div class="Reports-stat-percentage">47%</div>
+        <div class="Reports-stat-value" id="uniformViolations">0</div>
+        <div class="Reports-stat-percentage" id="uniformPercentage">0%</div>
       </div>
     </div>
 
@@ -83,8 +83,8 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
       <div class="Reports-stat-content">
         <h3 class="Reports-stat-title">Footwear Violations</h3>
-        <div class="Reports-stat-value" id="footwearViolations">48</div>
-        <div class="Reports-stat-percentage">30%</div>
+        <div class="Reports-stat-value" id="footwearViolations">0</div>
+        <div class="Reports-stat-percentage" id="footwearPercentage">0%</div>
       </div>
     </div>
 
@@ -94,8 +94,8 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
       <div class="Reports-stat-content">
         <h3 class="Reports-stat-title">No ID Violations</h3>
-        <div class="Reports-stat-value" id="noIdViolations">36</div>
-        <div class="Reports-stat-percentage">23%</div>
+        <div class="Reports-stat-value" id="noIdViolations">0</div>
+        <div class="Reports-stat-percentage" id="noIdPercentage">0%</div>
       </div>
     </div>
   </div>
@@ -147,6 +147,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="filter-group">
         <label for="ReportsTimeFilter">Time Period</label>
         <select id="ReportsTimeFilter" class="Reports-filter-select">
+          <option value="all">All Time</option>
           <option value="today">Today</option>
           <option value="this_week">This Week</option>
           <option value="this_month">This Month</option>
@@ -279,237 +280,8 @@ require_once __DIR__ . '/../../core/View.php';
 
         <tbody id="ReportsTableBody">
           <tr>
-            <td class="report-id">R001</td>
-            <td class="report-student-info">
-              <div class="student-info-wrapper">
-                <div class="student-avatar">
-                  <img src="https://ui-avatars.com/api/?name=John+Doe&background=ff6b6b&color=fff&size=40" alt="John Doe">
-                </div>
-                <div class="student-details">
-                  <strong>John Doe</strong>
-                  <small>2024-001 • 09171234567</small>
-                </div>
-              </div>
-            </td>
-            <td class="report-dept">
-              <span class="dept-badge bsis">BS Information System</span>
-            </td>
-            <td class="report-section">BSIS-1</td>
-            <td class="violation-count uniform">
-              <div class="count-badge high">3</div>
-            </td>
-            <td class="violation-count footwear">
-              <div class="count-badge medium">2</div>
-            </td>
-            <td class="violation-count no-id">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="total-violations">
-              <div class="total-badge">6</div>
-            </td>
-            <td>
-              <span class="Reports-status-badge disciplinary">Disciplinary Action</span>
-            </td>
-            <td>
-              <div class="Reports-action-buttons">
-                <button class="Reports-action-btn view" title="View Details">
-                  <i class='bx bx-show'></i>
-                </button>
-                <button class="Reports-action-btn export" title="Export Report">
-                  <i class='bx bx-download'></i>
-                </button>
-                <button class="Reports-action-btn print" title="Print Report">
-                  <i class='bx bx-printer'></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="report-id">R002</td>
-            <td class="report-student-info">
-              <div class="student-info-wrapper">
-                <div class="student-avatar">
-                  <img src="https://ui-avatars.com/api/?name=Maria+Santos&background=1dd1a1&color=fff&size=40" alt="Maria Santos">
-                </div>
-                <div class="student-details">
-                  <strong>Maria Santos</strong>
-                  <small>2024-002 • 09179876543</small>
-                </div>
-              </div>
-            </td>
-            <td class="report-dept">
-              <span class="dept-badge wft">Welding & Fabrication Tech</span>
-            </td>
-            <td class="report-section">WFT-2</td>
-            <td class="violation-count uniform">
-              <div class="count-badge medium">2</div>
-            </td>
-            <td class="violation-count footwear">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="violation-count no-id">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="total-violations">
-              <div class="total-badge">4</div>
-            </td>
-            <td>
-              <span class="Reports-status-badge permitted">Permitted</span>
-            </td>
-            <td>
-              <div class="Reports-action-buttons">
-                <button class="Reports-action-btn view" title="View Details">
-                  <i class='bx bx-show'></i>
-                </button>
-                <button class="Reports-action-btn export" title="Export Report">
-                  <i class='bx bx-download'></i>
-                </button>
-                <button class="Reports-action-btn print" title="Print Report">
-                  <i class='bx bx-printer'></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="report-id">R003</td>
-            <td class="report-student-info">
-              <div class="student-info-wrapper">
-                <div class="student-avatar">
-                  <img src="https://ui-avatars.com/api/?name=Pedro+Reyes&background=54a0ff&color=fff&size=40" alt="Pedro Reyes">
-                </div>
-                <div class="student-details">
-                  <strong>Pedro Reyes</strong>
-                  <small>2024-003 • 09171239876</small>
-                </div>
-              </div>
-            </td>
-            <td class="report-dept">
-              <span class="dept-badge btvted">BTVTED</span>
-            </td>
-            <td class="report-section">BTVTED-3</td>
-            <td class="violation-count uniform">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="violation-count footwear">
-              <div class="count-badge none">0</div>
-            </td>
-            <td class="violation-count no-id">
-              <div class="count-badge medium">2</div>
-            </td>
-            <td class="total-violations">
-              <div class="total-badge">3</div>
-            </td>
-            <td>
-              <span class="Reports-status-badge permitted">Permitted</span>
-            </td>
-            <td>
-              <div class="Reports-action-buttons">
-                <button class="Reports-action-btn view" title="View Details">
-                  <i class='bx bx-show'></i>
-                </button>
-                <button class="Reports-action-btn export" title="Export Report">
-                  <i class='bx bx-download'></i>
-                </button>
-                <button class="Reports-action-btn print" title="Print Report">
-                  <i class='bx bx-printer'></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="report-id">R004</td>
-            <td class="report-student-info">
-              <div class="student-info-wrapper">
-                <div class="student-avatar">
-                  <img src="https://ui-avatars.com/api/?name=Anna+Lopez&background=feca57&color=fff&size=40" alt="Anna Lopez">
-                </div>
-                <div class="student-details">
-                  <strong>Anna Lopez</strong>
-                  <small>2024-004 • 09174563218</small>
-                </div>
-              </div>
-            </td>
-            <td class="report-dept">
-              <span class="dept-badge chs">Computer Hardware Servicing</span>
-            </td>
-            <td class="report-section">CHS-1</td>
-            <td class="violation-count uniform">
-              <div class="count-badge none">0</div>
-            </td>
-            <td class="violation-count footwear">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="violation-count no-id">
-              <div class="count-badge low">1</div>
-            </td>
-            <td class="total-violations">
-              <div class="total-badge">2</div>
-            </td>
-            <td>
-              <span class="Reports-status-badge warning">Warning</span>
-            </td>
-            <td>
-              <div class="Reports-action-buttons">
-                <button class="Reports-action-btn view" title="View Details">
-                  <i class='bx bx-show'></i>
-                </button>
-                <button class="Reports-action-btn export" title="Export Report">
-                  <i class='bx bx-download'></i>
-                </button>
-                <button class="Reports-action-btn print" title="Print Report">
-                  <i class='bx bx-printer'></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="report-id">R005</td>
-            <td class="report-student-info">
-              <div class="student-info-wrapper">
-                <div class="student-avatar">
-                  <img src="https://ui-avatars.com/api/?name=Chris+Lim&background=ff6b6b&color=fff&size=40" alt="Chris Lim">
-                </div>
-                <div class="student-details">
-                  <strong>Chris Lim</strong>
-                  <small>2024-005 • 09175678901</small>
-                </div>
-              </div>
-            </td>
-            <td class="report-dept">
-              <span class="dept-badge bsis">BS Information System</span>
-            </td>
-            <td class="report-section">BSIS-1</td>
-            <td class="violation-count uniform">
-              <div class="count-badge high">3</div>
-            </td>
-            <td class="violation-count footwear">
-              <div class="count-badge none">0</div>
-            </td>
-            <td class="violation-count no-id">
-              <div class="count-badge none">0</div>
-            </td>
-            <td class="total-violations">
-              <div class="total-badge">3</div>
-            </td>
-            <td>
-              <span class="Reports-status-badge warning">Warning</span>
-            </td>
-            <td>
-              <div class="Reports-action-buttons">
-                <button class="Reports-action-btn view" title="View Details">
-                  <i class='bx bx-show'></i>
-                </button>
-                <button class="Reports-action-btn export" title="Export Report">
-                  <i class='bx bx-download'></i>
-                </button>
-                <button class="Reports-action-btn print" title="Print Report">
-                  <i class='bx bx-printer'></i>
-                </button>
-              </div>
+            <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
+              <div style="font-size: 1.1em;">Loading reports...</div>
             </td>
           </tr>
         </tbody>
@@ -521,17 +293,17 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Reports-footer-info">
         <div class="summary-stats">
           <span class="stat-item">
-            <strong>Total Students:</strong> 5
+            <strong>Total Students:</strong> <span id="totalStudentsCount">0</span>
           </span>
           <span class="stat-item">
-            <strong>Total Violations:</strong> 18
+            <strong>Total Violations:</strong> <span id="totalViolationsFooter">0</span>
           </span>
           <span class="stat-item">
-            <strong>Avg per Student:</strong> 3.6
+            <strong>Avg per Student:</strong> <span id="avgViolations">0</span>
           </span>
         </div>
         <div class="pagination-info">
-          Showing <span id="showingReportsCount">5</span> of <span id="totalReportsCount">158</span> records
+          Showing <span id="showingReportsCount">0</span> of <span id="totalReportsCount">0</span> records
         </div>
       </div>
       <div class="Reports-pagination">
@@ -860,6 +632,7 @@ require_once __DIR__ . '/../../core/View.php';
 
 </main>
 
+<script src="<?= View::asset('js/reports.js') ?>"></script>
 </body>
 </html>
 

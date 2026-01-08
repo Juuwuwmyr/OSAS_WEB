@@ -31,9 +31,6 @@ switch ($action) {
     case 'restore':
         $controller->restore();
         break;
-    case 'import':
-        $controller->import();
-        break;
     default:
         // Default to dropdown for backward compatibility
         if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($action)) {

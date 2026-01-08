@@ -15,10 +15,7 @@ body.dark {
 /*         BASE STYLES FOR PAGE             */
 /* ========================================= */
 #announcements-page {
-  padding-top: 75px;
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-bottom: 24px;
+  padding: 24px;
   min-height: calc(100vh - 56px);
   font-family: var(--poppins);
   background: var(--grey);

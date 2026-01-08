@@ -144,14 +144,34 @@ function logout() {
     if (confirm('Are you sure you want to logout?')) {
         console.log('👋 User logging out...');
 
-        // Clear all session data
+        // Clear all client-side storage
         localStorage.removeItem('userSession');
+        sessionStorage.removeItem('userSession');
 
-        // Optional: Clear other temporary data
-        // localStorage.removeItem('tempData');
+        // Delete all authentication cookies on client side
+        document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'student_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'student_id_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 
-        // Redirect to login page
-        window.location.href = '../index.php';
+        // Determine correct logout path based on current location
+        let logoutPath;
+        const currentPath = window.location.pathname;
+        
+        if (currentPath.includes('/app/entry/')) {
+          // From app/entry/dashboard.php -> ../app/views/auth/logout.php
+          logoutPath = '../app/views/auth/logout.php';
+        } else if (currentPath.includes('/includes/')) {
+          // From includes/dashboard.php -> ../app/views/auth/logout.php
+          logoutPath = '../app/views/auth/logout.php';
+        } else {
+          // Default fallback
+          logoutPath = 'app/views/auth/logout.php';
+        }
+        
+        console.log('Redirecting to logout:', logoutPath);
+        window.location.href = logoutPath;
     }
 }
 

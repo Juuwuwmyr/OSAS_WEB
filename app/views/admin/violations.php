@@ -9,10 +9,6 @@ require_once __DIR__ . '/../../core/View.php';
   <title>Violations | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
-  <!-- Export Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   
@@ -576,97 +572,6 @@ require_once __DIR__ . '/../../core/View.php';
       <h3>Violation History</h3>
       <div class="student-violations-timeline" id="studentViolationsTimeline">
         <!-- Violation timeline will be populated dynamically -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Export Format Modal -->
-  <div id="exportModal" class="modal">
-    <div class="modal-overlay" id="exportModalOverlay"></div>
-    <div class="modal-container export-modal-container">
-      <div class="modal-header">
-        <h2>Export Violations</h2>
-        <button class="close-btn" id="closeExportModal">
-          <i class='bx bx-x'></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="export-description">Select the format you want to export:</p>
-        <div class="export-form-group">
-          <label for="exportFormat" class="export-label">
-            <i class='bx bx-file-blank'></i>
-            Export Format
-          </label>
-          <select id="exportFormat" class="export-select">
-            <option value="">-- Select Format --</option>
-            <option value="pdf">PDF Document (.pdf)</option>
-            <option value="excel">Excel Spreadsheet (.xlsx)</option>
-            <option value="word">Word Document (.doc)</option>
-            <option value="csv">CSV File (.csv)</option>
-            <option value="json">JSON File (.json)</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn-outline" id="cancelExportModal">Cancel</button>
-        <button type="button" class="btn-primary" id="confirmExportBtn">
-          <i class='bx bx-download'></i>
-          Export
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Import Modal -->
-  <div id="importModal" class="modal">
-    <div class="modal-overlay" id="importModalOverlay"></div>
-    <div class="modal-container import-modal-container">
-      <div class="modal-header">
-        <h2>Import Violations</h2>
-        <button class="close-btn" id="closeImportModal">
-          <i class='bx bx-x'></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="export-description">Upload a file to import violations. Supported formats: CSV, Excel (.xlsx)</p>
-        
-        <div class="import-form-group">
-          <label for="importFile" class="export-label">
-            <i class='bx bx-upload'></i>
-            Select File
-          </label>
-          <div class="file-upload-wrapper">
-            <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="file-input">
-            <label for="importFile" class="file-upload-label">
-              <i class='bx bx-cloud-upload'></i>
-              <span class="file-upload-text">Choose file or drag and drop</span>
-              <span class="file-upload-hint">CSV, XLSX up to 10MB</span>
-            </label>
-            <div id="selectedFileName" class="selected-file-name" style="display: none;"></div>
-          </div>
-        </div>
-
-        <div class="import-info-box">
-          <h4><i class='bx bx-info-circle'></i> File Format Requirements:</h4>
-          <ul>
-            <li>Required columns: <strong>Student ID</strong>, <strong>Violation Type</strong>, <strong>Date</strong></li>
-            <li>Optional columns: <strong>Description</strong>, <strong>Status</strong>, <strong>Severity</strong>, <strong>Location</strong></li>
-            <li>First row should contain column headers</li>
-            <li>Status values: <strong>warning</strong>, <strong>resolved</strong>, or <strong>pending</strong> (default: warning)</li>
-          </ul>
-        </div>
-
-        <div id="importPreview" class="import-preview" style="display: none;">
-          <h4>Preview (First 5 rows):</h4>
-          <div id="previewTable" class="preview-table"></div>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn-outline" id="cancelImportModal">Cancel</button>
-        <button type="button" class="btn-primary" id="confirmImportBtn" disabled>
-          <i class='bx bx-upload'></i>
-          Import Violations
-        </button>
       </div>
     </div>
   </div>

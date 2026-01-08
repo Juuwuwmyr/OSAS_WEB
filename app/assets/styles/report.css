@@ -897,9 +897,9 @@ body.dark {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   background: var(--light);
   z-index: 1;
-  flex-shrink: 0;
 }
 
 .Reports-modal-header h2 {
@@ -943,9 +943,9 @@ body.dark {
 #ReportsGenerateForm {
   padding: 32px;
   overflow-y: auto;
-  overflow-x: hidden;
   flex: 1;
-  max-height: calc(90vh - 120px);
+  min-height: 0;
+  /* Custom scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: var(--gold) transparent;
 }
@@ -956,17 +956,17 @@ body.dark {
 
 #ReportsGenerateForm::-webkit-scrollbar-track {
   background: transparent;
-  margin: 8px 0;
+  border-radius: 10px;
 }
 
 #ReportsGenerateForm::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  background: var(--gold);
+  border-radius: 10px;
+  border: 2px solid var(--light);
 }
 
 #ReportsGenerateForm::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.5);
+  background: #ffb347;
 }
 
 .Reports-form-row {
@@ -1107,6 +1107,7 @@ input[type="checkbox"]:checked + .toggle-label::after {
   margin-top: 32px;
   padding-top: 24px;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .Reports-btn-outline,
@@ -1155,9 +1156,9 @@ input[type="checkbox"]:checked + .toggle-label::after {
 .report-details-content {
   padding: 0 32px 32px;
   overflow-y: auto;
-  overflow-x: hidden;
   flex: 1;
-  max-height: calc(90vh - 120px);
+  min-height: 0;
+  /* Custom scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: var(--gold) transparent;
 }
@@ -1168,17 +1169,17 @@ input[type="checkbox"]:checked + .toggle-label::after {
 
 .report-details-content::-webkit-scrollbar-track {
   background: transparent;
-  margin: 8px 0;
+  border-radius: 10px;
 }
 
 .report-details-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  background: var(--gold);
+  border-radius: 10px;
+  border: 2px solid var(--light);
 }
 
 .report-details-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.5);
+  background: #ffb347;
 }
 
 .report-header {
@@ -1420,6 +1421,7 @@ input[type="checkbox"]:checked + .toggle-label::after {
 
 /* Report Details Actions */
 .report-details-actions {
+  flex-shrink: 0;
   display: flex;
   gap: 12px;
   padding-top: 24px;

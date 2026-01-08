@@ -44,91 +44,41 @@ function initReportsModule() {
             return;
         }
 
-        // ========== DATA & CONFIG ==========
+        // ========== API CONFIG ==========
         
-        // Demo data for reports (aggregated from violations)
-        let reports = [
-            { 
-                id: 1,
-                reportId: 'R001',
-                studentId: '2024-001',
-                studentName: 'John Doe',
-                studentImage: 'https://ui-avatars.com/api/?name=John+Doe&background=ff6b6b&color=fff&size=80',
-                studentContact: '09171234567',
-                department: 'BS Information System',
-                deptCode: 'BSIS',
-                section: 'BSIS-1',
-                uniformCount: 3,
-                footwearCount: 2,
-                noIdCount: 1,
-                totalViolations: 6,
-                status: 'disciplinary',
-                statusLabel: 'Disciplinary Action',
-                lastUpdated: '2024-03-15',
-                history: [
-                    { date: 'Mar 15, 2024', title: 'Improper Uniform - Warning 3', desc: 'Third offense for improper uniform' },
-                    { date: 'Mar 1, 2024', title: 'Improper Footwear - Warning 2', desc: 'Second offense for improper footwear' },
-                    { date: 'Feb 15, 2024', title: 'No ID - Warning 1', desc: 'First offense for not wearing ID' }
-                ],
-                recommendations: [
-                    'Schedule counseling session with student',
-                    'Notify parents about disciplinary status',
-                    'Monitor student for next 30 days'
-                ]
-            },
-            { 
-                id: 2,
-                reportId: 'R002',
-                studentId: '2024-002',
-                studentName: 'Maria Santos',
-                studentImage: 'https://ui-avatars.com/api/?name=Maria+Santos&background=1dd1a1&color=fff&size=80',
-                studentContact: '09179876543',
-                department: 'Welding & Fabrication Tech',
-                deptCode: 'WFT',
-                section: 'WFT-2',
-                uniformCount: 2,
-                footwearCount: 1,
-                noIdCount: 1,
-                totalViolations: 4,
-                status: 'permitted',
-                statusLabel: 'Permitted',
-                lastUpdated: '2024-03-10',
-                history: [
-                    { date: 'Mar 10, 2024', title: 'Improper Uniform - Warning 1', desc: 'First offense for improper uniform' },
-                    { date: 'Feb 28, 2024', title: 'Improper Footwear - Permitted 2', desc: 'Second offense for improper footwear' }
-                ],
-                recommendations: [
-                    'Issue written warning',
-                    'Monitor uniform compliance'
-                ]
-            },
-            { 
-                id: 3,
-                reportId: 'R003',
-                studentId: '2024-003',
-                studentName: 'Pedro Reyes',
-                studentImage: 'https://ui-avatars.com/api/?name=Pedro+Reyes&background=54a0ff&color=fff&size=80',
-                studentContact: '09171239876',
-                department: 'BTVTED',
-                deptCode: 'BTVTED',
-                section: 'BTVTED-3',
-                uniformCount: 1,
-                footwearCount: 0,
-                noIdCount: 2,
-                totalViolations: 3,
-                status: 'permitted',
-                statusLabel: 'Permitted',
-                lastUpdated: '2024-03-05',
-                history: [
-                    { date: 'Mar 5, 2024', title: 'No ID - Warning 2', desc: 'Second offense for not wearing ID' },
-                    { date: 'Feb 20, 2024', title: 'Improper Uniform - Permitted 1', desc: 'First offense for improper uniform' }
-                ],
-                recommendations: [
-                    'Remind student to always wear ID',
-                    'Monitor ID compliance for 2 weeks'
-                ]
+        // Detect the correct API path based on current page location
+        function getAPIBasePath() {
+            const currentPath = window.location.pathname;
+            console.log('📍 Current path:', currentPath);
+            
+            // Try to extract the base project path from the URL
+            const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+            const projectBase = pathMatch ? pathMatch[1] : '';
+            console.log('📁 Project base:', projectBase);
+            
+            // Use absolute path from project root for reliability
+            if (projectBase) {
+                return projectBase + '/api/';
             }
-        ];
+            
+            // Fallback to relative paths
+            if (currentPath.includes('/app/views/')) {
+                return '../../api/';
+            } else if (currentPath.includes('/includes/')) {
+                return '../api/';
+            } else {
+                return 'api/';
+            }
+        }
+        
+        const API_BASE = getAPIBasePath();
+        console.log('🔗 Reports API Base Path:', API_BASE);
+        
+        // ========== DATA ==========
+        
+        // Reports data loaded from API
+        let reports = [];
+        let allReports = []; // Store all reports for client-side filtering
 
         // ========== HELPER FUNCTIONS ==========
         
@@ -158,23 +108,186 @@ function initReportsModule() {
             return 'none';
         }
 
-        function calculateStats() {
-            const totalViolations = reports.reduce((sum, report) => sum + report.totalViolations, 0);
-            const uniformViolations = reports.reduce((sum, report) => sum + report.uniformCount, 0);
-            const footwearViolations = reports.reduce((sum, report) => sum + report.footwearCount, 0);
-            const noIdViolations = reports.reduce((sum, report) => sum + report.noIdCount, 0);
+        function calculateStats(statsData = null) {
+            // Use provided stats or calculate from current reports
+            let totalViolations, uniformViolations, footwearViolations, noIdViolations, totalStudents;
+            
+            if (statsData) {
+                totalViolations = statsData.totalViolations || 0;
+                uniformViolations = statsData.uniformViolations || 0;
+                footwearViolations = statsData.footwearViolations || 0;
+                noIdViolations = statsData.noIdViolations || 0;
+                totalStudents = statsData.totalStudents || reports.length;
+            } else {
+                totalViolations = reports.reduce((sum, report) => sum + report.totalViolations, 0);
+                uniformViolations = reports.reduce((sum, report) => sum + report.uniformCount, 0);
+                footwearViolations = reports.reduce((sum, report) => sum + report.footwearCount, 0);
+                noIdViolations = reports.reduce((sum, report) => sum + report.noIdCount, 0);
+                totalStudents = reports.length;
+            }
             
             // Update stats cards
-            document.getElementById('totalViolationsCount').textContent = totalViolations;
-            document.getElementById('uniformViolations').textContent = uniformViolations;
-            document.getElementById('footwearViolations').textContent = footwearViolations;
-            document.getElementById('noIdViolations').textContent = noIdViolations;
+            const totalViolationsEl = document.getElementById('totalViolationsCount');
+            const uniformViolationsEl = document.getElementById('uniformViolations');
+            const footwearViolationsEl = document.getElementById('footwearViolations');
+            const noIdViolationsEl = document.getElementById('noIdViolations');
+            
+            if (totalViolationsEl) totalViolationsEl.textContent = totalViolations;
+            if (uniformViolationsEl) uniformViolationsEl.textContent = uniformViolations;
+            if (footwearViolationsEl) footwearViolationsEl.textContent = footwearViolations;
+            if (noIdViolationsEl) noIdViolationsEl.textContent = noIdViolations;
+            
+            // Calculate and update percentages
+            const uniformPercentageEl = document.getElementById('uniformPercentage');
+            const footwearPercentageEl = document.getElementById('footwearPercentage');
+            const noIdPercentageEl = document.getElementById('noIdPercentage');
+            
+            if (uniformPercentageEl) {
+                const percentage = totalViolations > 0 ? ((uniformViolations / totalViolations) * 100).toFixed(0) : 0;
+                uniformPercentageEl.textContent = percentage + '%';
+            }
+            if (footwearPercentageEl) {
+                const percentage = totalViolations > 0 ? ((footwearViolations / totalViolations) * 100).toFixed(0) : 0;
+                footwearPercentageEl.textContent = percentage + '%';
+            }
+            if (noIdPercentageEl) {
+                const percentage = totalViolations > 0 ? ((noIdViolations / totalViolations) * 100).toFixed(0) : 0;
+                noIdPercentageEl.textContent = percentage + '%';
+            }
             
             // Update footer stats
-            document.getElementById('totalStudentsCount').textContent = reports.length;
-            document.getElementById('totalViolationsFooter').textContent = totalViolations;
-            document.getElementById('avgViolations').textContent = reports.length > 0 ? (totalViolations / reports.length).toFixed(1) : '0';
-            document.getElementById('totalReportsCount').textContent = reports.length;
+            const totalStudentsEl = document.getElementById('totalStudentsCount');
+            const totalViolationsFooterEl = document.getElementById('totalViolationsFooter');
+            const avgViolationsEl = document.getElementById('avgViolations');
+            const totalReportsCountEl = document.getElementById('totalReportsCount');
+            
+            if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
+            if (totalViolationsFooterEl) totalViolationsFooterEl.textContent = totalViolations;
+            if (avgViolationsEl) avgViolationsEl.textContent = totalStudents > 0 ? (totalViolations / totalStudents).toFixed(1) : '0';
+            if (totalReportsCountEl) totalReportsCountEl.textContent = totalStudents;
+        }
+        
+        // ========== API FUNCTIONS ==========
+        
+        async function loadReports(showLoading = true) {
+            try {
+                if (showLoading) {
+                    if (tableBody) {
+                        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">Loading reports...</td></tr>';
+                    }
+                }
+                
+                console.log('🔄 Loading reports from API...');
+                
+                // Build query parameters
+                const params = new URLSearchParams();
+                const deptValue = deptFilter ? deptFilter.value : 'all';
+                const sectionValue = sectionFilter ? sectionFilter.value : 'all';
+                const statusValue = statusFilter ? statusFilter.value : 'all';
+                const timeValue = timeFilter ? timeFilter.value : 'all';
+                const searchValue = searchInput ? searchInput.value.trim() : '';
+                
+                if (deptValue !== 'all') params.append('department', deptValue);
+                if (sectionValue !== 'all') params.append('section', sectionValue);
+                if (statusValue !== 'all') params.append('status', statusValue);
+                if (searchValue) params.append('search', searchValue);
+                
+                // Handle time period
+                if (timeValue && timeValue !== 'all' && timeValue !== 'custom') {
+                    params.append('timePeriod', timeValue);
+                } else if (timeValue === 'custom') {
+                    const startDate = document.getElementById('ReportsStart')?.value;
+                    const endDate = document.getElementById('ReportsEnd')?.value;
+                    if (startDate) params.append('startDate', startDate);
+                    if (endDate) params.append('endDate', endDate);
+                }
+                
+                const queryString = params.toString();
+                const url = API_BASE + 'reports.php' + (queryString ? '?' + queryString : '');
+                
+                console.log('📡 Fetching from:', url);
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                console.log('📊 API Response:', data);
+                
+                if (data.status === 'error') {
+                    console.error('❌ API Error:', data.message);
+                    throw new Error(data.message || 'API returned error status');
+                }
+                
+                // Store all reports
+                allReports = data.reports || data.data || [];
+                reports = [...allReports]; // Copy for filtering
+                
+                console.log(`✅ Loaded ${reports.length} reports from database`);
+                
+                if (reports.length === 0) {
+                    console.warn('⚠️ No reports found. This could mean:');
+                    console.warn('  1. No violations exist in the database');
+                    console.warn('  2. Filters are too restrictive');
+                    console.warn('  3. No students have violations');
+                    console.warn('  4. student_id mismatch between violations and students tables');
+                    console.warn('💡 Try: Clear all filters and check if violations exist in the Violations page');
+                    
+                    // Show helpful message in table
+                    if (tableBody) {
+                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px;">
+                            <div style="font-size: 1.2em; color: #666; margin-bottom: 10px;">
+                                <i class='bx bx-info-circle' style="font-size: 2em; color: #4a90e2;"></i>
+                            </div>
+                            <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px; color: #333;">
+                                No Reports Found
+                            </div>
+                            <div style="color: #666; line-height: 1.6;">
+                                <p>There are no violation reports to display. This could mean:</p>
+                                <ul style="text-align: left; display: inline-block; margin: 10px 0;">
+                                    <li>No violations have been recorded in the database</li>
+                                    <li>The current filters are too restrictive</li>
+                                    <li>No students have violations matching the criteria</li>
+                                </ul>
+                                <p style="margin-top: 15px;">
+                                    <strong>Tip:</strong> Go to the <strong>Violations</strong> page to add violations, 
+                                    or try clearing your filters.
+                                </p>
+                            </div>
+                        </td></tr>`;
+                    }
+                }
+                
+                // Update stats if provided
+                if (data.stats) {
+                    calculateStats(data.stats);
+                } else {
+                    calculateStats();
+                }
+                
+                // Apply client-side filtering and sorting
+                renderReports();
+                
+            } catch (error) {
+                console.error('❌ Error loading reports:', error);
+                console.error('Error details:', error.stack);
+                if (tableBody) {
+                    tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #e74c3c;">
+                        <div style="margin-bottom: 10px;">❌ Error loading reports: ${error.message}</div>
+                        <div style="font-size: 0.9em; color: #666;">Check browser console for details</div>
+                    </td></tr>`;
+                }
+                // Set empty stats
+                calculateStats({
+                    totalViolations: 0,
+                    uniformViolations: 0,
+                    footwearViolations: 0,
+                    noIdViolations: 0,
+                    totalStudents: 0
+                });
+            }
         }
 
         // ========== RENDER FUNCTIONS ==========
@@ -182,21 +295,20 @@ function initReportsModule() {
         function renderReports() {
             if (!tableBody) return;
             
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-            const deptValue = deptFilter ? deptFilter.value : 'all';
-            const sectionValue = sectionFilter ? sectionFilter.value : 'all';
-            const statusValue = statusFilter ? statusFilter.value : 'all';
+            // Client-side filtering for search and sort (department, section, status are handled by API)
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const sortValue = sortByFilter ? sortByFilter.value : 'total_desc';
             
-            let filteredReports = reports.filter(report => {
-                const matchesSearch = report.studentName.toLowerCase().includes(searchTerm) || 
-                                    report.reportId.toLowerCase().includes(searchTerm) ||
-                                    report.studentId.toLowerCase().includes(searchTerm);
-                const matchesDept = deptValue === 'all' || report.deptCode === deptValue;
-                const matchesSection = sectionValue === 'all' || report.section === sectionValue;
-                const matchesStatus = statusValue === 'all' || report.status === statusValue;
-                return matchesSearch && matchesDept && matchesSection && matchesStatus;
-            });
+            let filteredReports = reports;
+            
+            // Apply search filter (client-side)
+            if (searchTerm) {
+                filteredReports = filteredReports.filter(report => {
+                    return report.studentName.toLowerCase().includes(searchTerm) || 
+                           report.reportId.toLowerCase().includes(searchTerm) ||
+                           report.studentId.toLowerCase().includes(searchTerm);
+                });
+            }
 
             // Sort reports
             filteredReports.sort((a, b) => {
@@ -221,7 +333,19 @@ function initReportsModule() {
             // Show/hide empty state
             const emptyState = document.getElementById('ReportsEmptyState');
             if (emptyState) {
-                emptyState.style.display = filteredReports.length === 0 ? 'flex' : 'none';
+                if (filteredReports.length === 0 && reports.length === 0) {
+                    emptyState.style.display = 'flex';
+                } else if (filteredReports.length === 0 && reports.length > 0) {
+                    emptyState.style.display = 'none';
+                    // Show message in table instead
+                    if (tableBody && tableBody.innerHTML.trim() === '') {
+                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #666;">
+                            No reports match the current filters. Try adjusting your search or filter criteria.
+                        </td></tr>`;
+                    }
+                } else {
+                    emptyState.style.display = 'none';
+                }
             }
 
             tableBody.innerHTML = filteredReports.map(report => {
@@ -312,54 +436,138 @@ function initReportsModule() {
             if (!detailsModal) return;
             
             const report = reports.find(r => r.id === reportId);
-            if (!report) return;
+            if (!report) {
+                console.error('Report not found:', reportId);
+                return;
+            }
             
-            // Populate details
-            document.getElementById('detailReportTitle').textContent = `Violation Report - ${report.studentName}`;
-            document.getElementById('detailReportId').textContent = report.reportId;
-            document.getElementById('detailReportDate').textContent = new Date().toLocaleDateString('en-US', { 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            // Populate report header
+            const reportHeader = detailsModal.querySelector('.report-header h3');
+            if (reportHeader) {
+                reportHeader.textContent = `Student Violation Analysis Report - ${report.studentName}`;
+            }
             
-            document.getElementById('detailStudentName').textContent = report.studentName;
-            document.getElementById('detailStudentId').textContent = report.studentId;
-            document.getElementById('detailStudentDept').textContent = report.department;
-            document.getElementById('detailStudentSection').textContent = report.section;
-            document.getElementById('detailStudentContact').textContent = report.studentContact;
-            document.getElementById('detailReportPeriod').textContent = `Jan 1, 2024 - ${new Date(report.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            const reportIdEl = detailsModal.querySelector('.report-id');
+            if (reportIdEl) {
+                reportIdEl.textContent = `Report ID: ${report.reportId}`;
+            }
             
-            document.getElementById('detailUniformCount').textContent = report.uniformCount;
-            document.getElementById('detailFootwearCount').textContent = report.footwearCount;
-            document.getElementById('detailNoIdCount').textContent = report.noIdCount;
-            document.getElementById('detailTotalCount').textContent = report.totalViolations;
+            const reportDateEl = detailsModal.querySelector('.report-date');
+            if (reportDateEl) {
+                reportDateEl.textContent = `Generated: ${new Date().toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`;
+            }
             
-            // Populate timeline
-            const timelineEl = document.getElementById('detailTimeline');
-            if (timelineEl) {
-                timelineEl.innerHTML = report.history.map(item => `
-                    <div class="timeline-item">
-                        <div class="timeline-date">${item.date}</div>
-                        <div class="timeline-content">
-                            <span class="timeline-title">${item.title}</span>
-                            <span class="timeline-desc">${item.desc}</span>
+            // Populate student info
+            const studentInfoGrid = detailsModal.querySelector('.student-info-grid');
+            if (studentInfoGrid) {
+                studentInfoGrid.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Student Name:</span>
+                        <span class="info-value">${report.studentName}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Student ID:</span>
+                        <span class="info-value">${report.studentId}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Department:</span>
+                        <span class="info-value">${report.department}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Section:</span>
+                        <span class="info-value">${report.section}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Contact No:</span>
+                        <span class="info-value">${report.studentContact}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Report Period:</span>
+                        <span class="info-value">${report.lastUpdated ? new Date(report.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
+                    </div>
+                `;
+            }
+            
+            // Populate violation statistics
+            const statsGrid = detailsModal.querySelector('.stats-grid');
+            if (statsGrid) {
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class='bx bx-t-shirt'></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-title">Uniform Violations</span>
+                            <span class="stat-value">${report.uniformCount}</span>
                         </div>
                     </div>
-                `).join('');
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class='bx bx-walk'></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-title">Footwear Violations</span>
+                            <span class="stat-value">${report.footwearCount}</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class='bx bx-id-card'></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-title">No ID Violations</span>
+                            <span class="stat-value">${report.noIdCount}</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class='bx bx-bar-chart-alt'></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-title">Total Violations</span>
+                            <span class="stat-value">${report.totalViolations}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Populate timeline
+            const timelineEl = detailsModal.querySelector('.timeline');
+            if (timelineEl) {
+                if (report.history && report.history.length > 0) {
+                    timelineEl.innerHTML = report.history.map(item => `
+                        <div class="timeline-item">
+                            <div class="timeline-date">${item.date}</div>
+                            <div class="timeline-content">
+                                <span class="timeline-title">${item.title}</span>
+                                <span class="timeline-desc">${item.desc}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    timelineEl.innerHTML = '<div class="timeline-item"><div class="timeline-content">No violation history available</div></div>';
+                }
             }
             
             // Populate recommendations
-            const recommendationsEl = document.getElementById('detailRecommendations');
+            const recommendationsEl = detailsModal.querySelector('.recommendations-list');
             if (recommendationsEl) {
-                recommendationsEl.innerHTML = report.recommendations.map(rec => `
-                    <div class="recommendation-item">
-                        <i class='bx bx-check-circle'></i>
-                        <span>${rec}</span>
-                    </div>
-                `).join('');
+                if (report.recommendations && report.recommendations.length > 0) {
+                    recommendationsEl.innerHTML = report.recommendations.map(rec => `
+                        <div class="recommendation-item">
+                            <i class='bx bx-check-circle'></i>
+                            <span>${rec}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    recommendationsEl.innerHTML = '<div class="recommendation-item"><span>No recommendations at this time</span></div>';
+                }
             }
             
             detailsModal.dataset.viewingId = reportId;
@@ -451,8 +659,7 @@ function initReportsModule() {
         // 5. REFRESH REPORTS
         if (btnRefreshReports) {
             btnRefreshReports.addEventListener('click', function() {
-                renderReports();
-                alert('Reports refreshed!');
+                loadReports(true);
             });
         }
 
@@ -499,24 +706,30 @@ function initReportsModule() {
 
         // 10. FILTER FUNCTIONALITY
         if (deptFilter) {
-            deptFilter.addEventListener('change', renderReports);
+            deptFilter.addEventListener('change', function() {
+                loadReports(true);
+            });
         }
 
         if (sectionFilter) {
-            sectionFilter.addEventListener('change', renderReports);
+            sectionFilter.addEventListener('change', function() {
+                loadReports(true);
+            });
         }
 
         if (statusFilter) {
-            statusFilter.addEventListener('change', renderReports);
+            statusFilter.addEventListener('change', function() {
+                loadReports(true);
+            });
         }
 
         if (timeFilter) {
             timeFilter.addEventListener('change', function() {
                 if (this.value === 'custom') {
-                    dateRangeGroup.style.display = 'block';
+                    if (dateRangeGroup) dateRangeGroup.style.display = 'block';
                 } else {
-                    dateRangeGroup.style.display = 'none';
-                    renderReports();
+                    if (dateRangeGroup) dateRangeGroup.style.display = 'none';
+                    loadReports(true);
                 }
             });
         }
@@ -527,7 +740,9 @@ function initReportsModule() {
 
         // 11. APPLY FILTERS BUTTON
         if (applyFiltersBtn) {
-            applyFiltersBtn.addEventListener('click', renderReports);
+            applyFiltersBtn.addEventListener('click', function() {
+                loadReports(true);
+            });
         }
 
         // 12. CLEAR FILTERS BUTTON
@@ -540,7 +755,7 @@ function initReportsModule() {
                 if (sortByFilter) sortByFilter.value = 'total_desc';
                 if (dateRangeGroup) dateRangeGroup.style.display = 'none';
                 if (searchInput) searchInput.value = '';
-                renderReports();
+                loadReports(true);
             });
         }
 
@@ -550,13 +765,13 @@ function initReportsModule() {
                 if (deptFilter) deptFilter.value = 'all';
                 if (sectionFilter) sectionFilter.value = 'all';
                 if (statusFilter) statusFilter.value = 'all';
-                renderReports();
+                loadReports(true);
             });
         }
 
         // 14. FORM SUBMISSION
         if (generateForm) {
-            generateForm.addEventListener('submit', function(e) {
+            generateForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const reportName = document.getElementById('reportName').value.trim();
@@ -570,14 +785,28 @@ function initReportsModule() {
                     return;
                 }
 
-                alert(`Report generation started: ${reportName}\nType: ${reportType}\nFormat: ${reportFormat}\nPeriod: ${startDate} to ${endDate}`);
-                closeGenerateModal();
-                
-                // Simulate report generation
-                setTimeout(() => {
-                    alert('Report generation completed! The report has been added to the list.');
-                    // In a real app, this would add a new report to the list
-                }, 2000);
+                try {
+                    // Generate reports from violations
+                    const params = new URLSearchParams();
+                    params.append('generate', 'true');
+                    if (startDate) params.append('startDate', startDate);
+                    if (endDate) params.append('endDate', endDate);
+                    
+                    const response = await fetch(API_BASE + 'reports.php?' + params.toString());
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        alert(`Reports generated successfully!\nGenerated: ${data.generated}\nUpdated: ${data.updated}\nTotal: ${data.total}`);
+                        closeGenerateModal();
+                        // Reload reports
+                        loadReports(true);
+                    } else {
+                        alert('Error generating reports: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error generating reports:', error);
+                    alert('Error generating reports: ' + error.message);
+                }
             });
         }
 
@@ -820,8 +1049,66 @@ function initReportsModule() {
             printWindow.print();
         }
 
-        // ========== INITIAL RENDER ==========
-        renderReports();
+        // ========== LOAD DEPARTMENTS AND SECTIONS ==========
+        
+        async function loadDepartments() {
+            try {
+                const response = await fetch(API_BASE + 'departments.php');
+                const data = await response.json();
+                
+                if (data.status === 'success' && deptFilter) {
+                    // Clear existing options except "All"
+                    const allOption = deptFilter.querySelector('option[value="all"]');
+                    deptFilter.innerHTML = '';
+                    if (allOption) {
+                        deptFilter.appendChild(allOption);
+                    }
+                    
+                    // Add departments
+                    data.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.department_code || dept.code || dept.id;
+                        option.textContent = dept.department_name || dept.name || dept.department_code || dept.code;
+                        deptFilter.appendChild(option);
+                    });
+                    console.log(`✅ Loaded ${data.data.length} departments`);
+                }
+            } catch (error) {
+                console.error('❌ Error loading departments:', error);
+            }
+        }
+        
+        async function loadSections() {
+            try {
+                const response = await fetch(API_BASE + 'sections.php');
+                const data = await response.json();
+                
+                if (data.status === 'success' && sectionFilter) {
+                    // Clear existing options except "All"
+                    const allOption = sectionFilter.querySelector('option[value="all"]');
+                    sectionFilter.innerHTML = '';
+                    if (allOption) {
+                        sectionFilter.appendChild(allOption);
+                    }
+                    
+                    // Add sections
+                    data.data.forEach(section => {
+                        const option = document.createElement('option');
+                        option.value = section.section_code || section.code || section.id;
+                        option.textContent = section.section_code || section.code || section.section_name || section.name;
+                        sectionFilter.appendChild(option);
+                    });
+                    console.log(`✅ Loaded ${data.data.length} sections`);
+                }
+            } catch (error) {
+                console.error('❌ Error loading sections:', error);
+            }
+        }
+        
+        // ========== INITIAL LOAD ==========
+        loadDepartments();
+        loadSections();
+        loadReports(true);
         console.log('✅ Reports module initialized successfully!');
         
     } catch (error) {

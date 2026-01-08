@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * User Violations Page
  * Connects to database to show user's violations
@@ -156,19 +157,130 @@ function updateViolationStats() {
 function updateViolationTable() {
     const tbody = document.querySelector('.violation-history tbody');
     if (!tbody) return;
+=======
+/*********************************************************
+ * CONFIG
+ *********************************************************/
+const API_BASE = '/OSAS_WEB/api/';
+
+
+let studentId = null;
+let userViolations = [];
+
+/*********************************************************
+ * INIT
+ *********************************************************/
+document.addEventListener('DOMContentLoaded', initUserViolations);
+
+async function initUserViolations() {
+    const tbody = document.getElementById('violationsTableBody');
+
+    studentId = getStudentId();
+
+    if (!studentId) {
+        tbody.innerHTML = errorRow('Student ID not found. Please login again.');
+        return;
+    }
+
+    await loadUserViolations();
+}
+
+/*********************************************************
+ * HELPERS
+ *********************************************************/
+function getStudentId() {
+    // Priority: PHP-injected variable
+    if (window.STUDENT_ID) return window.STUDENT_ID;
+
+    // Cookie fallback
+    const cookies = Object.fromEntries(
+        document.cookie.split(';').map(c => c.trim().split('='))
+    );
+
+    return cookies.student_id || cookies.student_id_code || null;
+}
+
+function errorRow(message) {
+    return `
+        <tr>
+            <td colspan="5" style="text-align:center; padding:40px; color:#ef4444;">
+                ${message}
+            </td>
+        </tr>
+    `;
+}
+
+/*********************************************************
+ * LOAD VIOLATIONS
+ *********************************************************/
+async function loadUserViolations() {
+    const tbody = document.getElementById('violationsTableBody');
+
+    try {
+        const res = await fetch(`${API_BASE}violations.php?student_id=${studentId}`)
+
+        const json = await res.json();
+
+        if (json.status !== 'success') {
+            throw new Error(json.message || 'Failed to load violations');
+        }
+
+        userViolations = json.data || [];
+
+        updateViolationStats();
+        renderViolationTable();
+
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = errorRow(err.message);
+    }
+}
+
+/*********************************************************
+ * STATS
+ *********************************************************/
+function updateViolationStats() {
+    const total = userViolations.length;
+
+    const countByType = (type) =>
+        userViolations.filter(v =>
+            (v.violation_type || '').toLowerCase().includes(type)
+        ).length;
+
+    const boxes = document.querySelectorAll('.box-info li h3');
+    if (!boxes.length) return;
+
+    boxes[0].textContent = countByType('uniform');
+    boxes[1].textContent = countByType('footwear');
+    boxes[2].textContent = countByType('id');
+    boxes[3].textContent = total;
+}
+
+/*********************************************************
+ * TABLE
+ *********************************************************/
+function renderViolationTable() {
+    const tbody = document.getElementById('violationsTableBody');
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
 
     if (userViolations.length === 0) {
         tbody.innerHTML = `
             <tr>
+<<<<<<< HEAD
                 <td colspan="5" style="text-align: center; padding: 40px;">
                     <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
                     <p>No violations found</p>
+=======
+                <td colspan="5" style="text-align:center; padding:40px;">
+                    No violations found
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
                 </td>
             </tr>
         `;
         return;
     }
 
+<<<<<<< HEAD
     // Sort by date (newest first)
     const sorted = [...userViolations].sort((a, b) => {
         const dateA = new Date(a.date || a.created_at || a.violation_date);
@@ -204,12 +316,29 @@ function updateViolationTable() {
                 <td><span class="status ${statusClass}">${statusText}</span></td>
                 <td>
                     <button class="btn-view-details" onclick="viewViolationDetails(${v.id || v.violation_id})">View Details</button>
+=======
+    tbody.innerHTML = userViolations.map(v => {
+        const status = (v.status || 'pending').toLowerCase();
+        const statusClass = status === 'resolved' ? 'resolved' : 'pending';
+
+        return `
+            <tr class="violation-row" data-status="${statusClass}">
+                <td>${formatDate(v.created_at || v.violation_date)}</td>
+                <td>${escapeHtml(v.violation_type)}</td>
+                <td>${escapeHtml(v.notes || v.description || '-')}</td>
+                <td><span class="status ${statusClass}">${status}</span></td>
+                <td>
+                    <button onclick="viewViolationDetails(${v.id})">
+                        View
+                    </button>
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
                 </td>
             </tr>
         `;
     }).join('');
 }
 
+<<<<<<< HEAD
 // Filter violations
 function filterViolations() {
     const typeFilter = document.getElementById('violationFilter')?.value || 'all';
@@ -268,6 +397,53 @@ function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+=======
+/*********************************************************
+ * FILTERS
+ *********************************************************/
+function filterViolations() {
+    const type = document.getElementById('violationFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    document.querySelectorAll('.violation-row').forEach(row => {
+        const matchesType = type === 'all' || row.innerHTML.includes(type);
+        const matchesStatus = status === 'all' || row.dataset.status === status;
+        row.style.display = matchesType && matchesStatus ? '' : 'none';
+    });
+}
+
+/*********************************************************
+ * MODAL
+ *********************************************************/
+function viewViolationDetails(id) {
+    const v = userViolations.find(x => x.id == id);
+    if (!v) return;
+
+    document.getElementById('modalDate').textContent =
+        formatDate(v.created_at || v.violation_date);
+
+    document.getElementById('modalType').textContent = v.violation_type;
+    document.getElementById('modalDescription').textContent =
+        v.notes || v.description || '-';
+
+    document.getElementById('modalStatus').textContent = v.status;
+    document.getElementById('modalReportedBy').textContent =
+        v.reported_by || 'N/A';
+
+    document.getElementById('violationModal').style.display = 'block';
+}
+
+function closeViolationModal() {
+    document.getElementById('violationModal').style.display = 'none';
+}
+
+/*********************************************************
+ * UTILS
+ *********************************************************/
+function formatDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString();
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
 }
 
 function escapeHtml(text) {
@@ -276,6 +452,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+<<<<<<< HEAD
 // Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('violationModal');
@@ -289,3 +466,11 @@ window.filterViolations = filterViolations;
 window.viewViolationDetails = viewViolationDetails;
 window.closeViolationModal = closeViolationModal;
 
+=======
+/*********************************************************
+ * EXPORTS
+ *********************************************************/
+window.filterViolations = filterViolations;
+window.viewViolationDetails = viewViolationDetails;
+window.closeViolationModal = closeViolationModal;
+>>>>>>> dbac73674c57c74e9b697c55aa52db7eae288df6
