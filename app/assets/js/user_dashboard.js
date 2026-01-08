@@ -125,10 +125,37 @@ function updateUserInfo(session) {
 // ===============================
 function logout() {
   if (confirm('Are you sure you want to logout?')) {
+    console.log('👋 Logging out...');
+    
+    // Clear all client-side storage first
     localStorage.removeItem('userSession');
     sessionStorage.removeItem('userSession');
+    
+    // Delete all authentication cookies on client side
+    deleteCookie('user_id');
+    deleteCookie('username');
+    deleteCookie('role');
+    deleteCookie('student_id');
+    deleteCookie('student_id_code');
     deleteCookie('userSession');
-    window.location.href = '../index.php';
+    
+    // Determine correct logout path based on current location
+    let logoutPath;
+    const currentPath = window.location.pathname;
+    
+    if (currentPath.includes('/app/entry/')) {
+      // From app/entry/user_dashboard.php -> ../app/views/auth/logout.php
+      logoutPath = '../app/views/auth/logout.php';
+    } else if (currentPath.includes('/includes/')) {
+      // From includes/user_dashboard.php -> ../app/views/auth/logout.php
+      logoutPath = '../app/views/auth/logout.php';
+    } else {
+      // Default fallback
+      logoutPath = 'app/views/auth/logout.php';
+    }
+    
+    console.log('Redirecting to logout:', logoutPath);
+    window.location.href = logoutPath;
   }
 }
 
@@ -143,7 +170,10 @@ function getCookie(name) {
 }
 
 function deleteCookie(name) {
-  document.cookie = name + '=; Max-Age=0; path=/';
+  // Delete cookie with multiple path options to ensure it's removed
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/OSAS_WEB/;';
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/OSAS_WEB/app/entry/;';
 }
 
 // ===============================
@@ -318,21 +348,72 @@ function loadContent(page) {
           // Initialize modules after scripts are loaded
           if (page.toLowerCase().includes('user_dashcontent')) {
             setTimeout(() => {
+              console.log('🔄 Initializing dashboard page...');
               if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
               if (typeof initializeAnnouncements === 'function') initializeAnnouncements();
+              
+              // Load dashboard data
+              const loadData = () => {
+                if (typeof window.userDashboardData !== 'undefined' && window.userDashboardData) {
+                  console.log('🔄 Loading user dashboard data...');
+                  window.userDashboardData.loadAllData().catch(error => {
+                    console.error('❌ Error loading dashboard data:', error);
+                  });
+                } else if (typeof userDashboardData !== 'undefined' && userDashboardData) {
+                  console.log('🔄 Loading user dashboard data (fallback)...');
+                  userDashboardData.loadAllData().catch(error => {
+                    console.error('❌ Error loading dashboard data:', error);
+                  });
+                } else {
+                  console.warn('⚠️ userDashboardData not available, retrying in 500ms...');
+                  setTimeout(loadData, 500);
+                }
+              };
+              
+              loadData();
             }, 100);
           }
 
-          if (page.toLowerCase().includes('my_violations') && typeof initViolationsModule === 'function') {
-            initViolationsModule();
+          if (page.toLowerCase().includes('my_violations')) {
+            setTimeout(() => {
+              if (typeof window.initUserViolations === 'function') {
+                window.initUserViolations();
+              } else if (typeof window.initializeUserViolations === 'function') {
+                window.initializeUserViolations();
+              } else if (typeof initViolationsModule === 'function') {
+                initViolationsModule();
+              } else {
+                console.warn('⚠️ User violations init function not found');
+              }
+            }, 300);
           }
 
-          if (page.toLowerCase().includes('my_profile') && typeof initProfileModule === 'function') {
-            initProfileModule();
+          if (page.toLowerCase().includes('my_profile')) {
+            setTimeout(() => {
+              if (typeof window.initUserProfile === 'function') {
+                window.initUserProfile();
+              } else if (typeof window.initializeUserProfile === 'function') {
+                window.initializeUserProfile();
+              } else if (typeof initProfileModule === 'function') {
+                initProfileModule();
+              } else {
+                console.warn('⚠️ User profile init function not found');
+              }
+            }, 300);
           }
 
-          if (page.toLowerCase().includes('announcements') && typeof initAnnouncementsModule === 'function') {
-            initAnnouncementsModule();
+          if (page.toLowerCase().includes('announcements') && !page.toLowerCase().includes('user_dashcontent')) {
+            setTimeout(() => {
+              if (typeof window.initAnnouncementsModule === 'function') {
+                window.initAnnouncementsModule();
+              } else if (typeof window.initializeUserAnnouncements === 'function') {
+                window.initializeUserAnnouncements();
+              } else if (typeof initAnnouncementsModule === 'function') {
+                initAnnouncementsModule();
+              } else {
+                console.warn('⚠️ User announcements init function not found');
+              }
+            }, 300);
           }
         };
         

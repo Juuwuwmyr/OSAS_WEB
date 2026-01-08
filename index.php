@@ -1,8 +1,6 @@
 <?php
 // Check if user is already logged in
 session_start();
-
-// Check cookies first (more reliable than session)
 if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     // Restore session from cookies
     $_SESSION['user_id'] = $_COOKIE['user_id'];

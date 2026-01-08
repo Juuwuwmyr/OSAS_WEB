@@ -6,28 +6,24 @@
 // API Base Path Detection
 function getUserAPIBasePath() {
     const currentPath = window.location.pathname;
-    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-    const projectBase = pathMatch ? pathMatch[1] : '';
+    const pathParts = currentPath.split('/').filter(p => p);
     
-    // Try to detect from current URL
+    // Find project root (typically the first directory in the path)
+    // For paths like /OSAS_WEB/app/entry/user_dashboard.php
+    // Project root is OSAS_WEB, so API is at /OSAS_WEB/api/
+    if (pathParts.length > 0) {
+        const projectRoot = pathParts[0];
+        return '/' + projectRoot + '/api/';
+    }
+    
+    // Fallback to relative path
     if (currentPath.includes('/includes/') || currentPath.includes('/app/entry/')) {
         return '../api/';
     } else if (currentPath.includes('/app/views/')) {
         return '../../api/';
-    } else if (projectBase) {
-        return projectBase + '/api/';
-    } else {
-        // Default fallback - try to detect from window location
-        const host = window.location.host;
-        const path = window.location.pathname;
-        const pathParts = path.split('/').filter(p => p);
-        
-        if (pathParts.length > 0) {
-            return '/' + pathParts[0] + '/api/';
-        }
-        
-        return 'api/';
     }
+    
+    return '/api/';
 }
 
 const USER_API_BASE = getUserAPIBasePath();
