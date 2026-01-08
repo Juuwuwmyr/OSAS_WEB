@@ -41,7 +41,7 @@
 
 
  body.dark-mode {
-     background-color: #2D2D2D;
+     background-color: #0F0F0F;
      background-image: none;
      color: #FFFFFF;
      animation: none;
@@ -80,10 +80,10 @@
  }
 
  .dark-mode .login-card {
-     background-color: #3A3A3A;
-     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+     background-color: #1A1A1A;
+     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
      backdrop-filter: none;
-     border: 1px solid rgba(255, 255, 255, 0.15);
+     border: 1px solid rgba(255, 255, 255, 0.1);
  }
 
  .gold-border {
@@ -177,8 +177,8 @@
  }
 
  .dark-mode .form-group input {
-     background-color: #4A4A4A;
-     border-color: #5A5A5A;
+     background-color: #2A2A2A;
+     border-color: #2A2A2A;
      color: #FFFFFF;
  }
 
@@ -253,15 +253,15 @@
      width: 16px;
      height: 16px;
      background-color: #FFFFFF;
-     border: 1px solid #E0E0E0;
+     border: 1px solid #D8D8D5;
      border-radius: 3px;
      margin-right: 8px;
      position: relative;
  }
 
  .dark-mode .checkmark {
-     background-color: #4A4A4A;
-     border-color: #5A5A5A;
+     background-color: #2A2A2A;
+     border-color: #2A2A2A;
  }
 
  .remember-me input:checked~.checkmark {
@@ -359,7 +359,7 @@
  }
 
  .dark-mode .divider-line {
-     background-color: #5A5A5A;
+     background-color: #2A2A2A;
  }
 
  .divider-text {
@@ -395,8 +395,8 @@
  }
 
  .dark-mode .social-button {
-     background-color: #4A4A4A;
-     border-color: #5A5A5A;
+     background-color: #2A2A2A;
+     border-color: #2A2A2A;
      color: #FFFFFF;
  }
  
@@ -405,7 +405,7 @@
  }
  
  .dark-mode .social-button:hover {
-     background-color: #5A5A5A;
+     background-color: #2A2A2A;
  }
 
  .social-button i {

@@ -8,7 +8,7 @@
 
 body.dark {
   /* Keep your existing variables */
-  --border: #5A5A5A; /* Lighter border for dark mode */
+  --border: #2A2A2A; /* Darkest border for dark mode */
 }
 
 /* ========================================= */
@@ -325,12 +325,27 @@ body.dark {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Fix dropdown overflow */
+.filter-group select {
+  max-width: 100%;
+  overflow: visible;
+}
+
+.filter-group select option {
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .filter-group label {
@@ -347,6 +362,10 @@ body.dark {
   color: var(--dark);
   font-size: 14px;
   cursor: pointer;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
   transition: all 0.3s ease;
 }
 
@@ -354,6 +373,32 @@ body.dark {
   border-color: var(--gold);
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+  z-index: 10;
+}
+
+/* Fix dropdown overflow - ensure select dropdowns don't get clipped */
+.Reports-filter-select {
+  z-index: 1;
+}
+
+.Reports-filter-select:focus {
+  z-index: 100;
+  position: relative;
+}
+
+.filter-group {
+  position: relative;
+}
+
+.filter-group:has(select:focus) {
+  z-index: 100;
+}
+
+/* Ensure dropdown options are visible */
+.Reports-filter-select option {
+  padding: 8px 12px;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .date-range-group {

@@ -321,8 +321,8 @@ class Chatbot {
             <div class="chatbot-messages" id="chatbot-messages">
                 <div class="chatbot-message bot welcome-message">
                     <div class="message-content">
-                        <i class="bx bx-bot"></i>
-                        <div>
+                        <i class="bx bx-bot" aria-hidden="true"></i>
+                        <div class="message-text">
                             <p style="margin-bottom: 12px; font-weight: 600;">Hello! I'm your OSAS assistant. 👋</p>
                             <p style="margin-bottom: 8px;">I can help you with:</p>
                             <ul style="margin: 0; padding-left: 20px; font-size: 13px; opacity: 0.9;">

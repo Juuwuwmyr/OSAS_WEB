@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../core/View.php';
 ?>
 <!-- SIDEBAR -->
 <section id="sidebar">
+  <i class='bx bx-menu sidebar-menu-toggle'></i>
   <a href="#" class="brand">
     <img src="<?= View::asset('img/default.png') ?>" alt="Crown Icon"
       style="width: 38px; height: 38px; vertical-align: middle; margin-right: 24px; margin-left: 10px;">

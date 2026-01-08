@@ -53,9 +53,9 @@ function updateThemeColor() {
   const msThemeColorMeta = document.querySelector('meta[name="msapplication-TileColor"]');
   const appleStatusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   
-  // Primary theme colors - lighter dark mode
-  const themeColor = window.darkMode ? '#2D2D2D' : '#ffffff';
-  const secondaryColor = window.darkMode ? '#3A3A3A' : '#ffffff';
+  // Primary theme colors - darkest dark mode
+  const themeColor = window.darkMode ? '#0F0F0F' : '#ffffff';
+  const secondaryColor = window.darkMode ? '#1A1A1A' : '#ffffff';
   
   // Update or create standard theme-color meta tag
   if (themeColorMeta) {
@@ -120,13 +120,13 @@ function updateCSSVariables() {
   const root = document.documentElement;
   
   if (window.darkMode) {
-    // Lighter dark mode colors - less black, more comfortable
-    root.style.setProperty('--primary-bg', '#2D2D2D');
-    root.style.setProperty('--secondary-bg', '#3A3A3A');
+    // Darkest dark mode - very dark but not pure black
+    root.style.setProperty('--primary-bg', '#0F0F0F');
+    root.style.setProperty('--secondary-bg', '#1A1A1A');
     root.style.setProperty('--text-primary', '#FFFFFF');
-    root.style.setProperty('--text-secondary', '#D0D0D0');
+    root.style.setProperty('--text-secondary', '#B8B8B8');
     root.style.setProperty('--accent-color', '#FFD700');
-    root.style.setProperty('--border-color', '#4A4A4A');
+    root.style.setProperty('--border-color', '#2A2A2A');
   } else {
     // Warmer, softer light mode - less harsh white
     root.style.setProperty('--primary-bg', '#F0F0ED');

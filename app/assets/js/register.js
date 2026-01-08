@@ -45,14 +45,14 @@ class ThemeManager {
         const root = document.documentElement;
         
         if (this.darkMode) {
-            root.style.setProperty('--bg-primary', '#2D2D2D');
-            root.style.setProperty('--bg-secondary', '#3A3A3A');
+            root.style.setProperty('--bg-primary', '#0F0F0F');
+            root.style.setProperty('--bg-secondary', '#1A1A1A');
             root.style.setProperty('--text-primary', '#ffffff');
-            root.style.setProperty('--text-secondary', '#D0D0D0');
+            root.style.setProperty('--text-secondary', '#B8B8B8');
             root.style.setProperty('--accent-color', '#4a6cf7');
-            root.style.setProperty('--border-color', '#5A5A5A');
-            root.style.setProperty('--card-bg', '#3A3A3A');
-            root.style.setProperty('--shadow', '0 2px 10px rgba(0, 0, 0, 0.3)');
+            root.style.setProperty('--border-color', '#2A2A2A');
+            root.style.setProperty('--card-bg', '#1A1A1A');
+            root.style.setProperty('--shadow', '0 2px 10px rgba(0, 0, 0, 0.5)');
         } else {
             // Warmer, softer light mode
             root.style.setProperty('--bg-primary', '#F0F0ED');
@@ -86,7 +86,7 @@ class ThemeManager {
             metaThemeColor.name = 'theme-color';
             document.head.appendChild(metaThemeColor);
         }
-        metaThemeColor.content = this.darkMode ? '#2D2D2D' : '#ffffff';
+        metaThemeColor.content = this.darkMode ? '#0F0F0F' : '#ffffff';
     }
 
     checkSavedTheme() {
