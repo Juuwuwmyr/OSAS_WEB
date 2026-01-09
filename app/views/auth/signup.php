@@ -67,9 +67,36 @@
 
                 <div class="form-group full-width">
                     <label for="email">Email Address</label>
-                    <input id="email" type="email" placeholder="Enter your email address" required
-                        oninput="clearError('email')">
+                    <div class="email-verification-wrapper">
+                        <input id="email" type="email" placeholder="Enter your email address" required
+                            oninput="clearError('email'); handleEmailInput()">
+                        <button type="button" id="sendOtpBtn" class="send-otp-btn" onclick="sendOTP()" disabled>
+                            <span id="sendOtpText">Send OTP</span>
+                        </button>
+                    </div>
                     <span class="error-message" id="email-error"></span>
+                    <span class="success-message" id="email-success"></span>
+                </div>
+
+                <!-- OTP Verification Section (hidden by default) -->
+                <div class="form-group full-width" id="otpSection" style="display: none;">
+                    <label for="otp">Verification Code</label>
+                    <div class="otp-input-wrapper">
+                        <input id="otp" type="text" placeholder="Enter 6-digit OTP code" maxlength="6"
+                            oninput="clearError('otp'); handleOtpInput()">
+                        <button type="button" id="verifyOtpBtn" class="verify-otp-btn" onclick="verifyOTP()" disabled>
+                            <span id="verifyOtpText">Verify</span>
+                        </button>
+                    </div>
+                    <span class="error-message" id="otp-error"></span>
+                    <span class="success-message" id="otp-success"></span>
+                    <div class="otp-info">
+                        <span id="otpTimer" class="otp-timer"></span>
+                        <button type="button" id="resendOtpBtn" class="resend-otp-btn" onclick="sendOTP(true)" style="display: none;">
+                            Resend OTP
+                        </button>
+                    </div>
+                    <input type="hidden" id="emailVerified" value="0">
                 </div>
 
                 <div class="form-group full-width">

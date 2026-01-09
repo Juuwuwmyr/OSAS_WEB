@@ -144,6 +144,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
     
+    // Check if email is verified via OTP
+    $otp_verified = false;
+    $check_otp = $conn->prepare("SELECT * FROM email_otps WHERE email = ? AND verified = 1 ORDER BY created_at DESC LIMIT 1");
+    if ($check_otp && $check_otp->bind_param("s", $email)) {
+        $check_otp->execute();
+        if (method_exists($check_otp, 'get_result')) {
+            $otp_result = $check_otp->get_result();
+            $otp_verified = $otp_result->num_rows > 0;
+        } else {
+            $check_otp->store_result();
+            $otp_verified = $check_otp->num_rows > 0;
+        }
+        $check_otp->close();
+    }
+    
+    if (!$otp_verified) {
+        ob_end_clean();
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Please verify your email address with the OTP code before registering.']);
+        exit;
+    }
+    
     // Check database connection
     if (!isset($conn)) {
         ob_end_clean();

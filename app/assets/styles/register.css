@@ -232,6 +232,18 @@
             color: #FF6B6B;
         }
 
+        .success-message {
+            color: #4caf50;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+            min-height: 18px;
+        }
+
+        .dark-mode .success-message {
+            color: #66bb6a;
+        }
+
         /* Password input */
         .password-input-wrapper {
             position: relative;
@@ -954,4 +966,139 @@
                 left: 20px;
                 max-width: none;
             }
+        }
+
+        /* Email Verification Styles */
+        .email-verification-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .email-verification-wrapper input {
+            flex: 1;
+        }
+
+        .send-otp-btn, .verify-otp-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #D4AF37, #B8860B);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 100px;
+            height: 42px;
+        }
+
+        .send-otp-btn:hover:not(:disabled), .verify-otp-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #B8860B, #966F0F);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .send-otp-btn:disabled, .verify-otp-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .dark-mode .send-otp-btn:disabled, .dark-mode .verify-otp-btn:disabled {
+            background: #444444;
+            color: #888888;
+        }
+
+        /* OTP Section Styles */
+        #otpSection {
+            background: rgba(212, 175, 55, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            margin-top: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dark-mode #otpSection {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        .otp-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .otp-input-wrapper input {
+            flex: 1;
+            text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            font-weight: 600;
+        }
+
+        .otp-input-wrapper input:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .dark-mode .otp-input-wrapper input:disabled {
+            background: #333333;
+            color: #888888;
+        }
+
+        .otp-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .otp-timer {
+            color: #666666;
+            font-weight: 500;
+        }
+
+        .dark-mode .otp-timer {
+            color: #aaaaaa;
+        }
+
+        .resend-otp-btn {
+            background: none;
+            border: none;
+            color: #D4AF37;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .resend-otp-btn:hover {
+            color: #B8860B;
+        }
+
+        .dark-mode .resend-otp-btn {
+            color: #FFD700;
+        }
+
+        .dark-mode .resend-otp-btn:hover {
+            color: #D4AF37;
         }

@@ -321,6 +321,21 @@ function handleSignup(event) {
         hasErrors = true;
     }
 
+    // Check if email is verified
+    const emailVerified = document.getElementById('emailVerified');
+    if (!emailVerified || emailVerified.value !== '1') {
+        document.getElementById("email-error").textContent = "Please verify your email address with the OTP code.";
+        showNotification('error', 'Email Not Verified', 'Please verify your email address before proceeding.');
+        hasErrors = true;
+        // Scroll to email field
+        document.getElementById('email').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Show OTP section if hidden
+        const otpSection = document.getElementById('otpSection');
+        if (otpSection && otpSection.style.display === 'none') {
+            otpSection.style.display = 'block';
+        }
+    }
+
     // Required field validation (matching your PHP validation)
     if (!firstName) {
         document.getElementById("firstName-error").textContent = "First name is required.";
@@ -493,6 +508,359 @@ function handleSignup(event) {
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+}
+
+// Handle email input
+function handleEmailInput() {
+    const email = document.getElementById('email').value.trim();
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const emailVerified = document.getElementById('emailVerified');
+    
+    // Reset email verification status
+    if (emailVerified) {
+        emailVerified.value = '0';
+    }
+    
+    // Hide OTP section if email changes
+    const otpSection = document.getElementById('otpSection');
+    if (otpSection) {
+        otpSection.style.display = 'none';
+    }
+    
+    // Clear OTP fields
+    if (document.getElementById('otp')) {
+        document.getElementById('otp').value = '';
+    }
+    
+    // Enable/disable send OTP button based on email validity
+    if (sendOtpBtn) {
+        if (isValidEmail(email)) {
+            sendOtpBtn.disabled = false;
+        } else {
+            sendOtpBtn.disabled = true;
+        }
+    }
+    
+    // Clear success/error messages
+    const emailSuccess = document.getElementById('email-success');
+    const emailError = document.getElementById('email-error');
+    if (emailSuccess) emailSuccess.textContent = '';
+    if (emailError) emailError.textContent = '';
+}
+
+// Handle OTP input
+function handleOtpInput() {
+    const otp = document.getElementById('otp').value.trim();
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    
+    if (verifyOtpBtn) {
+        if (otp.length === 6) {
+            verifyOtpBtn.disabled = false;
+        } else {
+            verifyOtpBtn.disabled = true;
+        }
+    }
+}
+
+// Send OTP to email
+function sendOTP(resend = false) {
+    const email = document.getElementById('email').value.trim();
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const sendOtpText = document.getElementById('sendOtpText');
+    const emailError = document.getElementById('email-error');
+    const emailSuccess = document.getElementById('email-success');
+    const otpSection = document.getElementById('otpSection');
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    
+    // Validate email
+    if (!isValidEmail(email)) {
+        if (emailError) {
+            emailError.textContent = 'Please enter a valid email address.';
+        }
+        return;
+    }
+    
+    // Disable button and show loading
+    if (sendOtpBtn) {
+        sendOtpBtn.disabled = true;
+        if (sendOtpText) {
+            sendOtpText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        }
+    }
+    
+    // Clear previous messages
+    if (emailError) emailError.textContent = '';
+    if (emailSuccess) emailSuccess.textContent = '';
+    
+    // Determine API path
+    function getApiPath(endpoint) {
+        const currentPath = window.location.pathname;
+        const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+        const projectBase = pathMatch ? pathMatch[1] : '';
+        
+        if (projectBase) {
+            return projectBase + '/api/' + endpoint;
+        }
+        
+        if (currentPath.includes('/includes/') || currentPath.includes('/app/views/')) {
+            return '../api/' + endpoint;
+        } else {
+            return 'api/' + endpoint;
+        }
+    }
+    
+    const apiPath = getApiPath('send_otp.php');
+    
+    // Send OTP request
+    fetch(apiPath, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            email: email
+        })
+    })
+    .then(async response => {
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            throw new Error('Invalid response from server.');
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to send OTP');
+        }
+        
+        return data;
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            // Show success message
+            if (emailSuccess) {
+                emailSuccess.textContent = data.message;
+            }
+            
+            // Show OTP section
+            if (otpSection) {
+                otpSection.style.display = 'block';
+                const otpInput = document.getElementById('otp');
+                if (otpInput) {
+                    otpInput.focus();
+                }
+            }
+            
+            // Start OTP timer (10 minutes)
+            startOtpTimer(600);
+            
+            // For development: log OTP (remove in production)
+            if (data.otp) {
+                console.log('OTP (development only):', data.otp);
+                showNotification('info', 'OTP Sent', 'Check your email. OTP: ' + data.otp + ' (shown only for development)');
+            } else {
+                showNotification('success', 'OTP Sent', 'Please check your email for the verification code.');
+            }
+        } else {
+            throw new Error(data.message || 'Failed to send OTP');
+        }
+    })
+    .catch(error => {
+        if (emailError) {
+            emailError.textContent = error.message || 'Failed to send OTP. Please try again.';
+        }
+        showNotification('error', 'OTP Failed', error.message || 'Failed to send OTP. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable button
+        if (sendOtpBtn) {
+            sendOtpBtn.disabled = false;
+            if (sendOtpText) {
+                sendOtpText.textContent = resend ? 'Resend OTP' : 'Send OTP';
+            }
+        }
+        
+        // Hide resend button initially
+        if (resendOtpBtn) {
+            resendOtpBtn.style.display = 'none';
+        }
+    });
+}
+
+// Verify OTP
+function verifyOTP() {
+    const email = document.getElementById('email').value.trim();
+    const otp = document.getElementById('otp').value.trim();
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    const verifyOtpText = document.getElementById('verifyOtpText');
+    const otpError = document.getElementById('otp-error');
+    const otpSuccess = document.getElementById('otp-success');
+    const emailVerified = document.getElementById('emailVerified');
+    
+    // Validate OTP length
+    if (otp.length !== 6) {
+        if (otpError) {
+            otpError.textContent = 'Please enter a valid 6-digit OTP code.';
+        }
+        return;
+    }
+    
+    // Disable button and show loading
+    if (verifyOtpBtn) {
+        verifyOtpBtn.disabled = true;
+        if (verifyOtpText) {
+            verifyOtpText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+        }
+    }
+    
+    // Clear previous messages
+    if (otpError) otpError.textContent = '';
+    if (otpSuccess) otpSuccess.textContent = '';
+    
+    // Determine API path
+    function getApiPath(endpoint) {
+        const currentPath = window.location.pathname;
+        const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+        const projectBase = pathMatch ? pathMatch[1] : '';
+        
+        if (projectBase) {
+            return projectBase + '/api/' + endpoint;
+        }
+        
+        if (currentPath.includes('/includes/') || currentPath.includes('/app/views/')) {
+            return '../api/' + endpoint;
+        } else {
+            return 'api/' + endpoint;
+        }
+    }
+    
+    const apiPath = getApiPath('verify_otp.php');
+    
+    // Verify OTP request
+    fetch(apiPath, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            email: email,
+            otp: otp
+        })
+    })
+    .then(async response => {
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            throw new Error('Invalid response from server.');
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'OTP verification failed');
+        }
+        
+        return data;
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            // Mark email as verified
+            if (emailVerified) {
+                emailVerified.value = '1';
+            }
+            
+            // Show success message
+            if (otpSuccess) {
+                otpSuccess.textContent = data.message || 'Email verified successfully!';
+            }
+            
+            // Update email field to show it's verified
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.style.borderColor = '#4caf50';
+            }
+            
+            // Disable OTP inputs
+            const otpInput = document.getElementById('otp');
+            if (otpInput) {
+                otpInput.disabled = true;
+            }
+            if (verifyOtpBtn) {
+                verifyOtpBtn.disabled = true;
+                if (verifyOtpText) {
+                    verifyOtpText.innerHTML = '<i class="fas fa-check"></i> Verified';
+                }
+            }
+            
+            // Stop timer
+            stopOtpTimer();
+            
+            showNotification('success', 'Email Verified', 'Your email has been verified successfully!');
+        } else {
+            throw new Error(data.message || 'OTP verification failed');
+        }
+    })
+    .catch(error => {
+        if (otpError) {
+            otpError.textContent = error.message || 'Invalid OTP. Please try again.';
+        }
+        showNotification('error', 'Verification Failed', error.message || 'Invalid OTP. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable button if verification failed
+        if (verifyOtpBtn && emailVerified && emailVerified.value !== '1') {
+            verifyOtpBtn.disabled = false;
+            if (verifyOtpText) {
+                verifyOtpText.textContent = 'Verify';
+            }
+        }
+    });
+}
+
+// OTP Timer functions
+let otpTimerInterval = null;
+
+function startOtpTimer(seconds) {
+    stopOtpTimer(); // Clear any existing timer
+    
+    const otpTimer = document.getElementById('otpTimer');
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    
+    if (!otpTimer) return;
+    
+    let remaining = seconds;
+    
+    function updateTimer() {
+        const minutes = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        otpTimer.textContent = `OTP expires in ${minutes}:${secs.toString().padStart(2, '0')}`;
+        
+        if (remaining <= 0) {
+            stopOtpTimer();
+            if (otpTimer) {
+                otpTimer.textContent = 'OTP has expired.';
+                otpTimer.style.color = '#f44336';
+            }
+            if (resendOtpBtn) {
+                resendOtpBtn.style.display = 'inline-block';
+            }
+        } else {
+            remaining--;
+        }
+    }
+    
+    updateTimer(); // Initial update
+    otpTimerInterval = setInterval(updateTimer, 1000);
+}
+
+function stopOtpTimer() {
+    if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+    }
 }
 
 // Initialize theme when DOM is loaded
