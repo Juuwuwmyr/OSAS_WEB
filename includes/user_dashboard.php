@@ -33,8 +33,50 @@ switch ($_SESSION['role']) {
 // STUDENT ID HANDLING
 // --------------------
 
-// Get student ID from session (preferred) or fallback to GET parameter
-$student_id = $_SESSION['user_id'] ?? $_GET['student_id'] ?? null;
+// Get student ID code from session (preferred) or fallback to cookies/GET parameter
+// student_id_code is the actual student ID string (e.g., "2023-001")
+// student_id is the database ID, but we need the code for filtering
+$student_id = $_SESSION['student_id_code'] 
+           ?? $_COOKIE['student_id_code'] 
+           ?? $_SESSION['student_id'] 
+           ?? $_COOKIE['student_id'] 
+           ?? $_GET['student_id'] 
+           ?? null;
+
+// If we got it from cookie, update session for future use
+if ($student_id && !isset($_SESSION['student_id_code']) && isset($_COOKIE['student_id_code'])) {
+    $_SESSION['student_id_code'] = $_COOKIE['student_id_code'];
+    if (isset($_COOKIE['student_id'])) {
+        $_SESSION['student_id'] = $_COOKIE['student_id'];
+    }
+}
+
+// If still null and user is logged in, try to fetch from database
+if (!$student_id && isset($_SESSION['user_id']) && $_SESSION['role'] === 'user') {
+    require_once __DIR__ . '/../app/core/Model.php';
+    require_once __DIR__ . '/../app/models/UserModel.php';
+    
+    try {
+        $userModel = new UserModel();
+        
+        // Get student_id directly from users table (it's stored there!)
+        $user = $userModel->getById($_SESSION['user_id']);
+        
+        if ($user && !empty($user['student_id'])) {
+            $student_id = $user['student_id']; // Use the actual student_id string (e.g., "2023-0195")
+            // Update session and cookie for future use
+            $_SESSION['student_id_code'] = $student_id;
+            
+            $expiryTime = time() + (isset($_COOKIE['user_id']) ? 30*24*60*60 : 6*60*60);
+            setcookie("student_id_code", $student_id, $expiryTime, "/", "", false, false);
+        } else {
+            error_log("Student ID not found in users table for user_id: " . $_SESSION['user_id']);
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching student_id from database: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+    }
+}
 
 // If still null, redirect to login or show error
 if (!$student_id) {

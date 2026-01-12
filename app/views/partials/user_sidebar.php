@@ -27,6 +27,18 @@ $role = $_SESSION['role'] ?? 'user';
     </div>
   </div>
 
+  <!-- Profile Section -->
+  <div class="sidebar-profile-section" id="sidebarProfileSection">
+    <div class="sidebar-profile-image-wrapper">
+      <img src="<?= View::asset('img/default.png') ?>" alt="Profile" class="sidebar-profile-image" id="sidebarProfileImage">
+      <div class="profile-status-indicator"></div>
+    </div>
+    <div class="sidebar-profile-info">
+      <p class="sidebar-username" id="sidebarUsername"><?= htmlspecialchars($username) ?></p>
+      <span class="sidebar-role-badge">Student</span>
+    </div>
+  </div>
+
   <ul class="side-menu top">
     <li class="active">
       <a href="#" data-page="user-page/user_dashcontent">

@@ -17,6 +17,37 @@ class StudentController extends Controller {
     }
 
     public function index() {
+        // Check if student_id parameter is provided for single student lookup
+        $studentId = trim($this->getGet('student_id', ''));
+        
+        if (!empty($studentId)) {
+            // Get single student by student_id
+            try {
+                error_log("StudentController::index - Looking for student_id: " . $studentId);
+                $student = $this->model->getByStudentId($studentId);
+                if ($student) {
+                    error_log("StudentController::index - Student found: " . json_encode($student));
+                    $this->success('Student retrieved successfully', $student);
+                } else {
+                    error_log("StudentController::index - Student not found for student_id: " . $studentId);
+                    // Try to see if student exists but is archived
+                    $allStudents = $this->model->query("SELECT student_id, status FROM students WHERE student_id = ?", [$studentId]);
+                    if (!empty($allStudents)) {
+                        error_log("StudentController::index - Student exists but status is: " . $allStudents[0]['status']);
+                        $this->error('Student not found or is archived');
+                    } else {
+                        $this->error('Student not found');
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("StudentController::index - Exception: " . $e->getMessage());
+                error_log("StudentController::index - Stack trace: " . $e->getTraceAsString());
+                $this->error('Failed to retrieve student: ' . $e->getMessage());
+            }
+            return;
+        }
+        
+        // Otherwise, get all students
         $filter = $this->getGet('filter', 'all');
         $search = $this->getGet('search', '');
         

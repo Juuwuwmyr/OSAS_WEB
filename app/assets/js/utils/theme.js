@@ -11,9 +11,11 @@ function initializeTheme() {
   
   updateTheme();
   
-  // Sync the switch mode checkbox
-  if (window.switchMode) {
-    window.switchMode.checked = window.darkMode;
+  // Sync the switch mode checkbox - try multiple ways to find it
+  const switchMode = window.switchMode || document.getElementById('switch-mode');
+  if (switchMode) {
+    switchMode.checked = window.darkMode;
+    window.switchMode = switchMode; // Store globally
   }
   
   // Initialize PWA theme colors immediately
@@ -144,6 +146,12 @@ function toggleTheme() {
   updateTheme();
   localStorage.setItem('theme', window.darkMode ? 'dark' : 'light');
   console.log('🔁 Theme toggled to:', window.darkMode ? 'dark' : 'light');
+  
+  // Sync switch mode checkbox
+  const switchMode = window.switchMode || document.getElementById('switch-mode');
+  if (switchMode) {
+    switchMode.checked = window.darkMode;
+  }
   
   // Force PWA theme update
   updateThemeColor();

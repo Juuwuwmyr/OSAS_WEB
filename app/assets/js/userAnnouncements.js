@@ -34,14 +34,41 @@ let readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || 
 
 // Initialize function
 function initializeUserAnnouncements() {
+    console.log('🔄 Initializing announcements module...');
+    
+    // Make sure we're on the announcements page
+    const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+    if (!container) {
+        console.warn('⚠️ Announcements container not found, not on announcements page');
+        return;
+    }
+    
+    // Check if announcements are already rendered from PHP
+    const existingCards = container.querySelectorAll('.announcement-card');
+    if (existingCards.length > 0) {
+        console.log('✅ Announcements already rendered from PHP, parsing existing data...');
+        // Parse existing announcements from DOM
+        parseExistingAnnouncements();
+        // Setup filter listeners but don't reload
+        setupFilterListeners();
+        return;
+    }
+    
+    // If no existing announcements, load from API
     loadAnnouncements();
     
     // Setup filter listeners
     setTimeout(() => {
         const categoryFilter = document.getElementById('categoryFilter');
         const statusFilter = document.getElementById('statusFilter');
-        if (categoryFilter) categoryFilter.addEventListener('change', filterAnnouncements);
-        if (statusFilter) statusFilter.addEventListener('change', filterAnnouncements);
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterAnnouncements);
+            console.log('✅ Category filter listener added');
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterAnnouncements);
+            console.log('✅ Status filter listener added');
+        }
     }, 200);
 }
 
@@ -54,14 +81,17 @@ function initializeAnnouncementsModule() {
     
     if (announcementsPage) {
         // Page elements exist, initialize immediately
-        setTimeout(initializeUserAnnouncements, 100);
+        console.log('✅ Announcements page detected, initializing...');
+        initializeUserAnnouncements();
     } else if (document.readyState === 'loading') {
         // Wait for DOM
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initializeUserAnnouncements, 100);
+            console.log('✅ DOM loaded, initializing announcements...');
+            initializeUserAnnouncements();
         });
     } else {
         // DOM ready but page not loaded yet, try again later
+        console.log('⚠️ Announcements page not found, retrying...');
         setTimeout(initializeAnnouncementsModule, 500);
     }
 }
@@ -69,8 +99,15 @@ function initializeAnnouncementsModule() {
 window.initAnnouncementsModule = initializeUserAnnouncements;
 window.initializeUserAnnouncements = initializeUserAnnouncements;
 
+// Initialize when script loads
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(initializeAnnouncementsModule, 100);
+    console.log('🔄 Script loaded, checking for announcements page...');
+    initializeAnnouncementsModule();
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🔄 DOMContentLoaded, checking for announcements page...');
+        initializeAnnouncementsModule();
+    });
 }
 
 async function loadAnnouncements() {
@@ -108,8 +145,17 @@ async function loadAnnouncements() {
             throw new Error(data.message || 'Failed to load announcements');
         }
 
+        // Handle both data and announcements keys
         announcements = data.data || data.announcements || [];
         console.log(`✅ Loaded ${announcements.length} announcements`);
+        console.log('Announcements data:', announcements);
+        
+        // Make sure we have an array
+        if (!Array.isArray(announcements)) {
+            console.warn('⚠️ Announcements is not an array:', announcements);
+            announcements = [];
+        }
+        
         renderAnnouncements();
     } catch (error) {
         console.error('❌ Error loading announcements:', error);
@@ -134,7 +180,7 @@ function renderAnnouncements() {
         return;
     }
 
-    if (announcements.length === 0) {
+    if (!Array.isArray(announcements) || announcements.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px;">
                 <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
@@ -144,49 +190,115 @@ function renderAnnouncements() {
         return;
     }
 
-    container.innerHTML = announcements.map(announcement => {
-        const type = announcement.type || 'info';
-        const typeClass = type === 'urgent' ? 'urgent' : type === 'warning' ? 'warning' : 'general';
-        const isRead = readAnnouncements.includes(announcement.id);
-        const readClass = isRead ? 'read' : 'unread';
-        
-        let icon = 'bxs-info-circle';
-        if (type === 'urgent') icon = 'bxs-error-circle';
-        else if (type === 'warning') icon = 'bxs-error';
-        else if (type === 'info') icon = 'bxs-info-circle';
-        else icon = 'bxs-bell';
+    console.log('Rendering', announcements.length, 'announcements');
+    
+    try {
+        container.innerHTML = announcements.map(announcement => {
+            const type = announcement.type || 'info';
+            const typeClass = type === 'urgent' ? 'urgent' : type === 'warning' ? 'warning' : 'general';
+            const announcementId = announcement.id || 0;
+            const isRead = readAnnouncements.includes(announcementId);
+            const readClass = isRead ? 'read' : 'unread';
+            
+            let icon = 'bxs-info-circle';
+            if (type === 'urgent') icon = 'bxs-error-circle';
+            else if (type === 'warning') icon = 'bxs-error';
+            else if (type === 'info') icon = 'bxs-info-circle';
+            else icon = 'bxs-bell';
 
-        const timeAgo = formatTimeAgo(announcement.created_at);
-        const category = type === 'urgent' ? 'Urgent' : type === 'warning' ? 'Warning' : 'General';
+            const timeAgo = formatTimeAgo(announcement.created_at || announcement.createdAt || '');
+            const category = type === 'urgent' ? 'Urgent' : type === 'warning' ? 'Warning' : 'General';
+            const title = escapeHtml(announcement.title || 'Untitled');
+            const message = escapeHtml(announcement.message || announcement.content || '');
 
-        return `
-            <div class="announcement-card ${typeClass} ${readClass}" data-category="${type}">
-                <div class="announcement-header">
-                    <div class="announcement-icon ${typeClass}">
-                        <i class='bx ${icon}'></i>
-                    </div>
-                    <div class="announcement-title">
-                        <h3>${escapeHtml(announcement.title || 'Untitled')}</h3>
-                        <div class="announcement-meta">
-                            <span class="announcement-date">${timeAgo}</span>
-                            <span class="announcement-category ${typeClass}">${category}</span>
+            return `
+                <div class="announcement-card ${typeClass} ${readClass}" data-category="${type}">
+                    <div class="announcement-header">
+                        <div class="announcement-icon ${typeClass}">
+                            <i class='bx ${icon}'></i>
+                        </div>
+                        <div class="announcement-title">
+                            <h3>${title}</h3>
+                            <div class="announcement-meta">
+                                <span class="announcement-date">${timeAgo}</span>
+                                <span class="announcement-category ${typeClass}">${category}</span>
+                            </div>
+                        </div>
+                        <div class="announcement-actions">
+                            <button class="btn-mark-read" onclick="markAsRead(${announcementId}, this)" style="display: ${isRead ? 'none' : 'block'};">
+                                <i class='bx bxs-check-circle'></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="announcement-actions">
-                        <button class="btn-mark-read" onclick="markAsRead(${announcement.id}, this)" style="display: ${isRead ? 'none' : 'block'};">
-                            <i class='bx bxs-check-circle'></i>
-                        </button>
+                    <div class="announcement-content">
+                        <p>${message}</p>
+                        <div class="announcement-tags">
+                            <span class="tag">${category}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="announcement-content">
-                    <p>${escapeHtml(announcement.message || '')}</p>
-                    <div class="announcement-tags">
-                        <span class="tag">${category}</span>
-                    </div>
-                </div>
+            `;
+        }).join('');
+        
+        console.log('✅ Announcements rendered successfully');
+    } catch (error) {
+        console.error('❌ Error rendering announcements:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #ef4444;">
+                <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
+                <p>Error rendering announcements: ${error.message}</p>
             </div>
         `;
-    }).join('');
+    }
+}
+
+// Parse existing announcements from DOM (rendered by PHP)
+function parseExistingAnnouncements() {
+    const cards = document.querySelectorAll('.announcement-card');
+    announcements = [];
+    
+    cards.forEach(card => {
+        const announcementId = parseInt(card.querySelector('.btn-mark-read')?.getAttribute('onclick')?.match(/\d+/)?.[0] || '0');
+        const title = card.querySelector('h3')?.textContent || '';
+        const message = card.querySelector('.announcement-content p')?.textContent || '';
+        const category = card.getAttribute('data-category') || 'info';
+        const type = category;
+        const isRead = card.classList.contains('read');
+        
+        announcements.push({
+            id: announcementId,
+            title: title,
+            message: message,
+            type: type,
+            created_at: new Date().toISOString() // Approximate, since we don't have exact date from DOM
+        });
+        
+        if (isRead && !readAnnouncements.includes(announcementId)) {
+            readAnnouncements.push(announcementId);
+        }
+    });
+    
+    localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
+    console.log(`✅ Parsed ${announcements.length} announcements from DOM`);
+}
+
+// Setup filter listeners
+function setupFilterListeners() {
+    setTimeout(() => {
+        const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const searchInput = document.getElementById('searchInput');
+        
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterAnnouncements);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterAnnouncements);
+        }
+        if (searchInput) {
+            searchInput.addEventListener('keyup', searchAnnouncements);
+        }
+    }, 100);
 }
 
 function filterAnnouncements() {

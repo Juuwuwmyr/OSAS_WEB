@@ -32,7 +32,7 @@ function getStudentId() {
     // Priority: PHP-injected variable
     if (window.STUDENT_ID) return window.STUDENT_ID;
 
-    // Cookie fallback
+    // Cookie fallback - prefer student_id_code (actual student ID string) over student_id (database ID)
     const cookies = Object.fromEntries(
         document.cookie
             .split(';')
@@ -40,7 +40,8 @@ function getStudentId() {
             .map(([k,v]) => [k, decodeURIComponent(v)])
     );
 
-    return cookies.student_id || cookies.student_id_code || null;
+    // Prefer student_id_code as it's the actual student ID string (e.g., "2023-001")
+    return cookies.student_id_code || cookies.student_id || null;
 }
 
 function errorRow(message) {
@@ -84,10 +85,25 @@ async function loadUserViolations() {
 function updateViolationStats() {
     const total = userViolations.length;
 
-    const countByType = (type) =>
-        userViolations.filter(v =>
-            (v.violation_type || '').toLowerCase().includes(type)
-        ).length;
+    // Count violations by specific type from database
+    const countByType = (type) => {
+        return userViolations.filter(v => {
+            const violationType = (v.violation_type || v.violationType || '').toLowerCase();
+            const violationTypeLabel = (v.violationTypeLabel || '').toLowerCase();
+            
+            // Check for specific violation types
+            if (type === 'uniform') {
+                return violationType.includes('uniform') || violationTypeLabel.includes('uniform');
+            } else if (type === 'footwear') {
+                return violationType.includes('footwear') || violationType.includes('shoe') || 
+                       violationTypeLabel.includes('footwear') || violationTypeLabel.includes('shoe');
+            } else if (type === 'id') {
+                return violationType.includes('id') || violationType.includes('no_id') ||
+                       violationTypeLabel.includes('id') || violationTypeLabel.includes('no id');
+            }
+            return false;
+        }).length;
+    };
 
     const boxes = document.querySelectorAll('.box-info li h3');
     if (!boxes.length) return;
@@ -117,17 +133,22 @@ function renderViolationTable() {
 
     tbody.innerHTML = userViolations.map(v => {
         const status = (v.status || 'pending').toLowerCase();
-        const statusClass = status === 'resolved' ? 'resolved' : 'pending';
+        const statusClass = status === 'resolved' || status === 'permitted' ? 'resolved' : 'pending';
+        const statusText = statusClass === 'resolved' ? 'Permitted' : 'Pending';
+        
+        // Format violation type
+        const violationType = v.violationTypeLabel || v.violation_type || 'Unknown';
+        const violationTypeFormatted = formatViolationType(violationType);
 
         return `
-            <tr class="violation-row" data-status="${statusClass}">
-                <td>${formatDate(v.created_at || v.violation_date)}</td>
-                <td>${escapeHtml(v.violation_type)}</td>
+            <tr class="violation-row" data-status="${statusClass}" data-type="${(violationType || '').toLowerCase()}">
+                <td>${formatDate(v.created_at || v.violation_date || v.date)}</td>
+                <td>${escapeHtml(violationTypeFormatted)}</td>
                 <td>${escapeHtml(v.notes || v.description || '-')}</td>
-                <td><span class="status ${statusClass}">${status}</span></td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
                 <td>
-                    <button onclick="viewViolationDetails(${v.id})">
-                        View
+                    <button class="btn-view-details" onclick="viewViolationDetails(${v.id})">
+                        View Details
                     </button>
                 </td>
             </tr>
@@ -143,7 +164,8 @@ function filterViolations() {
     const status = document.getElementById('statusFilter').value;
 
     document.querySelectorAll('.violation-row').forEach(row => {
-        const matchesType = type === 'all' || row.innerHTML.includes(type);
+        const rowType = row.dataset.type || '';
+        const matchesType = type === 'all' || rowType.includes(type.toLowerCase().replace(' ', '_'));
         const matchesStatus = status === 'all' || row.dataset.status === status;
         row.style.display = matchesType && matchesStatus ? '' : 'none';
     });
@@ -156,23 +178,62 @@ function viewViolationDetails(id) {
     const v = userViolations.find(x => x.id == id);
     if (!v) return;
 
-    document.getElementById('modalDate').textContent =
-        formatDate(v.created_at || v.violation_date);
+    // Format violation type
+    const violationType = formatViolationType(v.violationTypeLabel || v.violation_type || 'Unknown');
+    
+    // Format date
+    const date = formatDate(v.created_at || v.violation_date || v.date);
+    
+    // Format status
+    const status = (v.status || 'pending').toLowerCase();
+    const statusText = status === 'resolved' || status === 'permitted' ? 'Permitted' : 
+                      status === 'warning' ? 'Warning' : 
+                      status === 'disciplinary' ? 'Disciplinary' : 'Pending';
 
-    document.getElementById('modalType').textContent = v.violation_type;
-    document.getElementById('modalDescription').textContent =
-        v.notes || v.description || '-';
+    document.getElementById('modalDate').textContent = date;
+    document.getElementById('modalType').textContent = violationType;
+    document.getElementById('modalDescription').textContent = v.notes || v.description || '-';
+    document.getElementById('modalStatus').textContent = statusText;
+    document.getElementById('modalReportedBy').textContent = v.reported_by || v.reportedBy || 'N/A';
+    
+    // Show resolution if available
+    const resolutionEl = document.getElementById('modalResolution');
+    if (resolutionEl) {
+        resolutionEl.textContent = v.resolution || v.resolution_notes || 'N/A';
+    }
 
-    document.getElementById('modalStatus').textContent = v.status;
-    document.getElementById('modalReportedBy').textContent =
-        v.reported_by || 'N/A';
-
-    document.getElementById('violationModal').style.display = 'block';
+    // Show modal with proper styling
+    const modal = document.getElementById('violationModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
 }
 
 function closeViolationModal() {
-    document.getElementById('violationModal').style.display = 'none';
+    const modal = document.getElementById('violationModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
 }
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('violationModal');
+    if (modal && modal.classList.contains('active')) {
+        if (e.target === modal || e.target.classList.contains('modal')) {
+            closeViolationModal();
+        }
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeViolationModal();
+    }
+});
 
 /*********************************************************
  * UTILS
@@ -186,6 +247,33 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function formatViolationType(type) {
+    if (!type) return 'Unknown';
+    
+    const typeMap = {
+        'improper_uniform': 'Improper Uniform',
+        'improper_footwear': 'Improper Footwear',
+        'no_id': 'No ID Card',
+        'misconduct': 'Misconduct'
+    };
+    
+    // Check if it's already formatted
+    if (typeMap[type.toLowerCase()]) {
+        return typeMap[type.toLowerCase()];
+    }
+    
+    // If it contains the key, return the formatted version
+    const lowerType = type.toLowerCase();
+    for (const [key, value] of Object.entries(typeMap)) {
+        if (lowerType.includes(key.replace('_', ' ')) || lowerType === key) {
+            return value;
+        }
+    }
+    
+    // Otherwise, format it nicely
+    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 /*********************************************************

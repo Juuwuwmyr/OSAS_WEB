@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', function () {
       switchMode.checked = window.darkMode;
     }
   }
+  
+  // Store switchMode globally for theme.js
+  window.switchMode = switchMode;
 
   // Load default page
   const defaultPage = 'user-page/user_dashcontent';
@@ -368,11 +371,35 @@ function loadContent(page) {
           console.log('All scripts loaded');
           
           // Initialize modules after scripts are loaded
-          if (page.toLowerCase().includes('user_dashcontent')) {
+          if (page.toLowerCase().includes('user_dashcontent') || page.toLowerCase().includes('dashcontent')) {
             setTimeout(() => {
               console.log('🔄 Initializing dashboard page...');
               if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
               if (typeof initializeAnnouncements === 'function') initializeAnnouncements();
+              
+              // Re-initialize theme toggle for dynamically loaded content
+              const switchMode = document.getElementById('switch-mode');
+              if (switchMode && !switchMode.hasAttribute('data-listener-attached')) {
+                switchMode.setAttribute('data-listener-attached', 'true');
+                window.switchMode = switchMode;
+                switchMode.addEventListener('change', function () {
+                  if (typeof toggleTheme === 'function') {
+                    toggleTheme();
+                  } else {
+                    window.darkMode = this.checked;
+                    if (this.checked) {
+                      document.body.classList.add('dark');
+                    } else {
+                      document.body.classList.remove('dark');
+                    }
+                    localStorage.setItem('theme', this.checked ? 'dark' : 'light');
+                    document.dispatchEvent(new CustomEvent('themeChanged', { 
+                      detail: { darkMode: this.checked } 
+                    }));
+                  }
+                });
+                console.log('✅ Theme toggle re-initialized');
+              }
               
               // Load dashboard data
               const loadData = () => {
@@ -387,12 +414,28 @@ function loadContent(page) {
                     console.error('❌ Error loading dashboard data:', error);
                   });
                 } else {
-                  console.warn('⚠️ userDashboardData not available, retrying in 500ms...');
-                  setTimeout(loadData, 500);
+                  // Create new instance if it doesn't exist
+                  if (typeof UserDashboardData !== 'undefined') {
+                    window.userDashboardData = new UserDashboardData();
+                    window.userDashboardData.loadAllData().catch(error => {
+                      console.error('❌ Error loading dashboard data:', error);
+                    });
+                  } else {
+                    console.warn('⚠️ userDashboardData not available, retrying in 500ms...');
+                    setTimeout(loadData, 500);
+                  }
                 }
               };
               
               loadData();
+              
+              // Load sidebar profile
+              if (typeof updateSidebarProfile === 'function') {
+                updateSidebarProfile();
+              } else {
+                // Load sidebar profile from API
+                loadSidebarProfile();
+              }
             }, 100);
           }
 
@@ -972,6 +1015,9 @@ searchButton.addEventListener('click', function (e) {
 
 // Theme switcher: dark mode
 if (switchMode) {
+  // Store globally for theme.js
+  window.switchMode = switchMode;
+  
   switchMode.addEventListener('change', function () {
     // Use theme.js toggleTheme if available, otherwise use local implementation
     if (typeof toggleTheme === 'function') {
@@ -1066,3 +1112,80 @@ window.addEventListener('resize', function () {
     searchForm.classList.remove('show');
   }
 });
+
+// Load sidebar profile from database
+function loadSidebarProfile() {
+  const sidebarUsername = document.getElementById('sidebarUsername');
+  const sidebarProfileImage = document.getElementById('sidebarProfileImage');
+  
+  if (!sidebarUsername && !sidebarProfileImage) return;
+  
+  // Get student_id_code from cookies or window.STUDENT_ID
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+  
+  const studentIdCode = window.STUDENT_ID || cookies.student_id_code;
+  if (!studentIdCode) {
+    console.warn('⚠️ Student ID not found for sidebar profile');
+    return;
+  }
+  
+  // Get student data from API
+  const apiBase = (function() {
+    const pathParts = window.location.pathname.split('/').filter(p => p);
+    if (pathParts.length > 0) return '/' + pathParts[0] + '/api/';
+    return '/api/';
+  })();
+  
+  fetch(apiBase + 'students.php')
+    .then(response => response.json())
+    .then(data => {
+      const students = data.data || data.students || [];
+      // Find student by student_id (the actual student ID string like "2023-0195")
+      const student = students.find(s => {
+        const sId = s.student_id || s.studentId || '';
+        return sId && sId.toString() === studentIdCode.toString();
+      });
+      
+      if (student) {
+        // Update username
+        if (sidebarUsername) {
+          const firstName = student.first_name || student.firstName || '';
+          const lastName = student.last_name || student.lastName || '';
+          const fullName = `${firstName} ${lastName}`.trim() || 'Student';
+          sidebarUsername.textContent = fullName;
+        }
+        
+        // Update profile image
+        if (sidebarProfileImage) {
+          if (student.avatar && student.avatar.trim() !== '') {
+            let avatarUrl = student.avatar;
+            if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('/')) {
+              avatarUrl = '../app/assets/img/students/' + avatarUrl;
+            }
+            sidebarProfileImage.src = avatarUrl;
+            sidebarProfileImage.onerror = function() {
+              this.src = '../app/assets/img/default.png';
+            };
+          } else {
+            sidebarProfileImage.src = '../app/assets/img/default.png';
+          }
+        }
+      } else {
+        console.warn('⚠️ Student not found for student_id:', studentIdCode);
+      }
+    })
+    .catch(error => {
+      console.error('Error loading sidebar profile:', error);
+    });
+}
+
+// Load sidebar profile on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadSidebarProfile);
+} else {
+  setTimeout(loadSidebarProfile, 100);
+}

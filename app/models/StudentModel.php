@@ -158,6 +158,125 @@ class StudentModel extends Model {
     }
 
     /**
+     * Get student by student_id (the actual student ID string)
+     */
+    public function getByStudentId($studentId) {
+        // Check if table exists
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE '{$this->table}'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return null;
+        }
+
+        // Check if sections and departments tables exist
+        $sectionsExist = $this->tableExists('sections');
+        $deptExist = $this->tableExists('departments');
+        
+        // Build query with JOINs
+        if ($sectionsExist && $deptExist) {
+            $query = "SELECT s.*, 
+                             COALESCE(sec.section_name, 'N/A') as section_name, 
+                             COALESCE(sec.section_code, 'N/A') as section_code, 
+                             COALESCE(d.department_name, s.department) as department_name
+                      FROM students s
+                      LEFT JOIN sections sec ON s.section_id = sec.id
+                      LEFT JOIN departments d ON s.department = d.department_code
+                      WHERE s.student_id = ? AND s.status != 'archived'";
+        } elseif ($sectionsExist) {
+            $query = "SELECT s.*, 
+                             COALESCE(sec.section_name, 'N/A') as section_name, 
+                             COALESCE(sec.section_code, 'N/A') as section_code, 
+                             s.department as department_name
+                      FROM students s
+                      LEFT JOIN sections sec ON s.section_id = sec.id
+                      WHERE s.student_id = ? AND s.status != 'archived'";
+        } else {
+            $query = "SELECT s.*, 
+                             'N/A' as section_name, 
+                             'N/A' as section_code, 
+                             s.department as department_name
+                      FROM students s
+                      WHERE s.student_id = ? AND s.status != 'archived'";
+        }
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            if ($stmt) {
+                $stmt->bind_param("s", $studentId);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    $row = $result->fetch_assoc();
+                    
+                    // Format the data similar to getAllWithDetails
+                    $firstName = trim($row['first_name'] ?? '');
+                    $middleName = trim($row['middle_name'] ?? '');
+                    $lastName = trim($row['last_name'] ?? '');
+                    
+                    $avatar = $row['avatar'] ?? null;
+                    if ($avatar && !empty($avatar) && trim($avatar) !== '') {
+                        // If avatar is already a full path (contains app/assets or assets), use it as is
+                        if (strpos($avatar, 'app/assets/img/students/') !== false || 
+                            strpos($avatar, 'assets/img/students/') !== false) {
+                            // Already has full path, use as is
+                            if (strpos($avatar, 'app/assets/') === false && strpos($avatar, 'assets/') !== false) {
+                                // Normalize to app/assets/
+                                $avatar = str_replace('assets/', 'app/assets/', $avatar);
+                            }
+                        } elseif (!filter_var($avatar, FILTER_VALIDATE_URL) && !str_starts_with($avatar, '/')) {
+                            // If it's just a filename, prepend the path
+                            $avatar = 'app/assets/img/students/' . basename($avatar);
+                        }
+                    } else {
+                        $avatar = 'app/assets/img/default.png';
+                    }
+                    
+                    return [
+                        'id' => $row['id'] ?? 0,
+                        'student_id' => $row['student_id'] ?? '',
+                        'studentId' => $row['student_id'] ?? '',
+                        'first_name' => $firstName,
+                        'firstName' => $firstName,
+                        'middle_name' => $middleName,
+                        'middleName' => $middleName,
+                        'last_name' => $lastName,
+                        'lastName' => $lastName,
+                        'email' => $row['email'] ?? '',
+                        'contact_number' => $row['contact_number'] ?? null,
+                        'contact' => $row['contact_number'] ?? null,
+                        'phone' => $row['contact_number'] ?? null,
+                        'address' => $row['address'] ?? '',
+                        'department' => $row['department_name'] ?? ($row['department'] ?? 'N/A'),
+                        'department_name' => $row['department_name'] ?? ($row['department'] ?? 'N/A'),
+                        'section' => $row['section_code'] ?? 'N/A',
+                        'section_code' => $row['section_code'] ?? 'N/A',
+                        'section_name' => $row['section_name'] ?? 'N/A',
+                        'section_id' => $row['section_id'] ?? null,
+                        'status' => $row['status'] ?? 'active',
+                        'avatar' => $avatar,
+                        'date_of_birth' => $row['date_of_birth'] ?? null,
+                        'dateOfBirth' => $row['date_of_birth'] ?? null,
+                        'dob' => $row['date_of_birth'] ?? null,
+                        'gender' => $row['gender'] ?? null,
+                        'year_level' => $row['year_level'] ?? null,
+                        'yearLevel' => $row['year_level'] ?? null,
+                        'year' => $row['year_level'] ?? null,
+                        'created_at' => $row['created_at'] ?? null,
+                        'createdAt' => $row['created_at'] ?? null,
+                        'enrollment_date' => $row['created_at'] ?? null,
+                        'enrollmentDate' => $row['created_at'] ?? null
+                    ];
+                }
+                $stmt->close();
+            }
+            return null;
+        } catch (Exception $e) {
+            error_log("StudentModel::getByStudentId error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Check if student_id exists
      */
     public function studentIdExists($studentId, $excludeId = null) {

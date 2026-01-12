@@ -61,13 +61,13 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="head">
         <h3>Violation History</h3>
         <div class="filter-options">
-          <select id="violationFilter">
+          <select id="violationFilter" onchange="filterViolations()">
             <option value="all">All Violations</option>
             <option value="improper_uniform">Improper Uniform</option>
             <option value="improper_footwear">Improper Footwear</option>
             <option value="no_id">No ID Card</option>
           </select>
-          <select id="statusFilter">
+          <select id="statusFilter" onchange="filterViolations()">
             <option value="all">All Status</option>
             <option value="resolved">Resolved</option>
             <option value="pending">Pending</option>
@@ -101,39 +101,46 @@ require_once __DIR__ . '/../../core/View.php';
   <div id="violationModal" class="modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Violation Details</h3>
-        <button class="modal-close" onclick="closeViolationModal()">&times;</button>
+        <h3>
+          <i class='bx bxs-info-circle'></i>
+          Violation Details
+        </h3>
+        <button class="modal-close" onclick="closeViolationModal()" title="Close">
+          <i class='bx bx-x'></i>
+        </button>
       </div>
       <div class="modal-body">
         <div class="violation-detail">
           <div class="detail-row">
-            <label>Date:</label>
+            <label><i class='bx bx-calendar'></i> Date:</label>
             <span id="modalDate">-</span>
           </div>
           <div class="detail-row">
-            <label>Type:</label>
+            <label><i class='bx bx-category'></i> Type:</label>
             <span id="modalType">-</span>
           </div>
           <div class="detail-row">
-            <label>Description:</label>
+            <label><i class='bx bx-file-blank'></i> Description:</label>
             <span id="modalDescription">-</span>
           </div>
           <div class="detail-row">
-            <label>Status:</label>
+            <label><i class='bx bx-info-circle'></i> Status:</label>
             <span id="modalStatus">-</span>
           </div>
           <div class="detail-row">
-            <label>Reported By:</label>
+            <label><i class='bx bx-user'></i> Reported By:</label>
             <span id="modalReportedBy">-</span>
           </div>
           <div class="detail-row">
-            <label>Resolution:</label>
+            <label><i class='bx bx-check-circle'></i> Resolution:</label>
             <span id="modalResolution">-</span>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-close" onclick="closeViolationModal()">Close</button>
+        <button class="btn-close" onclick="closeViolationModal()">
+          <i class='bx bx-x'></i> Close
+        </button>
       </div>
     </div>
   </div>

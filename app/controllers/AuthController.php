@@ -32,28 +32,34 @@ class AuthController extends Controller {
             $studentIdCode = null;
             
             if ($user['role'] === 'user') {
-                require_once __DIR__ . '/../models/StudentModel.php';
-                $studentModel = new StudentModel();
-                try {
-                    $student = $studentModel->query(
-                        "SELECT id, student_id FROM students WHERE user_id = ? LIMIT 1",
-                        [$user['id']]
-                    );
-                    if (!empty($student)) {
-                        $studentId = $student[0]['id'];
-                        $studentIdCode = $student[0]['student_id'];
+                // Get student_id directly from users table (it's stored there!)
+                if (!empty($user['student_id'])) {
+                    $studentIdCode = $user['student_id'];
+                    // Try to get the database ID from students table if it exists
+                    try {
+                        require_once __DIR__ . '/../models/StudentModel.php';
+                        $studentModel = new StudentModel();
+                        $student = $studentModel->query(
+                            "SELECT id FROM students WHERE student_id = ? LIMIT 1",
+                            [$studentIdCode]
+                        );
+                        if (!empty($student)) {
+                            $studentId = $student[0]['id'];
+                        }
+                    } catch (Exception $e) {
+                        error_log("Error fetching student database ID: " . $e->getMessage());
                     }
-                } catch (Exception $e) {
-                    error_log("Error fetching student_id: " . $e->getMessage());
                 }
             }
             
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
-            if ($studentId) {
-                $_SESSION['student_id'] = $studentId;
+            if ($studentIdCode) {
                 $_SESSION['student_id_code'] = $studentIdCode;
+                if ($studentId) {
+                    $_SESSION['student_id'] = $studentId;
+                }
             }
 
             $expiryTime = time() + ($remember ? 30*24*60*60 : 6*60*60);
@@ -61,9 +67,11 @@ class AuthController extends Controller {
             setcookie("user_id", $user['id'], $expiryTime, "/", "", false, false);
             setcookie("username", $user['username'], $expiryTime, "/", "", false, false);
             setcookie("role", $user['role'], $expiryTime, "/", "", false, false);
-            if ($studentId) {
-                setcookie("student_id", $studentId, $expiryTime, "/", "", false, false);
+            if ($studentIdCode) {
                 setcookie("student_id_code", $studentIdCode, $expiryTime, "/", "", false, false);
+                if ($studentId) {
+                    setcookie("student_id", $studentId, $expiryTime, "/", "", false, false);
+                }
             }
 
             $responseData = [

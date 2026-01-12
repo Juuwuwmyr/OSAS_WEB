@@ -9,6 +9,14 @@ session_start();
 
 require_once __DIR__ . '/../app/config/db_connect.php';
 
+// Get student ID if user is logged in as 'user' role
+$userRole = $_SESSION['role'] ?? null;
+$studentId = null;
+if ($userRole === 'user') {
+    // Prefer student_id_code (the actual student ID string) over student_id (database ID)
+    $studentId = $_SESSION['student_id_code'] ?? $_SESSION['student_id'] ?? null;
+}
+
 try {
     // Use the $conn from db_connect.php
     
@@ -58,32 +66,65 @@ try {
         }
     }
     
+    // Build WHERE clause for user filtering
+    $whereClause = '';
+    $whereParams = [];
+    $whereTypes = '';
+    if ($studentId) {
+        $whereClause = " WHERE BINARY v.student_id = BINARY ?";
+        $whereParams[] = $studentId;
+        $whereTypes = 's';
+    }
+    
     // Get violations count
-    $violationsResult = $conn->query("SELECT COUNT(*) as count FROM violations");
+    $violationsQuery = "SELECT COUNT(*) as count FROM violations v" . $whereClause;
+    $violationsStmt = $conn->prepare($violationsQuery);
+    if ($studentId && $violationsStmt) {
+        $violationsStmt->bind_param($whereTypes, ...$whereParams);
+        $violationsStmt->execute();
+        $violationsResult = $violationsStmt->get_result();
+    } else {
+        $violationsResult = $conn->query($violationsQuery);
+    }
     $violationsCount = 0;
     if ($violationsResult) {
         $row = $violationsResult->fetch_assoc();
         $violationsCount = (int)$row['count'];
     }
+    if (isset($violationsStmt)) $violationsStmt->close();
     
     // Get unique violators count (students with at least one violation)
-    $violatorsResult = $conn->query("SELECT COUNT(DISTINCT student_id) as count FROM violations WHERE student_id IS NOT NULL AND student_id != ''");
-    $violatorsCount = 0;
-    if ($violatorsResult) {
-        $row = $violatorsResult->fetch_assoc();
-        $violatorsCount = (int)$row['count'];
+    // For users, this will always be 1 (themselves) or 0
+    if ($studentId) {
+        $violatorsCount = $violationsCount > 0 ? 1 : 0;
+    } else {
+        $violatorsResult = $conn->query("SELECT COUNT(DISTINCT student_id) as count FROM violations WHERE student_id IS NOT NULL AND student_id != ''");
+        $violatorsCount = 0;
+        if ($violatorsResult) {
+            $row = $violatorsResult->fetch_assoc();
+            $violatorsCount = (int)$row['count'];
+        }
     }
     
     // Get penalties count (violations with disciplinary status or disciplinary level)
-    $penaltiesResult = $conn->query("SELECT COUNT(*) as count FROM violations WHERE status = 'disciplinary' OR violation_level = 'disciplinary'");
+    $penaltiesQuery = "SELECT COUNT(*) as count FROM violations v WHERE (v.status = 'disciplinary' OR v.violation_level = 'disciplinary')" . ($studentId ? " AND BINARY v.student_id = BINARY ?" : "");
+    $penaltiesStmt = $conn->prepare($penaltiesQuery);
+    if ($studentId && $penaltiesStmt) {
+        $penaltiesStmt->bind_param('s', $studentId);
+        $penaltiesStmt->execute();
+        $penaltiesResult = $penaltiesStmt->get_result();
+    } else {
+        $penaltiesResult = $conn->query($penaltiesQuery);
+    }
     $penaltiesCount = 0;
     if ($penaltiesResult) {
         $row = $penaltiesResult->fetch_assoc();
         $penaltiesCount = (int)$row['count'];
     }
+    if (isset($penaltiesStmt)) $penaltiesStmt->close();
     
     // Get recent violations (last 10)
-    $recentViolationsResult = $conn->query("
+    $recentViolationsQuery = "
         SELECT v.id,
                v.case_id,
                v.student_id,
@@ -102,38 +143,75 @@ try {
                s.avatar,
                s.department
         FROM violations v
-        LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+        LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id" .
+        ($studentId ? " WHERE BINARY v.student_id = BINARY ?" : "") . "
         ORDER BY v.created_at DESC
         LIMIT 10
-    ");
+    ";
+    $recentViolationsStmt = $conn->prepare($recentViolationsQuery);
+    if ($studentId && $recentViolationsStmt) {
+        $recentViolationsStmt->bind_param('s', $studentId);
+        $recentViolationsStmt->execute();
+        $recentViolationsResult = $recentViolationsStmt->get_result();
+    } else {
+        $recentViolationsResult = $conn->query($recentViolationsQuery);
+    }
     $recentViolations = [];
     if ($recentViolationsResult) {
         while ($row = $recentViolationsResult->fetch_assoc()) {
             $recentViolations[] = $row;
         }
     }
+    if (isset($recentViolationsStmt)) $recentViolationsStmt->close();
     
     // Get top violators (students with most violations)
-    $topViolatorsResult = $conn->query("
-        SELECT 
-            v.student_id,
-            s.first_name,
-            s.last_name,
-            s.avatar,
-            COUNT(*) as violation_count
-        FROM violations v
-        LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
-        WHERE v.student_id IS NOT NULL AND v.student_id != ''
-        GROUP BY v.student_id, s.first_name, s.last_name, s.avatar
-        ORDER BY violation_count DESC
-        LIMIT 5
-    ");
+    // For users, this will only show themselves if they have violations
+    if ($studentId) {
+        $topViolatorsQuery = "
+            SELECT 
+                v.student_id,
+                s.first_name,
+                s.last_name,
+                s.avatar,
+                COUNT(*) as violation_count
+            FROM violations v
+            LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+            WHERE BINARY v.student_id = BINARY ?
+            GROUP BY v.student_id, s.first_name, s.last_name, s.avatar
+            ORDER BY violation_count DESC
+            LIMIT 5
+        ";
+        $topViolatorsStmt = $conn->prepare($topViolatorsQuery);
+        if ($topViolatorsStmt) {
+            $topViolatorsStmt->bind_param('s', $studentId);
+            $topViolatorsStmt->execute();
+            $topViolatorsResult = $topViolatorsStmt->get_result();
+        } else {
+            $topViolatorsResult = false;
+        }
+    } else {
+        $topViolatorsResult = $conn->query("
+            SELECT 
+                v.student_id,
+                s.first_name,
+                s.last_name,
+                s.avatar,
+                COUNT(*) as violation_count
+            FROM violations v
+            LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+            WHERE v.student_id IS NOT NULL AND v.student_id != ''
+            GROUP BY v.student_id, s.first_name, s.last_name, s.avatar
+            ORDER BY violation_count DESC
+            LIMIT 5
+        ");
+    }
     $topViolators = [];
     if ($topViolatorsResult) {
         while ($row = $topViolatorsResult->fetch_assoc()) {
             $topViolators[] = $row;
         }
     }
+    if (isset($topViolatorsStmt)) $topViolatorsStmt->close();
     
     echo json_encode([
         'status' => 'success',
