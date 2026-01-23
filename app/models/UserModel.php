@@ -9,17 +9,35 @@ class UserModel extends Model {
      * Authenticate user
      */
     public function authenticate($username, $password) {
-        $query = "SELECT * FROM users WHERE (username = ? OR email = ?) AND status = 'active' AND email_verified_at IS NOT NULL LIMIT 1";
-        $result = $this->query($query, [$username, $username]);
-        
-        if (count($result) === 1) {
-            $user = $result[0];
-            if (password_verify($password, $user['password'])) {
-                return $user;
+        try {
+            error_log("UserModel: Authenticating user: " . $username);
+            
+            // Updated query to match actual table structure (no status, no email_verified_at)
+            $query = "SELECT * FROM users WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1";
+            error_log("UserModel: Executing query: " . $query);
+            
+            $result = $this->query($query, [$username, $username]);
+            error_log("UserModel: Query returned " . count($result) . " results");
+            
+            if (count($result) === 1) {
+                $user = $result[0];
+                error_log("UserModel: Found user, verifying password");
+                
+                if (password_verify($password, $user['password'])) {
+                    error_log("UserModel: Password verified successfully");
+                    return $user;
+                } else {
+                    error_log("UserModel: Password verification failed");
+                }
+            } else {
+                error_log("UserModel: No user found or multiple users returned");
             }
+            
+            return null;
+        } catch (Exception $e) {
+            error_log("UserModel authenticate error: " . $e->getMessage());
+            return null;
         }
-        
-        return null;
     }
 
     /**

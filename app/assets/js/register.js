@@ -451,22 +451,6 @@ function handleSignup(event) {
         signupButton.innerHTML = '<span>Create Account</span>';
 
         if (data.status === 'success') {
-<<<<<<< HEAD
-            showNotification(
-                'success', 
-                'Account Created Successfully!', 
-                data.message,
-                6000
-            );
-            
-            // Reset form
-            event.target.reset();
-            
-            // Redirect to login page after 3 seconds
-            setTimeout(() => {
-                window.location.href = '../login_page.php';
-            }, 3000);
-=======
             // Check if verification is required
             if (data.requireVerification) {
                 showNotification(
@@ -494,7 +478,6 @@ function handleSignup(event) {
                     window.location.href = '../index.php';
                 }, 3000);
             }
->>>>>>> fbd234e5eea35a7d97b770875762c0eeb6502d28
         } else {
             // Handle error response from your PHP
             showNotification('error', 'Registration Failed', data.message);
@@ -1182,6 +1165,37 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Theme changed to:', event.detail.darkMode ? 'dark' : 'light');
         // Add any custom logic for theme changes
     });
+
+    // Signup form validation
+    const signupForm = document.querySelector('.signup-form');
+    if (signupForm) {
+        console.log('Signup form found, adding event listener');
+        signupForm.addEventListener('submit', handleSignup);
+    } else {
+        console.log('Signup form not found');
+    }
+
+    // Privacy checkbox validation
+    const agreeTermsCheckbox = document.getElementById('agreeTerms');
+    if (agreeTermsCheckbox) {
+        console.log('Privacy checkbox found, adding event listener');
+        agreeTermsCheckbox.addEventListener('change', function() {
+            console.log('Checkbox changed:', this.checked);
+            // Update visual state
+            const checkmark = this.nextElementSibling;
+            if (checkmark && checkmark.classList.contains('checkmark')) {
+                if (this.checked) {
+                    checkmark.style.background = '#4a2d6d';
+                    checkmark.style.borderColor = '#4a2d6d';
+                } else {
+                    checkmark.style.background = '';
+                    checkmark.style.borderColor = '';
+                }
+            }
+        });
+    } else {
+        console.log('Privacy checkbox not found');
+    }
 
     // Social signup buttons
     const googleBtn = document.querySelector('.social-button.google');

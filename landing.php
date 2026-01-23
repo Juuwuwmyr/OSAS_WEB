@@ -537,7 +537,7 @@ try {
             </div>
             
             <div class="nav-buttons">
-                <a href="index.php?direct=true" class="btn btn-outline">
+                <a href="login_page.php?direct=true" class="btn btn-outline">
                     <i class="fas fa-sign-in-alt"></i>
                     Login
                 </a>
@@ -673,7 +673,7 @@ try {
                         <li>System configuration</li>
                         <li>Analytics and insights</li>
                     </ul>
-                    <a href="index.php?direct=true" class="btn btn-primary">
+                    <a href="login_page.php?direct=true" class="btn btn-primary">
                         <i class="fas fa-sign-in-alt"></i>
                         Admin Login
                     </a>
@@ -693,7 +693,7 @@ try {
                         <li>Personal dashboard</li>
                         <li>Profile management</li>
                     </ul>
-                    <a href="index.php?direct=true" class="btn btn-primary">
+                    <a href="login_page.php?direct=true" class="btn btn-primary">
                         <i class="fas fa-sign-in-alt"></i>
                         Student Login
                     </a>
@@ -713,7 +713,7 @@ try {
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <ul>
-                    <li><a href="index.php?direct=true">Login</a></li>
+                    <li><a href="login_page.php?direct=true">Login</a></li>
                     <li><a href="includes/signup.php">Sign Up</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#modules">Modules</a></li>
