@@ -5,6 +5,18 @@ error_reporting(0);
 ini_set('display_errors', 0);
 ob_start(); // Start output buffering
 
+// Try to load Composer autoloader (PHPMailer)
+$autoloadPaths = [
+    __DIR__ . '/../../../vendor/autoload.php',
+    __DIR__ . '/../../../../vendor/autoload.php'
+];
+foreach ($autoloadPaths as $autoloadPath) {
+    if (file_exists($autoloadPath)) {
+        require_once $autoloadPath;
+        break;
+    }
+}
+
 // Set headers first, before any output
 if (!headers_sent()) {
     header('Content-Type: application/json; charset=utf-8');
@@ -158,6 +170,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     );
 
     if ($insert->execute()) {
+        // Try to send welcome email (do not block signup if it fails)
+        try {
+            if (class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+                $smtp = null;
+                $smtpQuery = $conn->query(
+                    "SELECT * FROM email_configs WHERE is_active = 1 ORDER BY is_default DESC, id DESC LIMIT 1"
+                );
+                if ($smtpQuery && $smtpQuery->num_rows > 0) {
+                    $smtp = $smtpQuery->fetch_assoc();
+                }
+
+                if ($smtp) {
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    $mail->isSMTP();
+                    $mail->Host = (string)($smtp['smtp_host'] ?? '');
+                    $mail->Port = (int)($smtp['smtp_port'] ?? 587);
+                    $mail->Username = (string)($smtp['smtp_username'] ?? '');
+                    $mail->Password = (string)($smtp['smtp_password'] ?? '');
+                    $mail->SMTPAuth = !empty($mail->Username);
+                    $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+
+                    $fromEmail = (string)($smtp['from_email'] ?? $mail->Username);
+                    $fromName = (string)($smtp['from_name'] ?? 'OSAS');
+                    if (!empty($fromEmail)) {
+                        $mail->setFrom($fromEmail, $fromName);
+                    }
+
+                    $mail->addAddress($email, $full_name);
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Welcome to OSAS';
+                    $mail->Body = '<p>Hi ' . htmlspecialchars($full_name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                        . '<p>Your account has been created successfully.</p>'
+                        . '<p>You can now log in using your username: <b>' . htmlspecialchars($username, ENT_QUOTES, 'UTF-8') . '</b></p>';
+                    $mail->AltBody = "Hi {$full_name},\n\nYour account has been created successfully.\n\nUsername: {$username}\n";
+
+                    $mail->send();
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Signup email send failed: ' . $e->getMessage());
+        }
+
         ob_clean();
         http_response_code(201);
         echo json_encode(['status' => 'success', 'message' => 'Account created successfully!']);
