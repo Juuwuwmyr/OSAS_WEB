@@ -451,6 +451,7 @@ function handleSignup(event) {
         signupButton.innerHTML = '<span>Create Account</span>';
 
         if (data.status === 'success') {
+<<<<<<< HEAD
             showNotification(
                 'success', 
                 'Account Created Successfully!', 
@@ -465,6 +466,35 @@ function handleSignup(event) {
             setTimeout(() => {
                 window.location.href = '../login_page.php';
             }, 3000);
+=======
+            // Check if verification is required
+            if (data.requireVerification) {
+                showNotification(
+                    'info', 
+                    'Verify Your Email', 
+                    'Please enter the verification code sent to your email.',
+                    8000
+                );
+                
+                // Show OTP verification modal
+                showOTPVerificationModal(data.email);
+            } else {
+                showNotification(
+                    'success', 
+                    'Account Created Successfully!', 
+                    data.message,
+                    6000
+                );
+                
+                // Reset form
+                event.target.reset();
+                
+                // Redirect to login page after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '../index.php';
+                }, 3000);
+            }
+>>>>>>> fbd234e5eea35a7d97b770875762c0eeb6502d28
         } else {
             // Handle error response from your PHP
             showNotification('error', 'Registration Failed', data.message);
@@ -751,6 +781,394 @@ function closeSocialModal() {
     if (modal) {
         modal.classList.remove('show');
         setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// ============================================
+// ============================================
+
+let verificationEmail = '';
+
+function showOTPVerificationModal(email) {
+    verificationEmail = email;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('otpVerificationModal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'otpVerificationModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+        <style>
+            .otp-modal-content {
+                background: #111;
+                border-radius: 16px;
+                padding: 28px;
+                max-width: 420px;
+                width: 92%;
+                box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+                position: relative;
+            }
+            .otp-close-btn {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: transparent;
+                border: none;
+                color: #9a9a9a;
+                font-size: 22px;
+                cursor: pointer;
+            }
+            .otp-close-btn:hover {
+                color: #fff;
+            }
+            .otp-title {
+                color: #fff;
+                font-size: 22px;
+                font-weight: 700;
+                margin: 0 0 6px;
+                text-align: center;
+            }
+            .otp-subtitle {
+                color: #b0b0b0;
+                font-size: 14px;
+                text-align: center;
+                margin: 0 0 14px;
+            }
+            .otp-email {
+                color: #d4af37;
+                font-weight: 600;
+                font-size: 14px;
+                text-align: center;
+                margin: 0 0 18px;
+                overflow-wrap: anywhere;
+            }
+            .otp-inputs {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            .otp-input {
+                width: 46px;
+                height: 56px;
+                text-align: center;
+                font-size: 22px;
+                font-weight: 700;
+                border: 1px solid #2f2f2f;
+                border-radius: 10px;
+                background: #0b0b0b;
+                color: #fff;
+                outline: none;
+            }
+            .otp-input:focus {
+                border-color: #d4af37;
+                box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+            }
+            .otp-error {
+                color: #ff4444;
+                font-size: 14px;
+                text-align: center;
+                margin-bottom: 15px;
+                display: none;
+            }
+            .otp-verify-btn {
+                width: 100%;
+                padding: 12px 14px;
+                background: #d4af37;
+                border: none;
+                border-radius: 10px;
+                color: #000;
+                font-size: 15px;
+                font-weight: 700;
+                cursor: pointer;
+            }
+            .otp-verify-btn:hover {
+                filter: brightness(0.95);
+            }
+            .otp-verify-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+            .otp-resend {
+                text-align: center;
+                margin-top: 14px;
+                color: #8d8d8d;
+                font-size: 14px;
+            }
+            .otp-resend a {
+                color: #d4af37;
+                text-decoration: none;
+                font-weight: 600;
+            }
+            .otp-resend a:hover {
+                text-decoration: underline;
+            }
+            .otp-timer {
+                text-align: center;
+                color: #7a7a7a;
+                font-size: 13px;
+                margin-top: 10px;
+            }
+            .otp-timer span {
+                color: #d4af37;
+                font-weight: 600;
+            }
+        </style>
+        <div class="otp-modal-content">
+            <button class="otp-close-btn" onclick="closeOTPModal()">&times;</button>
+            <h2 class="otp-title">Verify your email</h2>
+            <p class="otp-subtitle">Enter the 6-digit code sent to</p>
+            <div class="otp-email">${email}</div>
+            
+            <div class="otp-inputs">
+                <input type="text" maxlength="1" class="otp-input" data-index="0" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" maxlength="1" class="otp-input" data-index="1" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" maxlength="1" class="otp-input" data-index="2" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" maxlength="1" class="otp-input" data-index="3" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" maxlength="1" class="otp-input" data-index="4" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" maxlength="1" class="otp-input" data-index="5" inputmode="numeric" pattern="[0-9]*">
+            </div>
+            
+            <div id="otpError" class="otp-error"></div>
+            
+            <button id="verifyOTPBtn" class="otp-verify-btn" onclick="verifyOTP()">
+                Verify
+            </button>
+            
+            <p class="otp-resend">
+                Didn't receive the code? <a href="#" onclick="resendOTP(); return false;">Resend Code</a>
+            </p>
+            <p class="otp-timer">Code expires in <span id="otpCountdown">15:00</span></p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Setup input handlers
+    const inputs = modal.querySelectorAll('.otp-input');
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            if (e.target.value && index < 5) {
+                inputs[index + 1].focus();
+            }
+            // Auto-submit when all filled
+            const code = Array.from(inputs).map(i => i.value).join('');
+            if (code.length === 6) {
+                setTimeout(() => verifyOTP(), 100);
+            }
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+            if (e.key === 'ArrowLeft' && index > 0) inputs[index - 1].focus();
+            if (e.key === 'ArrowRight' && index < 5) inputs[index + 1].focus();
+        });
+        
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+            if (paste.length === 6) {
+                paste.split('').forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+                inputs[5].focus();
+                setTimeout(() => verifyOTP(), 100);
+            }
+        });
+    });
+    
+    // Focus first input
+    setTimeout(() => inputs[0].focus(), 100);
+    
+    // Start countdown timer
+    startOTPCountdown();
+}
+
+let countdownInterval;
+
+function startOTPCountdown() {
+    let timeLeft = 15 * 60; // 15 minutes in seconds
+    const countdownEl = document.getElementById('otpCountdown');
+    
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    countdownInterval = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        
+        if (countdownEl) {
+            countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            if (countdownEl) {
+                countdownEl.textContent = 'Expired';
+                countdownEl.style.color = '#ff4444';
+            }
+        }
+        
+        timeLeft--;
+    }, 1000);
+}
+
+function handleOTPInput(input, index) {
+    // Only allow numbers
+    input.value = input.value.replace(/[^0-9]/g, '');
+    
+    // Move to next input
+    if (input.value.length === 1 && index < 5) {
+        const inputs = document.querySelectorAll('.otp-input');
+        inputs[index + 1].focus();
+    }
+    
+    // Auto-submit when all fields are filled
+    const inputs = document.querySelectorAll('.otp-input');
+    const code = Array.from(inputs).map(i => i.value).join('');
+    if (code.length === 6) {
+        verifyOTP();
+    }
+}
+
+function handleOTPKeydown(event, index) {
+    const inputs = document.querySelectorAll('.otp-input');
+    
+    // Handle backspace
+    if (event.key === 'Backspace' && index > 0 && !inputs[index].value) {
+        inputs[index - 1].focus();
+    }
+    
+    // Handle arrow keys
+    if (event.key === 'ArrowLeft' && index > 0) {
+        inputs[index - 1].focus();
+    }
+    if (event.key === 'ArrowRight' && index < 5) {
+        inputs[index + 1].focus();
+    }
+}
+
+function verifyOTP() {
+    const inputs = document.querySelectorAll('.otp-input');
+    const code = Array.from(inputs).map(i => i.value).join('');
+    
+    if (code.length !== 6) {
+        showOTPError('Please enter the complete 6-digit code.');
+        return;
+    }
+    
+    const verifyBtn = document.getElementById('verifyOTPBtn');
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<span class="loading-spinner"></span>';
+    
+    // Get API path
+    const currentPath = window.location.pathname;
+    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+    const projectBase = pathMatch ? pathMatch[1] : '';
+    const apiPath = projectBase ? projectBase + '/app/views/auth/verify_otp.php' : 'app/views/auth/verify_otp.php';
+    
+    fetch(apiPath, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            email: verificationEmail,
+            code: code
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<span>Verify Email</span>';
+        
+        if (data.status === 'success') {
+            showNotification('success', 'Email Verified!', 'Your account is now active. Redirecting to login...', 5000);
+            closeOTPModal();
+            
+            // Redirect to login
+            setTimeout(() => {
+                window.location.href = '../index.php';
+            }, 2000);
+        } else {
+            showOTPError(data.message || 'Invalid verification code.');
+            // Clear inputs
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+        }
+    })
+    .catch(error => {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<span>Verify Email</span>';
+        showOTPError('Failed to verify. Please try again.');
+        console.error('Verification error:', error);
+    });
+}
+
+function resendOTP() {
+    // Get API path
+    const currentPath = window.location.pathname;
+    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+    const projectBase = pathMatch ? pathMatch[1] : '';
+    const apiPath = projectBase ? projectBase + '/app/views/auth/resend_otp.php' : 'app/views/auth/resend_otp.php';
+    
+    showNotification('info', 'Sending...', 'Sending new verification code...', 3000);
+    
+    fetch(apiPath, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            email: verificationEmail
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('success', 'Code Sent!', 'New verification code sent to your email.', 5000);
+            // Clear inputs
+            const inputs = document.querySelectorAll('.otp-input');
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+        } else {
+            showNotification('error', 'Failed', data.message || 'Failed to resend code.');
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Error', 'Failed to resend code. Please try again.');
+        console.error('Resend error:', error);
+    });
+}
+
+function showOTPError(message) {
+    const errorDiv = document.getElementById('otpError');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+function closeOTPModal() {
+    const modal = document.getElementById('otpVerificationModal');
+    if (modal) {
+        modal.remove();
     }
 }
 
