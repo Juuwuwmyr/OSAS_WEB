@@ -12,7 +12,7 @@ if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
 
 // Redirect if session is missing
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-    header('Location: ../index.php');
+    header('Location: ../login_page.php');
     exit;
 }
 
@@ -25,7 +25,7 @@ switch ($_SESSION['role']) {
         // Regular user, continue
         break;
     default:
-        header('Location: ../index.php');
+        header('Location: ../login_page.php');
         exit;
 }
 
