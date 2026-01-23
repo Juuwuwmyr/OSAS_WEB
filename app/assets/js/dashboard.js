@@ -160,15 +160,15 @@ function logout() {
         let logoutPath;
         const currentPath = window.location.pathname;
         
-        if (currentPath.includes('/app/entry/')) {
+        if (currentPath.includes('/landing.php')) {
           // From app/entry/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../app/views/auth/logout.php';
+          logoutPath = '../landing.php';
         } else if (currentPath.includes('/includes/')) {
           // From includes/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../app/views/auth/logout.php';
+          logoutPath = '../landing.php';
         } else {
           // Default fallback
-          logoutPath = 'app/views/auth/logout.php';
+          logoutPath = 'landing.php';
         }
         
         console.log('Redirecting to logout:', logoutPath);

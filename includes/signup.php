@@ -137,7 +137,7 @@
 
             <div class="signup-footer">
                 <p>Already have an account?
-                    <a href="../index.php" class="login-link">Log in</a>
+                    <a href="../login_page.php" class="login-link">Log in</a>
                 </p>
             </div>
         </div>

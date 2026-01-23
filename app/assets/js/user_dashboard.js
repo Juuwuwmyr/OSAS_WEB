@@ -152,35 +152,45 @@ function logout() {
   if (confirm('Are you sure you want to logout?')) {
     console.log('👋 Logging out...');
     
-    // Clear all client-side storage first
-    localStorage.removeItem('userSession');
-    sessionStorage.removeItem('userSession');
-    
-    // Delete all authentication cookies on client side
-    deleteCookie('user_id');
-    deleteCookie('username');
-    deleteCookie('role');
-    deleteCookie('student_id');
-    deleteCookie('student_id_code');
-    deleteCookie('userSession');
-    
-    // Determine correct logout path based on current location
-    let logoutPath;
-    const currentPath = window.location.pathname;
-    
-    if (currentPath.includes('/app/entry/')) {
-      // From app/entry/user_dashboard.php -> ../app/views/auth/logout.php
-      logoutPath = '../app/views/auth/logout.php';
-    } else if (currentPath.includes('/includes/')) {
-      // From includes/user_dashboard.php -> ../app/views/auth/logout.php
-      logoutPath = '../app/views/auth/logout.php';
-    } else {
-      // Default fallback
-      logoutPath = 'app/views/auth/logout.php';
+    try {
+      // Clear all client-side storage first
+      localStorage.removeItem('userSession');
+      sessionStorage.removeItem('userSession');
+      
+      // Delete all authentication cookies on client side
+      deleteCookie('user_id');
+      deleteCookie('username');
+      deleteCookie('role');
+      deleteCookie('student_id');
+      deleteCookie('student_id_code');
+      deleteCookie('userSession');
+      
+      // Direct redirect to logout script
+      console.log('Redirecting to logout script...');
+      
+      // Determine correct logout path based on current location
+      let logoutPath;
+      const currentPath = window.location.pathname;
+      
+      if (currentPath.includes('/landing.php')) {
+        // From app/entry/user_dashboard.php -> ../app/views/auth/logout.php
+        logoutPath = '../landing.php';
+      } else if (currentPath.includes('/includes/')) {
+        // From includes/user_dashboard.php -> ../app/views/auth/logout.php
+        logoutPath = '../landing.php';
+      } else {
+        // Default fallback - go to root and then to logout
+        logoutPath = '../landing.php';
+      }
+      
+      console.log('Logout path:', logoutPath);
+      window.location.href = logoutPath;
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: direct redirect to login page
+      window.location.href = 'index.php?direct=true';
     }
-    
-    console.log('Redirecting to logout:', logoutPath);
-    window.location.href = logoutPath;
   }
 }
 
@@ -1065,6 +1075,19 @@ if (navSettings) {
     e.preventDefault();
     alert('Settings page coming soon!');
   });
+}
+
+// Logout button event listener (backup to onclick)
+const logoutButton = document.querySelector('.sidebar-logout a.logout');
+if (logoutButton) {
+  logoutButton.addEventListener('click', function (e) {
+    e.preventDefault();
+    console.log('Logout button clicked via event listener');
+    logout();
+  });
+  console.log('✅ Logout button event listener attached');
+} else {
+  console.log('❌ Logout button not found');
 }
 
 // Responsive adjustments on load

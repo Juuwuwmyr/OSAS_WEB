@@ -463,7 +463,7 @@ function handleSignup(event) {
             
             // Redirect to login page after 3 seconds
             setTimeout(() => {
-                window.location.href = '../index.php';
+                window.location.href = '../login_page.php';
             }, 3000);
         } else {
             // Handle error response from your PHP

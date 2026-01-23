@@ -17,6 +17,6 @@ foreach ($cookies as $cookie) {
     // Clear with path "/" (no domain specified, so it uses current domain)
     setcookie($cookie, "", time() - 3600, "/");
 }
-header('Location: ' . dirname($_SERVER['SCRIPT_NAME'], 4) . '/index.php');
+header('Location: ' . dirname($_SERVER['SCRIPT_NAME'], 4) . '/index.php?direct=true');
 exit;
 
