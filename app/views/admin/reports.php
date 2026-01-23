@@ -249,6 +249,7 @@ require_once __DIR__ . '/../../core/View.php';
                 <i class='bx bx-sort'></i>
               </div>
             </th>
+            <th>Year Level</th>
             <th class="Reports-sortable" data-sort="uniform">
               <div class="Reports-table-header-content">
                 <span>Improper Uniform</span>
@@ -280,7 +281,7 @@ require_once __DIR__ . '/../../core/View.php';
 
         <tbody id="ReportsTableBody">
           <tr>
-            <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
+            <td colspan="11" style="text-align: center; padding: 40px; color: #666;">
               <div style="font-size: 1.1em;">Loading reports...</div>
             </td>
           </tr>

@@ -33,6 +33,7 @@ class ReportModel extends Model {
                     s.avatar,
                     s.department as student_dept_code,
                     s.section_id,
+                    s.yearlevel,
                     COALESCE(d.department_name, s.department) as department_name,
                     COALESCE(sec.section_code, 'N/A') as section_code,
                     COALESCE(sec.section_name, 'N/A') as section_name,
@@ -132,6 +133,7 @@ class ReportModel extends Model {
                     'department_code' => $row['student_dept_code'] ?? null,
                     'section' => $row['section_code'] ?? null,
                     'section_id' => $row['section_id'] ?? null,
+                    'yearlevel' => $row['yearlevel'] ?? 'N/A',
                     'uniform_count' => (int)($row['uniform_count'] ?? 0),
                     'footwear_count' => (int)($row['footwear_count'] ?? 0),
                     'no_id_count' => (int)($row['no_id_count'] ?? 0),
@@ -196,7 +198,7 @@ class ReportModel extends Model {
         $endDate = $filters['endDate'] ?? null;
         $search = $filters['search'] ?? '';
         
-        $query = "SELECT r.*, s.avatar
+        $query = "SELECT r.*, s.avatar, s.yearlevel
                   FROM reports r
                   LEFT JOIN students s ON BINARY r.student_id = BINARY s.student_id
                   WHERE 1=1";
@@ -300,6 +302,7 @@ class ReportModel extends Model {
                         'deptCode' => $row['department_code'] ?? '',
                         'section' => $row['section'] ?? 'N/A',
                         'sectionName' => $row['section'] ?? 'N/A',
+                        'yearlevel' => $row['yearlevel'] ?? 'N/A',
                         'uniformCount' => (int)($row['uniform_count'] ?? 0),
                         'footwearCount' => (int)($row['footwear_count'] ?? 0),
                         'noIdCount' => (int)($row['no_id_count'] ?? 0),

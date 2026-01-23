@@ -172,6 +172,12 @@ require_once '../../config/db_connect.php';
                 <i class='bx bx-sort'></i>
               </div>
             </th>
+            <th class="Students-sortable" data-sort="yearlevel">
+              <div class="Students-table-header-content">
+                <span>Year Level</span>
+                <i class='bx bx-sort'></i>
+              </div>
+            </th>
             <th>Contact No</th>
             <th class="Students-sortable" data-sort="status">
               <div class="Students-table-header-content">
@@ -301,6 +307,20 @@ require_once '../../config/db_connect.php';
             <select id="studentSection" name="studentSection" required>
               <option value="">Select Section</option>
               <!-- Options loaded from database based on selected department -->
+            </select>
+          </div>
+        </div>
+
+        <div class="Students-form-row">
+          <div class="Students-form-group">
+            <label for="studentYearlevel">Year Level</label>
+            <select id="studentYearlevel" name="studentYearlevel" required>
+              <option value="">Select Year Level</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="5th Year">5th Year</option>
             </select>
           </div>
         </div>

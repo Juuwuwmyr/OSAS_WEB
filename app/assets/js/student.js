@@ -488,6 +488,9 @@ function initStudentsModule() {
                             <span class="dept-badge ${deptClass}">${escapeHtml(s.department || 'N/A')}</span>
                         </td>
                         <td class="student-section">${escapeHtml(s.section || 'N/A')}</td>
+                        <td class="student-yearlevel">
+                            <span class="yearlevel-badge">${escapeHtml(s.yearlevel || 'N/A')}</span>
+                        </td>
                         <td class="student-contact">${escapeHtml(s.contact || 'N/A')}</td>
                         <td>
                             <span class="Students-status-badge ${s.status || 'active'}">${formatStatus(s.status || 'active')}</span>
@@ -586,6 +589,7 @@ function initStudentsModule() {
                     document.getElementById('studentContact').value = student.contact || '';
                     document.getElementById('studentDept').value = student.department || '';
                     document.getElementById('studentAddress').value = student.address || '';
+                    document.getElementById('studentYearlevel').value = student.yearlevel || '';
                     
                     // Load sections for the department
                     if (student.department) {
@@ -804,135 +808,6 @@ function initStudentsModule() {
                     const studentEmail = document.getElementById('studentEmail').value.trim();
                     const studentContact = document.getElementById('studentContact').value.trim();
                     const studentAddress = document.getElementById('studentAddress').value.trim();
-                    const studentDept = document.getElementById('studentDept').value;
-                    const studentSection = document.getElementById('studentSection').value;
-                    const studentStatus = document.getElementById('studentStatus').value;
-                    
-                    if (!studentId || !firstName || !lastName || !studentEmail || !studentContact || !studentDept || !studentSection) {
-                        alert('Please fill in all required fields.');
-                        return;
-                    }
-
-                    // Handle avatar image upload
-                    const studentImageInput = document.getElementById('studentImage');
-                    let avatarPath = '';
-                    
-                    // If a new image file is selected, upload it first
-                    if (studentImageInput && studentImageInput.files && studentImageInput.files.length > 0) {
-                        try {
-                            const uploadFormData = new FormData();
-                            uploadFormData.append('image', studentImageInput.files[0]);
-                            
-                            const uploadApiBase = window.location.pathname.includes('admin_page')
-                                ? '../../api/upload_student_image.php'
-                                : '../api/upload_student_image.php';
-                            
-                            const uploadResponse = await fetch(uploadApiBase, {
-                                method: 'POST',
-                                body: uploadFormData
-                            });
-                            
-                            const uploadResult = await uploadResponse.json();
-                            
-                            if (uploadResult.status === 'success' && uploadResult.data && uploadResult.data.path) {
-                                avatarPath = uploadResult.data.path; // e.g., 'app/assets/img/students/filename.jpg'
-                            } else {
-                                showError(uploadResult.message || 'Failed to upload image');
-                                return;
-                            }
-                        } catch (error) {
-                            console.error('Error uploading image:', error);
-                            showError('Error uploading image. Please try again.');
-                            return;
-                        }
-                    } else {
-                        // No new file - check if we have existing avatar (for edit mode)
-                        const previewImg = document.querySelector('.Students-preview-img');
-                        if (previewImg && previewImg.getAttribute('data-existing-avatar')) {
-                            avatarPath = previewImg.getAttribute('data-existing-avatar');
-                        }
-                    }
-                    
-                    // Now submit the form with the avatar path
-                    const formData = new FormData();
-                    if (editingStudentId) {
-                        formData.append('studentId', editingStudentId);
-                    }
-                    
-                    formData.append('studentIdCode', studentId);
-                    formData.append('firstName', firstName);
-                    formData.append('middleName', middleName);
-                    formData.append('lastName', lastName);
-                    formData.append('studentEmail', studentEmail);
-                    formData.append('studentContact', studentContact);
-                    formData.append('studentAddress', studentAddress);
-                    formData.append('studentDept', studentDept);
-                    formData.append('studentSection', studentSection);
-                    formData.append('studentStatus', studentStatus);
-                    formData.append('studentAvatar', avatarPath);
-                    
-                    if (editingStudentId) {
-                        await updateStudent(editingStudentId, formData);
-                    } else {
-                        await addStudent(formData);
-                    }
-                });
-            }
-
-            // Search functionality
-            if (searchInput) {
-                searchInput.addEventListener('input', renderStudents);
-            }
-
-            // Filter functionality - hide archived by default
-            if (filterSelect) {
-                // Set default to active
-                filterSelect.value = 'active';
-                currentView = 'active';
-                
-                filterSelect.addEventListener('change', () => {
-                    if (filterSelect.value === 'archived') {
-                        currentView = 'archived';
-                    } else {
-                        currentView = 'active';
-                    }
-                    fetchStudents();
-                    // Update archived button state
-                    const btnArchived = document.getElementById('btnArchivedStudents');
-                    if (btnArchived) {
-                        if (currentView === 'archived') {
-                            btnArchived.classList.add('active');
-                        } else {
-                            btnArchived.classList.remove('active');
-                        }
-                    }
-                });
-            }
-
-            // Archived button functionality
-            const btnArchived = document.getElementById('btnArchivedStudents');
-            if (btnArchived) {
-                btnArchived.addEventListener('click', () => {
-                    if (currentView === 'archived') {
-                        // Switch back to active view
-                        currentView = 'active';
-                        if (filterSelect) filterSelect.value = 'active';
-                        btnArchived.classList.remove('active');
-                    } else {
-                        // Switch to archived view
-                        currentView = 'archived';
-                        if (filterSelect) filterSelect.value = 'archived';
-                        btnArchived.classList.add('active');
-                    }
-                    fetchStudents();
-                });
-            }
-
-            // Print functionality
-            if (printBtn) {
-                printBtn.addEventListener('click', function() {
-                    const tableTitle = document.querySelector('.Students-table-title')?.textContent || 'Student List';
-                    const tableSubtitle = document.querySelector('.Students-table-subtitle')?.textContent || 'All student records and their details';
 
                     // Generate HTML table for printing
                     let printTableHTML = `

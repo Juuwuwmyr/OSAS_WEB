@@ -53,12 +53,6 @@ $role = $_SESSION['role'] ?? 'user';
       </a>
     </li>
     <li>
-      <a href="#" data-page="user-page/my_profile">
-        <i class='bx bxs-user'></i>
-        <span class="text">My Profile</span>
-      </a>
-    </li>
-    <li>
       <a href="#" data-page="user-page/announcements">
         <i class='bx bxs-megaphone'></i>
         <span class="text">Announcements</span>

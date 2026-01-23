@@ -857,6 +857,9 @@ function initViolationsModule() {
                         <span class="dept-badge ${deptClass}">${v.department}</span>
                     </td>
                     <td class="violation-section">${v.section}</td>
+                    <td class="violation-yearlevel">
+                        <span class="yearlevel-badge">${v.studentYearlevel || 'N/A'}</span>
+                    </td>
                     <td class="violation-date">${formatDate(v.dateReported)}</td>
                     <td>
                         <span class="Violations-status-badge ${statusClass}">${v.statusLabel}</span>
@@ -959,6 +962,7 @@ function initViolationsModule() {
                     if (modalStudentImage) modalStudentImage.src = violation.studentImage;
                     document.getElementById('modalStudentDept').textContent = violation.studentDept;
                     document.getElementById('modalStudentSection').textContent = violation.studentSection;
+                    document.getElementById('modalStudentYearlevel').textContent = violation.studentYearlevel || 'N/A';
                     document.getElementById('modalStudentContact').textContent = violation.studentContact;
                     if (selectedStudentCard) selectedStudentCard.style.display = 'flex';
 
@@ -1256,6 +1260,7 @@ function initViolationsModule() {
                 document.getElementById('modalStudentImage').src = imageUrl;
                 document.getElementById('modalStudentDept').textContent = student.department || 'N/A';
                 document.getElementById('modalStudentSection').textContent = student.section || 'N/A';
+                document.getElementById('modalStudentYearlevel').textContent = student.yearlevel || 'N/A';
                 document.getElementById('modalStudentContact').textContent = student.contact || student.email || 'N/A';
 
                 if (selectedStudentCard) {
@@ -1420,6 +1425,9 @@ function initViolationsModule() {
                                     <div><span class="report-label">Case ID:</span> <span class="report-value">${violation.caseId}</span></div>
                                     <div><span class="report-label">Student ID:</span> <span class="report-value">${violation.studentId}</span></div>
                                     <div><span class="report-label">Student Name:</span> <span class="report-value">${violation.studentName}</span></div>
+                                    <div><span class="report-label">Department:</span> <span class="report-value">${violation.department}</span></div>
+                                    <div><span class="report-label">Section:</span> <span class="report-value">${violation.section}</span></div>
+                                    <div><span class="report-label">Year Level:</span> <span class="report-value">${violation.studentYearlevel || 'N/A'}</span></div>
                                     <div><span class="report-label">Violation Type:</span> <span class="report-value">${violation.violationTypeLabel}</span></div>
                                     <div><span class="report-label">Level:</span> <span class="report-value">${violation.violationLevelLabel}</span></div>
                                     <div><span class="report-label">Date & Time:</span> <span class="report-value">${violation.dateTime}</span></div>
@@ -1933,6 +1941,7 @@ function initViolationsModule() {
                                 <th>Level</th>
                                 <th>Department</th>
                                 <th>Section</th>
+                                <th>Year Level</th>
                                 <th>Date Reported</th>
                                 <th>Status</th>
                             </tr>
@@ -1955,6 +1964,7 @@ function initViolationsModule() {
                             <td><span class="level-badge ${levelClass}">${violation.violationLevelLabel}</span></td>
                             <td><span class="dept-badge ${deptClass}">${violation.department}</span></td>
                             <td>${violation.section}</td>
+                            <td>${violation.studentYearlevel || 'N/A'}</td>
                             <td>${formatDate(violation.dateReported)}</td>
                             <td><span class="status-badge ${statusClass}">${violation.statusLabel}</span></td>
                         </tr>
@@ -2141,7 +2151,7 @@ function initViolationsModule() {
                 if (tableBody) {
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 40px; color: #dc3545;">
+                            <td colspan="11" style="text-align: center; padding: 40px; color: #dc3545;">
                                 <i class='bx bx-error' style="font-size: 24px; margin-bottom: 10px;"></i>
                                 <div>Failed to load violations data</div>
                                 <div style="font-size: 14px; margin: 10px 0; color: #666;">${errorMessage}</div>

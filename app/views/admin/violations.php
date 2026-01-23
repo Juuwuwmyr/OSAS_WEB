@@ -170,6 +170,7 @@ require_once __DIR__ . '/../../core/View.php';
               </div>
             </th>
             <th>Section</th>
+            <th>Year Level</th>
             <th class="Violations-sortable" data-sort="date">
               <div class="Violations-table-header-content">
                 <span>Date Reported</span>
@@ -263,6 +264,10 @@ require_once __DIR__ . '/../../core/View.php';
             <div class="violation-detail-row">
               <span class="violation-detail-label">Section:</span>
               <span id="modalStudentSection" class="violation-detail-value">BSIT-3A</span>
+            </div>
+            <div class="violation-detail-row">
+              <span class="violation-detail-label">Year Level:</span>
+              <span id="modalStudentYearlevel" class="violation-detail-value">3rd Year</span>
             </div>
             <div class="violation-detail-row">
               <span class="violation-detail-label">Contact:</span>

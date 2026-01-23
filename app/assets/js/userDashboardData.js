@@ -24,7 +24,6 @@ class UserDashboardData {
         this.violations = [];
         this.announcements = [];
         this.dashcontents = [];
-        this.userProfile = null;
     }
 
     /**

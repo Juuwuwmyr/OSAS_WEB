@@ -16,7 +16,7 @@ class StudentModel extends Model {
         // Build query with JOINs
         if ($sectionsExist && $deptExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, 
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -27,7 +27,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } elseif ($sectionsExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, 
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -37,7 +37,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } else {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, 
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              'N/A' as section_name, 
                              'N/A' as section_code, 
@@ -134,6 +134,7 @@ class StudentModel extends Model {
                 'department' => $row['department_name'] ?? ($row['department'] ?? 'N/A'),
                 'section' => $row['section_code'] ?? 'N/A',
                 'section_id' => $row['section_id'] ?? null,
+                'yearlevel' => $row['yearlevel'] ?? 'N/A',
                 'status' => $row['status'] ?? 'active',
                 'avatar' => $avatar,
                 'date' => isset($row['created_at']) ? date('M d, Y', strtotime($row['created_at'])) : date('M d, Y')
@@ -261,6 +262,7 @@ class StudentModel extends Model {
                         'year_level' => $row['year_level'] ?? null,
                         'yearLevel' => $row['year_level'] ?? null,
                         'year' => $row['year_level'] ?? null,
+                        'yearlevel' => $row['yearlevel'] ?? null,
                         'created_at' => $row['created_at'] ?? null,
                         'createdAt' => $row['created_at'] ?? null,
                         'enrollment_date' => $row['created_at'] ?? null,

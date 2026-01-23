@@ -82,6 +82,7 @@ class StudentController extends Controller {
         $address = $this->sanitize($this->getPost('studentAddress', ''));
         $department = $this->sanitize($this->getPost('studentDept', ''));
         $sectionId = intval($this->getPost('studentSection', 0));
+        $yearlevel = $this->sanitize($this->getPost('studentYearlevel', ''));
         $status = $this->sanitize($this->getPost('studentStatus', 'active'));
         $avatar = $this->sanitize($this->getPost('studentAvatar', ''));
 
@@ -108,6 +109,7 @@ class StudentController extends Controller {
                 'address' => $address ?: null,
                 'department' => $department ?: null,
                 'section_id' => $sectionId ?: null,
+                'yearlevel' => $yearlevel ?: null,
                 'avatar' => $avatar ?: null,
                 'status' => $status,
                 'created_at' => date('Y-m-d H:i:s')
@@ -139,6 +141,7 @@ class StudentController extends Controller {
         $address = $this->sanitize($this->getPost('studentAddress', ''));
         $department = $this->sanitize($this->getPost('studentDept', ''));
         $sectionId = intval($this->getPost('studentSection', 0));
+        $yearlevel = $this->sanitize($this->getPost('studentYearlevel', ''));
         $status = $this->sanitize($this->getPost('studentStatus', 'active'));
         $avatar = $this->sanitize($this->getPost('studentAvatar', ''));
 
@@ -165,6 +168,7 @@ class StudentController extends Controller {
                 'address' => $address ?: null,
                 'department' => $department ?: null,
                 'section_id' => $sectionId ?: null,
+                'yearlevel' => $yearlevel ?: null,
                 'avatar' => $avatar ?: null,
                 'status' => $status,
                 'updated_at' => date('Y-m-d H:i:s')

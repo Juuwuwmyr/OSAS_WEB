@@ -49,7 +49,6 @@ OSAS_WEBSYS/
 │   └── user-page/            # User interface pages
 │       ├── user_dashcontent.php  # User dashboard
 │       ├── my_violations.php     # User's violation history
-│       ├── my_profile.php        # User profile
 │       └── announcements.php     # Announcements
 ├── index.php                 # Main entry point (Login page)
 ├── manifest.json             # PWA manifest
@@ -78,7 +77,6 @@ OSAS_WEBSYS/
 ### 👤 User Dashboard
 * **Personal Dashboard:** User-specific overview
 * **My Violations:** View personal violation history
-* **My Profile:** Manage personal information
 * **Announcements:** View system announcements
 
 ### 📱 Progressive Web App (PWA)

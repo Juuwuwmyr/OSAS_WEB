@@ -34,6 +34,7 @@ class ViolationModel extends Model {
         
         // Use LEFT JOIN so we get violations even if student doesn't exist
         // Fix collation mismatch by using BINARY comparison (case-sensitive but works with any collation)
+        // Also join with departments table to get department names
         $query = "SELECT 
                     v.*, 
                     s.student_id as student_id_no,
@@ -44,9 +45,15 @@ class ViolationModel extends Model {
                     s.contact_number, 
                     s.avatar,
                     s.department as student_dept,
-                    s.section_id as student_section
+                    s.section_id as student_section,
+                    s.yearlevel as student_yearlevel,
+                    COALESCE(d.department_name, s.department) as department_name,
+                    COALESCE(sec.section_name, 'N/A') as section_name,
+                    COALESCE(sec.section_code, 'N/A') as section_code
                   FROM violations v
                   LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+                  LEFT JOIN departments d ON s.department = d.department_code
+                  LEFT JOIN sections sec ON s.section_id = sec.id
                   WHERE 1=1";
         
         $params = [];
@@ -202,15 +209,16 @@ class ViolationModel extends Model {
                     'studentId' => $row['student_id'] ?? '',
                     'studentName' => $fullName,
                     'studentImage' => $avatar,
-                    'studentDept' => $row['student_dept'] ?? $row['department'] ?? '',
-                    'studentSection' => $row['student_section'] ?? $row['section'] ?? '',
+                    'studentDept' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
+                    'studentSection' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
+                    'studentYearlevel' => $row['student_yearlevel'] ?? 'N/A',
                     'studentContact' => $row['contact_number'] ?? 'N/A',
                     'violationType' => $row['violation_type'] ?? '',
                     'violationTypeLabel' => $violationTypeLabel,
                     'violationLevel' => $row['violation_level'] ?? '',
                     'violationLevelLabel' => $violationLevelLabel,
-                    'department' => $row['department'] ?? '',
-                    'section' => $row['section'] ?? '',
+                    'department' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
+                    'section' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
                     'dateReported' => $row['violation_date'] ?? '',
                     'violationTime' => $row['violation_time'] ?? '',
                     'dateTime' => $violationDateTime,

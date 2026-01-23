@@ -40,7 +40,6 @@ $pathMap = [
     'admin_page/Settings' => 'admin/settings',
     'user-page/user_dashcontent' => 'user/dashcontent',
     'user-page/my_violations' => 'user/my_violations',
-    'user-page/my_profile' => 'user/my_profile',
     'user-page/announcements' => 'user/announcements',
 ];
 

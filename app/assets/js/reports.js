@@ -173,7 +173,7 @@ function initReportsModule() {
             try {
                 if (showLoading) {
                     if (tableBody) {
-                        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">Loading reports...</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 20px;">Loading reports...</td></tr>';
                     }
                 }
                 
@@ -237,7 +237,7 @@ function initReportsModule() {
                     
                     // Show helpful message in table
                     if (tableBody) {
-                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px;">
+                        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 40px;">
                             <div style="font-size: 1.2em; color: #666; margin-bottom: 10px;">
                                 <i class='bx bx-info-circle' style="font-size: 2em; color: #4a90e2;"></i>
                             </div>
@@ -274,7 +274,7 @@ function initReportsModule() {
                 console.error('❌ Error loading reports:', error);
                 console.error('Error details:', error.stack);
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #e74c3c;">
+                    tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px; color: #e74c3c;">
                         <div style="margin-bottom: 10px;">❌ Error loading reports: ${error.message}</div>
                         <div style="font-size: 0.9em; color: #666;">Check browser console for details</div>
                     </td></tr>`;
@@ -339,7 +339,7 @@ function initReportsModule() {
                     emptyState.style.display = 'none';
                     // Show message in table instead
                     if (tableBody && tableBody.innerHTML.trim() === '') {
-                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #666;">
+                        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px; color: #666;">
                             No reports match the current filters. Try adjusting your search or filter criteria.
                         </td></tr>`;
                     }
@@ -374,6 +374,9 @@ function initReportsModule() {
                         <span class="dept-badge ${deptClass}">${report.department}</span>
                     </td>
                     <td class="report-section">${report.section}</td>
+                    <td class="report-yearlevel">
+                        <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
+                    </td>
                     <td class="violation-count uniform">
                         <div class="count-badge ${uniformClass}">${report.uniformCount}</div>
                     </td>
@@ -482,6 +485,10 @@ function initReportsModule() {
                     <div class="info-item">
                         <span class="info-label">Section:</span>
                         <span class="info-value">${report.section}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Year Level:</span>
+                        <span class="info-value">${report.yearlevel || 'N/A'}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Contact No:</span>

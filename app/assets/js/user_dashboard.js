@@ -453,20 +453,6 @@ function loadContent(page) {
             }, 300);
           }
 
-          if (page.toLowerCase().includes('my_profile')) {
-            setTimeout(() => {
-              if (typeof window.initUserProfile === 'function') {
-                window.initUserProfile();
-              } else if (typeof window.initializeUserProfile === 'function') {
-                window.initializeUserProfile();
-              } else if (typeof initProfileModule === 'function') {
-                initProfileModule();
-              } else {
-                console.warn('⚠️ User profile init function not found');
-              }
-            }, 300);
-          }
-
           if (page.toLowerCase().includes('announcements') && !page.toLowerCase().includes('user_dashcontent')) {
             setTimeout(() => {
               if (typeof window.initAnnouncementsModule === 'function') {
@@ -524,21 +510,6 @@ function loadContent(page) {
                 window.initializeUserViolations();
               } else {
                 console.warn('⚠️ User violations init function not found');
-              }
-            }, 300);
-          });
-        }
-
-        if (page.toLowerCase().includes('my_profile')) {
-          loadScript('../app/assets/js/userProfile.js', () => {
-            console.log('✅ User profile script loaded');
-            setTimeout(() => {
-              if (typeof window.initUserProfile === 'function') {
-                window.initUserProfile();
-              } else if (typeof window.initializeUserProfile === 'function') {
-                window.initializeUserProfile();
-              } else {
-                console.warn('⚠️ User profile init function not found');
               }
             }, 300);
           });
