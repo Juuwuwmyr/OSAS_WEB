@@ -9,7 +9,7 @@ class UserModel extends Model {
      * Authenticate user
      */
     public function authenticate($username, $password) {
-        $query = "SELECT * FROM users WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1";
+        $query = "SELECT * FROM users WHERE (username = ? OR email = ?) AND status = 'active' AND email_verified_at IS NOT NULL LIMIT 1";
         $result = $this->query($query, [$username, $username]);
         
         if (count($result) === 1) {

@@ -158,27 +158,29 @@ function handleLoginFormSubmit(e) {
             if (data.status === 'success') {
                 showToast('Login successful! Redirecting...', 'success');
 
+                const payload = data.data || data;
+
                 const sessionData = {
-                    name: data.name,
-                    role: data.role,
-                    user_id: data.user_id || data.studentId,
-                    studentId: data.studentId,
-                    studentIdCode: data.studentIdCode,
-                    expires: data.expires * 1000,
+                    name: payload.name,
+                    role: payload.role,
+                    user_id: payload.user_id || payload.studentId,
+                    studentId: payload.studentId,
+                    studentIdCode: payload.studentIdCode,
+                    expires: payload.expires * 1000,
                     theme: darkMode ? 'dark' : 'light'
                 };
 
                 localStorage.setItem('userSession', JSON.stringify(sessionData));
                 
-                if (data.studentId) {
-                    localStorage.setItem('student_id', data.studentId);
-                    if (data.studentIdCode) {
-                        localStorage.setItem('student_id_code', data.studentIdCode);
+                if (payload.studentId) {
+                    localStorage.setItem('student_id', payload.studentId);
+                    if (payload.studentIdCode) {
+                        localStorage.setItem('student_id_code', payload.studentIdCode);
                     }
                 }
 
                 setTimeout(() => {
-                    if (data.role === 'admin') {
+                    if (payload.role === 'admin') {
                         window.location.href = './includes/dashboard.php';
                     } else {
                         window.location.href = './includes/user_dashboard.php';

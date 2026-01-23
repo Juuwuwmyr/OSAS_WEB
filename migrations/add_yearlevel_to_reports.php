@@ -20,6 +20,12 @@ class AddYearlevelToReports {
      */
     public function up() {
         try {
+            $checkTable = $this->conn->query("SHOW TABLES LIKE 'reports'");
+            if (!$checkTable || $checkTable->num_rows === 0) {
+                echo "ℹ️ reports table does not exist - skipping migration\n";
+                return true;
+            }
+
             // Check if yearlevel column already exists
             $checkColumn = $this->conn->query("SHOW COLUMNS FROM reports LIKE 'yearlevel'");
             
@@ -78,6 +84,12 @@ class AddYearlevelToReports {
      */
     public function down() {
         try {
+            $checkTable = $this->conn->query("SHOW TABLES LIKE 'reports'");
+            if (!$checkTable || $checkTable->num_rows === 0) {
+                echo "ℹ️ reports table does not exist - skipping rollback\n";
+                return true;
+            }
+
             // Check if yearlevel column exists before dropping
             $checkColumn = $this->conn->query("SHOW COLUMNS FROM reports LIKE 'yearlevel'");
             
@@ -103,7 +115,7 @@ class AddYearlevelToReports {
 }
 
 // Run migration if accessed directly
-if (basename(__FILE__) === 'add_yearlevel_to_reports.php') {
+if (basename($_SERVER['PHP_SELF']) === basename(__FILE__)) {
     $migration = new AddYearlevelToReports($conn);
     $migration->up();
 }
