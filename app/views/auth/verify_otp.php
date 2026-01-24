@@ -2,8 +2,49 @@
 // app/views/auth/verify_otp.php
 // Creates user ONLY after successful OTP verification
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ob_start();
+
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length()) {
+            ob_clean();
+        }
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server error. Please try again.']);
+        if (ob_get_level()) {
+            ob_end_flush();
+        }
+    }
+});
+
+function bindParamsByRef($stmt, string $types, array $params): bool {
+    $refs = [];
+    $refs[] = $types;
+    foreach ($params as $k => $v) {
+        $refs[] = &$params[$k];
+    }
+    return call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
+set_exception_handler(function (Throwable $e) {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Server error. Please try again.']);
+    if (ob_get_level()) {
+        ob_end_flush();
+    }
+    exit;
+});
 
 // Set timezone to match MySQL
 date_default_timezone_set('Asia/Manila');
@@ -68,17 +109,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
     
-    // Get current time for comparison
-    $currentTime = date('Y-m-d H:i:s');
-    
     // Find valid OTP with pending data
-    $stmt = $conn->prepare("SELECT * FROM otps WHERE email = ? AND code = ? AND used = 0 ORDER BY id DESC LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, email, code, expires_at, used, pending_data FROM otps WHERE email = ? AND code = ? AND used = 0 ORDER BY id DESC LIMIT 1");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server error. Please try again.']);
+        ob_end_flush();
+        exit;
+    }
     $stmt->bind_param("ss", $email, $code);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result && $result->num_rows > 0) {
-        $otp = $result->fetch_assoc();
+
+    if (!$stmt->execute()) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server error. Please try again.']);
+        $stmt->close();
+        ob_end_flush();
+        exit;
+    }
+
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        $otp = [];
+        $stmt->bind_result($otpId, $otpEmail, $otpCode, $otpExpiresAt, $otpUsed, $otpPendingData);
+        $stmt->fetch();
+        $otp['id'] = $otpId;
+        $otp['email'] = $otpEmail;
+        $otp['code'] = $otpCode;
+        $otp['expires_at'] = $otpExpiresAt;
+        $otp['used'] = $otpUsed;
+        $otp['pending_data'] = $otpPendingData;
         
         // Check if expired (compare timestamps)
         $expiresAt = strtotime($otp['expires_at']);
@@ -106,23 +166,112 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ob_end_flush();
             exit;
         }
+
+        if (empty($pendingData['name']) || empty($pendingData['email']) || empty($pendingData['username']) || empty($pendingData['password']) || empty($pendingData['role'])) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Registration data is incomplete. Please register again.']);
+            $stmt->close();
+            ob_end_flush();
+            exit;
+        }
         
         // NOW create the user in the users table
-        $insertUser = $conn->prepare("
-            INSERT INTO users (student_id, name, email, username, password, department, role, status, email_verified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())
-        ");
-        
-        $insertUser->bind_param(
-            "sssssss",
-            $pendingData['student_id'],
-            $pendingData['name'],
-            $pendingData['email'],
-            $pendingData['username'],
-            $pendingData['password'],
-            $pendingData['department'],
-            $pendingData['role']
-        );
+        // Support both schemas:
+        // - Legacy schema: full_name, is_active
+        // - New schema: name, status, email_verified_at, department
+        $columns = [];
+        try {
+            $colRes = $conn->query('SHOW COLUMNS FROM users');
+            if ($colRes) {
+                while ($row = $colRes->fetch_assoc()) {
+                    if (!empty($row['Field'])) {
+                        $columns[$row['Field']] = true;
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            $columns = [];
+        }
+
+        $hasFullName = isset($columns['full_name']);
+        $hasIsActive = isset($columns['is_active']);
+        $hasStatus = isset($columns['status']);
+        $hasEmailVerifiedAt = isset($columns['email_verified_at']);
+        $hasDepartment = isset($columns['department']);
+
+        $studentId = isset($pendingData['student_id']) ? (string)$pendingData['student_id'] : null;
+        $fullName = (string)$pendingData['name'];
+        $dept = isset($pendingData['department']) ? (string)$pendingData['department'] : null;
+        $roleVal = (string)$pendingData['role'];
+
+        // Prefer legacy schema if present (matches your current phpMyAdmin screenshot)
+        if ($hasFullName && $hasIsActive) {
+            $insertUser = $conn->prepare("
+                INSERT INTO users (username, email, password, role, full_name, student_id, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+            ");
+        } else {
+            // Newer schema
+            $cols = ['student_id', 'name', 'email', 'username', 'password', 'role'];
+            $vals = ['?', '?', '?', '?', '?', '?'];
+            $types = 'ssssss';
+            $bind = [$studentId, $fullName, (string)$pendingData['email'], (string)$pendingData['username'], (string)$pendingData['password'], $roleVal];
+
+            if ($hasDepartment) {
+                $cols[] = 'department';
+                $vals[] = '?';
+                $types .= 's';
+                $bind[] = $dept;
+            }
+            if ($hasStatus) {
+                $cols[] = 'status';
+                $vals[] = "'active'";
+            }
+            if ($hasEmailVerifiedAt) {
+                $cols[] = 'email_verified_at';
+                $vals[] = 'NOW()';
+            }
+
+            $sql = 'INSERT INTO users (' . implode(', ', $cols) . ') VALUES (' . implode(', ', $vals) . ')';
+            $insertUser = $conn->prepare($sql);
+        }
+
+        if (!$insertUser) {
+            error_log('verify_otp: prepare insertUser failed: ' . ($conn->errno ?? '') . ' ' . ($conn->error ?? ''));
+            http_response_code(500);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to create account. Please try again.',
+                'error_code' => $conn->errno ?? null,
+                'hint' => 'Prepare failed'
+            ]);
+            $stmt->close();
+            ob_end_flush();
+            exit;
+        }
+
+        if ($hasFullName && $hasIsActive) {
+            $insertUser->bind_param(
+                'ssssss',
+                $pendingData['username'],
+                $pendingData['email'],
+                $pendingData['password'],
+                $roleVal,
+                $fullName,
+                $studentId
+            );
+        } else {
+            // Rebuild bind params for the dynamically-built query
+            $types = 'ssssss';
+            $bind = [$studentId, $fullName, (string)$pendingData['email'], (string)$pendingData['username'], (string)$pendingData['password'], $roleVal];
+            if ($hasDepartment) {
+                $types .= 's';
+                $bind[] = $dept;
+            }
+            if (!bindParamsByRef($insertUser, $types, $bind)) {
+                error_log('verify_otp: bind_param failed');
+            }
+        }
         
         if ($insertUser->execute()) {
             // Mark OTP as used
@@ -147,10 +296,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // Check if duplicate entry error
             if ($conn->errno == 1062) {
                 http_response_code(409);
-                echo json_encode(['status' => 'error', 'message' => 'Account already exists with this email or username.']);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Account already exists with this email or username.',
+                    'error_code' => 1062
+                ]);
             } else {
+                error_log('verify_otp: insertUser execute failed: ' . ($conn->errno ?? '') . ' ' . ($conn->error ?? ''));
                 http_response_code(500);
-                echo json_encode(['status' => 'error', 'message' => 'Failed to create account. Please try again.']);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Failed to create account. Please try again.',
+                    'error_code' => $conn->errno ?? null,
+                    'hint' => 'Insert failed'
+                ]);
             }
         }
         $insertUser->close();

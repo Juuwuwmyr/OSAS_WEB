@@ -654,6 +654,47 @@ INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type`, `viol
 (10, 'VIOL-2025-010', '2023-0195', 'improper_uniform', 'permitted1', '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'permitted', NULL, '2025-12-16 19:54:09', '2025-12-17 03:54:09', NULL),
 (11, 'VIOL-2026-001', '2024-001', 'improper_uniform', 'warning1', '', '22', '2026-01-12', '00:15:00', 'gate_1', 'soeaifjsoidjfos', NULL, 'warning', NULL, '2026-01-12 08:15:52', '2026-01-12 16:15:52', NULL);
 
+-- --------------------------------------------------------
+
+DROP TABLE IF EXISTS `otps`;
+CREATE TABLE IF NOT EXISTS `otps` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `code` varchar(6) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `pending_data` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_otps_email` (`email`),
+  KEY `idx_otps_code` (`code`),
+  KEY `idx_otps_expires` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+DROP TABLE IF EXISTS `email_configs`;
+CREATE TABLE IF NOT EXISTS `email_configs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `smtp_host` varchar(255) NOT NULL,
+  `smtp_port` int NOT NULL,
+  `smtp_username` varchar(255) DEFAULT NULL,
+  `smtp_password` varchar(255) DEFAULT NULL,
+  `from_email` varchar(255) NOT NULL,
+  `from_name` varchar(255) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `is_default` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_email_configs_active` (`is_active`),
+  KEY `idx_email_configs_default` (`is_default`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `email_configs` (`name`, `smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`, `from_email`, `from_name`, `is_active`, `is_default`)
+VALUES ('OSAS Primary Gmail', 'smtp.gmail.com', 587, 'belugaw6@gmail.com', 'chrqrylpqhrtqytl', 'belugaw6@gmail.com', 'OSAS', 1, 1);
+
 --
 -- Constraints for dumped tables
 --

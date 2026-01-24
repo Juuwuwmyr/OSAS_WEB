@@ -86,9 +86,9 @@ INSERT INTO email_configs (
     'Default SMTP',
     'smtp.gmail.com',
     587,
-    'your_email@gmail.com',
-    'your_app_password',
-    'your_email@gmail.com',
+    'belugaw6@gmail.com',
+    'chrqrylpqhrtqytl',
+    'belugaw6@gmail.com',
     'OSAS',
     1,
     1

@@ -789,6 +789,24 @@ function getOTPAPIPath(fileName) {
     return 'app/views/auth/' + fileName;
 }
 
+function getLoginPagePath() {
+    const currentPath = window.location.pathname;
+    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+    const projectBase = pathMatch ? pathMatch[1] : '';
+
+    if (projectBase) {
+        return projectBase + '/login_page.php?direct=true';
+    }
+
+    if (currentPath.includes('/includes/')) {
+        return '../login_page.php?direct=true';
+    } else if (currentPath.includes('/app/views/')) {
+        return '../../login_page.php?direct=true';
+    }
+
+    return 'login_page.php?direct=true';
+}
+
 function showOTPVerificationModal(email) {
     verificationEmail = email;
     
@@ -1120,7 +1138,7 @@ function verifyOTP() {
             
             // Redirect to login
             setTimeout(() => {
-                window.location.href = '../index.php';
+                window.location.href = getLoginPagePath();
             }, 2000);
         } else {
             showOTPError(data.message || 'Invalid verification code.');
