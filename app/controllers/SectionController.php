@@ -46,7 +46,9 @@ class SectionController extends Controller {
 
         $name = $this->sanitize($this->getPost('sectionName', ''));
         $code = $this->sanitize($this->getPost('sectionCode', ''));
-        $deptId = intval($this->getPost('departmentId', 0));
+        $deptId = intval($this->getPost('departmentId', $this->getPost('sectionDepartment', 0)));
+        $academicYear = $this->sanitize($this->getPost('academicYear', ''));
+        $status = $this->sanitize($this->getPost('sectionStatus', 'active'));
 
         if (empty($name) || empty($code) || $deptId === 0) {
             $this->error('Section name, code, and department are required.');
@@ -61,7 +63,8 @@ class SectionController extends Controller {
                 'section_name' => $name,
                 'section_code' => $code,
                 'department_id' => $deptId,
-                'status' => 'active',
+                'academic_year' => $academicYear,
+                'status' => !empty($status) ? $status : 'active',
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
@@ -84,7 +87,9 @@ class SectionController extends Controller {
 
         $name = $this->sanitize($this->getPost('sectionName', ''));
         $code = $this->sanitize($this->getPost('sectionCode', ''));
-        $deptId = intval($this->getPost('departmentId', 0));
+        $deptId = intval($this->getPost('departmentId', $this->getPost('sectionDepartment', 0)));
+        $academicYear = $this->sanitize($this->getPost('academicYear', ''));
+        $status = $this->sanitize($this->getPost('sectionStatus', 'active'));
 
         if (empty($name) || empty($code) || $deptId === 0) {
             $this->error('Section name, code, and department are required.');
@@ -99,6 +104,8 @@ class SectionController extends Controller {
                 'section_name' => $name,
                 'section_code' => $code,
                 'department_id' => $deptId,
+                'academic_year' => $academicYear,
+                'status' => !empty($status) ? $status : 'active',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 

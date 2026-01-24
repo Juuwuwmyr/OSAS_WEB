@@ -5,6 +5,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ob_start();
 
+// Set timezone to match MySQL
+date_default_timezone_set('Asia/Manila');
+
 // Load Composer autoloader
 $autoloadPaths = [
     __DIR__ . '/../../../vendor/autoload.php',
@@ -76,30 +79,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit;
     }
     
-    // Check if user exists and is not verified
-    $checkUser = $conn->prepare("SELECT * FROM users WHERE email = ?");
-    $checkUser->bind_param("s", $email);
-    $checkUser->execute();
-    $userResult = $checkUser->get_result();
-    
-    if (!$userResult || $userResult->num_rows === 0) {
+    // NEW FLOW: User is only created after OTP verification.
+    // So we must resend OTP based on the latest pending registration stored in otps.pending_data.
+    $checkPending = $conn->prepare("SELECT pending_data FROM otps WHERE email = ? ORDER BY id DESC LIMIT 1");
+    $checkPending->bind_param("s", $email);
+    $checkPending->execute();
+    $pendingResult = $checkPending->get_result();
+
+    if (!$pendingResult || $pendingResult->num_rows === 0) {
         http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'No account found with this email.']);
-        $checkUser->close();
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'No pending registration found for this email. Please register again.'
+        ]);
+        $checkPending->close();
         ob_end_flush();
         exit;
     }
-    
-    $user = $userResult->fetch_assoc();
-    $checkUser->close();
-    
-    // Check if already verified
-    if ($user['email_verified_at'] !== null) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Email is already verified. You can login now.']);
+
+    $pendingRow = $pendingResult->fetch_assoc();
+    $checkPending->close();
+
+    $pendingData = $pendingRow['pending_data'] ?? null;
+    if (empty($pendingData)) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Pending registration data is missing. Please register again.'
+        ]);
         ob_end_flush();
         exit;
     }
+
+    $pendingDecoded = json_decode($pendingData, true);
+    $displayName = is_array($pendingDecoded) && !empty($pendingDecoded['name']) ? $pendingDecoded['name'] : $email;
     
     // Generate new OTP
     $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -111,9 +124,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $deleteOtp->execute();
     $deleteOtp->close();
     
-    // Insert new OTP
-    $insertOtp = $conn->prepare("INSERT INTO otps (email, code, expires_at, used) VALUES (?, ?, ?, 0)");
-    $insertOtp->bind_param("sss", $email, $otpCode, $expiresAt);
+    // Insert new OTP and keep the pending registration data
+    $insertOtp = $conn->prepare("INSERT INTO otps (email, code, expires_at, used, pending_data) VALUES (?, ?, ?, 0, ?)");
+    $insertOtp->bind_param("ssss", $email, $otpCode, $expiresAt, $pendingData);
     $insertOtp->execute();
     $insertOtp->close();
     
@@ -145,7 +158,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail->setFrom($fromEmail, $fromName);
                 }
 
-                $mail->addAddress($email, $user['name']);
+                $mail->addAddress($email, $displayName);
                 $mail->isHTML(true);
                 $mail->Subject = 'OSAS - New Verification Code';
                 $mail->Body = '
@@ -156,7 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                         <div style="background: #f9f9f9; padding: 30px; border-radius: 10px;">
                             <h2 style="color: #333; margin-bottom: 20px;">New Verification Code</h2>
-                            <p style="color: #666;">Hi ' . htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') . ',</p>
+                            <p style="color: #666;">Hi ' . htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') . ',</p>
                             <p style="color: #666;">Here is your new verification code:</p>
                             <div style="background: #333; color: #fff; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 8px; letter-spacing: 8px; margin: 20px 0;">
                                 ' . $otpCode . '
@@ -165,7 +178,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                     </div>
                 ';
-                $mail->AltBody = "Hi {$user['name']},\n\nYour new verification code is: {$otpCode}\n\nThis code will expire in 15 minutes.";
+                $mail->AltBody = "Hi {$displayName},\n\nYour new verification code is: {$otpCode}\n\nThis code will expire in 15 minutes.";
 
                 $mail->send();
                 $emailSent = true;

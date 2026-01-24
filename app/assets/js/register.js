@@ -768,9 +768,26 @@ function closeSocialModal() {
 }
 
 // ============================================
-// ============================================
 
 let verificationEmail = '';
+
+function getOTPAPIPath(fileName) {
+    const currentPath = window.location.pathname;
+    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
+    const projectBase = pathMatch ? pathMatch[1] : '';
+
+    if (projectBase) {
+        return projectBase + '/app/views/auth/' + fileName;
+    }
+
+    if (currentPath.includes('/includes/')) {
+        return '../app/views/auth/' + fileName;
+    } else if (currentPath.includes('/app/views/')) {
+        return '../auth/' + fileName;
+    }
+
+    return 'app/views/auth/' + fileName;
+}
 
 function showOTPVerificationModal(email) {
     verificationEmail = email;
@@ -1059,12 +1076,8 @@ function verifyOTP() {
     const verifyBtn = document.getElementById('verifyOTPBtn');
     verifyBtn.disabled = true;
     verifyBtn.innerHTML = '<span class="loading-spinner"></span>';
-    
-    // Get API path
-    const currentPath = window.location.pathname;
-    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-    const projectBase = pathMatch ? pathMatch[1] : '';
-    const apiPath = projectBase ? projectBase + '/app/views/auth/verify_otp.php' : 'app/views/auth/verify_otp.php';
+
+    const apiPath = getOTPAPIPath('verify_otp.php');
     
     fetch(apiPath, {
         method: 'POST',
@@ -1076,7 +1089,27 @@ function verifyOTP() {
             code: code
         })
     })
-    .then(response => response.json())
+    .then(async (response) => {
+        const responseText = await response.text();
+        let data = null;
+
+        try {
+            data = responseText ? JSON.parse(responseText) : null;
+        } catch (e) {
+            data = null;
+        }
+
+        if (!response.ok) {
+            const msg = (data && data.message) ? data.message : (responseText || `Request failed (${response.status})`);
+            throw new Error(msg);
+        }
+
+        if (!data) {
+            throw new Error('Server returned an invalid response (not JSON).');
+        }
+
+        return data;
+    })
     .then(data => {
         verifyBtn.disabled = false;
         verifyBtn.innerHTML = '<span>Verify Email</span>';
@@ -1099,17 +1132,13 @@ function verifyOTP() {
     .catch(error => {
         verifyBtn.disabled = false;
         verifyBtn.innerHTML = '<span>Verify Email</span>';
-        showOTPError('Failed to verify. Please try again.');
+        showOTPError(error.message || 'Failed to verify. Please try again.');
         console.error('Verification error:', error);
     });
 }
 
 function resendOTP() {
-    // Get API path
-    const currentPath = window.location.pathname;
-    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-    const projectBase = pathMatch ? pathMatch[1] : '';
-    const apiPath = projectBase ? projectBase + '/app/views/auth/resend_otp.php' : 'app/views/auth/resend_otp.php';
+    const apiPath = getOTPAPIPath('resend_otp.php');
     
     showNotification('info', 'Sending...', 'Sending new verification code...', 3000);
     
@@ -1122,7 +1151,27 @@ function resendOTP() {
             email: verificationEmail
         })
     })
-    .then(response => response.json())
+    .then(async (response) => {
+        const responseText = await response.text();
+        let data = null;
+
+        try {
+            data = responseText ? JSON.parse(responseText) : null;
+        } catch (e) {
+            data = null;
+        }
+
+        if (!response.ok) {
+            const msg = (data && data.message) ? data.message : (responseText || `Request failed (${response.status})`);
+            throw new Error(msg);
+        }
+
+        if (!data) {
+            throw new Error('Server returned an invalid response (not JSON).');
+        }
+
+        return data;
+    })
     .then(data => {
         if (data.status === 'success') {
             showNotification('success', 'Code Sent!', 'New verification code sent to your email.', 5000);
@@ -1135,7 +1184,7 @@ function resendOTP() {
         }
     })
     .catch(error => {
-        showNotification('error', 'Error', 'Failed to resend code. Please try again.');
+        showNotification('error', 'Error', error.message || 'Failed to resend code. Please try again.');
         console.error('Resend error:', error);
     });
 }
