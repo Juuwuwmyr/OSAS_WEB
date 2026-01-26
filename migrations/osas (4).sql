@@ -726,7 +726,7 @@ ALTER TABLE `sections`
 --
 -- Constraints for table `students`
 --
-ALTER TABLE `students`
+ALTER TABLE `students`.0
   ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
