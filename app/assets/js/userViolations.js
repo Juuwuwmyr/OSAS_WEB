@@ -11,8 +11,19 @@ let userViolations = [];
  *********************************************************/
 document.addEventListener('DOMContentLoaded', initUserViolations);
 
+// Also listen for dynamic page loads
+if (typeof window.addEventListener !== 'undefined') {
+    window.addEventListener('pageContentLoaded', initUserViolations);
+}
+
 async function initUserViolations() {
     const tbody = document.getElementById('violationsTableBody');
+    
+    // Only initialize if the violations table exists on the page
+    if (!tbody) {
+        console.log('Violations table not found on this page, skipping initialization');
+        return;
+    }
 
     studentId = getStudentId();
     console.log('Student ID:', studentId); // Debug: check student ID
@@ -29,10 +40,20 @@ async function initUserViolations() {
  * HELPERS
  *********************************************************/
 function getStudentId() {
-    // Priority: PHP-injected variable
-    if (window.STUDENT_ID) return window.STUDENT_ID;
+    // Priority 1: PHP-injected variable
+    if (window.STUDENT_ID) {
+        console.log('✅ Student ID from window.STUDENT_ID:', window.STUDENT_ID);
+        return window.STUDENT_ID;
+    }
 
-    // Cookie fallback - prefer student_id_code (actual student ID string) over student_id (database ID)
+    // Priority 2: Data attribute on main-content
+    const mainContent = document.getElementById('main-content');
+    if (mainContent && mainContent.dataset.studentId) {
+        console.log('✅ Student ID from data attribute:', mainContent.dataset.studentId);
+        return mainContent.dataset.studentId;
+    }
+
+    // Priority 3: Cookie fallback - prefer student_id_code (actual student ID string) over student_id (database ID)
     const cookies = Object.fromEntries(
         document.cookie
             .split(';')
@@ -40,8 +61,14 @@ function getStudentId() {
             .map(([k,v]) => [k, decodeURIComponent(v)])
     );
 
-    // Prefer student_id_code as it's the actual student ID string (e.g., "2023-001")
-    return cookies.student_id_code || cookies.student_id || null;
+    const studentIdFromCookie = cookies.student_id_code || cookies.student_id;
+    if (studentIdFromCookie) {
+        console.log('✅ Student ID from cookie:', studentIdFromCookie);
+        return studentIdFromCookie;
+    }
+
+    console.error('❌ Student ID not found in any source');
+    return null;
 }
 
 function errorRow(message) {
@@ -61,20 +88,31 @@ async function loadUserViolations() {
     const tbody = document.getElementById('violationsTableBody');
 
     try {
-        const res = await fetch(`${API_BASE}violations.php?student_id=${studentId}`);
+        const apiUrl = `${API_BASE}violations.php`;
+        console.log('📡 Fetching violations from:', apiUrl);
+        
+        const res = await fetch(apiUrl);
+        console.log('📡 Response status:', res.status);
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
         const json = await res.json();
+        console.log('📡 Response data:', json);
 
         if (json.status !== 'success') {
             throw new Error(json.message || 'Failed to load violations');
         }
 
         userViolations = json.data || [];
+        console.log('✅ Loaded', userViolations.length, 'violations');
 
         updateViolationStats();
         renderViolationTable();
 
     } catch (err) {
-        console.error(err);
+        console.error('❌ Error loading violations:', err);
         tbody.innerHTML = errorRow(err.message);
     }
 }
@@ -279,6 +317,7 @@ function formatViolationType(type) {
 /*********************************************************
  * EXPORTS
  *********************************************************/
+window.initUserViolations = initUserViolations;
 window.filterViolations = filterViolations;
 window.viewViolationDetails = viewViolationDetails;
 window.closeViolationModal = closeViolationModal;

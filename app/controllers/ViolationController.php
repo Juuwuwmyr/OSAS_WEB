@@ -30,10 +30,11 @@ class ViolationController extends Controller
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
 
-        // If role is 'user' and student_id not provided, get it from session
-        if (empty($studentId) && isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
-            // Prefer student_id_code (the actual student ID string) over student_id (database ID)
-            $studentId = $_SESSION['student_id_code'] ?? $_SESSION['student_id'] ?? '';
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+            $studentId = $_SESSION['student_id_code'] ?? '';
+            if (empty($studentId)) {
+                $this->error('Student ID not found. Please login again.', '', 401);
+            }
         }
 
         try {

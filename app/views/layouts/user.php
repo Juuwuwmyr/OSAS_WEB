@@ -39,6 +39,7 @@ $notificationCount = 7; // Can be dynamic later
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
@@ -49,7 +50,7 @@ $notificationCount = 7; // Can be dynamic later
 
   <!-- CONTENT -->
   <section id="content">
-    <?php View::partial('navbar', ['role' => $role, 'notificationCount' => $notificationCount]); ?>
+    <?php View::partial('user_topnav', ['role' => $role, 'notificationCount' => $notificationCount]); ?>
 
     <!-- MAIN CONTENT CONTAINER -->
     <div id="main-content">
@@ -62,6 +63,8 @@ $notificationCount = 7; // Can be dynamic later
   <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
   <script src="<?= View::asset('js/initModules.js') ?>"></script>
   <script src="<?= View::asset('js/user_dashboard.js') ?>"></script>
+  <script src="<?= View::asset('js/userViolations.js') ?>"></script>
+  <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
 </body>
 

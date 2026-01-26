@@ -453,15 +453,24 @@ function handleSignup(event) {
         if (data.status === 'success') {
             // Check if verification is required
             if (data.requireVerification) {
-                showNotification(
-                    'info', 
-                    'Verify Your Email', 
-                    'Please enter the verification code sent to your email.',
-                    8000
-                );
-                
-                // Show OTP verification modal
-                showOTPVerificationModal(data.email);
+                if (data.emailSent) {
+                    showNotification(
+                        'info', 
+                        'Verify Your Email', 
+                        'Please enter the verification code sent to your email.',
+                        8000
+                    );
+                    
+                    // Show OTP verification modal
+                    showOTPVerificationModal(data.email);
+                } else {
+                    showNotification(
+                        'error',
+                        'Error',
+                        'Failed to send verification email. Please try again.',
+                        8000
+                    );
+                }
             } else {
                 showNotification(
                     'success', 

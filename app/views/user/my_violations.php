@@ -145,7 +145,3 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </div>
 </main>
-
-  <script src="<?= View::asset('js/userViolations.js') ?>"></script>
-
-

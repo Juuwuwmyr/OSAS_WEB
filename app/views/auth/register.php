@@ -3,7 +3,7 @@
 // NEW FLOW: Don't save user until OTP is verified
 // Store registration data temporarily in OTP table
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ob_start();
 
 // Set timezone to match MySQL
@@ -92,6 +92,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (!isset($conn) || ($conn && $conn->connect_error)) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        ob_end_flush();
+        exit;
+    }
+
+    // Validate student ID (must exist in students table)
+    if (empty($student_id)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Student ID is required.']);
+        ob_end_flush();
+        exit;
+    }
+
+    $studentCheck = $conn->prepare("SELECT 1 FROM students WHERE student_id = ? LIMIT 1");
+    $studentCheck->bind_param("s", $student_id);
+    $studentCheck->execute();
+    $studentResult = $studentCheck->get_result();
+    $studentExists = $studentResult && $studentResult->num_rows > 0;
+    $studentCheck->close();
+
+    if (!$studentExists) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid Student ID. Please use a registered Student ID.']);
         ob_end_flush();
         exit;
     }

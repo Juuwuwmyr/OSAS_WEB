@@ -60,11 +60,21 @@ class ViolationModel extends Model {
         $types = "";
 
         if (!empty($studentId)) {
-            $query .= " AND (BINARY v.student_id = BINARY ? OR BINARY s.student_id = BINARY ? OR s.id = ?)";
-            $params[] = $studentId;
-            $params[] = $studentId;
-            $params[] = $studentId;
-            $types .= "sss";
+            // If it's a numeric ID, allow filtering by students.id as well.
+            // Otherwise, only filter by the student_id string to avoid MySQL coercion issues
+            // (e.g. "2024-001" being treated as 2024).
+            if (ctype_digit((string)$studentId)) {
+                $query .= " AND (BINARY v.student_id = BINARY ? OR BINARY s.student_id = BINARY ? OR s.id = ?)";
+                $params[] = $studentId;
+                $params[] = $studentId;
+                $params[] = (int)$studentId;
+                $types .= "ssi";
+            } else {
+                $query .= " AND (BINARY v.student_id = BINARY ? OR BINARY s.student_id = BINARY ?)";
+                $params[] = $studentId;
+                $params[] = $studentId;
+                $types .= "ss";
+            }
         }
 
         if ($filter === 'resolved') {

@@ -99,6 +99,7 @@ if (!$student_id) {
     <!-- CSS -->
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css">
+    <link rel="stylesheet" href="../app/assets/styles/user_topnav.css">
     <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
     
     <!-- JS Libraries -->
@@ -117,7 +118,7 @@ if (!$student_id) {
         <?php
         $role = $_SESSION['role'] ?? 'user';
         $notificationCount = 7;
-        View::partial('navbar', ['role' => $role, 'notificationCount' => $notificationCount]);
+        View::partial('user_topnav', ['role' => $role, 'notificationCount' => $notificationCount]);
         ?>
 
         <!-- MAIN CONTENT -->
@@ -133,6 +134,8 @@ if (!$student_id) {
     <script src="../app/assets/js/initModules.js"></script>
     <script src="../app/assets/js/user_dashboard.js"></script>
     <script src="../app/assets/js/userDashboardData.js"></script>
+    <script src="../app/assets/js/userViolations.js"></script>
+    <script src="../app/assets/js/userAnnouncements.js"></script>
     <script src="../app/assets/js/chatbot.js"></script>
 </body>
 

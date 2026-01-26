@@ -91,7 +91,7 @@ class UserDashboardData {
         }
 
         try {
-            const url = `${USER_API_BASE}violations.php?student_id=${encodeURIComponent(this.studentId)}`;
+            const url = `${USER_API_BASE}violations.php`;
             console.log('🔄 Loading violations from:', url);
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);

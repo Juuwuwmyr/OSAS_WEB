@@ -34,6 +34,7 @@ if ($_SESSION['role'] !== 'user') {
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css">
+  <link rel="stylesheet" href="../app/assets/styles/user_topnav.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
@@ -50,7 +51,7 @@ if ($_SESSION['role'] !== 'user') {
     <?php
     $role = $_SESSION['role'] ?? 'user';
     $notificationCount = 7;
-    View::partial('navbar', ['role' => $role, 'notificationCount' => $notificationCount]);
+    View::partial('user_topnav', ['role' => $role, 'notificationCount' => $notificationCount]);
     ?>
 
     <!-- MAIN CONTENT CONTAINER -->
@@ -64,6 +65,8 @@ if ($_SESSION['role'] !== 'user') {
   <script src="../app/assets/js/initModules.js"></script>
   <script src="../app/assets/js/user_dashboard.js"></script>
   <script src="../app/assets/js/userDashboardData.js"></script>
+  <script src="../app/assets/js/userViolations.js"></script>
+  <script src="../app/assets/js/userAnnouncements.js"></script>
   <script src="../app/assets/js/chatbot.js"></script>
 </body>
 

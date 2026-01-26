@@ -14,6 +14,54 @@ const switchMode = document.getElementById('switch-mode');
 const mainContent = document.getElementById('main-content');
 
 // ===============================
+// USER DROPDOWN FUNCTIONALITY
+// ===============================
+function initializeUserDropdown() {
+  const userAvatar = document.querySelector('.nav-user-menu .user-avatar');
+  const userDropdown = document.querySelector('.nav-user-menu .user-dropdown');
+  
+  if (userAvatar && userDropdown) {
+    userAvatar.addEventListener('click', function(e) {
+      e.stopPropagation();
+      userDropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.nav-user-menu')) {
+        userDropdown.classList.remove('show');
+      }
+    });
+    
+    console.log('✅ User dropdown initialized');
+  }
+}
+
+// ===============================
+// LOGOUT FUNCTION
+// ===============================
+window.logout = function() {
+  if (confirm('Are you sure you want to logout?')) {
+    // Clear session and cookies
+    fetch('../api/logout.php', {
+      method: 'POST',
+      credentials: 'include'
+    })
+    .then(() => {
+      // Clear local storage
+      localStorage.clear();
+      // Redirect to login page
+      window.location.href = '../index.php';
+    })
+    .catch(error => {
+      console.error('Logout error:', error);
+      // Redirect anyway
+      window.location.href = '../index.php';
+    });
+  }
+};
+
+// ===============================
 // PAGE INITIALIZATION
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
@@ -22,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const session = checkAuthentication();
 
   if (!session) return; // Redirected if not authenticated
+  
+  // Initialize user dropdown
+  initializeUserDropdown();
 
   // Initialize theme state if theme.js is available
   if (typeof initializeTheme === 'function') {
@@ -239,6 +290,37 @@ allSideMenu.forEach(item => {
 });
 
 // ===============================
+// TOP NAVIGATION HANDLING
+// ===============================
+const topNavLinks = document.querySelectorAll('.nav-menu .nav-link');
+console.log('Found', topNavLinks.length, 'top nav links');
+
+topNavLinks.forEach(link => {
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    const page = this.getAttribute('data-page');
+    if (!page) return;
+
+    console.log('Top nav clicked:', page);
+
+    // Update active state
+    topNavLinks.forEach(l => {
+      l.parentElement.classList.remove('active');
+    });
+    this.parentElement.classList.add('active');
+
+    // Also update sidebar active state if it exists
+    allSideMenu.forEach(i => {
+      if (!i.classList.contains('chatbot-sidebar-btn')) {
+        i.parentElement.classList.remove('active');
+      }
+    });
+
+    loadContent(page);
+  });
+});
+
+// ===============================
 // DYNAMIC CONTENT LOADER
 // ===============================
 function loadContent(page) {
@@ -380,6 +462,9 @@ function loadContent(page) {
           }
           console.log('All scripts loaded');
           
+          // Dispatch custom event for page-specific initializations
+          window.dispatchEvent(new Event('pageContentLoaded'));
+          
           // Initialize modules after scripts are loaded
           if (page.toLowerCase().includes('user_dashcontent') || page.toLowerCase().includes('dashcontent')) {
             setTimeout(() => {
@@ -451,16 +536,26 @@ function loadContent(page) {
 
           if (page.toLowerCase().includes('my_violations')) {
             setTimeout(() => {
+              console.log('🔄 Attempting to initialize violations page...');
+              console.log('window.initUserViolations exists?', typeof window.initUserViolations);
+              
               if (typeof window.initUserViolations === 'function') {
+                console.log('✅ Calling window.initUserViolations()');
                 window.initUserViolations();
+              } else if (typeof initUserViolations === 'function') {
+                console.log('✅ Calling initUserViolations()');
+                initUserViolations();
               } else if (typeof window.initializeUserViolations === 'function') {
+                console.log('✅ Calling window.initializeUserViolations()');
                 window.initializeUserViolations();
               } else if (typeof initViolationsModule === 'function') {
+                console.log('✅ Calling initViolationsModule()');
                 initViolationsModule();
               } else {
-                console.warn('⚠️ User violations init function not found');
+                console.error('❌ User violations init function not found');
+                console.log('Available window functions:', Object.keys(window).filter(k => k.includes('violation') || k.includes('Violation')));
               }
-            }, 300);
+            }, 500);
           }
 
           if (page.toLowerCase().includes('announcements') && !page.toLowerCase().includes('user_dashcontent')) {

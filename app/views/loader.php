@@ -54,9 +54,12 @@ $viewFile = __DIR__ . '/' . $viewPath . '.php';
 // Check if view file exists
 if (!file_exists($viewFile)) {
     http_response_code(404);
-    echo "View not found: $viewPath";
+    echo "View not found: $viewPath (tried: $viewFile)";
     exit;
 }
+
+// Debug: Log which file is being loaded
+error_log("Loading view: $viewPath from file: $viewFile");
 
 // Load the view
 require_once __DIR__ . '/../core/View.php';

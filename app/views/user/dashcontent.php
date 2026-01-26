@@ -1,7 +1,8 @@
 ﻿<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
-<!-- User Dashboard Content -->
+<!-- USER DASHBOARD CONTENT - NOT ADMIN -->
+<script>console.log('✅ USER dashcontent.php loaded (NOT admin)');</script>
 <main>
   <!-- Header Section -->
   <div class="page-header">
