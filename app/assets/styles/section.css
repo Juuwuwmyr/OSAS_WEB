@@ -655,36 +655,36 @@ body.dark {
 /* ========================================= */
 /*           MODAL STYLES                   */
 /* ========================================= */
-.sections-modal {
+#sectionsModal.sections-modal {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 11000;
 }
 
-.sections-modal.active {
+#sectionsModal.sections-modal.active {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sections-modal-overlay {
+#sectionsModal .sections-modal-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
 }
 
-.sections-modal-container {
+#sectionsModal .sections-modal-container {
   position: relative;
   background: var(--light);
-  width: 90%;
-  max-width: 600px;
+  width: 600px !important;
+  max-width: calc(100vw - 48px) !important;
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.4s ease-out;
-  z-index: 2001;
+  z-index: 11001;
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -700,7 +700,7 @@ body.dark {
   }
 }
 
-.sections-modal-header {
+#sectionsModal .sections-modal-header {
   padding: 24px 32px;
   border-bottom: none;
   display: flex;
@@ -712,7 +712,7 @@ body.dark {
   z-index: 1;
 }
 
-.sections-modal-header h2 {
+#sectionsModal .sections-modal-header h2 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
@@ -723,11 +723,11 @@ body.dark {
   font-family: var(--poppins);
 }
 
-.sections-modal-header h2 i {
+#sectionsModal .sections-modal-header h2 i {
   font-size: 28px;
 }
 
-.sections-close-btn {
+#sectionsModal .sections-close-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: var(--dark);
@@ -743,7 +743,7 @@ body.dark {
   height: 40px;
 }
 
-.sections-close-btn:hover {
+#sectionsModal .sections-close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }
@@ -924,8 +924,8 @@ body.dark {
     padding: 0 16px;
   }
   
-  .sections-modal-container {
-    width: 95%;
+  #sectionsModal .sections-modal-container {
+    width: calc(100vw - 48px) !important;
     margin: 16px;
   }
   

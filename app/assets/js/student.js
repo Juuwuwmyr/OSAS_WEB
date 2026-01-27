@@ -166,7 +166,6 @@ function initStudentsModule() {
 
         async function addStudent(formData) {
             try {
-                formData.append('action', 'add');
                 const response = await fetch(`${apiBase}?action=add`, {
                     method: 'POST',
                     body: formData
@@ -189,9 +188,6 @@ function initStudentsModule() {
 
         async function updateStudent(studentId, formData) {
             try {
-                formData.append('action', 'update');
-                formData.append('studentId', studentId);
-                
                 const response = await fetch(`${apiBase}?action=update`, {
                     method: 'POST',
                     body: formData
@@ -796,19 +792,9 @@ function initStudentsModule() {
                 });
             }
 
-            // Form submission
-            if (studentsForm) {
-                studentsForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    const studentId = document.getElementById('studentId').value.trim();
-                    const firstName = document.getElementById('firstName').value.trim();
-                    const lastName = document.getElementById('lastName').value.trim();
-                    const middleName = document.getElementById('middleName').value.trim();
-                    const studentEmail = document.getElementById('studentEmail').value.trim();
-                    const studentContact = document.getElementById('studentContact').value.trim();
-                    const studentAddress = document.getElementById('studentAddress').value.trim();
-
+            // Print functionality
+            if (printBtn) {
+                printBtn.addEventListener('click', function() {
                     // Generate HTML table for printing
                     let printTableHTML = `
                         <table>
@@ -828,7 +814,7 @@ function initStudentsModule() {
 
                     students.forEach(student => {
                         const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
-                        
+
                         printTableHTML += `
                             <tr>
                                 <td>${student.id}</td>
@@ -859,11 +845,11 @@ function initStudentsModule() {
                                     h1 { color: #333; margin-bottom: 10px; }
                                     .report-header { margin-bottom: 30px; }
                                     .report-date { color: #666; margin-bottom: 20px; }
-                                    .status-badge { 
-                                        padding: 4px 12px; 
-                                        border-radius: 20px; 
-                                        font-size: 12px; 
-                                        font-weight: 600; 
+                                    .status-badge {
+                                        padding: 4px 12px;
+                                        border-radius: 20px;
+                                        font-size: 12px;
+                                        font-weight: 600;
                                     }
                                     .active { background: #e8f5e9; color: #2e7d32; }
                                     .inactive { background: #ffebee; color: #c62828; }
@@ -872,11 +858,11 @@ function initStudentsModule() {
                             </head>
                             <body>
                                 <div class="report-header">
-                                    <h1>${tableTitle}</h1>
-                                    <p style="color: #666;">${tableSubtitle}</p>
-                                    <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', { 
-                                        year: 'numeric', 
-                                        month: 'long', 
+                                    <h1>Students Report</h1>
+                                    <p style="color: #666;">Generated from OSAS System</p>
+                                    <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
                                         day: 'numeric',
                                         hour: '2-digit',
                                         minute: '2-digit'
@@ -891,6 +877,47 @@ function initStudentsModule() {
                     printWindow.document.write(printContent);
                     printWindow.document.close();
                     printWindow.print();
+                });
+            }
+
+            // Form submission
+            if (studentsForm) {
+                studentsForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const studentIdCode = (document.getElementById('studentId')?.value || '').trim();
+                    const firstName = (document.getElementById('firstName')?.value || '').trim();
+                    const lastName = (document.getElementById('lastName')?.value || '').trim();
+                    const studentEmail = (document.getElementById('studentEmail')?.value || '').trim();
+
+                    if (!studentIdCode || !firstName || !lastName || !studentEmail) {
+                        showError('Student ID, First Name, Last Name, and Email are required.');
+                        return;
+                    }
+
+                    const formData = new FormData(studentsForm);
+
+                    // Ensure backend gets the expected student ID field
+                    formData.set('studentIdCode', studentIdCode);
+
+                    // Preserve existing avatar on update if no new image is selected
+                    const studentImageInput = document.getElementById('studentImage');
+                    const hasNewImage = !!(studentImageInput && studentImageInput.files && studentImageInput.files.length > 0);
+                    if (!hasNewImage) {
+                        const previewImg = document.querySelector('.Students-preview-img');
+                        const existingAvatar = previewImg ? previewImg.getAttribute('data-existing-avatar') : '';
+                        if (existingAvatar) {
+                            formData.set('studentAvatar', existingAvatar);
+                        }
+                    }
+
+                    if (editingStudentId) {
+                        // Avoid conflicting with the form's studentId field by using `id` for DB id
+                        formData.set('id', editingStudentId);
+                        await updateStudent(editingStudentId, formData);
+                    } else {
+                        await addStudent(formData);
+                    }
                 });
             }
 

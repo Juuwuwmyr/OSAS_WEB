@@ -47,8 +47,8 @@ class DepartmentController extends Controller {
             $this->error('Invalid request method');
         }
 
-        $name = $this->sanitize($this->getPost('departmentName', ''));
-        $code = $this->sanitize($this->getPost('departmentCode', ''));
+        $name = $this->sanitize($this->getPost('departmentName', $this->getPost('deptName', '')));
+        $code = $this->sanitize($this->getPost('departmentCode', $this->getPost('deptCode', '')));
 
         if (empty($name) || empty($code)) {
             $this->error('Department name and code are required.');
@@ -78,13 +78,13 @@ class DepartmentController extends Controller {
             $this->error('Invalid request method');
         }
 
-        $id = intval($this->getPost('departmentId', $this->getGet('id', 0)));
+        $id = intval($this->getPost('departmentId', $this->getPost('deptId', $this->getGet('id', 0))));
         if ($id === 0) {
             $this->error('Invalid department ID');
         }
 
-        $name = $this->sanitize($this->getPost('departmentName', ''));
-        $code = $this->sanitize($this->getPost('departmentCode', ''));
+        $name = $this->sanitize($this->getPost('departmentName', $this->getPost('deptName', '')));
+        $code = $this->sanitize($this->getPost('departmentCode', $this->getPost('deptCode', '')));
 
         if (empty($name) || empty($code)) {
             $this->error('Department name and code are required.');

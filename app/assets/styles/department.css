@@ -37,24 +37,24 @@ body.dark .stat-change {
 }
 
 /* Modal header always shows gradient */
-body.dark .modal-header {
+body.dark #departmentModal .modal-header {
   background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 100%) !important;
 }
 
-body.dark .modal-header h2 {
+body.dark #departmentModal .modal-header h2 {
   color: #1A1A1A !important;
 }
 
-body.dark .modal-header h2 i {
+body.dark #departmentModal .modal-header h2 i {
   color: #1A1A1A !important;
 }
 
-body.dark .close-btn {
+body.dark #departmentModal .close-btn {
   background: rgba(255, 255, 255, 0.2) !important;
   color: #1A1A1A !important;
 }
 
-body.dark .close-btn:hover {
+body.dark #departmentModal .close-btn:hover {
   background: rgba(255, 255, 255, 0.3) !important;
   color: #1A1A1A !important;
 }
@@ -713,27 +713,41 @@ body.dark .close-btn:hover {
 /* ========================================= */
 /*           MODAL STYLES                   */
 /* ========================================= */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
+#departmentModal {
+  display: flex !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  z-index: 11000 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.modal.active {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#departmentModal::before {
+  content: none;
 }
 
-.modal-overlay {
+#departmentModal.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#departmentModal .modal-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
 }
 
-.modal-container {
+#departmentModal .modal-container {
   position: relative;
   background: var(--light);
   width: 90%;
@@ -741,11 +755,14 @@ body.dark .close-btn:hover {
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.4s ease-out;
-  z-index: 2001;
+  z-index: 11001;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+}
+
+#departmentModal.active .modal-container {
+  animation: modalSlideIn 0.4s ease-out;
 }
 
 @keyframes modalSlideIn {
@@ -759,7 +776,7 @@ body.dark .close-btn:hover {
   }
 }
 
-.modal-header {
+#departmentModal .modal-header {
   padding: 24px 32px;
   border-bottom: none;
   display: flex;
@@ -772,7 +789,7 @@ body.dark .close-btn:hover {
   position: relative;
 }
 
-.modal-header h2 {
+#departmentModal .modal-header h2 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
@@ -785,16 +802,16 @@ body.dark .close-btn:hover {
   z-index: 1;
 }
 
-.modal-header h2 i {
+#departmentModal .modal-header h2 i {
   font-size: 28px;
   color: #1A1A1A !important;
 }
 
-.modal-header h2 span {
+#departmentModal .modal-header h2 span {
   color: #1A1A1A !important;
 }
 
-.close-btn {
+#departmentModal .close-btn {
   background: rgba(255, 255, 255, 0.2) !important;
   border: none;
   color: #1A1A1A !important;
@@ -810,7 +827,7 @@ body.dark .close-btn:hover {
   height: 40px;
 }
 
-.close-btn:hover {
+#departmentModal .close-btn:hover {
   background: rgba(255, 255, 255, 0.3) !important;
   transform: rotate(90deg);
   color: #1A1A1A !important;
@@ -1017,7 +1034,7 @@ body.dark .close-btn:hover {
     padding: 0 16px;
   }
   
-  .modal-container {
+  #departmentModal .modal-container {
     width: 95%;
     margin: 16px;
   }

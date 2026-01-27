@@ -775,7 +775,7 @@ body.dark {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 11000;
 }
 
 .Students-modal.active {
@@ -789,18 +789,19 @@ body.dark {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
+  z-index: 11000;
 }
 
 .Students-modal-container {
   position: relative;
   background: var(--light);
-  width: 90%;
-  max-width: 600px;
+  width: 600px;
+  max-width: calc(100vw - 48px);
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.4s ease-out;
-  z-index: 2001;
+  z-index: 11001;
   max-height: 90vh;
   overflow-y: auto;
 }

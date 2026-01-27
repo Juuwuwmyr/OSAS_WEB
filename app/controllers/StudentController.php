@@ -127,7 +127,7 @@ class StudentController extends Controller {
             $this->error('Invalid request method');
         }
 
-        $id = intval($this->getPost('studentId', $this->getGet('id', 0)));
+        $id = intval($this->getPost('id', $this->getPost('studentId', $this->getGet('id', 0))));
         if ($id === 0) {
             $this->error('Invalid student ID');
         }

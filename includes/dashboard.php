@@ -36,6 +36,9 @@ if ($_SESSION['role'] !== 'admin') {
   <link rel="stylesheet" href="../app/assets/styles/dashboard.css">
   <link rel="stylesheet" href="../app/assets/styles/topnav.css">
   <link rel="stylesheet" href="../app/assets/styles/content-layout.css">
+  <link rel="stylesheet" href="../app/assets/styles/department.css">
+  <link rel="stylesheet" href="../app/assets/styles/section.css">
+  <link rel="stylesheet" href="../app/assets/styles/students.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
