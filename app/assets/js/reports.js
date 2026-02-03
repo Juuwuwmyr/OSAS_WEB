@@ -362,11 +362,13 @@ function initReportsModule() {
                     <td class="report-student-info">
                         <div class="student-info-wrapper">
                             <div class="student-avatar">
-                                <img src="${report.studentImage}" alt="${report.studentName}">
+                                <img src="${report.studentImage}" 
+                                     alt="${report.studentName}" 
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(report.studentName)}&background=ffd700&color=333&size=32'">
                             </div>
                             <div class="student-details">
                                 <strong>${report.studentName}</strong>
-                                <small>${report.studentId} • ${report.studentContact}</small>
+                                <small>${report.studentId} • ${report.section || 'N/A'}</small>
                             </div>
                         </div>
                     </td>

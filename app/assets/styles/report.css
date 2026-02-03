@@ -566,37 +566,62 @@ body.dark {
 .Reports-table-container {
   overflow-x: auto;
   padding: 0 32px;
+  border-radius: 12px;
+  background: var(--light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--grey);
+}
+
+.Reports-table-container::-webkit-scrollbar {
+  height: 12px;
+}
+
+.Reports-table-container::-webkit-scrollbar-track {
+  background: var(--grey);
+  border-radius: 6px;
+}
+
+.Reports-table-container::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 6px;
+  border: 2px solid var(--grey);
+}
+
+.Reports-table-container::-webkit-scrollbar-thumb:hover {
+  background: #ffcc33;
 }
 
 .Reports-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1400px;
+  min-width: 1200px;
+  table-layout: fixed;
 }
 
 .Reports-table thead {
   border-bottom: 2px solid var(--border);
+  background: rgba(255, 215, 0, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .Reports-table th {
-  padding: 20px 16px;
+  padding: 16px 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--dark-grey);
+  color: var(--dark);
   white-space: nowrap;
+  border-bottom: 2px solid var(--border);
+  background: var(--light);
 }
 
 .Reports-table th.Reports-sortable {
   cursor: pointer;
-}
-
-.Reports-table-header-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .Reports-table tbody tr {
@@ -609,10 +634,91 @@ body.dark {
 }
 
 .Reports-table td {
-  padding: 20px 16px;
+  padding: 16px 12px;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 14px;
   vertical-align: middle;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Reports-table td:last-child {
+  border-right: none;
+  width: 120px;
+  min-width: 120px;
+}
+
+/* Column-specific widths */
+.Reports-table th:nth-child(1), /* Report ID */
+.Reports-table td:nth-child(1) {
+  width: 120px;
+  min-width: 120px;
+}
+
+.Reports-table th:nth-child(2), /* Student Info */
+.Reports-table td:nth-child(2) {
+  width: 200px;
+  min-width: 180px;
+}
+
+.Reports-table th:nth-child(3), /* Department */
+.Reports-table td:nth-child(3) {
+  width: 110px;
+  min-width: 110px;
+}
+
+.Reports-table th:nth-child(4), /* Section */
+.Reports-table td:nth-child(4) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.Reports-table th:nth-child(5), /* Year Level */
+.Reports-table td:nth-child(5) {
+  width: 90px;
+  min-width: 90px;
+}
+
+.Reports-table th:nth-child(6), /* Uniform */
+.Reports-table td:nth-child(6) {
+  width: 100px;
+  min-width: 100px;
+}
+
+.Reports-table th:nth-child(7), /* Footwear */
+.Reports-table td:nth-child(7) {
+  width: 100px;
+  min-width: 100px;
+}
+
+.Reports-table th:nth-child(8), /* No ID */
+.Reports-table td:nth-child(8) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.Reports-table th:nth-child(9), /* Total Violations */
+.Reports-table td:nth-child(9) {
+  width: 100px;
+  min-width: 100px;
+}
+
+.Reports-table th:nth-child(10), /* Status */
+.Reports-table td:nth-child(10) {
+  width: 110px;
+  min-width: 110px;
+}
+
+.Reports-table th:nth-child(11), /* Actions */
+.Reports-table td:nth-child(11) {
+  width: 120px;
+  min-width: 120px;
+  position: sticky;
+  right: 0;
+  background: var(--light);
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Report ID */
@@ -624,21 +730,23 @@ body.dark {
 
 /* Student Info Cell */
 .report-student-info {
-  width: 250px;
+  width: 200px;
 }
 
 .student-info-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .student-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--gold);
+  flex-shrink: 0;
+  background: var(--grey);
 }
 
 .student-avatar img {
@@ -649,18 +757,26 @@ body.dark {
 
 .student-details {
   flex: 1;
+  min-width: 0; /* Allow text truncation */
 }
 
 .student-details strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   font-weight: 600;
   color: var(--dark);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .student-details small {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--dark-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Department Badges */
@@ -786,41 +902,73 @@ body.dark {
 
 .Reports-action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
 }
 
 .Reports-action-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  border: none;
-  background: none;
+  border: 1.5px solid var(--border);
+  background: var(--light);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.3s ease;
-  color: var(--dark-grey);
+  color: var(--dark);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .Reports-action-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  border-color: var(--gold);
 }
 
 .Reports-action-btn.view:hover {
   background: rgba(33, 150, 243, 0.15);
   color: #2196f3;
+  border-color: #2196f3;
 }
 
 .Reports-action-btn.export:hover {
   background: rgba(76, 175, 80, 0.15);
   color: #4caf50;
+  border-color: #4caf50;
 }
 
 .Reports-action-btn.print:hover {
   background: rgba(96, 125, 139, 0.15);
   color: #607d8b;
+  border-color: #607d8b;
+}
+
+/* Add tooltips for action buttons */
+.Reports-action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: var(--light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.Reports-action-btn:hover::after {
+  opacity: 1;
 }
 
 /* ========================================= */

@@ -839,10 +839,11 @@ function initViolationsModule() {
                                 <img src="${v.studentImage}" 
                                      alt="${v.studentName}" 
                                      class="student-avatar"
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=40'">
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=32'">
                             </div>
                             <div class="violation-student-name">
                                 <strong>${v.studentName}</strong>
+                                <small>${v.section || 'N/A'} • ${v.studentYearlevel || 'N/A'}</small>
                             </div>
                         </div>
                     </td>

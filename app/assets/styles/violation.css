@@ -419,29 +419,58 @@ body.dark {
 .Violations-table-container {
   overflow-x: auto;
   padding: 0 32px;
+  border-radius: 12px;
+  background: var(--light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--grey);
+}
+
+.Violations-table-container::-webkit-scrollbar {
+  height: 12px;
+}
+
+.Violations-table-container::-webkit-scrollbar-track {
+  background: var(--grey);
+  border-radius: 6px;
+}
+
+.Violations-table-container::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 6px;
+  border: 2px solid var(--grey);
+}
+
+.Violations-table-container::-webkit-scrollbar-thumb:hover {
+  background: #ffcc33;
 }
 
 .Violations-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1400px;
+  min-width: 1200px;
+  table-layout: fixed;
 }
 
 .Violations-table thead {
   border-bottom: 3px solid var(--border);
   background: rgba(255, 215, 0, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .Violations-table th {
-  padding: 20px 16px;
+  padding: 16px 12px;
   text-align: left;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--dark);
   white-space: nowrap;
   border-bottom: 2px solid var(--border);
+  background: var(--light);
 }
 
 .Violations-table th.Violations-sortable {
@@ -472,15 +501,91 @@ body.dark {
 }
 
 .Violations-table td {
-  padding: 20px 16px;
+  padding: 16px 12px;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 14px;
   vertical-align: middle;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .Violations-table td:last-child {
   border-right: none;
+  width: 120px; /* Fixed width for actions column */
+  min-width: 120px;
+}
+
+/* Column-specific widths */
+.Violations-table th:nth-child(1), /* Case ID */
+.Violations-table td:nth-child(1) {
+  width: 120px;
+  min-width: 120px;
+}
+
+.Violations-table th:nth-child(2), /* Student */
+.Violations-table td:nth-child(2) {
+  width: 180px;
+  min-width: 160px;
+}
+
+.Violations-table th:nth-child(3), /* Student ID */
+.Violations-table td:nth-child(3) {
+  width: 110px;
+  min-width: 110px;
+}
+
+.Violations-table th:nth-child(4), /* Violation Type */
+.Violations-table td:nth-child(4) {
+  width: 140px;
+  min-width: 140px;
+}
+
+.Violations-table th:nth-child(5), /* Level */
+.Violations-table td:nth-child(5) {
+  width: 100px;
+  min-width: 100px;
+}
+
+.Violations-table th:nth-child(6), /* Department */
+.Violations-table td:nth-child(6) {
+  width: 90px;
+  min-width: 90px;
+}
+
+.Violations-table th:nth-child(7), /* Section */
+.Violations-table td:nth-child(7) {
+  width: 80px;
+  min-width: 80px;
+}
+
+.Violations-table th:nth-child(8), /* Year Level */
+.Violations-table td:nth-child(8) {
+  width: 90px;
+  min-width: 90px;
+}
+
+.Violations-table th:nth-child(9), /* Date Reported */
+.Violations-table td:nth-child(9) {
+  width: 130px;
+  min-width: 130px;
+}
+
+.Violations-table th:nth-child(10), /* Status */
+.Violations-table td:nth-child(10) {
+  width: 110px;
+  min-width: 110px;
+}
+
+.Violations-table th:nth-child(11), /* Actions */
+.Violations-table td:nth-child(11) {
+  width: 120px;
+  min-width: 120px;
+  position: sticky;
+  right: 0;
+  background: var(--light);
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Case ID */
@@ -492,37 +597,58 @@ body.dark {
 
 /* Student Info Cell */
 .violation-student-cell {
-  width: 200px;
+  width: 180px;
 }
 
 .violation-student-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .violation-student-image {
-  width: 40px;
-  height: 40px;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--gold);
+  flex-shrink: 0;
+  background: var(--grey);
 }
 
 .student-avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--gold);
+  flex-shrink: 0;
+  background: var(--grey);
 }
 
 .violation-student-name {
   flex: 1;
+  min-width: 0; /* Allow text truncation */
 }
 
 .violation-student-name strong {
   display: block;
   font-weight: 600;
   color: var(--dark);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.violation-student-name small {
+  display: block;
+  color: var(--dark-grey);
+  font-size: 11px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Student ID */
@@ -686,59 +812,91 @@ body.dark {
 
 .Violations-action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
 }
 
 .Violations-action-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1.5px solid var(--border);
   background: var(--light);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.3s ease;
   color: var(--dark);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .Violations-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
   border-color: var(--gold);
 }
 
 .Violations-action-btn.view:hover {
   background: rgba(33, 150, 243, 0.15);
   color: #2196f3;
+  border-color: #2196f3;
 }
 
 .Violations-action-btn.edit:hover {
   background: rgba(255, 152, 0, 0.15);
   color: #ff9800;
+  border-color: #ff9800;
 }
 
 .Violations-action-btn.resolve:hover {
   background: rgba(76, 175, 80, 0.15);
   color: #4caf50;
+  border-color: #4caf50;
 }
 
 .Violations-action-btn.escalate:hover {
   background: rgba(244, 67, 54, 0.15);
   color: #f44336;
+  border-color: #f44336;
 }
 
 .Violations-action-btn.reopen:hover {
   background: rgba(96, 125, 139, 0.15);
   color: #607d8b;
+  border-color: #607d8b;
 }
 
 .Violations-action-btn.print:hover {
   background: rgba(96, 125, 139, 0.15);
   color: #607d8b;
+  border-color: #607d8b;
+}
+
+/* Add tooltips for action buttons */
+.Violations-action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: var(--light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.Violations-action-btn:hover::after {
+  opacity: 1;
 }
 
 /* ========================================= */
