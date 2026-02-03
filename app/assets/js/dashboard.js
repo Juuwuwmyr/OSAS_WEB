@@ -180,15 +180,15 @@ function logout() {
         let logoutPath;
         const currentPath = window.location.pathname;
         
-        if (currentPath.includes('/landing.php')) {
+        if (currentPath.includes('/index.php')) {
           // From app/entry/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../landing.php';
+          logoutPath = '../index.php';
         } else if (currentPath.includes('/includes/')) {
           // From includes/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../landing.php';
+          logoutPath = '../index.php';
         } else {
           // Default fallback
-          logoutPath = 'landing.php';
+          logoutPath = 'index.php';
         }
         
         console.log('Redirecting to logout:', logoutPath);
