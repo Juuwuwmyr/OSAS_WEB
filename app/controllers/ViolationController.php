@@ -104,7 +104,40 @@ class ViolationController extends Controller
         }
 
         try {
-            $caseId = $this->model->generateCaseId();
+            // Check for duplicate violation with time window check
+            $existingId = $this->model->checkDuplicateInTimeWindow(
+                $studentId, 
+                $violationType, 
+                $violationDate, 
+                $violationTime, 
+                $location,
+                5 // 5-minute time window for near-simultaneous submissions
+            );
+            
+            if ($existingId) {
+                $this->error('A violation with the same details already exists for this student (within 5 minutes).', ['existing_id' => $existingId]);
+                return;
+            }
+
+            // Generate unique case ID with retry mechanism
+            $maxRetries = 3;
+            $caseId = null;
+            
+            for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+                $caseId = $this->model->generateCaseId();
+                
+                if (!$this->model->caseIdExists($caseId)) {
+                    break; // Found unique case ID
+                }
+                
+                if ($attempt === $maxRetries - 1) {
+                    $this->error('Unable to generate unique case ID. Please try again.');
+                    return;
+                }
+                
+                // Wait a moment before retrying
+                usleep(100000); // 0.1 seconds
+            }
 
             $data = [
                 'case_id'        => $caseId,
@@ -130,7 +163,12 @@ class ViolationController extends Controller
             ]);
 
         } catch (Exception $e) {
-            $this->error('Failed to save violation');
+            // Check if it's a duplicate key error
+            if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                $this->error('A violation with this case ID already exists. Please try again.');
+            } else {
+                $this->error('Failed to save violation: ' . $e->getMessage());
+            }
         }
     }
 

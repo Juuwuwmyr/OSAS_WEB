@@ -117,6 +117,7 @@ function initViolationsModule() {
         let violations = [];
         let students = [];
         let isLoading = false;
+        let isSubmitting = false; // Form submission lock
 
         // Student data will be loaded dynamically
 
@@ -1686,13 +1687,19 @@ function initViolationsModule() {
             }
         }
 
-        // Enhanced form submission
+        // 6. FORM SUBMISSION
         if (violationForm) {
             // Setup real-time validation
             setupRealTimeValidation();
 
             violationForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+
+                // Prevent double submission
+                if (isSubmitting) {
+                    console.log('Form submission already in progress, ignoring...');
+                    return;
+                }
 
                 // Get form data (no validation needed)
                 const studentId = document.getElementById('modalStudentId').textContent;
@@ -1709,12 +1716,15 @@ function initViolationsModule() {
                 const originalText = submitBtn.textContent;
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Saving...';
+                
+                // Set submission lock
+                isSubmitting = true;
 
                 try {
-                const editingId = recordModal.dataset.editingId;
+                    const editingId = recordModal.dataset.editingId;
 
-                if (editingId) {
-                    // Edit existing violation
+                    if (editingId) {
+                        // Edit existing violation
                         const updateData = {
                             violationType: violationType ? violationType.value : '',
                             violationLevel: violationLevel ? violationLevel.value : '',
@@ -1727,10 +1737,10 @@ function initViolationsModule() {
 
                         await updateViolation(editingId, updateData);
                         showNotification('Violation updated successfully!', 'success');
-                } else {
-                    // Add new violation
-                    const student = students.find(s => s.studentId === studentId);
-                    if (!student) {
+                    } else {
+                        // Add new violation
+                        const student = students.find(s => s.studentId === studentId);
+                        if (!student) {
                             throw new Error('Selected student not found in database.');
                         }
                     
@@ -1767,7 +1777,7 @@ function initViolationsModule() {
                         showNotification('Violation recorded successfully!', 'success');
                     }
 
-                closeRecordModal();
+                    closeRecordModal();
                 } catch (error) {
                     console.error('Error saving violation:', error);
                     showNotification('Failed to save violation: ' + error.message, 'error');
@@ -1775,62 +1785,14 @@ function initViolationsModule() {
                     // Re-enable submit button
                     submitBtn.disabled = false;
                     submitBtn.textContent = originalText;
+                } finally {
+                    // Release submission lock
+                    isSubmitting = false;
                 }
             });
         }
 
         // 7. STUDENT SEARCH
-        if (searchStudentBtn) {
-            searchStudentBtn.addEventListener('click', async () => {
-                try {
-                    await handleStudentSearch();
-                } catch (error) {
-                    console.error('Error searching student:', error);
-                    showNotification('Failed to search student. Please try again.', 'error');
-                }
-            });
-        }
-
-        // 7.5. REFRESH STUDENTS DATA
-        const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
-        if (refreshStudentsBtn) {
-            refreshStudentsBtn.addEventListener('click', async () => {
-                try {
-                    console.log('Manual refresh of students data requested');
-                    await loadStudents(true);
-                    showNotification(`Student data refreshed! (${students.length} students loaded)`, 'success');
-
-                    // Debug: Show first few student IDs
-                    if (students.length > 0) {
-                        console.log('Available student IDs (first 10):', students.slice(0, 10).map(s => s.studentId));
-                        console.log('Sample student data:', students.slice(0, 3));
-                    } else {
-                        console.warn('No students loaded!');
-                        showNotification('Warning: No student data loaded. Check database connection.', 'warning', 5000);
-                    }
-                } catch (error) {
-                    console.error('Error refreshing students data:', error);
-                    showNotification('Failed to refresh student data.', 'error');
-                }
-            });
-        }
-
-        // DEBUG: Add console command to check students
-        window.debugStudents = function() {
-            console.log('=== STUDENT DATA DEBUG ===');
-            console.log('Students array length:', students.length);
-            if (students.length > 0) {
-                console.log('First 5 students:');
-                students.slice(0, 5).forEach((s, i) => {
-                    console.log(`${i+1}. ID: ${s.studentId}, Name: ${s.firstName} ${s.lastName}, Dept: ${s.department}`);
-                });
-            } else {
-                console.log('No students in array!');
-            }
-            console.log('=== END DEBUG ===');
-        };
-
-        // 8. ENTER KEY IN STUDENT SEARCH
         if (studentSearchInput) {
             studentSearchInput.addEventListener('keypress', async (e) => {
                 if (e.key === 'Enter') {

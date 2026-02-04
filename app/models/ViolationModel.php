@@ -271,5 +271,53 @@ class ViolationModel extends Model {
         $count = ($result[0]['count'] ?? 0) + 1;
         return sprintf('VIOL-%d-%03d', $year, $count);
     }
+
+    /**
+     * Check for duplicate violation with time tolerance
+     */
+    public function checkDuplicate($studentId, $violationType, $violationDate, $violationTime, $location) {
+        $query = "SELECT id FROM violations 
+                  WHERE student_id = ? 
+                  AND violation_type = ? 
+                  AND violation_date = ? 
+                  AND violation_time = ? 
+                  AND location = ? 
+                  AND deleted_at IS NULL";
+        
+        $result = $this->query($query, [$studentId, $violationType, $violationDate, $violationTime, $location]);
+        return !empty($result) ? $result[0]['id'] : false;
+    }
+
+    /**
+     * Check for duplicate violation within time window (for near-simultaneous submissions)
+     */
+    public function checkDuplicateInTimeWindow($studentId, $violationType, $violationDate, $violationTime, $location, $timeWindowMinutes = 5) {
+        // Check exact match first
+        $exactMatch = $this->checkDuplicate($studentId, $violationType, $violationDate, $violationTime, $location);
+        if ($exactMatch) {
+            return $exactMatch;
+        }
+
+        // Check for violations within time window
+        $query = "SELECT id, violation_time FROM violations 
+                  WHERE student_id = ? 
+                  AND violation_type = ? 
+                  AND violation_date = ? 
+                  AND location = ? 
+                  AND deleted_at IS NULL
+                  AND ABS(TIMESTAMPDIFF(MINUTE, STR_TO_DATE(?, '%H:%i:%s'), violation_time)) <= ?";
+        
+        $result = $this->query($query, [$studentId, $violationType, $violationDate, $location, $violationTime, $timeWindowMinutes]);
+        return !empty($result) ? $result[0]['id'] : false;
+    }
+
+    /**
+     * Check if case ID already exists
+     */
+    public function caseIdExists($caseId) {
+        $query = "SELECT id FROM violations WHERE case_id = ?";
+        $result = $this->query($query, [$caseId]);
+        return !empty($result);
+    }
 }
 
