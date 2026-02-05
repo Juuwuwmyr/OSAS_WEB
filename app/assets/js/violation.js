@@ -760,9 +760,23 @@ function initViolationsModule() {
 
                 console.log('✅ Violation saved successfully');
 
-                // Reload violations data
-                await loadViolations(false);
+                // Reload violations data with a small delay to ensure DB consistency
+                await new Promise(resolve => setTimeout(resolve, 200));
+                const newViolations = await loadViolations(false);
+                
+                // Verify if the new violation is in the list
+                if (result.id) {
+                    const exists = newViolations.find(v => v.id == result.id || v.caseId == result.case_id);
+                    console.log('🔍 verification of saved violation:', exists ? 'Found' : 'NOT FOUND');
+                }
+
                 renderViolations();
+                
+                // Explicitly update badges for the student if applicable
+                if (violationData && violationData.studentId) {
+                    console.log('🔄 Force updating badges for student:', violationData.studentId);
+                    updateViolationTypeBadges(violationData.studentId);
+                }
 
                 showNotification('Violation recorded successfully!', 'success');
                 return result;
@@ -804,9 +818,22 @@ function initViolationsModule() {
 
                 console.log('✅ Violation updated successfully');
 
-                // Reload violations data
+                // Get student ID for badge update (before reload, or find in existing)
+                let studentId = violationData.studentId;
+                if (!studentId) {
+                     const existing = violations.find(v => v.id == violationId);
+                     if (existing) studentId = existing.studentId;
+                }
+
+                // Reload violations data with delay
+                await new Promise(resolve => setTimeout(resolve, 200));
                 await loadViolations(false);
                 renderViolations();
+
+                if (studentId) {
+                    console.log('🔄 Force updating badges for student:', studentId);
+                    updateViolationTypeBadges(studentId);
+                }
 
                 showNotification('Violation updated successfully!', 'success');
                 return result;
@@ -842,11 +869,22 @@ function initViolationsModule() {
                     throw new Error(result.message);
                 }
 
+                // Get student ID before deletion/reload
+                let studentId = null;
+                const existing = violations.find(v => v.id == violationId);
+                if (existing) studentId = existing.studentId;
+
                 console.log('✅ Violation deleted successfully');
 
-                // Reload violations data
+                // Reload violations data with delay
+                await new Promise(resolve => setTimeout(resolve, 200));
                 await loadViolations(false);
                 renderViolations();
+
+                if (studentId) {
+                     console.log('🔄 Force updating badges for student:', studentId);
+                     updateViolationTypeBadges(studentId);
+                }
 
                 showNotification('Violation deleted successfully!', 'success');
                 return true;
@@ -1266,6 +1304,7 @@ function initViolationsModule() {
             
             if (editId) {
                 // Edit mode
+                recordModal.dataset.editingId = editId;
                 const span = modalTitle.querySelector('span');
                 if (span) {
                     span.textContent = 'Edit Violation';
@@ -1295,6 +1334,7 @@ function initViolationsModule() {
                         if (card) card.classList.add('active');
                         
                         // Render levels for this type
+                        console.log('Rendering levels for type:', violation.violationType);
                         renderViolationLevels(violation.violationType);
                     }
 
@@ -1302,15 +1342,83 @@ function initViolationsModule() {
                     updateViolationTypeBadges(violation.studentId);
 
                     // Set violation level (must be done AFTER rendering levels)
-                    setTimeout(() => {
-                        const levelRadio = document.querySelector(`input[name="violationLevel"][value="${violation.violationLevel}"]`);
-                        if (levelRadio) {
-                            levelRadio.checked = true;
-                            // Update visual state
-                            const option = levelRadio.closest('.violation-level-option');
-                            if (option) option.classList.add('active');
+                    // We use a small helper to retry selection as DOM updates might be async/batched
+                    const selectLevel = (attempts = 0) => {
+                        const targetLevelId = parseInt(violation.violationLevel);
+                        const targetLevelName = violation.violationLevelLabel;
+                        
+                        console.log(`Attempt ${attempts + 1}: Setting violation level. Target ID: ${targetLevelId}, Name: ${targetLevelName}`);
+                        
+                        const allRadios = document.querySelectorAll('input[name="violationLevel"]');
+                        let found = false;
+                        
+                        // Strategy 1: Match by ID
+                        allRadios.forEach(radio => {
+                            if (!isNaN(targetLevelId) && parseInt(radio.value) === targetLevelId) {
+                                radio.checked = true;
+                                found = true;
+                                // Update visual state
+                                const option = radio.closest('.violation-level-option');
+                                if (option) {
+                                    option.classList.add('active');
+                                    console.log('✅ Activated option by ID:', targetLevelId);
+                                }
+                            } else {
+                                // Ensure others are not active
+                                const option = radio.closest('.violation-level-option');
+                                if (option) option.classList.remove('active');
+                            }
+                        });
+
+                        // Strategy 2: Match by Name (Fallback)
+                        if (!found && targetLevelName) {
+                            console.log('⚠️ ID match failed, trying name match:', targetLevelName);
+                            allRadios.forEach(radio => {
+                                const label = radio.nextElementSibling;
+                                const title = label ? label.querySelector('.level-title') : null;
+                                if (title && title.textContent.trim() === targetLevelName.trim()) {
+                                     radio.checked = true;
+                                     found = true;
+                                     const option = radio.closest('.violation-level-option');
+                                     if (option) {
+                                         option.classList.add('active');
+                                         console.log('✅ Activated option by Name:', targetLevelName);
+                                     }
+                                }
+                            });
                         }
-                    }, 0);
+
+                        if (!found && attempts < 5) {
+                            // Retry a few times
+                            setTimeout(() => selectLevel(attempts + 1), 100);
+                        } else if (!found) {
+                            console.error('❌ Failed to select level after retries');
+                            
+                            // VISUAL DEBUG - Show error in modal for troubleshooting
+                            // Only show if we have radios but couldn't match (prevents showing on empty container)
+                            if (allRadios.length > 0) {
+                                const container = document.getElementById('violationLevelsContainer');
+                                if (container && !container.querySelector('.debug-err')) {
+                                     const debugMsg = document.createElement('div');
+                                     debugMsg.className = 'debug-err';
+                                     debugMsg.style.color = 'red';
+                                     debugMsg.style.fontSize = '11px';
+                                     debugMsg.style.marginTop = '8px';
+                                     debugMsg.style.padding = '4px';
+                                     debugMsg.style.background = '#fff0f0';
+                                     debugMsg.style.border = '1px solid red';
+                                     debugMsg.innerHTML = `<strong>Debug Error:</strong> Could not auto-select level.<br>
+                                     Target ID: ${targetLevelId} (${typeof targetLevelId})<br>
+                                     Target Name: "${targetLevelName}"<br>
+                                     Available IDs: ${Array.from(allRadios).map(r => r.value).join(', ')}`;
+                                     container.appendChild(debugMsg);
+                                }
+                            }
+                        }
+                    };
+                    
+                    // Call immediately
+                    selectLevel();
 
                     // Set other fields
                     document.getElementById('violationDate').value = violation.dateReported;
@@ -1322,7 +1430,6 @@ function initViolationsModule() {
                     // Update notes counter
                     updateNotesCounter((violation.notes || '').length);
                 }
-                recordModal.dataset.editingId = editId;
             } else {
                 // Add new mode
                 const span = modalTitle.querySelector('span');
@@ -2097,6 +2204,31 @@ function initViolationsModule() {
                     const editingId = recordModal.dataset.editingId;
 
                     if (editingId) {
+                        // Determine status based on level name (not ID)
+                        let status = 'warning';
+                        if (violationLevel) {
+                            // Get the level name from the label
+                            const levelLabel = document.querySelector(`label[for="${violationLevel.id}"] .level-title`);
+                            let levelName = '';
+                            
+                            if (levelLabel) {
+                                levelName = levelLabel.textContent.trim().toLowerCase();
+                            } else if (typeof violationTypes !== 'undefined') {
+                                // Fallback: try to find in global data
+                                const typeId = document.querySelector('input[name="violationType"]:checked')?.value;
+                                const levelId = violationLevel.value;
+                                const type = violationTypes.find(t => t.id == typeId);
+                                const level = type?.levels?.find(l => l.id == levelId);
+                                if (level) levelName = level.name.toLowerCase();
+                            }
+
+                            if (levelName.includes('permitted')) {
+                                status = 'permitted';
+                            } else if (levelName.includes('disciplinary')) {
+                                status = 'disciplinary';
+                            }
+                        }
+
                         // Edit existing violation
                         const updateData = {
                             violationType: violationType ? violationType.value : '',
@@ -2105,6 +2237,7 @@ function initViolationsModule() {
                             violationTime: violationTime,
                             location: location,
                             reportedBy: reportedBy,
+                            status: status,
                             notes: notes
                         };
 
@@ -2117,12 +2250,30 @@ function initViolationsModule() {
                             throw new Error('Selected student not found in database.');
                         }
                     
-                        // Determine status based on level (if selected)
+                        // Determine status based on level name (not ID)
                         let status = 'warning';
-                        if (violationLevel && violationLevel.value) {
-                            if (violationLevel.value.startsWith('permitted')) {
+                        if (violationLevel) {
+                            // Get the level name from the label
+                            const levelLabel = document.querySelector(`label[for="${violationLevel.id}"] .level-title`);
+                            // Fallback: try to find it in the violationTypes data if label not found
+                            let levelName = '';
+                            
+                            if (levelLabel) {
+                                levelName = levelLabel.textContent.trim().toLowerCase();
+                            } else if (typeof violationTypes !== 'undefined') {
+                                // Try to find in global data
+                                const typeId = document.querySelector('input[name="violationType"]:checked')?.value;
+                                const levelId = violationLevel.value;
+                                const type = violationTypes.find(t => t.id == typeId);
+                                const level = type?.levels?.find(l => l.id == levelId);
+                                if (level) levelName = level.name.toLowerCase();
+                            }
+
+                            console.log('Determining status from level name:', levelName);
+
+                            if (levelName.includes('permitted')) {
                                 status = 'permitted';
-                            } else if (violationLevel.value === 'disciplinary') {
+                            } else if (levelName.includes('disciplinary')) {
                                 status = 'disciplinary';
                             }
                         }
