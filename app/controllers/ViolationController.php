@@ -26,6 +26,13 @@ class ViolationController extends Controller
      */
     public function index()
     {
+        $action = $this->getGet('action', '');
+
+        if ($action === 'types') {
+            $this->get_types();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -108,6 +115,7 @@ class ViolationController extends Controller
             $existingId = $this->model->checkDuplicateInTimeWindow(
                 $studentId, 
                 $violationType, 
+                $violationLevel,
                 $violationDate, 
                 $violationTime, 
                 $location,
@@ -142,8 +150,8 @@ class ViolationController extends Controller
             $data = [
                 'case_id'        => $caseId,
                 'student_id'     => $studentId,
-                'violation_type' => $violationType,
-                'violation_level'=> $violationLevel,
+                'violation_type_id' => $violationType,
+                'violation_level_id'=> $violationLevel,
                 'department'     => $student[0]['department_name'] ?? 'N/A',
                 'section'        => $student[0]['section_id'] ?? '',
                 'violation_date' => $violationDate,
@@ -190,8 +198,8 @@ class ViolationController extends Controller
         }
 
         $data = [
-            'violation_type'  => $this->sanitize($input['violationType'] ?? $current['violation_type']),
-            'violation_level' => $this->sanitize($input['violationLevel'] ?? $current['violation_level']),
+            'violation_type_id'  => $this->sanitize($input['violationType'] ?? $current['violation_type_id']),
+            'violation_level_id' => $this->sanitize($input['violationLevel'] ?? $current['violation_level_id']),
             'violation_date'  => $this->sanitize($input['violationDate'] ?? $current['violation_date']),
             'violation_time'  => $this->sanitize($input['violationTime'] ?? $current['violation_time']),
             'location'        => $this->sanitize($input['location'] ?? $current['location']),
@@ -224,6 +232,31 @@ class ViolationController extends Controller
             $this->success('Violation deleted successfully');
         } catch (Exception $e) {
             $this->error('Failed to delete violation');
+        }
+    }
+
+    /**
+     * Get violation types and levels
+     */
+    private function get_types() {
+        try {
+            $types = $this->model->getViolationTypes();
+            $result = [];
+            
+            // If types are returned as assoc array with 'id' key (single row) or array of arrays
+            // Check structure of getViolationTypes return
+            if ($types && count($types) > 0) {
+                foreach ($types as $type) {
+                    $levels = $this->model->getViolationLevels($type['id']);
+                    $type['levels'] = $levels;
+                    $result[] = $type;
+                }
+            }
+            
+            $this->success('Violation types retrieved successfully', $result);
+        } catch (Exception $e) {
+            error_log("Error getting types: " . $e->getMessage());
+            $this->error('Failed to retrieve violation types: ' . $e->getMessage());
         }
     }
 }

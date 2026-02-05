@@ -209,36 +209,50 @@ class UserDashboardData {
         const container = document.querySelector('.violation-summary') || document.getElementById('violationSummary');
         if (!container) return;
 
-        // Count violations by specific type from database
-        const countByType = (type) => {
-            return this.violations.filter(v => {
-                const violationType = (v.violation_type || v.violationType || v.violationTypeLabel || '').toLowerCase();
-                
-                // Check for specific violation types
-                if (type === 'improper_uniform') {
-                    return violationType.includes('uniform');
-                } else if (type === 'improper_footwear') {
-                    return violationType.includes('footwear') || violationType.includes('shoe');
-                } else if (type === 'no_id') {
-                    return violationType.includes('id') || violationType.includes('no_id');
-                }
-                return false;
-            }).length;
+        // Group violations by type label
+        const typeCounts = {};
+        this.violations.forEach(v => {
+            const label = v.violationTypeLabel || v.violation_type_name || 'Other';
+            typeCounts[label] = (typeCounts[label] || 0) + 1;
+        });
+
+        // Sort by count descending
+        const sortedTypes = Object.entries(typeCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3); // Show top 3
+
+        // Helper for icons
+        const getIcon = (label) => {
+            const lower = label.toLowerCase();
+            if (lower.includes('uniform')) return 'bxs-t-shirt';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shoe';
+            if (lower.includes('id')) return 'bxs-id-card';
+            if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
+            if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
+            return 'bxs-error-circle'; // Default icon
         };
 
-        const types = ['improper_uniform', 'improper_footwear', 'no_id'];
-        const typeLabels = { 'improper_uniform':'Improper Uniform', 'improper_footwear':'Improper Footwear', 'no_id':'No ID Card' };
-        const typeIcons = { 'improper_uniform':'bxs-t-shirt', 'improper_footwear':'bxs-shoe', 'no_id':'bxs-id-card' };
+        if (sortedTypes.length === 0) {
+            container.innerHTML = `
+                <div class="violation-type" style="width:100%; justify-content:center;">
+                    <div class="violation-details">
+                        <h4>No Violations</h4>
+                        <p>Keep it up!</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
-        container.innerHTML = types.map(type => {
-            const count = countByType(type);
+        container.innerHTML = sortedTypes.map(([label, count]) => {
+            const icon = getIcon(label);
             return `
                 <div class="violation-type">
-                    <div class="violation-icon ${type}">
-                        <i class='bx ${typeIcons[type]}'></i>
+                    <div class="violation-icon" style="background: var(--light-blue); color: var(--blue);">
+                        <i class='bx ${icon}'></i>
                     </div>
                     <div class="violation-details">
-                        <h4>${typeLabels[type]}</h4>
+                        <h4>${label}</h4>
                         <p>Violations: <span class="count">${count}</span></p>
                     </div>
                 </div>
@@ -263,25 +277,31 @@ class UserDashboardData {
         }
 
         const sorted = [...this.violations].sort((a,b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)).slice(0,10);
+        
+        // Helper for icons (reused)
+        const getIcon = (label) => {
+            const lower = (label || '').toLowerCase();
+            if (lower.includes('uniform')) return 'bxs-t-shirt';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shoe';
+            if (lower.includes('id')) return 'bxs-id-card';
+            if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
+            if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
+            return 'bxs-info-circle';
+        };
+
         tbody.innerHTML = sorted.map(v => {
-            // Format violation type properly
-            const violationType = v.violationTypeLabel || v.violation_type || v.type || 'Unknown';
-            const type = this.formatViolationType(violationType);
+            // Use dynamic label
+            const typeLabel = v.violationTypeLabel || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
             const status = (v.status || 'pending').toLowerCase();
             const statusClass = status === 'resolved' || status === 'permitted' ? 'resolved' : 'pending';
             const statusText = statusClass === 'resolved' ? 'Permitted' : 'Pending';
-
-            let icon = 'bxs-info-circle';
-            const lowerType = violationType.toLowerCase();
-            if (lowerType.includes('uniform')) icon='bxs-t-shirt';
-            else if (lowerType.includes('footwear') || lowerType.includes('shoe')) icon='bxs-shoe';
-            else if (lowerType.includes('id') || lowerType.includes('no_id')) icon='bxs-id-card';
+            const icon = getIcon(typeLabel);
 
             return `
                 <tr>
                     <td>${date}</td>
-                    <td><i class='bx ${icon}'></i> ${this.escapeHtml(type)}</td>
+                    <td><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
                     <td><span class="status ${statusClass}">${statusText}</span></td>
                     <td><button class="btn-view-details" onclick="viewViolationDetails(${v.id || v.violation_id})">View Details</button></td>
                 </tr>

@@ -604,6 +604,81 @@ INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `pro
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `violation_types`
+--
+
+DROP TABLE IF EXISTS `violation_types`;
+CREATE TABLE IF NOT EXISTS `violation_types` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `violation_types`
+--
+
+INSERT INTO `violation_types` (`id`, `name`, `description`) VALUES
+(1, 'Improper Uniform', 'Wearing colored undershirt, improper pants, etc.'),
+(2, 'No ID', 'Failure to wear or bring student ID'),
+(3, 'Improper Footwear', 'Wearing slippers, open-toed shoes, etc.'),
+(4, 'Misconduct', 'Behavioral violations');
+
+--
+-- Table structure for table `violation_levels`
+--
+
+DROP TABLE IF EXISTS `violation_levels`;
+CREATE TABLE IF NOT EXISTS `violation_levels` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `violation_type_id` int NOT NULL,
+  `level_order` int NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `violation_type_id` (`violation_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `violation_levels`
+--
+
+INSERT INTO `violation_levels` (`id`, `violation_type_id`, `level_order`, `name`, `description`) VALUES
+-- Improper Uniform (Type 1)
+(1, 1, 1, 'Permitted 1', 'First permitted instance'),
+(2, 1, 2, 'Permitted 2', 'Second permitted instance'),
+(3, 1, 3, 'Warning 1', 'First warning'),
+(4, 1, 4, 'Warning 2', 'Second warning'),
+(5, 1, 5, 'Warning 3', 'Final warning'),
+(6, 1, 6, 'Disciplinary Action', 'Referral to discipline office'),
+-- No ID (Type 2)
+(7, 2, 1, 'Permitted 1', 'First permitted instance'),
+(8, 2, 2, 'Permitted 2', 'Second permitted instance'),
+(9, 2, 3, 'Warning 1', 'First warning'),
+(10, 2, 4, 'Warning 2', 'Second warning'),
+(11, 2, 5, 'Warning 3', 'Final warning'),
+(12, 2, 6, 'Disciplinary Action', 'Referral to discipline office'),
+-- Improper Footwear (Type 3)
+(13, 3, 1, 'Permitted 1', 'First permitted instance'),
+(14, 3, 2, 'Permitted 2', 'Second permitted instance'),
+(15, 3, 3, 'Warning 1', 'First warning'),
+(16, 3, 4, 'Warning 2', 'Second warning'),
+(17, 3, 5, 'Warning 3', 'Final warning'),
+(18, 3, 6, 'Disciplinary Action', 'Referral to discipline office'),
+-- Misconduct (Type 4)
+(19, 4, 1, 'Permitted 1', 'First permitted instance'),
+(20, 4, 2, 'Permitted 2', 'Second permitted instance'),
+(21, 4, 3, 'Warning 1', 'First warning'),
+(22, 4, 4, 'Warning 2', 'Second warning'),
+(23, 4, 5, 'Warning 3', 'Final warning'),
+(24, 4, 6, 'Disciplinary Action', 'Referral to discipline office');
+
+--
 -- Table structure for table `violations`
 --
 
@@ -612,9 +687,9 @@ CREATE TABLE IF NOT EXISTS `violations` (
   `id` int NOT NULL AUTO_INCREMENT,
   `case_id` varchar(20) NOT NULL,
   `student_id` varchar(20) NOT NULL,
-  `violation_type` enum('improper_uniform','no_id','improper_footwear','misconduct') NOT NULL,
-  `violation_level` enum('permitted1','permitted2','warning1','warning2','warning3','disciplinary') NOT NULL,
-  `department` enum('BSIS','WFT','BTVTED','CHS') NOT NULL,
+  `violation_type_id` int NOT NULL,
+  `violation_level_id` int NOT NULL,
+  `department` varchar(50) NOT NULL,
   `section` varchar(20) NOT NULL,
   `violation_date` date NOT NULL,
   `violation_time` time NOT NULL,
@@ -633,26 +708,26 @@ CREATE TABLE IF NOT EXISTS `violations` (
   KEY `idx_department` (`department`),
   KEY `idx_status` (`status`),
   KEY `idx_violation_date` (`violation_date`),
-  KEY `idx_violation_type` (`violation_type`),
-  KEY `idx_violation_level` (`violation_level`)
-) ENGINE=MyISAM AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_violation_type` (`violation_type_id`),
+  KEY `idx_violation_level` (`violation_level_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `violations`
 --
 
-INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type`, `violation_level`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'VIOL-2024-001', '2024-001', 'improper_uniform', 'warning2', '', 'BSIT-3A', '2024-02-15', '08:15:00', 'gate_1', 'Officer Maria Santos', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 10:36:23', NULL),
-(2, 'VIOL-2024-002', '2024-002', 'no_id', 'permitted1', '', 'BSIT-1B', '2024-02-14', '07:30:00', 'gate_2', 'Officer Juan Dela Cruz', 'Student forgot to bring ID. First offense.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 16:37:02', NULL),
-(3, 'VIOL-2024-003', '2024-003', 'improper_footwear', 'disciplinary', '', 'BSIT-2A', '2024-02-10', '08:30:00', 'classroom', 'Professor Ana Reyes', 'Student was wearing sneakers instead of the required black leather shoes in violation of school uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 23:04:22', NULL),
-(4, 'VIOL-2024-004', '2024-004', 'improper_uniform', 'warning3', '', 'BSIT-1A', '2024-02-08', '09:15:00', 'library', 'Librarian Pedro Gomez', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 01:38:56', NULL),
-(5, 'VIOL-2025-005', '2023-0206', 'no_id', 'permitted1', '', '4', '2025-12-14', '18:06:00', 'classroom', 'soeaifjsoidjfos', ',', 'resolved', NULL, '2025-12-14 10:07:00', '2025-12-14 10:20:48', NULL),
-(6, 'VIOL-2025-006', '2024-004', 'improper_uniform', 'permitted2', '', '1', '2025-12-15', '08:37:00', 'classroom', 'soeaifjsoidjfos', 'kughk', 'resolved', NULL, '2025-12-14 16:37:46', '2025-12-14 19:24:14', NULL),
-(7, 'VIOL-2025-007', '2023-0195', 'improper_uniform', 'permitted1', '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
-(8, 'VIOL-2025-008', '2023-0195', 'improper_uniform', 'permitted1', '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
-(9, 'VIOL-2025-009', '2023-0195', 'improper_uniform', 'warning3', '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'resolved', NULL, '2025-12-16 19:54:09', '2025-12-16 19:55:03', NULL),
-(10, 'VIOL-2025-010', '2023-0195', 'improper_uniform', 'permitted1', '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'permitted', NULL, '2025-12-16 19:54:09', '2025-12-17 03:54:09', NULL),
-(11, 'VIOL-2026-001', '2024-001', 'improper_uniform', 'warning1', '', '22', '2026-01-12', '00:15:00', 'gate_1', 'soeaifjsoidjfos', NULL, 'warning', NULL, '2026-01-12 08:15:52', '2026-01-12 16:15:52', NULL);
+INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, 'VIOL-2024-001', '2024-001', 1, 6, '', 'BSIT-3A', '2024-02-15', '08:15:00', 'gate_1', 'Officer Maria Santos', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 10:36:23', NULL),
+(2, 'VIOL-2024-002', '2024-002', 2, 9, '', 'BSIT-1B', '2024-02-14', '07:30:00', 'gate_2', 'Officer Juan Dela Cruz', 'Student forgot to bring ID. First offense.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 16:37:02', NULL),
+(3, 'VIOL-2024-003', '2024-003', 3, 18, '', 'BSIT-2A', '2024-02-10', '08:30:00', 'classroom', 'Professor Ana Reyes', 'Student was wearing sneakers instead of the required black leather shoes in violation of school uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 23:04:22', NULL),
+(4, 'VIOL-2024-004', '2024-004', 1, 5, '', 'BSIT-1A', '2024-02-08', '09:15:00', 'library', 'Librarian Pedro Gomez', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 01:38:56', NULL),
+(5, 'VIOL-2025-005', '2023-0206', 2, 9, '', '4', '2025-12-14', '18:06:00', 'classroom', 'soeaifjsoidjfos', ',', 'resolved', NULL, '2025-12-14 10:07:00', '2025-12-14 10:20:48', NULL),
+(6, 'VIOL-2025-006', '2024-004', 1, 4, '', '1', '2025-12-15', '08:37:00', 'classroom', 'soeaifjsoidjfos', 'kughk', 'resolved', NULL, '2025-12-14 16:37:46', '2025-12-14 19:24:14', NULL),
+(7, 'VIOL-2025-007', '2023-0195', 1, 1, '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
+(8, 'VIOL-2025-008', '2023-0195', 1, 1, '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
+(9, 'VIOL-2025-009', '2023-0195', 1, 5, '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'resolved', NULL, '2025-12-16 19:54:09', '2025-12-16 19:55:03', NULL),
+(10, 'VIOL-2025-010', '2023-0195', 1, 1, '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'permitted', NULL, '2025-12-16 19:54:09', '2025-12-17 03:54:09', NULL),
+(11, 'VIOL-2026-001', '2024-001', 1, 5, '', '22', '2026-01-12', '00:15:00', 'gate_1', 'soeaifjsoidjfos', NULL, 'warning', NULL, '2026-01-12 08:15:52', '2026-01-12 16:15:52', NULL);
 
 -- --------------------------------------------------------
 
@@ -726,8 +801,22 @@ ALTER TABLE `sections`
 --
 -- Constraints for table `students`
 --
-ALTER TABLE `students`.0
+ALTER TABLE `students`
   ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `violation_levels`
+--
+ALTER TABLE `violation_levels`
+  ADD CONSTRAINT `fk_violation_levels_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `violations`
+--
+ALTER TABLE `violations`
+  ADD CONSTRAINT `fk_violations_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`),
+  ADD CONSTRAINT `fk_violations_level` FOREIGN KEY (`violation_level_id`) REFERENCES `violation_levels` (`id`);
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

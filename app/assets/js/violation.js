@@ -116,6 +116,7 @@ function initViolationsModule() {
         // Dynamic data
         let violations = [];
         let students = [];
+        let violationTypes = [];
         let isLoading = false;
         let isSubmitting = false; // Form submission lock
 
@@ -215,7 +216,8 @@ function initViolationsModule() {
         
                 console.log('🔄 Loading violations data...');
         
-                const response = await fetch(API_BASE + 'violations.php');
+                // Add timestamp to prevent caching
+                const response = await fetch(API_BASE + 'violations.php?t=' + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('HTTP Error Response:', errorText);
@@ -298,10 +300,10 @@ function initViolationsModule() {
         async function loadStudents(showLoading = false) {
             try {
                 if (showLoading) showLoadingOverlay('Loading students...');
-
                 console.log('🔄 Loading students data...');
 
-                const response = await fetch(API_BASE + 'students.php');
+                // Add timestamp to prevent caching
+                const response = await fetch(API_BASE + 'students.php?t=' + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('Students API Error Response:', errorText);
@@ -368,7 +370,8 @@ function initViolationsModule() {
                 // Load data in parallel
                 await Promise.all([
                     loadViolations(false),
-                    loadStudents(false)
+                    loadStudents(false),
+                    loadViolationTypes()
                 ]);
 
                 // Re-render everything
@@ -381,6 +384,292 @@ function initViolationsModule() {
                 showNotification('Failed to refresh data', 'error');
             } finally {
                 hideLoadingOverlay();
+            }
+        }
+
+        async function loadViolationTypes() {
+            try {
+                console.log('🔄 Loading violation types...');
+                const response = await fetch(API_BASE + 'violations.php?action=types');
+                if (!response.ok) throw new Error('Failed to load types');
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    violationTypes = data.data;
+                    console.log('✅ Loaded violation types:', violationTypes);
+                    renderViolationTypes();
+                }
+            } catch (error) {
+                console.error('❌ Error loading violation types:', error);
+                showNotification('Failed to load violation types', 'error');
+            }
+        }
+
+        function renderViolationTypes() {
+            const container = document.getElementById('violationTypesContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            violationTypes.forEach(type => {
+                const card = document.createElement('div');
+                card.className = 'violation-type-card';
+                card.dataset.violation = type.id;
+                
+                // Choose icon based on name (simple logic)
+                let icon = 'bx-error-circle';
+                const nameLower = type.name.toLowerCase();
+                if (nameLower.includes('uniform')) icon = 'bx-t-shirt';
+                else if (nameLower.includes('footwear')) icon = 'bx-walk';
+                else if (nameLower.includes('id')) icon = 'bx-id-card';
+                else if (nameLower.includes('misconduct') || nameLower.includes('behavior')) icon = 'bx-message-alt-error';
+                
+                card.innerHTML = `
+                    <input type="radio" id="type_${type.id}" name="violationType" value="${type.id}">
+                    <label for="type_${type.id}">
+                        <i class='bx ${icon}'></i>
+                        <span>${type.name}</span>
+                    </label>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            // Event delegation for type selection
+            container.addEventListener('change', (e) => {
+                if (e.target.name === 'violationType') {
+                    // Update visual selection state of cards
+                    document.querySelectorAll('.violation-type-card').forEach(c => c.classList.remove('active'));
+                    e.target.closest('.violation-type-card').classList.add('active');
+                    
+                    renderViolationLevels(e.target.value);
+                }
+            });
+        }
+
+        function renderViolationLevels(typeId) {
+            const container = document.getElementById('violationLevelsContainer');
+            if (!container) return;
+            
+            const type = violationTypes.find(t => t.id == typeId);
+            if (!type || !type.levels) {
+                container.innerHTML = '<p class="no-levels">No levels defined for this violation type</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            type.levels.forEach(level => {
+                const div = document.createElement('div');
+                
+                // Determine style class based on name/level
+                let styleClass = 'level-warning';
+                const nameLower = level.name.toLowerCase();
+                if (nameLower.includes('permitted')) styleClass = 'level-permitted';
+                else if (nameLower.includes('disciplinary')) styleClass = 'level-disciplinary';
+
+                div.className = `violation-level-option ${styleClass}`;
+                
+                div.innerHTML = `
+                    <input type="radio" id="level_${level.id}" name="violationLevel" value="${level.id}">
+                    <label for="level_${level.id}" class="${styleClass}">
+                        <span class="level-title">${level.name}</span>
+                        <span class="level-desc">${level.description || ''}</span>
+                    </label>
+                `;
+                
+                container.appendChild(div);
+            });
+
+            // Event delegation for level selection
+            container.addEventListener('change', (e) => {
+                if (e.target.name === 'violationLevel') {
+                    // Update visual selection state of options
+                    document.querySelectorAll('.violation-level-option').forEach(c => c.classList.remove('active'));
+                    e.target.closest('.violation-level-option').classList.add('active');
+                }
+            });
+
+            // Check history if student is already selected
+            checkStudentViolationHistory();
+        }
+
+        // Check and highlight student's violation history
+        function checkStudentViolationHistory() {
+            // 1. Get selected student ID
+            const studentIdElement = document.getElementById('modalStudentId');
+            if (!studentIdElement || !studentIdElement.textContent) return;
+            
+            // Check if we are in "Add New" mode (not editing)
+            const recordModal = document.getElementById('ViolationRecordModal');
+            if (recordModal && recordModal.dataset.editingId) return;
+
+            const studentId = studentIdElement.textContent.trim();
+            if (!studentId) return;
+
+            // 2. Get selected violation type
+            const violationTypeInput = document.querySelector('input[name="violationType"]:checked');
+            if (!violationTypeInput) return;
+            
+            const violationTypeId = parseInt(violationTypeInput.value);
+
+            // 3. Filter violations for this student and type
+            // Note: violations array contains history
+            const studentHistory = violations.filter(v => 
+                v.studentId === studentId && 
+                (v.violationType == violationTypeId)
+            );
+            
+            console.log(`Found ${studentHistory.length} previous violations for student ${studentId} of type ${violationTypeId}`);
+
+            // 4. Update UI
+            updateLevelSelectionBasedOnHistory(studentHistory);
+        }
+
+        function updateViolationTypeBadges(studentId) {
+            console.log('Updating violation type badges for student:', studentId);
+            
+            // 1. Clear existing badges
+            document.querySelectorAll('.violation-type-badge-overlay').forEach(el => el.remove());
+
+            // 2. Iterate cards
+            document.querySelectorAll('.violation-type-card').forEach(card => {
+                const input = card.querySelector('input[name="violationType"]');
+                if (!input) return;
+                
+                const typeId = parseInt(input.value);
+                
+                // 3. Find history for this student and type
+                // Use the global violations array
+                const history = violations.filter(v => 
+                    v.studentId === studentId && 
+                    (v.violationType == typeId)
+                );
+                
+                if (history.length > 0) {
+                    // 4. Find the most relevant level
+                    // Sort by date descending
+                    history.sort((a, b) => {
+                        const dateA = new Date((a.dateReported || a.violationDate) + ' ' + (a.violationTime || '00:00'));
+                        const dateB = new Date((b.dateReported || b.violationDate) + ' ' + (b.violationTime || '00:00'));
+                        return dateB - dateA;
+                    });
+                    
+                    const latest = history[0];
+                    const levelName = latest.violationLevelLabel || 'Recorded';
+                    
+                    // Create Badge
+                    const badge = document.createElement('div');
+                    
+                    // Determine class based on level name
+                    let statusClass = 'warning';
+                    const nameLower = levelName.toLowerCase();
+                    if (nameLower.includes('permitted')) statusClass = 'permitted';
+                    else if (nameLower.includes('disciplinary')) statusClass = 'disciplinary';
+                    
+                    badge.className = `violation-type-badge-overlay ${statusClass}`;
+                    badge.textContent = levelName;
+                    
+                    card.style.position = 'relative'; // Ensure relative positioning
+                    card.appendChild(badge);
+                }
+            });
+        }
+
+        function updateLevelSelectionBasedOnHistory(history) {
+            // Reset any previous history highlights
+            document.querySelectorAll('.violation-history-badge').forEach(el => el.remove());
+            
+            // Find the levels container
+            const levelInputs = document.querySelectorAll('input[name="violationLevel"]');
+            
+            let maxLevelIndex = -1;
+            let lastViolationDate = null;
+            let lastViolationLevelName = '';
+
+            levelInputs.forEach((input, index) => {
+                const levelId = parseInt(input.value);
+                const optionContainer = input.closest('.violation-level-option');
+
+                // Reset state first (enable all)
+                input.disabled = false;
+                if (optionContainer) {
+                    optionContainer.classList.remove('recorded', 'disabled');
+                }
+                
+                // If no history, skip processing this item
+                if (!history || history.length === 0) return;
+
+                // Check if this level is in history
+                // Sort history by date desc to get latest for this level
+                const matchingHistory = history
+                    .filter(h => h.violationLevel == levelId)
+                    .sort((a, b) => new Date((b.dateReported || b.violationDate) + ' ' + (b.violationTime || '00:00')) - new Date((a.dateReported || a.violationDate) + ' ' + (a.violationTime || '00:00')));
+                
+                if (matchingHistory.length > 0) {
+                    const latest = matchingHistory[0];
+                    const latestDate = latest.dateReported || latest.violationDate;
+                    
+                    // Mark as recorded and disabled
+                    input.disabled = true;
+                    if (optionContainer) {
+                        optionContainer.classList.add('recorded', 'disabled');
+                        optionContainer.classList.remove('active'); // Deselect if active
+                    }
+
+                    // Add Badge
+                    const label = input.nextElementSibling; // The <label> tag
+                    if (label) {
+                        const badge = document.createElement('span');
+                        badge.className = 'violation-history-badge';
+                        badge.innerHTML = `<i class='bx bx-history'></i> Recorded (${matchingHistory.length})`;
+                        badge.title = `Last recorded: ${latestDate}`;
+                        
+                        // Append to the title
+                        const titleSpan = label.querySelector('.level-title');
+                        if (titleSpan) titleSpan.appendChild(badge);
+                    }
+                    
+                    // Track the highest level index found
+                    if (index > maxLevelIndex) {
+                        maxLevelIndex = index;
+                        lastViolationDate = latestDate;
+                        lastViolationLevelName = label.querySelector('.level-title').childNodes[0].textContent.trim();
+                    }
+                }
+            });
+
+            if (!history || history.length === 0) return;
+
+            // Auto-select the next level
+            if (maxLevelIndex > -1) {
+                // If the student has violations, select the NEXT level if available
+                if (maxLevelIndex < levelInputs.length - 1) {
+                    const nextInput = levelInputs[maxLevelIndex + 1];
+                    if (nextInput) {
+                        // Check and trigger change
+                        nextInput.checked = true;
+                        nextInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        // Also update the UI class for the newly selected item
+                        const nextContainer = nextInput.closest('.violation-level-option');
+                        if (nextContainer) nextContainer.classList.add('active');
+                        
+                        const nextLevelName = nextInput.nextElementSibling.querySelector('.level-title').textContent;
+                        
+                        showNotification(`
+                            <strong>Student History Found</strong><br>
+                            Previous: ${lastViolationLevelName} (${lastViolationDate})<br>
+                            Suggested: ${nextLevelName}
+                        `, 'info', 5000);
+                    }
+                } else {
+                    // Max level reached
+                    showNotification(`
+                        <strong>Maximum Violation Level Reached</strong><br>
+                        Student has already reached the highest level for this violation.
+                    `, 'warning', 6000);
+                }
             }
         }
 
@@ -417,6 +706,9 @@ function initViolationsModule() {
         }
 
         async function saveViolation(violationData) {
+            if (isSubmitting) return;
+            isSubmitting = true;
+            
             try {
                 console.log('💾 Saving violation...', violationData);
 
@@ -479,11 +771,15 @@ function initViolationsModule() {
                 showNotification('Failed to save violation: ' + error.message, 'error');
                 throw error;
             } finally {
+                isSubmitting = false;
                 hideLoadingOverlay();
             }
         }
 
         async function updateViolation(violationId, violationData) {
+            if (isSubmitting) return;
+            isSubmitting = true;
+
             try {
                 console.log('📝 Updating violation...', violationId, violationData);
 
@@ -519,11 +815,15 @@ function initViolationsModule() {
                 showNotification('Failed to update violation: ' + error.message, 'error');
                 throw error;
             } finally {
+                isSubmitting = false;
                 hideLoadingOverlay();
             }
         }
 
         async function deleteViolation(violationId) {
+            if (isSubmitting) return;
+            isSubmitting = true;
+
             try {
                 console.log('🗑️ Deleting violation...', violationId);
 
@@ -555,6 +855,7 @@ function initViolationsModule() {
                 showNotification('Failed to delete violation: ' + error.message, 'error');
                 throw error;
             } finally {
+                isSubmitting = false;
                 hideLoadingOverlay();
             }
         }
@@ -566,20 +867,36 @@ function initViolationsModule() {
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        function getViolationTypeClass(type) {
-            const classes = {
-                'improper_uniform': 'uniform',
-                'improper_footwear': 'footwear',
-                'no_id': 'id',
-                'misconduct': 'behavior'
-            };
-            return classes[type] || 'default';
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const [hours, minutes] = timeStr.split(':');
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function getViolationTypeClass(typeLabel) {
+            if (!typeLabel || typeof typeLabel !== 'string') return 'default';
+            const lower = typeLabel.toLowerCase();
+            if (lower.includes('uniform')) return 'uniform';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'footwear';
+            if (lower.includes('id')) return 'id';
+            if (lower.includes('misconduct') || lower.includes('behavior')) return 'behavior';
+            return 'default';
         }
 
         function getViolationLevelClass(level) {
-            if (level.startsWith('permitted')) return 'permitted';
-            if (level.startsWith('warning')) return 'warning';
-            if (level === 'disciplinary') return 'disciplinary';
+            // Ensure level is a string and not empty
+            if (level === null || level === undefined) return 'default';
+            
+            // Convert to string if it's not (e.g. number)
+            const levelStr = String(level);
+            
+            const lowerLevel = levelStr.toLowerCase();
+            if (lowerLevel.startsWith('permitted')) return 'permitted';
+            if (lowerLevel.startsWith('warning')) return 'warning';
+            if (lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
             return 'default';
         }
 
@@ -730,7 +1047,7 @@ function initViolationsModule() {
 
                 timeline.innerHTML = sortedViolations.map(violation => {
                     const statusClass = getStatusClass(violation.status);
-                    const typeClass = getViolationTypeClass(violation.violationType);
+                    const typeClass = getViolationTypeClass(violation.violationTypeLabel);
 
                     return `
                         <div class="student-violation-item">
@@ -826,8 +1143,8 @@ function initViolationsModule() {
             const tableRows = filteredViolations.map(v => {
                 console.log('📝 Processing violation:', v.caseId, v.studentName);
 
-                const typeClass = getViolationTypeClass(v.violationType);
-                const levelClass = getViolationLevelClass(v.violationLevel);
+                const typeClass = getViolationTypeClass(v.violationTypeLabel);
+                const levelClass = getViolationLevelClass(v.violationLevelLabel || '');
                 const deptClass = getDepartmentClass(v.department);
                 const statusClass = getStatusClass(v.status);
 
@@ -970,11 +1287,30 @@ function initViolationsModule() {
 
                     // Set violation type
                     const typeRadio = document.querySelector(`input[name="violationType"][value="${violation.violationType}"]`);
-                    if (typeRadio) typeRadio.checked = true;
+                    if (typeRadio) {
+                        typeRadio.checked = true;
+                        // Update visual state
+                        document.querySelectorAll('.violation-type-card').forEach(c => c.classList.remove('active'));
+                        const card = typeRadio.closest('.violation-type-card');
+                        if (card) card.classList.add('active');
+                        
+                        // Render levels for this type
+                        renderViolationLevels(violation.violationType);
+                    }
 
-                    // Set violation level
-                    const levelRadio = document.querySelector(`input[name="violationLevel"][value="${violation.violationLevel}"]`);
-                    if (levelRadio) levelRadio.checked = true;
+                    // Update badges for this student
+                    updateViolationTypeBadges(violation.studentId);
+
+                    // Set violation level (must be done AFTER rendering levels)
+                    setTimeout(() => {
+                        const levelRadio = document.querySelector(`input[name="violationLevel"][value="${violation.violationLevel}"]`);
+                        if (levelRadio) {
+                            levelRadio.checked = true;
+                            // Update visual state
+                            const option = levelRadio.closest('.violation-level-option');
+                            if (option) option.classList.add('active');
+                        }
+                    }, 0);
 
                     // Set other fields
                     document.getElementById('violationDate').value = violation.dateReported;
@@ -997,6 +1333,21 @@ function initViolationsModule() {
                 }
                 if (form) {
                     form.reset();
+                    
+                    // Clear any previous levels and type selection
+                    const levelsContainer = document.getElementById('violationLevelsContainer');
+                    if (levelsContainer) levelsContainer.innerHTML = '';
+                    
+                    document.querySelectorAll('.violation-type-card').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll('.violation-level-option').forEach(c => c.classList.remove('active'));
+                    
+                    // Clear violation type badges
+                    document.querySelectorAll('.violation-type-badge-overlay').forEach(el => el.remove());
+                    
+                    // Clear student search and details
+                    if (studentSearchInput) studentSearchInput.value = '';
+                    document.getElementById('modalStudentId').textContent = '';
+                    
                     // Re-set default values after reset
                     setTimeout(() => {
                         const today = new Date().toISOString().split('T')[0];
@@ -1081,9 +1432,9 @@ function initViolationsModule() {
             
             // Violation details
             setElementText('detailViolationType', violation.violationTypeLabel);
-            setElementClass('detailViolationType', `detail-value badge ${getViolationTypeClass(violation.violationType)}`);
+            setElementClass('detailViolationType', `detail-value badge ${getViolationTypeClass(violation.violationTypeLabel)}`);
             setElementText('detailViolationLevel', violation.violationLevelLabel);
-            setElementClass('detailViolationLevel', `detail-value badge ${getViolationLevelClass(violation.violationLevel)}`);
+            setElementClass('detailViolationLevel', `detail-value badge ${getViolationLevelClass(violation.violationLevelLabel || '')}`);
             setElementText('detailDateTime', violation.dateTime);
             setElementText('detailLocation', violation.locationLabel);
             setElementText('detailReportedBy', violation.reportedBy);
@@ -1091,19 +1442,46 @@ function initViolationsModule() {
             setElementClass('detailStatus', `detail-value badge ${getStatusClass(violation.status)}`);
             setElementText('detailNotes', violation.notes || 'No notes available.');
             
-            // Populate timeline if it exists and violation has history
+            // Populate timeline
             const timelineEl = document.getElementById('detailTimeline');
-            if (timelineEl && violation.history && violation.history.length > 0) {
-                timelineEl.innerHTML = violation.history.map(item => `
-                    <div class="timeline-item">
-                        <div class="timeline-marker"></div>
-                        <div class="timeline-content">
-                            <span class="timeline-date">${item.date}</span>
-                            <span class="timeline-title">${item.title}</span>
-                            <span class="timeline-desc">${item.desc}</span>
+            if (timelineEl) {
+                // Filter violations for this student
+                const studentHistory = violations.filter(v => v.studentId === violation.studentId);
+                
+                // Sort by date (newest first)
+                studentHistory.sort((a, b) => {
+                     const dateA = new Date((a.dateReported || a.date) + ' ' + (a.violationTime || '00:00'));
+                     const dateB = new Date((b.dateReported || b.date) + ' ' + (b.violationTime || '00:00'));
+                     return dateB - dateA;
+                });
+
+                if (studentHistory.length > 0) {
+                    timelineEl.innerHTML = studentHistory.map(v => {
+                        // Highlight the current violation being viewed
+                        const isCurrent = v.id === violation.id;
+                        const activeClass = isCurrent ? 'current-viewing' : '';
+                        const dateStr = formatDate(v.dateReported || v.date);
+                        const timeStr = formatTime(v.violationTime);
+                        
+                        return `
+                        <div class="timeline-item ${activeClass}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <span class="timeline-date">${dateStr} ${timeStr ? '• ' + timeStr : ''}</span>
+                                <span class="timeline-title">
+                                    ${v.violationLevelLabel || v.level || 'Level'} - ${v.violationTypeLabel || v.type || 'Type'}
+                                    ${isCurrent ? '<span style="font-size: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Current</span>' : ''}
+                                </span>
+                                <span class="timeline-desc">
+                                    Reported at ${v.locationLabel || v.location} 
+                                    ${v.status === 'resolved' ? '<span style="color: green; font-weight: bold;">(Resolved)</span>' : ''}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `}).join('');
+                } else {
+                    timelineEl.innerHTML = '<p style="color: #6c757d; font-size: 14px; text-align: center; padding: 10px;">No history available.</p>';
+                }
             }
             
             detailsModal.dataset.viewingId = violationId;
@@ -1270,6 +1648,10 @@ function initViolationsModule() {
                 }
 
                 showNotification(`Student found: ${student.firstName} ${student.lastName} (${student.studentId})`, 'success');
+
+                // Check for existing violations
+                checkStudentViolationHistory();
+                updateViolationTypeBadges(student.studentId);
             } else {
                 console.log('❌ No student found for search term:', searchTerm);
                 console.log('Available students:', students.length);
@@ -1695,12 +2077,6 @@ function initViolationsModule() {
             violationForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                // Prevent double submission
-                if (isSubmitting) {
-                    console.log('Form submission already in progress, ignoring...');
-                    return;
-                }
-
                 // Get form data (no validation needed)
                 const studentId = document.getElementById('modalStudentId').textContent;
                 const violationType = document.querySelector('input[name="violationType"]:checked');
@@ -1717,9 +2093,6 @@ function initViolationsModule() {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Saving...';
                 
-                // Set submission lock
-                isSubmitting = true;
-
                 try {
                     const editingId = recordModal.dataset.editingId;
 
@@ -1785,9 +2158,6 @@ function initViolationsModule() {
                     // Re-enable submit button
                     submitBtn.disabled = false;
                     submitBtn.textContent = originalText;
-                } finally {
-                    // Release submission lock
-                    isSubmitting = false;
                 }
             });
         }
@@ -2068,7 +2438,8 @@ function initViolationsModule() {
                 console.log('Loading data...');
                 const [violationsData, studentsData] = await Promise.all([
                     loadViolations(false),
-                    loadStudents(false)
+                    loadStudents(false),
+                    loadViolationTypes(false)
                 ]);
 
                 console.log('Data loaded, violations:', violationsData.length, 'students:', studentsData.length);

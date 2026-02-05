@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <!DOCTYPE html>
@@ -279,84 +279,18 @@ require_once __DIR__ . '/../../core/View.php';
         <!-- Violation Type Selection -->
         <div class="violation-type-section">
           <h3>Violation Type</h3>
-          <div class="violation-types">
-            <div class="violation-type-card" data-violation="uniform">
-              <input type="radio" id="uniformViolation" name="violationType" value="improper_uniform">
-              <label for="uniformViolation">
-                <i class='bx bx-t-shirt'></i>
-                <span>Improper Uniform</span>
-              </label>
-            </div>
-            <div class="violation-type-card" data-violation="footwear">
-              <input type="radio" id="footwearViolation" name="violationType" value="improper_footwear">
-              <label for="footwearViolation">
-                <i class='bx bx-walk'></i>
-                <span>Improper Footwear</span>
-              </label>
-            </div>
-            <div class="violation-type-card" data-violation="id">
-              <input type="radio" id="idViolation" name="violationType" value="no_id">
-              <label for="idViolation">
-                <i class='bx bx-id-card'></i>
-                <span>No ID</span>
-              </label>
-            </div>
-            <div class="violation-type-card" data-violation="behavior">
-              <input type="radio" id="behaviorViolation" name="violationType" value="misconduct">
-              <label for="behaviorViolation">
-                <i class='bx bx-message-alt-error'></i>
-                <span>Misconduct</span>
-              </label>
-            </div>
+          <div class="violation-types" id="violationTypesContainer">
+            <!-- Loaded dynamically via JS -->
+            <p style="text-align: center; color: #666; width: 100%;">Loading violation types...</p>
           </div>
         </div>
 
         <!-- Violation Level Selection -->
         <div class="violation-level-section">
           <h3>Violation Level</h3>
-          <div class="violation-level-buttons">
-            <div class="violation-level-option">
-              <input type="radio" id="permitted1" name="violationLevel" value="permitted1">
-              <label for="permitted1" class="level-permitted">
-                <span class="level-title">Permitted 1</span>
-                <span class="level-desc">First offense - Verbal reminder</span>
-              </label>
-            </div>
-            <div class="violation-level-option">
-              <input type="radio" id="permitted2" name="violationLevel" value="permitted2">
-              <label for="permitted2" class="level-permitted">
-                <span class="level-title">Permitted 2</span>
-                <span class="level-desc">Second offense - Written warning</span>
-              </label>
-            </div>
-            <div class="violation-level-option">
-              <input type="radio" id="warning1" name="violationLevel" value="warning1">
-              <label for="warning1" class="level-warning">
-                <span class="level-title">Warning 1</span>
-                <span class="level-desc">Third offense - Parent notification</span>
-              </label>
-            </div>
-            <div class="violation-level-option">
-              <input type="radio" id="warning2" name="violationLevel" value="warning2">
-              <label for="warning2" class="level-warning">
-                <span class="level-title">Warning 2</span>
-                <span class="level-desc">Fourth offense - Conference required</span>
-              </label>
-            </div>
-            <div class="violation-level-option">
-              <input type="radio" id="warning3" name="violationLevel" value="warning3">
-              <label for="warning3" class="level-warning">
-                <span class="level-title">Warning 3</span>
-                <span class="level-desc">Fifth offense - Disciplinary action</span>
-              </label>
-            </div>
-            <div class="violation-level-option">
-              <input type="radio" id="disciplinary" name="violationLevel" value="disciplinary">
-              <label for="disciplinary" class="level-disciplinary">
-                <span class="level-title">Disciplinary</span>
-                <span class="level-desc">Severe violation - Immediate action</span>
-              </label>
-            </div>
+          <div class="violation-level-buttons" id="violationLevelsContainer">
+            <!-- Loaded dynamically via JS -->
+            <p style="text-align: center; color: #666; width: 100%;">Select a violation type first</p>
           </div>
         </div>
 
@@ -501,31 +435,9 @@ require_once __DIR__ . '/../../core/View.php';
         <!-- History Timeline -->
         <div class="violation-history">
           <h4>Violation History</h4>
-          <div class="timeline">
-            <div class="timeline-item">
-              <div class="timeline-marker"></div>
-              <div class="timeline-content">
-                <span class="timeline-date">Feb 15, 2024 • 08:15 AM</span>
-                <span class="timeline-title">Warning 2 - Improper Uniform</span>
-                <span class="timeline-desc">Reported at Main Gate 1 by Officer Maria Santos</span>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-marker"></div>
-              <div class="timeline-content">
-                <span class="timeline-date">Jan 30, 2024 • 07:45 AM</span>
-                <span class="timeline-title">Warning 1 - Improper Uniform</span>
-                <span class="timeline-desc">First offense - Parent was notified</span>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-marker"></div>
-              <div class="timeline-content">
-                <span class="timeline-date">Dec 12, 2023 • 08:30 AM</span>
-                <span class="timeline-title">Permitted 2 - No ID</span>
-                <span class="timeline-desc">Second offense for not wearing ID</span>
-              </div>
-            </div>
+          <div class="timeline" id="detailTimeline">
+            <!-- Populated dynamically -->
+            <p style="color: #6c757d; font-size: 14px;">No history available.</p>
           </div>
         </div>
 

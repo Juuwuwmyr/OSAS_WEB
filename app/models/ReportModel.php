@@ -37,9 +37,9 @@ class ReportModel extends Model {
                     COALESCE(d.department_name, s.department) as department_name,
                     COALESCE(sec.section_code, 'N/A') as section_code,
                     COALESCE(sec.section_name, 'N/A') as section_name,
-                    COUNT(CASE WHEN v.violation_type = 'improper_uniform' THEN 1 END) as uniform_count,
-                    COUNT(CASE WHEN v.violation_type = 'improper_footwear' THEN 1 END) as footwear_count,
-                    COUNT(CASE WHEN v.violation_type = 'no_id' THEN 1 END) as no_id_count,
+                    COUNT(CASE WHEN vt.name LIKE '%Uniform%' THEN 1 END) as uniform_count,
+                    COUNT(CASE WHEN vt.name LIKE '%Footwear%' OR vt.name LIKE '%Shoe%' THEN 1 END) as footwear_count,
+                    COUNT(CASE WHEN vt.name LIKE '%ID%' THEN 1 END) as no_id_count,
                     COUNT(v.id) as total_violations,
                     MAX(CASE 
                         WHEN v.status = 'disciplinary' THEN 3
@@ -53,6 +53,7 @@ class ReportModel extends Model {
                   INNER JOIN violations v ON BINARY v.student_id = BINARY s.student_id
                   LEFT JOIN departments d ON s.department = d.department_code
                   LEFT JOIN sections sec ON s.section_id = sec.id
+                  LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
                   WHERE s.status != 'archived'";
         
         $params = [];
@@ -409,11 +410,15 @@ class ReportModel extends Model {
      * Sync violation history to report_violations table
      */
     private function syncReportViolations($startDate = null, $endDate = null) {
-        $query = "SELECT r.id as report_id, v.id as violation_id, v.violation_type, 
-                         v.violation_level, v.violation_date, v.violation_time, 
+        $query = "SELECT r.id as report_id, v.id as violation_id, 
+                         vt.name as violation_type, 
+                         vl.name as violation_level, 
+                         v.violation_date, v.violation_time, 
                          v.status, v.notes
                   FROM reports r
-                  INNER JOIN violations v ON BINARY r.student_id = BINARY v.student_id";
+                  INNER JOIN violations v ON BINARY r.student_id = BINARY v.student_id
+                  LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                  LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id";
         
         $params = [];
         $types = "";

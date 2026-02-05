@@ -472,10 +472,8 @@ class DashboardData {
         }
         
         this.violations.forEach(violation => {
-            const type = violation.violationType || violation.violation_type || violation.violationTypeLabel || 'Other';
-            // Normalize type names
-            const normalizedType = type.toLowerCase().replace(/\s+/g, '_');
-            types[normalizedType] = (types[normalizedType] || 0) + 1;
+            const label = violation.violationTypeLabel || violation.violation_type_name || violation.violationType || 'Other';
+            types[label] = (types[label] || 0) + 1;
         });
 
         // Get top 5 types
@@ -490,17 +488,8 @@ class DashboardData {
             };
         }
 
-        // Format labels for display
-        const typeLabels = {
-            'improper_uniform': 'Improper Uniform',
-            'no_id': 'No ID',
-            'improper_footwear': 'Improper Footwear',
-            'misconduct': 'Misconduct',
-            'other': 'Other'
-        };
-
         return {
-            labels: sorted.map(([label]) => typeLabels[label] || label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
+            labels: sorted.map(([label]) => label),
             data: sorted.map(([, count]) => count)
         };
     }

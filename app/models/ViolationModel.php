@@ -37,6 +37,8 @@ class ViolationModel extends Model {
         // Also join with departments table to get department names
         $query = "SELECT 
                     v.*, 
+                    vt.name as violation_type_name,
+                    vl.name as violation_level_name,
                     s.student_id as student_id_no,
                     s.first_name, 
                     s.middle_name, 
@@ -51,6 +53,8 @@ class ViolationModel extends Model {
                     COALESCE(sec.section_name, 'N/A') as section_name,
                     COALESCE(sec.section_code, 'N/A') as section_code
                   FROM violations v
+                  LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                  LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
                   LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
                   LEFT JOIN departments d ON s.department = d.department_code
                   LEFT JOIN sections sec ON s.section_id = sec.id
@@ -86,7 +90,7 @@ class ViolationModel extends Model {
         }
 
         if (!empty($search)) {
-            $query .= " AND (v.case_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR v.student_id LIKE ? OR v.violation_type LIKE ?)";
+            $query .= " AND (v.case_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR v.student_id LIKE ? OR vt.name LIKE ?)";
             $searchTerm = "%$search%";
             $searchParams = array_fill(0, 5, $searchTerm);
             $params = array_merge($params, $searchParams);
@@ -170,23 +174,8 @@ class ViolationModel extends Model {
                     $avatar = 'https://ui-avatars.com/api/?name=' . urlencode($fullName) . '&background=ffd700&color=333&size=80';
                 }
 
-                $violationTypeLabels = [
-                    'improper_uniform' => 'Improper Uniform',
-                    'no_id' => 'No ID',
-                    'improper_footwear' => 'Improper Footwear',
-                    'misconduct' => 'Misconduct'
-                ];
-                $violationTypeLabel = $violationTypeLabels[$row['violation_type']] ?? ucfirst(str_replace('_', ' ', $row['violation_type']));
-
-                $violationLevelLabels = [
-                    'permitted1' => 'Permitted 1',
-                    'permitted2' => 'Permitted 2',
-                    'warning1' => 'Warning 1',
-                    'warning2' => 'Warning 2',
-                    'warning3' => 'Warning 3',
-                    'disciplinary' => 'Disciplinary'
-                ];
-                $violationLevelLabel = $violationLevelLabels[$row['violation_level']] ?? ucfirst($row['violation_level']);
+                $violationTypeLabel = $row['violation_type_name'] ?? 'Unknown Type';
+                $violationLevelLabel = $row['violation_level_name'] ?? 'Unknown Level';
 
                 $statusLabels = [
                     'permitted' => 'Permitted',
@@ -223,9 +212,9 @@ class ViolationModel extends Model {
                     'studentSection' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
                     'studentYearlevel' => $row['student_yearlevel'] ?? 'N/A',
                     'studentContact' => $row['contact_number'] ?? 'N/A',
-                    'violationType' => $row['violation_type'] ?? '',
+                    'violationType' => $row['violation_type_id'] ?? '',
                     'violationTypeLabel' => $violationTypeLabel,
-                    'violationLevel' => $row['violation_level'] ?? '',
+                    'violationLevel' => $row['violation_level_id'] ?? '',
                     'violationLevelLabel' => $violationLevelLabel,
                     'department' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
                     'section' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
@@ -275,25 +264,26 @@ class ViolationModel extends Model {
     /**
      * Check for duplicate violation with time tolerance
      */
-    public function checkDuplicate($studentId, $violationType, $violationDate, $violationTime, $location) {
+    public function checkDuplicate($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location) {
         $query = "SELECT id FROM violations 
                   WHERE student_id = ? 
-                  AND violation_type = ? 
+                  AND violation_type_id = ? 
+                  AND violation_level_id = ?
                   AND violation_date = ? 
                   AND violation_time = ? 
                   AND location = ? 
                   AND deleted_at IS NULL";
         
-        $result = $this->query($query, [$studentId, $violationType, $violationDate, $violationTime, $location]);
+        $result = $this->query($query, [$studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location]);
         return !empty($result) ? $result[0]['id'] : false;
     }
 
     /**
      * Check for duplicate violation within time window (for near-simultaneous submissions)
      */
-    public function checkDuplicateInTimeWindow($studentId, $violationType, $violationDate, $violationTime, $location, $timeWindowMinutes = 5) {
+    public function checkDuplicateInTimeWindow($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location, $timeWindowMinutes = 5) {
         // Check exact match first
-        $exactMatch = $this->checkDuplicate($studentId, $violationType, $violationDate, $violationTime, $location);
+        $exactMatch = $this->checkDuplicate($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location);
         if ($exactMatch) {
             return $exactMatch;
         }
@@ -301,13 +291,14 @@ class ViolationModel extends Model {
         // Check for violations within time window
         $query = "SELECT id, violation_time FROM violations 
                   WHERE student_id = ? 
-                  AND violation_type = ? 
+                  AND violation_type_id = ? 
+                  AND violation_level_id = ?
                   AND violation_date = ? 
                   AND location = ? 
                   AND deleted_at IS NULL
                   AND ABS(TIMESTAMPDIFF(MINUTE, STR_TO_DATE(?, '%H:%i:%s'), violation_time)) <= ?";
         
-        $result = $this->query($query, [$studentId, $violationType, $violationDate, $location, $violationTime, $timeWindowMinutes]);
+        $result = $this->query($query, [$studentId, $violationTypeId, $violationLevelId, $violationDate, $location, $violationTime, $timeWindowMinutes]);
         return !empty($result) ? $result[0]['id'] : false;
     }
 
@@ -318,6 +309,20 @@ class ViolationModel extends Model {
         $query = "SELECT id FROM violations WHERE case_id = ?";
         $result = $this->query($query, [$caseId]);
         return !empty($result);
+    }
+
+    /**
+     * Get all violation types
+     */
+    public function getViolationTypes() {
+        return $this->query("SELECT * FROM violation_types ORDER BY name ASC");
+    }
+
+    /**
+     * Get violation levels by type
+     */
+    public function getViolationLevels($typeId) {
+        return $this->query("SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC", [$typeId]);
     }
 }
 
