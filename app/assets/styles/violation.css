@@ -870,6 +870,31 @@ body.dark {
   border-color: #607d8b;
 }
 
+.Violations-action-btn.entrance:hover {
+  background: rgba(63, 81, 181, 0.15);
+  color: #3f51b5;
+  border-color: #3f51b5;
+}
+
+.Violations-btn-outline.entrance-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #3f51b5;
+  color: #3f51b5;
+  background: transparent;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.Violations-btn-outline.entrance-btn:hover {
+  background: rgba(63, 81, 181, 0.1);
+  transform: translateY(-2px);
+}
+
 .Violations-action-btn.print:hover {
   background: rgba(96, 125, 139, 0.15);
   color: #607d8b;
@@ -987,15 +1012,15 @@ body.dark {
   position: relative;
   background: var(--light);
   width: 95%;
-  max-width: 550px; /* Further reduced width to prevent stretching */
+  max-width: 450px; /* Matched with student modal width */
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.4s ease-out;
   z-index: 2001;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
-  margin: 20px auto; /* Center with some margin */
+  margin: 20px auto;
 }
 
 @keyframes modalSlideIn {
@@ -1177,13 +1202,13 @@ body.dark {
 .violation-student-info-card {
   background: var(--grey);
   border-radius: 16px;
-  padding: 16px;
+  padding: 12px; /* Further reduced */
   margin: 0;
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  flex-direction: row;
+  gap: 12px; /* Further reduced */
   align-items: center;
-  text-align: center;
+  text-align: left;
   border: 2px solid transparent;
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease-out;
@@ -1207,8 +1232,8 @@ body.dark {
 }
 
 .violation-student-image {
-  width: 70px;
-  height: 70px;
+  width: 60px; /* Reduced from 70px */
+  height: 60px; /* Reduced from 70px */
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid var(--gold);
@@ -1216,6 +1241,7 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .violation-student-image img {
@@ -1229,26 +1255,28 @@ body.dark {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  align-items: flex-start;
 }
 
 .violation-detail-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
 }
 
 .violation-detail-label {
-  min-width: 100px;
+  min-width: 85px; /* Reduced from 100px */
   font-weight: 600;
   color: var(--dark-grey);
-  font-size: 14px;
+  font-size: 13px; /* Slightly smaller font */
 }
 
 .violation-detail-value {
   color: var(--dark);
   font-weight: 500;
   flex: 1;
+  text-align: left;
 }
 
 /* Enhanced Violation Type Section */
@@ -1258,7 +1286,7 @@ body.dark {
 .violation-attachments {
   background: var(--light);
   border-radius: 16px;
-  padding: 24px;
+  padding: 16px; /* Further reduced from 20px */
   border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
@@ -1316,8 +1344,8 @@ body.dark {
 
 .violation-types {
   display: grid;
-  grid-template-columns: 1fr; /* Changed to single column to avoid stretching */
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr); /* Force 2 columns to keep it compact */
+  gap: 10px;
   margin-bottom: 0;
 }
 
@@ -1405,8 +1433,8 @@ body.dark {
 /* Enhanced Violation Level Section */
 .violation-level-buttons {
   display: grid;
-  grid-template-columns: 1fr; /* Changed to single column to avoid stretching */
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr); /* Force 2 columns */
+  gap: 10px;
   margin-bottom: 0;
 }
 
@@ -1772,6 +1800,7 @@ body.dark {
   margin: 0 0 12px 0;
   font-size: 1.5rem;
   color: var(--dark);
+  text-align: left;
 }
 
 .student-meta {
@@ -1987,10 +2016,17 @@ body.dark {
 /*         RESPONSIVE DESIGN - UPDATED      */
 /* ========================================= */
 
+@media (max-width: 1024px) {
+  .Violations-modal-container {
+    width: 90%;
+    max-width: 450px !important; /* Force the width even on tablets */
+  }
+}
+
 @media (max-width: 768px) {
   .Violations-modal-container {
-    width: 98%;
-    max-width: 100%;
+    width: 95%;
+    max-width: 450px !important;
     margin: 10px auto;
     max-height: 95vh;
   }
@@ -2013,6 +2049,17 @@ body.dark {
 
   .violation-student-info-card {
     padding: 20px 15px;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+  
+  .violation-detail-row {
+    justify-content: center;
+  }
+  
+  .violation-detail-value {
+    text-align: center;
   }
   
   .Violations-form-actions {

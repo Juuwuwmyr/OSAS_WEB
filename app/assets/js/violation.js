@@ -111,6 +111,8 @@ function initViolationsModule() {
             return;
         }
 
+        const modalEntranceBtn = document.getElementById('modalEntranceBtn');
+
         // ========== DATA & CONFIG ==========
         
         // Dynamic data
@@ -1229,6 +1231,9 @@ function initViolationsModule() {
                             <button class="Violations-action-btn edit" data-id="${v.id}" title="Edit">
                                 <i class='bx bx-edit'></i>
                             </button>
+                            <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
+                                <i class='bx bx-receipt'></i>
+                            </button>
                             ${v.status === 'resolved' ? 
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
@@ -1287,6 +1292,11 @@ function initViolationsModule() {
             console.log('🎯 Opening record modal...');
             recordModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Show/hide entrance slip button
+            if (modalEntranceBtn) {
+                modalEntranceBtn.style.display = editId ? 'flex' : 'none';
+            }
             
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
@@ -1646,6 +1656,7 @@ function initViolationsModule() {
             const editBtn = e.target.closest('.Violations-action-btn.edit');
             const resolveBtn = e.target.closest('.Violations-action-btn.resolve');
             const reopenBtn = e.target.closest('.Violations-action-btn.reopen');
+            const entranceBtn = e.target.closest('.Violations-action-btn.entrance');
 
             if (viewBtn) {
                 const id = parseInt(viewBtn.dataset.id);
@@ -1655,6 +1666,14 @@ function initViolationsModule() {
             if (editBtn) {
                 const id = parseInt(editBtn.dataset.id);
                 openRecordModal(id);
+            }
+
+            if (entranceBtn) {
+                const id = parseInt(entranceBtn.dataset.id);
+                const violation = violations.find(v => v.id === id);
+                if (violation) {
+                    printEntranceSlip(violation);
+                }
             }
 
             if (resolveBtn) {
@@ -1754,6 +1773,11 @@ function initViolationsModule() {
                     selectedStudentCard.style.display = 'flex';
                 }
 
+                // Show entrance slip button when student is found
+                if (modalEntranceBtn) {
+                    modalEntranceBtn.style.display = 'flex';
+                }
+
                 showNotification(`Student found: ${student.firstName} ${student.lastName} (${student.studentId})`, 'success');
 
                 // Check for existing violations
@@ -1772,6 +1796,11 @@ function initViolationsModule() {
                 // Clear any previous selection
                 if (selectedStudentCard) {
                     selectedStudentCard.style.display = 'none';
+                }
+
+                // Hide entrance slip button when student is not found
+                if (modalEntranceBtn) {
+                    modalEntranceBtn.style.display = 'none';
                 }
             }
         }
@@ -1814,6 +1843,7 @@ function initViolationsModule() {
         const detailResolveBtn = document.getElementById('detailResolveBtn');
         const detailEscalateBtn = document.getElementById('detailEscalateBtn');
         const detailPrintBtn = document.getElementById('detailPrintBtn');
+        const detailEntranceBtn = document.getElementById('detailEntranceBtn');
 
         if (detailEditBtn) {
             detailEditBtn.addEventListener('click', function() {
@@ -1939,6 +1969,128 @@ function initViolationsModule() {
                     printWindow.print();
                 }
             });
+        }
+
+        if (modalEntranceBtn) {
+            modalEntranceBtn.addEventListener('click', function() {
+                const editId = recordModal.dataset.editingId;
+                
+                if (editId) {
+                    // Edit mode: Use existing violation data
+                    const violation = violations.find(v => v.id === parseInt(editId));
+                    if (violation) {
+                        printEntranceSlip(violation);
+                    }
+                } else {
+                    // New Record mode: Gather data from form fields
+                    const studentId = document.getElementById('modalStudentId').textContent;
+                    const studentName = document.getElementById('modalStudentName').textContent;
+                    const studentDept = document.getElementById('modalStudentDept').textContent;
+                    const studentSection = document.getElementById('modalStudentSection').textContent;
+                    
+                    const violationTypeRadio = document.querySelector('input[name="violationType"]:checked');
+                    const violationLevelRadio = document.querySelector('input[name="violationLevel"]:checked');
+                    
+                    if (!studentId || !studentName) {
+                        showNotification('Please search and select a student first.', 'warning');
+                        return;
+                    }
+                    
+                    // Get labels for type and level
+                    let violationTypeLabel = 'N/A';
+                    if (violationTypeRadio) {
+                        const label = document.querySelector(`label[for="${violationTypeRadio.id}"] span`);
+                        if (label) violationTypeLabel = label.textContent.trim();
+                    }
+                    
+                    let violationLevelLabel = 'N/A';
+                    if (violationLevelRadio) {
+                        const label = document.querySelector(`label[for="${violationLevelRadio.id}"] .level-title`);
+                        if (label) violationLevelLabel = label.textContent.trim();
+                    }
+                    
+                    // Create temporary violation object for printing
+                    const tempViolation = {
+                        caseId: generateCaseId() + ' (PENDING)',
+                        studentId: studentId,
+                        studentName: studentName,
+                        department: studentDept,
+                        section: studentSection,
+                        violationTypeLabel: violationTypeLabel,
+                        violationLevelLabel: violationLevelLabel,
+                        dateTime: new Date().toLocaleString()
+                    };
+                    
+                    printEntranceSlip(tempViolation);
+                }
+            });
+        }
+
+        function printEntranceSlip(violation) {
+            const printContent = `
+                <html>
+                    <head>
+                        <title>Entrance Slip - ${violation.studentName}</title>
+                        <style>
+                            @page { size: A5 landscape; margin: 10mm; }
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; }
+                            .slip-container { border: 2px solid #333; padding: 20px; position: relative; height: 100%; box-sizing: border-box; }
+                            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                            .header h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+                            .header p { margin: 5px 0 0; font-size: 14px; }
+                            .content { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+                            .field { margin-bottom: 10px; }
+                            .label { font-weight: bold; font-size: 12px; color: #666; text-transform: uppercase; }
+                            .value { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+                            .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+                            .signature-line { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 5px; font-size: 12px; }
+                            .date-stamp { font-size: 12px; color: #999; }
+                            .case-id { position: absolute; top: 20px; right: 20px; font-family: monospace; font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="slip-container">
+                            <div class="case-id">#${violation.caseId}</div>
+                            <div class="header">
+                                <h1>Entrance Slip</h1>
+                                <p>Office of Student Affairs and Services (OSAS)</p>
+                            </div>
+                            <div class="content">
+                                <div class="field">
+                                    <div class="label">Student Name</div>
+                                    <div class="value">${violation.studentName}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="label">Student ID</div>
+                                    <div class="value">${violation.studentId}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="label">Department / Section</div>
+                                    <div class="value">${violation.department} - ${violation.section}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="label">Violation</div>
+                                    <div class="value">${violation.violationTypeLabel}</div>
+                                </div>
+                            </div>
+                            <div class="footer">
+                                <div class="date-stamp">
+                                    Issued on: ${new Date().toLocaleString()}
+                                </div>
+                                <div class="signature-line">
+                                    OSAS Authorized Representative
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
         }
 
         // 4. ESCAPE KEY TO CLOSE MODAL

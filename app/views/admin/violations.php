@@ -348,6 +348,9 @@ require_once __DIR__ . '/../../core/View.php';
         <!-- Action Buttons -->
         <div class="Violations-form-actions">
           <button type="button" class="Violations-btn-outline" id="cancelRecordModal">Cancel</button>
+          <button type="button" class="Violations-btn-outline entrance-btn" id="modalEntranceBtn" style="display: none;">
+            <i class='bx bx-receipt'></i> Entrance Slip
+          </button>
           <button type="submit" class="Violations-btn-primary">Record Violation</button>
         </div>
       </form>
