@@ -986,15 +986,16 @@ body.dark {
 .Violations-modal-container {
   position: relative;
   background: var(--light);
-  width: 90%;
-  max-width: 850px; /* Increased for better layout */
+  width: 95%;
+  max-width: 550px; /* Further reduced width to prevent stretching */
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.4s ease-out;
   z-index: 2001;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
+  margin: 20px auto; /* Center with some margin */
 }
 
 @keyframes modalSlideIn {
@@ -1096,10 +1097,10 @@ body.dark {
 /* ========================================= */
 
 #ViolationRecordForm {
-  padding: 32px;
+  padding: 24px; /* Reduced padding */
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px; /* Reduced gap */
 }
 
 /* Student Search Enhancement */
@@ -1176,12 +1177,13 @@ body.dark {
 .violation-student-info-card {
   background: var(--grey);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   margin: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   align-items: center;
+  text-align: center;
   border: 2px solid transparent;
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease-out;
@@ -1205,8 +1207,8 @@ body.dark {
 }
 
 .violation-student-image {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid var(--gold);
@@ -1226,11 +1228,13 @@ body.dark {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .violation-detail-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
 }
 
@@ -1312,7 +1316,7 @@ body.dark {
 
 .violation-types {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr; /* Changed to single column to avoid stretching */
   gap: 12px;
   margin-bottom: 0;
 }
@@ -1401,7 +1405,7 @@ body.dark {
 /* Enhanced Violation Level Section */
 .violation-level-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr; /* Changed to single column to avoid stretching */
   gap: 12px;
   margin-bottom: 0;
 }
@@ -1548,7 +1552,7 @@ body.dark {
 /* Enhanced Form Controls */
 .Violations-form-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr; /* Changed to single column for better fit */
   gap: 20px;
   margin-bottom: 0;
 }
@@ -1985,64 +1989,77 @@ body.dark {
 
 @media (max-width: 768px) {
   .Violations-modal-container {
-    width: 95%;
-    max-height: 85vh;
+    width: 98%;
+    max-width: 100%;
+    margin: 10px auto;
+    max-height: 95vh;
   }
-  
-  .violation-types,
-  .violation-level-buttons,
-  .Violations-form-row {
-    grid-template-columns: 1fr;
+
+  .Violations-header {
+    flex-direction: column;
+    gap: 15px;
   }
   
   .student-search-wrapper {
     flex-direction: column;
-    align-items: stretch;
+    padding: 12px;
   }
   
   .Violations-search-btn,
   .Violations-refresh-btn {
     width: 100%;
-  }
-  
-  .violation-student-info-card {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  
-  .violation-detail-row {
     justify-content: center;
-    text-align: left;
+  }
+
+  .violation-student-info-card {
+    padding: 20px 15px;
   }
   
   .Violations-form-actions {
     flex-direction: column;
+    gap: 12px;
   }
   
   .Violations-btn-outline,
   .Violations-btn-primary {
     width: 100%;
+    height: 48px;
   }
 }
 
 @media (max-width: 480px) {
+  .Violations-modal-header {
+    padding: 16px 20px;
+  }
+
+  .Violations-modal-header h2 {
+    font-size: 1.2rem;
+  }
+
   #ViolationRecordForm {
-    padding: 20px;
+    padding: 16px;
+    gap: 16px;
   }
   
   .violation-type-section,
   .violation-level-section,
   .violation-details-section,
   .violation-attachments {
-    padding: 16px;
+    padding: 15px;
   }
-  
-  .Violations-modal-header {
-    padding: 20px 20px 16px;
+
+  .violation-type-card, 
+  .violation-level-option {
+    padding: 12px;
   }
-  
-  .Violations-modal-header h2 {
-    font-size: 1.5rem;
+
+  .violation-detail-label {
+    min-width: 80px;
+    font-size: 13px;
+  }
+
+  .violation-detail-value {
+    font-size: 13px;
   }
 }
 
