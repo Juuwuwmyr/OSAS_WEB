@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jan 23, 2026 at 03:03 AM
+-- Generation Time: Feb 08, 2026 at 02:25 PM
 -- Server version: 8.3.0
--- PHP Version: 8.2.18
+-- PHP Version: 8.3.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -21,6 +21,126 @@ SET time_zone = "+00:00";
 -- Database: `osas`
 --
 
+DELIMITER $$
+--
+-- Procedures
+--
+DROP PROCEDURE IF EXISTS `add_student_violation`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_student_violation` (IN `p_student_id` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci, IN `p_violation_type` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci, IN `p_violation_date` DATE, IN `p_violation_time` TIME, IN `p_location` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci, IN `p_reported_by` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci, IN `p_notes` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci, IN `p_case_id` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci)   BEGIN
+        DECLARE v_current_level VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL;
+        DECLARE v_previous_level VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL;
+        DECLARE v_permitted_count INT DEFAULT 0;
+        DECLARE v_warning_count INT DEFAULT 0;
+        DECLARE v_total_violations INT DEFAULT 0;
+        DECLARE v_level_id INT DEFAULT NULL;
+        DECLARE v_new_level VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL;
+        
+        -- Check if student violation level exists
+        SELECT id, current_level, permitted_count, warning_count, total_violations
+        INTO v_level_id, v_current_level, v_permitted_count, v_warning_count, v_total_violations
+        FROM student_violation_levels
+        WHERE student_id = p_student_id COLLATE utf8mb4_0900_ai_ci 
+          AND violation_type = p_violation_type COLLATE utf8mb4_0900_ai_ci;
+        
+        IF v_level_id IS NULL THEN
+            -- Create new violation level record
+            INSERT INTO student_violation_levels (
+                student_id, violation_type, current_level, 
+                permitted_count, warning_count, total_violations,
+                last_violation_date, last_violation_time, last_location,
+                last_reported_by, last_notes, status
+            ) VALUES (
+                p_student_id, p_violation_type, 'permitted1',
+                1, 0, 1,
+                p_violation_date, p_violation_time, p_location,
+                p_reported_by, p_notes, 'active'
+            );
+            
+            SET v_level_id = LAST_INSERT_ID();
+            SET v_previous_level = NULL;
+            SET v_new_level = 'permitted1';
+            SET v_total_violations = 1;
+        ELSE
+            -- Update existing record
+            SET v_previous_level = v_current_level;
+            SET v_total_violations = v_total_violations + 1;
+            
+            -- Determine new level based on total violations
+            SET v_new_level = get_next_violation_level(v_current_level, v_total_violations);
+            
+            -- Update counts based on new level
+            IF v_new_level LIKE 'permitted%' THEN
+                SET v_permitted_count = v_permitted_count + 1;
+            ELSEIF v_new_level LIKE 'warning%' THEN
+                SET v_warning_count = v_warning_count + 1;
+            END IF;
+            
+            -- Update the violation level record
+            UPDATE student_violation_levels SET
+                current_level = v_new_level,
+                permitted_count = v_permitted_count,
+                warning_count = v_warning_count,
+                total_violations = v_total_violations,
+                last_violation_date = p_violation_date,
+                last_violation_time = p_violation_time,
+                last_location = p_location,
+                last_reported_by = p_reported_by,
+                last_notes = p_notes,
+                status = IF(v_new_level = 'disciplinary', 'disciplinary', 'active'),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = v_level_id;
+        END IF;
+        
+        -- Add to history
+        INSERT INTO violation_history (
+            student_violation_level_id, student_id, violation_type,
+            previous_level, new_level, violation_date, violation_time,
+            location, reported_by, notes, case_id
+        ) VALUES (
+            v_level_id, p_student_id, p_violation_type,
+            v_previous_level, v_new_level, p_violation_date, p_violation_time,
+            p_location, p_reported_by, p_notes, p_case_id
+        );
+        
+        -- Return the result
+        SELECT 
+            v_level_id as id,
+            p_student_id as student_id,
+            p_violation_type as violation_type,
+            v_new_level as current_level,
+            v_permitted_count as permitted_count,
+            v_warning_count as warning_count,
+            v_total_violations as total_violations,
+            p_case_id as case_id;
+    END$$
+
+--
+-- Functions
+--
+DROP FUNCTION IF EXISTS `get_next_violation_level`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `get_next_violation_level` (`current_level` VARCHAR(50), `total_violations` INT) RETURNS VARCHAR(50) CHARSET utf8mb4 DETERMINISTIC READS SQL DATA BEGIN
+        DECLARE next_level VARCHAR(50);
+        
+        CASE current_level
+            WHEN 'permitted1' THEN
+                SET next_level = IF(total_violations >= 2, 'permitted2', 'permitted1');
+            WHEN 'permitted2' THEN
+                SET next_level = IF(total_violations >= 3, 'warning1', 'permitted2');
+            WHEN 'warning1' THEN
+                SET next_level = IF(total_violations >= 4, 'warning2', 'warning1');
+            WHEN 'warning2' THEN
+                SET next_level = IF(total_violations >= 5, 'warning3', 'warning2');
+            WHEN 'warning3' THEN
+                SET next_level = IF(total_violations >= 6, 'disciplinary', 'warning3');
+            ELSE
+                SET next_level = 'disciplinary';
+        END CASE;
+        
+        RETURN next_level;
+    END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -30,10 +150,10 @@ SET time_zone = "+00:00";
 DROP TABLE IF EXISTS `announcements`;
 CREATE TABLE IF NOT EXISTS `announcements` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('info','urgent','warning') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info',
-  `status` enum('active','archived') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` enum('info','urgent','warning') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info',
+  `status` enum('active','archived') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `created_by` int DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -79,11 +199,11 @@ INSERT INTO `announcements` (`id`, `title`, `message`, `type`, `status`, `create
 DROP TABLE IF EXISTS `dashcontents`;
 CREATE TABLE IF NOT EXISTS `dashcontents` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content_type` enum('tip','guideline','statistic','announcement','widget') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'tip',
-  `target_audience` enum('admin','user','both') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
-  `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content_type` enum('tip','guideline','statistic','announcement','widget') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'tip',
+  `target_audience` enum('admin','user','both') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
+  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `display_order` int NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -103,18 +223,18 @@ CREATE TABLE IF NOT EXISTS `dashcontents` (
 DROP TABLE IF EXISTS `departments`;
 CREATE TABLE IF NOT EXISTS `departments` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `department_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `department_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `head_of_department` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `status` enum('active','archived') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `department_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `department_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `head_of_department` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `status` enum('active','archived') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `department_code` (`department_code`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `departments`
@@ -132,7 +252,40 @@ INSERT INTO `departments` (`id`, `department_name`, `department_code`, `head_of_
 (9, 'BS Business Administration', 'BSBA', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
 (10, 'BS Nursing', 'BSN', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
 (11, 'Bachelor of Elementary Education', 'BEED', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
-(12, 'Bachelor of Secondary Education', 'BSED', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL);
+(12, 'Bachelor of Secondary Education', 'BSED', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
+(13, 'BSIT', 'IT-001', NULL, NULL, 'active', '2026-02-05 02:56:49', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `email_configs`
+--
+
+DROP TABLE IF EXISTS `email_configs`;
+CREATE TABLE IF NOT EXISTS `email_configs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `smtp_host` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `smtp_port` int NOT NULL,
+  `smtp_username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `smtp_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `from_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `from_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `is_default` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_email_configs_active` (`is_active`),
+  KEY `idx_email_configs_default` (`is_default`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `email_configs`
+--
+
+INSERT INTO `email_configs` (`id`, `name`, `smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`, `from_email`, `from_name`, `is_active`, `is_default`, `created_at`, `updated_at`) VALUES
+(1, 'OSAS Primary Gmail', 'smtp.gmail.com', 587, 'belugaw6@gmail.com', 'chrqrylpqhrtqytl', 'belugaw6@gmail.com', 'OSAS', 1, 1, '2026-02-04 21:42:49', '2026-02-04 21:42:49');
 
 -- --------------------------------------------------------
 
@@ -143,11 +296,11 @@ INSERT INTO `departments` (`id`, `department_name`, `department_code`, `head_of_
 DROP TABLE IF EXISTS `failed_jobs`;
 CREATE TABLE IF NOT EXISTS `failed_jobs` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `connection` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `queue` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exception` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `uuid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `connection` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `queue` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `exception` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -162,10 +315,10 @@ DROP TABLE IF EXISTS `messages`;
 CREATE TABLE IF NOT EXISTS `messages` (
   `id` int NOT NULL AUTO_INCREMENT,
   `announcement_id` int NOT NULL,
-  `sender_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sender_role` enum('admin','user') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sender_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sender_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sender_role` enum('admin','user') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sender_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -213,7 +366,7 @@ INSERT INTO `messages` (`id`, `announcement_id`, `sender_id`, `sender_role`, `se
 DROP TABLE IF EXISTS `migrations`;
 CREATE TABLE IF NOT EXISTS `migrations` (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
-  `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -242,13 +395,34 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `otps`
+--
+
+DROP TABLE IF EXISTS `otps`;
+CREATE TABLE IF NOT EXISTS `otps` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `pending_data` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_otps_email` (`email`),
+  KEY `idx_otps_code` (`code`),
+  KEY `idx_otps_expires` (`expires_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `password_resets`
 --
 
 DROP TABLE IF EXISTS `password_resets`;
 CREATE TABLE IF NOT EXISTS `password_resets` (
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -261,11 +435,11 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
 DROP TABLE IF EXISTS `personal_access_tokens`;
 CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `tokenable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tokenable_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `tokenable_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `abilities` text COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `abilities` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `last_used_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -281,20 +455,20 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
 DROP TABLE IF EXISTS `reports`;
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `report_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `student_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `student_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `student_contact` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `department` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `department_code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `section` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `report_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `student_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `student_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `student_contact` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `department` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `department_code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `section` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `section_id` int DEFAULT NULL,
-  `yearlevel` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `yearlevel` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `uniform_count` int DEFAULT '0',
   `footwear_count` int DEFAULT '0',
   `no_id_count` int DEFAULT '0',
   `total_violations` int DEFAULT '0',
-  `status` enum('permitted','warning','disciplinary') COLLATE utf8mb4_unicode_ci DEFAULT 'permitted',
+  `status` enum('permitted','warning','disciplinary') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'permitted',
   `last_violation_date` date DEFAULT NULL,
   `report_period_start` date DEFAULT NULL,
   `report_period_end` date DEFAULT NULL,
@@ -333,8 +507,8 @@ DROP TABLE IF EXISTS `report_recommendations`;
 CREATE TABLE IF NOT EXISTS `report_recommendations` (
   `id` int NOT NULL AUTO_INCREMENT,
   `report_id` int NOT NULL,
-  `recommendation` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `priority` enum('low','medium','high') COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
+  `recommendation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `priority` enum('low','medium','high') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_report_id` (`report_id`)
@@ -364,12 +538,12 @@ CREATE TABLE IF NOT EXISTS `report_violations` (
   `id` int NOT NULL AUTO_INCREMENT,
   `report_id` int NOT NULL,
   `violation_id` int DEFAULT NULL,
-  `violation_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `violation_level` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `violation_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `violation_level` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `violation_date` date NOT NULL,
   `violation_time` time DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `notes` text COLLATE utf8mb4_unicode_ci,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_report_id` (`report_id`),
@@ -399,11 +573,11 @@ INSERT INTO `report_violations` (`id`, `report_id`, `violation_id`, `violation_t
 DROP TABLE IF EXISTS `sections`;
 CREATE TABLE IF NOT EXISTS `sections` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `section_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `section_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `section_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `section_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `department_id` int NOT NULL,
-  `academic_year` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','archived') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `academic_year` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('active','archived') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
@@ -456,11 +630,11 @@ INSERT INTO `sections` (`id`, `section_name`, `section_code`, `department_id`, `
 DROP TABLE IF EXISTS `settings`;
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `setting_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `setting_value` text COLLATE utf8mb4_unicode_ci,
-  `setting_type` enum('string','integer','boolean','json') COLLATE utf8mb4_unicode_ci DEFAULT 'string',
-  `category` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'general',
-  `description` text COLLATE utf8mb4_unicode_ci,
+  `setting_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `setting_type` enum('string','integer','boolean','json') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'string',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'general',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `is_public` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -521,19 +695,19 @@ INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `setting_type`, `c
 DROP TABLE IF EXISTS `students`;
 CREATE TABLE IF NOT EXISTS `students` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `student_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `first_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `middle_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `last_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `contact_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `address` text COLLATE utf8mb4_unicode_ci,
-  `department` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `student_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `first_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `middle_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contact_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `department` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `section_id` int DEFAULT NULL,
-  `yearlevel` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `year_level` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1st Year',
-  `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('active','inactive','graduating','archived') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `yearlevel` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `year_level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1st Year',
+  `avatar` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('active','inactive','graduating','archived') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
@@ -544,7 +718,7 @@ CREATE TABLE IF NOT EXISTS `students` (
   KEY `status` (`status`),
   KEY `department` (`department`),
   KEY `idx_students_year_level` (`year_level`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `students`
@@ -558,7 +732,54 @@ INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_n
 (5, '2024-005', 'Michael', 'Anthony', 'Garcia', 'michael.garcia@student.edu', '+63 956 789 0123', '654 Maple Drive, Taguig', 'BSIT', 5, NULL, '1st Year', NULL, 'archived', '2025-12-14 09:38:56', '2026-01-08 17:21:10', NULL),
 (6, '2023-0206', 'Christian', 'Manalo', 'Moreno', 'morenojumyr0@gmail.com', '+639099999999', 'Street 6', 'BSIT', 4, NULL, '1st Year', 'assets/img/students/student_1765706780_693e8c1c7aec5.jpg', 'archived', '2025-12-14 18:06:20', '2025-12-14 21:57:00', NULL),
 (7, '2023-02065', 'Christian', 'Manalo', 'Moreno', 'morenojumyrw0@gmail.com', '+639099999999', 'Street 6', 'BEED', 22, NULL, '1st Year', 'assets/img/students/student_1765724438_693ed11651a2e.webp', 'archived', '2025-12-14 15:00:38', '2025-12-14 15:19:11', NULL),
-(8, '2023-0195', 'Jumyr', 'Manalo', 'Moreno', 'morenochristian20051225@gmail.com', '+639099999999', 'Street 6', 'BEED', 24, '1st Year', '1st Year', 'app/assets/img/students/student_1765788746_693fcc4a4ee38.jpg', 'active', '2025-12-15 08:52:26', '2026-01-23 09:52:21', NULL);
+(8, '2023-0195', 'Jumyr', 'Manalo', 'Moreno', 'morenochristian20051225@gmail.com', '+639099999999', 'Street 6', 'BEED', 24, '1st Year', '1st Year', 'app/assets/img/students/student_1765788746_693fcc4a4ee38.jpg', 'active', '2025-12-15 08:52:26', '2026-01-23 09:52:21', NULL),
+(9, '2023-006', 'Patrick', 'Vital', 'Romasanta', 'patrickmontero833@gmail.com', '0998913495', 'San Antnoio Naujan Oriental Mindoro', 'BSBA', 14, '3rd Year', '1st Year', NULL, 'active', '2026-02-05 09:50:20', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_violation_levels`
+--
+
+DROP TABLE IF EXISTS `student_violation_levels`;
+CREATE TABLE IF NOT EXISTS `student_violation_levels` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `student_id` varchar(50) NOT NULL,
+  `violation_type` varchar(50) NOT NULL,
+  `current_level` enum('permitted1','permitted2','warning1','warning2','warning3','disciplinary') NOT NULL DEFAULT 'permitted1',
+  `permitted_count` int NOT NULL DEFAULT '0',
+  `warning_count` int NOT NULL DEFAULT '0',
+  `total_violations` int NOT NULL DEFAULT '0',
+  `last_violation_date` date DEFAULT NULL,
+  `last_violation_time` time DEFAULT NULL,
+  `last_location` varchar(50) DEFAULT NULL,
+  `last_reported_by` varchar(100) DEFAULT NULL,
+  `last_notes` text,
+  `status` enum('active','resolved','disciplinary') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_student_violation` (`student_id`,`violation_type`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_violation_type` (`violation_type`),
+  KEY `idx_current_level` (`current_level`),
+  KEY `idx_status` (`status`),
+  KEY `idx_last_violation_date` (`last_violation_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `student_violation_levels`
+--
+
+INSERT INTO `student_violation_levels` (`id`, `student_id`, `violation_type`, `current_level`, `permitted_count`, `warning_count`, `total_violations`, `last_violation_date`, `last_violation_time`, `last_location`, `last_reported_by`, `last_notes`, `status`, `created_at`, `updated_at`) VALUES
+(1, '2024-001', 'no_id', 'permitted2', 2, 0, 2, '2026-02-04', '00:07:00', 'Main Gate', 'Test User', 'Test violation for collation fix', 'active', '2026-02-04 00:05:40', '2026-02-04 00:07:16'),
+(2, '1212-2122', 'improper_uniform', 'permitted1', 1, 0, 1, '2026-02-04', '08:08:00', 'gate_2', 'mn', 'A', 'active', '2026-02-04 00:09:05', '2026-02-04 00:09:05'),
+(3, '2024-001', 'improper_uniform', 'permitted1', 0, 0, 1, '2024-02-15', '08:15:00', 'gate_1', 'Officer Maria Santos', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
+(4, '2024-002', 'no_id', 'permitted1', 0, 0, 1, '2024-02-14', '07:30:00', 'gate_2', 'Officer Juan Dela Cruz', 'Student forgot to bring ID. First offense.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
+(5, '2024-003', 'improper_footwear', 'permitted1', 0, 0, 1, '2024-02-10', '08:30:00', 'classroom', 'Professor Ana Reyes', 'Student was wearing sneakers instead of the required black leather shoes in violation of school uniform policy.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
+(6, '2024-004', 'improper_uniform', 'permitted1', 0, 0, 1, '2024-02-08', '09:15:00', 'library', 'Librarian Pedro Gomez', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
+(7, '2023-0206', 'no_id', 'permitted1', 0, 0, 1, '2025-12-14', '18:06:00', 'classroom', 'soeaifjsoidjfos', ',', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
+(8, '2023-0195', 'improper_uniform', 'permitted1', 1, 0, 1, '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'active', '2026-02-04 00:40:27', '2026-02-04 00:40:27');
 
 -- --------------------------------------------------------
 
@@ -586,97 +807,22 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`),
   KEY `idx_users_google_id` (`google_id`(250)),
   KEY `idx_users_facebook_id` (`facebook_id`(250))
-) ENGINE=MyISAM AUTO_INCREMENT=2026 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2029 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `profile_picture`, `password`, `role`, `full_name`, `student_id`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'admin', 'admin@osas.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'System Administrator', NULL, 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
-(2, 'osas_admin', 'osas@admin.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'OSAS Admin', NULL, 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
+(2026, 'admin_demo@colegio.edu', 'ventiletos12@gmail.com', NULL, NULL, NULL, '$2y$10$8TCVnTQNnALHH1Xt6uW8lObeABzbqy9Snoa/ozSAVa5816G5u9dJ2', 'admin', 'admin admin', '2024-001', 1, '2026-02-05 01:28:46', '2026-02-05 01:29:08'),
 (3, 'student', 'student@example.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'John Doe', '2024-001', 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
 (4, 'test_student', 'test@example.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Jane Smith', '2024-002', 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
 (2023, 'jumyr', 'morenojumyr0@gmail.com', NULL, NULL, NULL, '$2y$10$166a7LG0mS7E.HOwr2wqhuuF.PkU8LcVCa3tRuhIZsY7YKqfk3Hau', 'admin', 'Jumyr Moreno', '2023-0195', 1, '2025-10-14 03:21:09', '2025-12-27 00:40:09'),
 (2024, 'jumyrrr', 'morenojumfyr0@gmail.com', NULL, NULL, NULL, '$2y$10$mOc68KLw6GdJ7WMsWODp8.E06FHP.09CCrNpZE0e9d7iw7TBti7rS', 'user', 'Christian Moreno', '2023-0206', 1, '2026-01-08 12:27:54', '2026-01-12 11:24:59'),
-(2025, 'hihihihi', 'morenojumyr099@gmail.com', NULL, NULL, NULL, '$2y$10$h79f5X6OmqFfq3mOSmwBIe.7jkkdW8RESunP3Pl7t4qpJw63xzUmS', 'user', 'Christian Moreno', '2023-0195', 1, '2026-01-09 03:30:51', '2026-01-12 09:36:41');
+(2025, 'hihihihi', 'morenojumyr099@gmail.com', NULL, NULL, NULL, '$2y$10$h79f5X6OmqFfq3mOSmwBIe.7jkkdW8RESunP3Pl7t4qpJw63xzUmS', 'user', 'Christian Moreno', '2023-0195', 1, '2026-01-09 03:30:51', '2026-01-12 09:36:41'),
+(2028, 'pat', 'patrickmontero@gmail.com', NULL, NULL, NULL, '$2y$10$nJi/snmyWcfFMZ/uIqXEjOGi3iNcFan9BYt49f9O9.A9FiRw4NY5a', 'admin', 'patrick Romasanta', '2024-001', 1, '2026-02-07 13:24:58', '2026-02-07 13:25:19');
 
 -- --------------------------------------------------------
-
---
--- Table structure for table `violation_types`
---
-
-DROP TABLE IF EXISTS `violation_types`;
-CREATE TABLE IF NOT EXISTS `violation_types` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `violation_types`
---
-
-INSERT INTO `violation_types` (`id`, `name`, `description`) VALUES
-(1, 'Improper Uniform', 'Wearing colored undershirt, improper pants, etc.'),
-(2, 'No ID', 'Failure to wear or bring student ID'),
-(3, 'Improper Footwear', 'Wearing slippers, open-toed shoes, etc.'),
-(4, 'Misconduct', 'Behavioral violations');
-
---
--- Table structure for table `violation_levels`
---
-
-DROP TABLE IF EXISTS `violation_levels`;
-CREATE TABLE IF NOT EXISTS `violation_levels` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `violation_type_id` int NOT NULL,
-  `level_order` int NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `violation_type_id` (`violation_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `violation_levels`
---
-
-INSERT INTO `violation_levels` (`id`, `violation_type_id`, `level_order`, `name`, `description`) VALUES
--- Improper Uniform (Type 1)
-(1, 1, 1, 'Permitted 1', 'First permitted instance'),
-(2, 1, 2, 'Permitted 2', 'Second permitted instance'),
-(3, 1, 3, 'Warning 1', 'First warning'),
-(4, 1, 4, 'Warning 2', 'Second warning'),
-(5, 1, 5, 'Warning 3', 'Final warning'),
-(6, 1, 6, 'Disciplinary Action', 'Referral to discipline office'),
--- No ID (Type 2)
-(7, 2, 1, 'Permitted 1', 'First permitted instance'),
-(8, 2, 2, 'Permitted 2', 'Second permitted instance'),
-(9, 2, 3, 'Warning 1', 'First warning'),
-(10, 2, 4, 'Warning 2', 'Second warning'),
-(11, 2, 5, 'Warning 3', 'Final warning'),
-(12, 2, 6, 'Disciplinary Action', 'Referral to discipline office'),
--- Improper Footwear (Type 3)
-(13, 3, 1, 'Permitted 1', 'First permitted instance'),
-(14, 3, 2, 'Permitted 2', 'Second permitted instance'),
-(15, 3, 3, 'Warning 1', 'First warning'),
-(16, 3, 4, 'Warning 2', 'Second warning'),
-(17, 3, 5, 'Warning 3', 'Final warning'),
-(18, 3, 6, 'Disciplinary Action', 'Referral to discipline office'),
--- Misconduct (Type 4)
-(19, 4, 1, 'Permitted 1', 'First permitted instance'),
-(20, 4, 2, 'Permitted 2', 'Second permitted instance'),
-(21, 4, 3, 'Warning 1', 'First warning'),
-(22, 4, 4, 'Warning 2', 'Second warning'),
-(23, 4, 5, 'Warning 3', 'Final warning'),
-(24, 4, 6, 'Disciplinary Action', 'Referral to discipline office');
 
 --
 -- Table structure for table `violations`
@@ -685,18 +831,18 @@ INSERT INTO `violation_levels` (`id`, `violation_type_id`, `level_order`, `name`
 DROP TABLE IF EXISTS `violations`;
 CREATE TABLE IF NOT EXISTS `violations` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `case_id` varchar(20) NOT NULL,
-  `student_id` varchar(20) NOT NULL,
+  `case_id` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `student_id` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `violation_type_id` int NOT NULL,
   `violation_level_id` int NOT NULL,
-  `department` varchar(50) NOT NULL,
-  `section` varchar(20) NOT NULL,
+  `department` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `section` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `violation_date` date NOT NULL,
   `violation_time` time NOT NULL,
-  `location` enum('gate_1','gate_2','classroom','library','cafeteria','gym','others') NOT NULL,
-  `reported_by` varchar(100) NOT NULL,
-  `notes` text,
-  `status` enum('permitted','warning','disciplinary','resolved') NOT NULL DEFAULT 'warning',
+  `location` enum('gate_1','gate_2','classroom','library','cafeteria','gym','others') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `reported_by` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `status` enum('permitted','warning','disciplinary','resolved') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'warning',
   `attachments` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -710,65 +856,122 @@ CREATE TABLE IF NOT EXISTS `violations` (
   KEY `idx_violation_date` (`violation_date`),
   KEY `idx_violation_type` (`violation_type_id`),
   KEY `idx_violation_level` (`violation_level_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `violations`
 --
 
 INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'VIOL-2024-001', '2024-001', 1, 6, '', 'BSIT-3A', '2024-02-15', '08:15:00', 'gate_1', 'Officer Maria Santos', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 10:36:23', NULL),
-(2, 'VIOL-2024-002', '2024-002', 2, 9, '', 'BSIT-1B', '2024-02-14', '07:30:00', 'gate_2', 'Officer Juan Dela Cruz', 'Student forgot to bring ID. First offense.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 16:37:02', NULL),
-(3, 'VIOL-2024-003', '2024-003', 3, 18, '', 'BSIT-2A', '2024-02-10', '08:30:00', 'classroom', 'Professor Ana Reyes', 'Student was wearing sneakers instead of the required black leather shoes in violation of school uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 23:04:22', NULL),
-(4, 'VIOL-2024-004', '2024-004', 1, 5, '', 'BSIT-1A', '2024-02-08', '09:15:00', 'library', 'Librarian Pedro Gomez', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', 'resolved', NULL, '2025-12-14 01:38:56', '2025-12-14 01:38:56', NULL),
-(5, 'VIOL-2025-005', '2023-0206', 2, 9, '', '4', '2025-12-14', '18:06:00', 'classroom', 'soeaifjsoidjfos', ',', 'resolved', NULL, '2025-12-14 10:07:00', '2025-12-14 10:20:48', NULL),
-(6, 'VIOL-2025-006', '2024-004', 1, 4, '', '1', '2025-12-15', '08:37:00', 'classroom', 'soeaifjsoidjfos', 'kughk', 'resolved', NULL, '2025-12-14 16:37:46', '2025-12-14 19:24:14', NULL),
-(7, 'VIOL-2025-007', '2023-0195', 1, 1, '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
-(8, 'VIOL-2025-008', '2023-0195', 1, 1, '', '24', '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'permitted', NULL, '2025-12-15 01:00:02', '2025-12-15 09:00:02', NULL),
-(9, 'VIOL-2025-009', '2023-0195', 1, 5, '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'resolved', NULL, '2025-12-16 19:54:09', '2025-12-16 19:55:03', NULL),
-(10, 'VIOL-2025-010', '2023-0195', 1, 1, '', '24', '2025-12-17', '11:52:00', 'gate_2', 'soeaifjsoidjfos', 'gh', 'permitted', NULL, '2025-12-16 19:54:09', '2025-12-17 03:54:09', NULL),
-(11, 'VIOL-2026-001', '2024-001', 1, 5, '', '22', '2026-01-12', '00:15:00', 'gate_1', 'soeaifjsoidjfos', NULL, 'warning', NULL, '2026-01-12 08:15:52', '2026-01-12 16:15:52', NULL);
+(20, 'VIOL-2026-001', '2024-001', 3, 13, 'Bachelor of Elementary Education', '22', '2026-02-05', '11:42:00', 'gate_2', 'csad', 'fse', 'permitted', NULL, '2026-02-04 19:42:34', '2026-02-05 03:42:34', NULL),
+(21, 'VIOL-2026-002', '2023-006', 3, 13, 'BS Business Administration', '14', '2026-02-05', '17:52:00', 'others', 'jhsxdj,m', 'skcbsdifk.', 'permitted', NULL, '2026-02-05 01:52:45', '2026-02-05 09:52:45', NULL),
+(22, 'VIOL-2026-003', '2023-006', 3, 14, 'BS Business Administration', '14', '2026-02-07', '23:08:00', 'gate_2', 'dsd', 'fs', 'permitted', NULL, '2026-02-07 07:08:49', '2026-02-07 15:08:49', NULL),
+(23, 'VIOL-2026-004', '2023-006', 3, 15, 'BS Business Administration', '14', '2026-02-07', '23:12:00', 'gate_2', 'dsd', 'rgd', 'warning', NULL, '2026-02-07 07:12:56', '2026-02-07 15:12:56', NULL),
+(24, 'VIOL-2026-005', '2023-006', 3, 16, 'BS Business Administration', '14', '2026-02-07', '23:18:00', 'gate_2', 'dsd', NULL, 'warning', NULL, '2026-02-07 07:19:06', '2026-02-07 15:19:06', NULL);
 
 -- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `otps`;
-CREATE TABLE IF NOT EXISTS `otps` (
+--
+-- Table structure for table `violation_history`
+--
+
+DROP TABLE IF EXISTS `violation_history`;
+CREATE TABLE IF NOT EXISTS `violation_history` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(100) NOT NULL,
-  `code` varchar(6) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used` tinyint(1) NOT NULL DEFAULT '0',
+  `student_violation_level_id` int NOT NULL,
+  `student_id` varchar(50) NOT NULL,
+  `violation_type` varchar(50) NOT NULL,
+  `previous_level` varchar(50) DEFAULT NULL,
+  `new_level` varchar(50) NOT NULL,
+  `violation_date` date NOT NULL,
+  `violation_time` time NOT NULL,
+  `location` varchar(50) NOT NULL,
+  `reported_by` varchar(100) NOT NULL,
+  `notes` text,
+  `case_id` varchar(50) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `pending_data` json DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_otps_email` (`email`),
-  KEY `idx_otps_code` (`code`),
-  KEY `idx_otps_expires` (`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `idx_student_violation_level_id` (`student_violation_level_id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_violation_type` (`violation_type`),
+  KEY `idx_violation_date` (`violation_date`),
+  KEY `idx_case_id` (`case_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `email_configs`;
-CREATE TABLE IF NOT EXISTS `email_configs` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `smtp_host` varchar(255) NOT NULL,
-  `smtp_port` int NOT NULL,
-  `smtp_username` varchar(255) DEFAULT NULL,
-  `smtp_password` varchar(255) DEFAULT NULL,
-  `from_email` varchar(255) NOT NULL,
-  `from_name` varchar(255) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_email_configs_active` (`is_active`),
-  KEY `idx_email_configs_default` (`is_default`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+--
+-- Table structure for table `violation_levels`
+--
 
-INSERT INTO `email_configs` (`name`, `smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`, `from_email`, `from_name`, `is_active`, `is_default`)
-VALUES ('OSAS Primary Gmail', 'smtp.gmail.com', 587, 'belugaw6@gmail.com', 'chrqrylpqhrtqytl', 'belugaw6@gmail.com', 'OSAS', 1, 1);
+DROP TABLE IF EXISTS `violation_levels`;
+CREATE TABLE IF NOT EXISTS `violation_levels` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `violation_type_id` int NOT NULL,
+  `level_order` int NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `violation_type_id` (`violation_type_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `violation_levels`
+--
+
+INSERT INTO `violation_levels` (`id`, `violation_type_id`, `level_order`, `name`, `description`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(2, 1, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(3, 1, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(4, 1, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(5, 1, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(6, 1, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(7, 2, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(8, 2, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(9, 2, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(10, 2, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(11, 2, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(12, 2, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(13, 3, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(14, 3, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(15, 3, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(16, 3, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(17, 3, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(18, 3, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(19, 4, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(20, 4, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(21, 4, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(22, 4, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(23, 4, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(24, 4, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `violation_types`
+--
+
+DROP TABLE IF EXISTS `violation_types`;
+CREATE TABLE IF NOT EXISTS `violation_types` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `violation_types`
+--
+
+INSERT INTO `violation_types` (`id`, `name`, `description`, `created_at`, `updated_at`) VALUES
+(1, 'Improper Uniform', 'Wearing colored undershirt, improper pants, etc.', '2026-02-04 21:42:49', NULL),
+(2, 'No ID', 'Failure to wear or bring student ID', '2026-02-04 21:42:49', NULL),
+(3, 'Improper Footwear', 'Wearing slippers, open-toed shoes, etc.', '2026-02-04 21:42:49', NULL),
+(4, 'Misconduct', 'Behavioral violations', '2026-02-04 21:42:49', NULL);
 
 --
 -- Constraints for dumped tables
@@ -805,18 +1008,23 @@ ALTER TABLE `students`
   ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Constraints for table `violations`
+--
+ALTER TABLE `violations`
+  ADD CONSTRAINT `fk_violations_level` FOREIGN KEY (`violation_level_id`) REFERENCES `violation_levels` (`id`),
+  ADD CONSTRAINT `fk_violations_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`);
+
+--
+-- Constraints for table `violation_history`
+--
+ALTER TABLE `violation_history`
+  ADD CONSTRAINT `fk_violation_history_level_id` FOREIGN KEY (`student_violation_level_id`) REFERENCES `student_violation_levels` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `violation_levels`
 --
 ALTER TABLE `violation_levels`
   ADD CONSTRAINT `fk_violation_levels_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `violations`
---
-ALTER TABLE `violations`
-  ADD CONSTRAINT `fk_violations_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`),
-  ADD CONSTRAINT `fk_violations_level` FOREIGN KEY (`violation_level_id`) REFERENCES `violation_levels` (`id`);
-
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
