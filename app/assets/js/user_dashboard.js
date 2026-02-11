@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fallback: Initialize dark mode state
     const savedTheme = localStorage.getItem('theme');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    window.darkMode = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
+    window.darkMode = savedTheme ? savedTheme === 'dark' : false;
     
     // Sync body class and switch
     if (window.darkMode) {

@@ -6,7 +6,7 @@ function initializeTheme() {
   if (savedTheme) {
     window.darkMode = savedTheme === 'dark';
   } else {
-    window.darkMode = systemPrefersDark;
+    window.darkMode = false;
   }
   
   updateTheme();

@@ -96,7 +96,7 @@ class ThemeManager {
         if (savedTheme) {
             this.darkMode = savedTheme === 'dark';
         } else {
-            this.darkMode = systemPrefersDark;
+            this.darkMode = false;
         }
 
         this.updateTheme();

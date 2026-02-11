@@ -1,5 +1,5 @@
 // Dark/Light Mode Functionality
-let darkMode = true;
+let darkMode = false;
 
 function toggleTheme() {
     darkMode = !darkMode;
@@ -43,7 +43,7 @@ function checkSavedTheme() {
     if (savedTheme) {
         darkMode = savedTheme === 'dark';
     } else {
-        darkMode = systemPrefersDark;
+        darkMode = false;
     }
 
     updateTheme();

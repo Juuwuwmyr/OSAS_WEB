@@ -1177,12 +1177,8 @@ function applyTheme(theme) {
     } else if (theme === 'light') {
         document.body.classList.remove('dark');
     } else {
-        // Auto - check system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.body.classList.add('dark');
-        } else {
-            document.body.classList.remove('dark');
-        }
+        // Auto - default to light
+        document.body.classList.remove('dark');
     }
 }
 
