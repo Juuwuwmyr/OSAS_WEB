@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(50) NULL,
     name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(100) NULL, -- Added for compatibility with legacy system
     email VARCHAR(100) UNIQUE NOT NULL,
     email_verified_at TIMESTAMP NULL,
     password VARCHAR(100) NOT NULL,
@@ -25,7 +26,11 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(100) UNIQUE NOT NULL,
     role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+    is_active TINYINT(1) DEFAULT 1, -- Added for compatibility with legacy system
     profile_image VARCHAR(500) NULL,
+    profile_picture VARCHAR(500) NULL, -- Added for compatibility with legacy system
+    google_id VARCHAR(255) NULL,
+    facebook_id VARCHAR(255) NULL,
     contact_number VARCHAR(20) NULL,
     address TEXT,
     department VARCHAR(100) NULL,
@@ -39,7 +44,9 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_users_status (status),
     INDEX idx_users_deleted_at (deleted_at),
     INDEX idx_users_username (username),
-    INDEX idx_users_student_id (student_id)
+    INDEX idx_users_student_id (student_id),
+    INDEX idx_users_google_id (google_id),
+    INDEX idx_users_facebook_id (facebook_id)
 );
 
 -- OTP table for email verification
@@ -131,20 +138,95 @@ CREATE TABLE IF NOT EXISTS students (
     FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE SET NULL
 );
 
--- Violations table for student violations
+-- Violation Types table
+CREATE TABLE IF NOT EXISTS violation_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Violation Levels table
+CREATE TABLE IF NOT EXISTS violation_levels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    violation_type_id INT NOT NULL,
+    level_order INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (violation_type_id) REFERENCES violation_types(id) ON DELETE CASCADE
+);
+
+-- Violations table (Main record)
 CREATE TABLE IF NOT EXISTS violations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
     case_id VARCHAR(50) NOT NULL UNIQUE,
-    violation_type VARCHAR(100) NOT NULL,
-    description TEXT,
+    student_id VARCHAR(50) NOT NULL,
+    violation_type_id INT NOT NULL,
+    violation_level_id INT NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    section VARCHAR(20) NOT NULL,
     violation_date DATE NOT NULL,
-    status ENUM('warning', 'permitted', 'disciplinary', 'resolved') NOT NULL DEFAULT 'warning',
+    violation_time TIME NOT NULL,
+    location ENUM('gate_1','gate_2','classroom','library','cafeteria','gym','others') NOT NULL,
+    reported_by VARCHAR(100) NOT NULL,
+    notes TEXT,
+    status ENUM('permitted','warning','disciplinary','resolved') NOT NULL DEFAULT 'warning',
+    attachments JSON DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_violations_student (student_id),
-    INDEX idx_violations_status (status),
-    INDEX idx_violations_date (violation_date)
+    deleted_at TIMESTAMP NULL,
+    INDEX idx_case_id (case_id),
+    INDEX idx_student_id (student_id),
+    INDEX idx_status (status),
+    INDEX idx_violation_date (violation_date),
+    FOREIGN KEY (violation_type_id) REFERENCES violation_types(id),
+    FOREIGN KEY (violation_level_id) REFERENCES violation_levels(id)
+);
+
+-- Student Violation Levels (Tracking current state)
+CREATE TABLE IF NOT EXISTS student_violation_levels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(50) NOT NULL,
+    violation_type VARCHAR(50) NOT NULL,
+    current_level ENUM('permitted1','permitted2','warning1','warning2','warning3','disciplinary') NOT NULL DEFAULT 'permitted1',
+    permitted_count INT NOT NULL DEFAULT '0',
+    warning_count INT NOT NULL DEFAULT '0',
+    total_violations INT NOT NULL DEFAULT '0',
+    last_violation_date DATE DEFAULT NULL,
+    last_violation_time TIME DEFAULT NULL,
+    last_location VARCHAR(50) DEFAULT NULL,
+    last_reported_by VARCHAR(100) DEFAULT NULL,
+    last_notes TEXT,
+    status ENUM('active','resolved','disciplinary') NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_student_violation (student_id, violation_type),
+    INDEX idx_student_id (student_id),
+    INDEX idx_violation_type (violation_type)
+);
+
+-- Violation History (Log of level changes)
+CREATE TABLE IF NOT EXISTS violation_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_violation_level_id INT NOT NULL,
+    student_id VARCHAR(50) NOT NULL,
+    violation_type VARCHAR(50) NOT NULL,
+    previous_level VARCHAR(50) DEFAULT NULL,
+    new_level VARCHAR(50) NOT NULL,
+    violation_date DATE NOT NULL,
+    violation_time TIME NOT NULL,
+    location VARCHAR(50) NOT NULL,
+    reported_by VARCHAR(100) NOT NULL,
+    notes TEXT,
+    case_id VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_student_violation_level_id (student_violation_level_id),
+    INDEX idx_student_id (student_id),
+    INDEX idx_case_id (case_id),
+    FOREIGN KEY (student_violation_level_id) REFERENCES student_violation_levels(id) ON DELETE CASCADE
 );
 
 -- Reports table for violation reports
@@ -338,27 +420,26 @@ CREATE TABLE IF NOT EXISTS personal_access_tokens (
 -- Email: admin@osas.com
 -- Password: admin123
 -- Bcrypt hash: $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
-INSERT INTO users (name, email, username, password, role, status, email_verified_at) 
+INSERT INTO users (name, full_name, email, username, password, role, status, is_active, email_verified_at) 
 VALUES (
+    'OSAS Administrator',
     'OSAS Administrator',
     'admin@osas.com',
     'admin',
     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
     'admin',
     'active',
+    1,
     NOW()
-)
-ON DUPLICATE KEY UPDATE
-    name = 'OSAS Administrator',
-    role = 'admin',
-    status = 'active';
+);
 
 -- Insert default demo user
 -- Email: user@osas.com
 -- Password: user123
 -- Bcrypt hash: $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
-INSERT INTO users (name, email, username, password, role, contact_number, address, status, email_verified_at) 
+INSERT INTO users (name, full_name, email, username, password, role, contact_number, address, status, is_active, email_verified_at) 
 VALUES (
+    'Juan Dela Cruz',
     'Juan Dela Cruz',
     'user@osas.com',
     'user',
@@ -367,12 +448,9 @@ VALUES (
     '0917-123-4567',
     'Manila, Philippines',
     'active',
+    1,
     NOW()
-)
-ON DUPLICATE KEY UPDATE
-    name = 'Juan Dela Cruz',
-    role = 'user',
-    status = 'active';
+);
 
 -- ============================================
 -- Step 4: Insert Default Departments
@@ -524,7 +602,160 @@ INSERT IGNORE INTO announcements (title, message, type, status, created_by) VALU
 ('Payment Deadline', 'Tuition payment deadline is on Friday.', 'warning', 'active', 1);
 
 -- ============================================
--- Step 11: Record Initial Migration
+-- Step 11: Insert Violation Types and Levels
+-- ============================================
+
+INSERT INTO `violation_types` (`id`, `name`, `description`, `created_at`, `updated_at`) VALUES
+(1, 'Improper Uniform', 'Wearing colored undershirt, improper pants, etc.', '2026-02-04 21:42:49', NULL),
+(2, 'No ID', 'Failure to wear or bring student ID', '2026-02-04 21:42:49', NULL),
+(3, 'Improper Footwear', 'Wearing slippers, open-toed shoes, etc.', '2026-02-04 21:42:49', NULL),
+(4, 'Misconduct', 'Behavioral violations', '2026-02-04 21:42:49', NULL);
+
+INSERT INTO `violation_levels` (`id`, `violation_type_id`, `level_order`, `name`, `description`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(2, 1, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(3, 1, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(4, 1, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(5, 1, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(6, 1, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(7, 2, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(8, 2, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(9, 2, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(10, 2, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(11, 2, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(12, 2, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(13, 3, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(14, 3, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(15, 3, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(16, 3, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(17, 3, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(18, 3, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL),
+(19, 4, 1, 'Permitted 1', 'First permitted instance', '2026-02-04 21:42:49', NULL),
+(20, 4, 2, 'Permitted 2', 'Second permitted instance', '2026-02-04 21:42:49', NULL),
+(21, 4, 3, 'Warning 1', 'First warning', '2026-02-04 21:42:49', NULL),
+(22, 4, 4, 'Warning 2', 'Second warning', '2026-02-04 21:42:49', NULL),
+(23, 4, 5, 'Warning 3', 'Final warning', '2026-02-04 21:42:49', NULL),
+(24, 4, 6, 'Disciplinary Action', 'Referral to discipline office', '2026-02-04 21:42:49', NULL);
+
+-- ============================================
+-- Step 12: Create Stored Procedures and Functions
+-- ============================================
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `add_student_violation`$$
+CREATE PROCEDURE `add_student_violation` (IN `p_student_id` VARCHAR(50), IN `p_violation_type` VARCHAR(50), IN `p_violation_date` DATE, IN `p_violation_time` TIME, IN `p_location` VARCHAR(50), IN `p_reported_by` VARCHAR(100), IN `p_notes` TEXT, IN `p_case_id` VARCHAR(50))   BEGIN
+        DECLARE v_current_level VARCHAR(50) DEFAULT NULL;
+        DECLARE v_previous_level VARCHAR(50) DEFAULT NULL;
+        DECLARE v_permitted_count INT DEFAULT 0;
+        DECLARE v_warning_count INT DEFAULT 0;
+        DECLARE v_total_violations INT DEFAULT 0;
+        DECLARE v_level_id INT DEFAULT NULL;
+        DECLARE v_new_level VARCHAR(50) DEFAULT NULL;
+        
+        -- Check if student violation level exists
+        SELECT id, current_level, permitted_count, warning_count, total_violations
+        INTO v_level_id, v_current_level, v_permitted_count, v_warning_count, v_total_violations
+        FROM student_violation_levels
+        WHERE student_id = p_student_id 
+          AND violation_type = p_violation_type;
+        
+        IF v_level_id IS NULL THEN
+            -- Create new violation level record
+            INSERT INTO student_violation_levels (
+                student_id, violation_type, current_level, 
+                permitted_count, warning_count, total_violations,
+                last_violation_date, last_violation_time, last_location,
+                last_reported_by, last_notes, status
+            ) VALUES (
+                p_student_id, p_violation_type, 'permitted1',
+                1, 0, 1,
+                p_violation_date, p_violation_time, p_location,
+                p_reported_by, p_notes, 'active'
+            );
+            
+            SET v_level_id = LAST_INSERT_ID();
+            SET v_previous_level = NULL;
+            SET v_new_level = 'permitted1';
+            SET v_total_violations = 1;
+        ELSE
+            -- Update existing record
+            SET v_previous_level = v_current_level;
+            SET v_total_violations = v_total_violations + 1;
+            
+            -- Determine new level based on total violations
+            SET v_new_level = get_next_violation_level(v_current_level, v_total_violations);
+            
+            -- Update counts based on new level
+            IF v_new_level LIKE 'permitted%' THEN
+                SET v_permitted_count = v_permitted_count + 1;
+            ELSEIF v_new_level LIKE 'warning%' THEN
+                SET v_warning_count = v_warning_count + 1;
+            END IF;
+            
+            -- Update the violation level record
+            UPDATE student_violation_levels SET
+                current_level = v_new_level,
+                permitted_count = v_permitted_count,
+                warning_count = v_warning_count,
+                total_violations = v_total_violations,
+                last_violation_date = p_violation_date,
+                last_violation_time = p_violation_time,
+                last_location = p_location,
+                last_reported_by = p_reported_by,
+                last_notes = p_notes,
+                status = IF(v_new_level = 'disciplinary', 'disciplinary', 'active'),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = v_level_id;
+        END IF;
+        
+        -- Add to history
+        INSERT INTO violation_history (
+            student_violation_level_id, student_id, violation_type,
+            previous_level, new_level, violation_date, violation_time,
+            location, reported_by, notes, case_id
+        ) VALUES (
+            v_level_id, p_student_id, p_violation_type,
+            v_previous_level, v_new_level, p_violation_date, p_violation_time,
+            p_location, p_reported_by, p_notes, p_case_id
+        );
+        
+        -- Return the result
+        SELECT 
+            v_level_id as id,
+            p_student_id as student_id,
+            p_violation_type as violation_type,
+            v_new_level as current_level,
+            v_permitted_count as permitted_count,
+            v_warning_count as warning_count,
+            v_total_violations as total_violations,
+            p_case_id as case_id;
+    END$$
+
+DROP FUNCTION IF EXISTS `get_next_violation_level`$$
+CREATE FUNCTION `get_next_violation_level` (`current_level` VARCHAR(50), `total_violations` INT) RETURNS VARCHAR(50) DETERMINISTIC READS SQL DATA BEGIN
+        DECLARE next_level VARCHAR(50);
+        
+        CASE current_level
+            WHEN 'permitted1' THEN
+                SET next_level = IF(total_violations >= 2, 'permitted2', 'permitted1');
+            WHEN 'permitted2' THEN
+                SET next_level = IF(total_violations >= 3, 'warning1', 'permitted2');
+            WHEN 'warning1' THEN
+                SET next_level = IF(total_violations >= 4, 'warning2', 'warning1');
+            WHEN 'warning2' THEN
+                SET next_level = IF(total_violations >= 5, 'warning3', 'warning2');
+            WHEN 'warning3' THEN
+                SET next_level = IF(total_violations >= 6, 'disciplinary', 'warning3');
+            ELSE
+                SET next_level = 'disciplinary';
+        END CASE;
+        
+        RETURN next_level;
+    END$$
+DELIMITER ;
+
+-- ============================================
+-- Step 13: Record Initial Migration
 -- ============================================
 
 INSERT IGNORE INTO migrations (migration, batch) VALUES
