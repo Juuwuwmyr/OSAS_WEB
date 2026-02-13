@@ -33,6 +33,11 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'generate_slip') {
+            $this->generate_slip();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -257,6 +262,111 @@ class ViolationController extends Controller
         } catch (Exception $e) {
             error_log("Error getting types: " . $e->getMessage());
             $this->error('Failed to retrieve violation types: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate Entrance Slip DOCX
+     */
+    private function generate_slip()
+    {
+        // 1. Get Violation Data
+        $violationId = $this->getGet('violation_id', '');
+        if (empty($violationId)) {
+            $this->error('Violation ID is required');
+        }
+
+        // Use getAllWithStudentInfo to search by Case ID and get FULL details (joined tables)
+        // We pass 'all' as filter and the case ID as search term
+        $violations = $this->model->getAllWithStudentInfo('all', $violationId);
+        
+        if (empty($violations)) {
+            $this->error('Violation not found');
+        }
+
+        // Get the first match
+        $violation = $violations[0];
+
+        // 2. Load Template (Native PHP ZipArchive)
+        $templatePath = __DIR__ . '/../assets/EntranceSlip.docx';
+        if (!file_exists($templatePath)) {
+            $this->error('Template file not found: ' . $templatePath);
+        }
+
+        // Create temp file
+        $tempDir = sys_get_temp_dir();
+        $tempFile = $tempDir . '/EntranceSlip_' . $violationId . '_' . time() . '.docx';
+        if (!copy($templatePath, $tempFile)) {
+            $this->error('Failed to create temporary file');
+        }
+
+        // 3. Prepare Data (Using camelCase keys from getAllWithStudentInfo)
+        $studentName = $violation['studentName'] ?? 'N/A';
+        $studentId = $violation['studentId'] ?? 'N/A';
+        $dept = $violation['studentDept'] ?? 'N/A';
+        $year = $violation['studentYearlevel'] ?? 'N/A';
+        $courseYear = "$dept - $year";
+        
+        $vType = strtolower($violation['violationTypeLabel'] ?? '');
+        $vLevel = strtolower($violation['violationLevelLabel'] ?? '');
+
+        // Checkmark Logic
+        $checkUniform = (strpos($vType, 'uniform') !== false) ? '✔' : ' ';
+        $checkFootwear = (strpos($vType, 'foot') !== false || strpos($vType, 'shoe') !== false) ? '✔' : ' ';
+        $checkID = (strpos($vType, 'id') !== false || strpos($vType, 'identification') !== false) ? '✔' : ' ';
+        
+        $check1st = (strpos($vLevel, '1st') !== false) ? '✔' : ' ';
+        $check2nd = (strpos($vLevel, '2nd') !== false) ? '✔' : ' ';
+        $check3rd = (strpos($vLevel, '3rd') !== false) ? '✔' : ' ';
+
+        // 4. Modify XML
+        $zip = new ZipArchive;
+        if ($zip->open($tempFile) === TRUE) {
+            $xml = $zip->getFromName('word/document.xml');
+
+            // EXACT STRING REPLACEMENT (Based on user's file structure)
+            
+            // "Name: ___________________________________________"
+            $xml = preg_replace('/Name: _+/', "Name: $studentName", $xml);
+            
+            // "ID Number: _________________"
+            $xml = preg_replace('/ID Number: _+/', "ID Number: $studentId", $xml);
+            
+            // "Course and Year:________________"
+            $xml = preg_replace('/Course and Year:_+/', "Course and Year: $courseYear", $xml);
+
+            // Violations (Text replacement)
+            $xml = str_replace('Improper Uniform', "Improper Uniform $checkUniform", $xml);
+            $xml = str_replace('Improper Foot Wear', "Improper Foot Wear $checkFootwear", $xml);
+            $xml = str_replace('No ID', "No ID $checkID", $xml);
+            
+            $xml = str_replace('1st Offense', "1st Offense $check1st", $xml);
+            $xml = str_replace('2nd Offense', "2nd Offense $check2nd", $xml);
+            $xml = str_replace('3rd Offense', "3rd Offense $check3rd", $xml);
+
+            // Write back
+            $zip->addFromString('word/document.xml', $xml);
+            $zip->close();
+
+            // 5. Download
+            // Clean output buffer to avoid corrupting the file
+            if (ob_get_level()) ob_end_clean();
+            
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            header('Content-Disposition: attachment; filename="Entrance_Slip_' . $studentId . '.docx"');
+            header('Content-Transfer-Encoding: binary');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($tempFile));
+            readfile($tempFile);
+            
+            // Cleanup
+            unlink($tempFile);
+            exit;
+        } else {
+            $this->error('Failed to open DOCX template');
         }
     }
 }

@@ -504,8 +504,14 @@ require_once __DIR__ . '/../../core/View.php';
 
 </main>
 
+<!-- Load Docx Generation Libraries -->
+<script src="<?= View::asset('js/lib/docxtemplater.js') ?>"></script>
+<script src="<?= View::asset('js/lib/pizzip.js') ?>"></script>
+<script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
+<script src="<?= View::asset('js/lib/pizzip-utils.js') ?>"></script>
+
 <!-- Load Violation JavaScript -->
-<script src="<?= View::asset('js/violation.js') ?>"></script>
+<script src="<?= View::asset('js/violation.js') ?>?v=<?= time() ?>"></script>
 
 </body>
 </html>

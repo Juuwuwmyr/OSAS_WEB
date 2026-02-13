@@ -2027,70 +2027,36 @@ function initViolationsModule() {
         }
 
         function printEntranceSlip(violation) {
-            const printContent = `
-                <html>
-                    <head>
-                        <title>Entrance Slip - ${violation.studentName}</title>
-                        <style>
-                            @page { size: A5 landscape; margin: 10mm; }
-                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; }
-                            .slip-container { border: 2px solid #333; padding: 20px; position: relative; height: 100%; box-sizing: border-box; }
-                            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                            .header h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
-                            .header p { margin: 5px 0 0; font-size: 14px; }
-                            .content { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-                            .field { margin-bottom: 10px; }
-                            .label { font-weight: bold; font-size: 12px; color: #666; text-transform: uppercase; }
-                            .value { font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
-                            .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
-                            .signature-line { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 5px; font-size: 12px; }
-                            .date-stamp { font-size: 12px; color: #999; }
-                            .case-id { position: absolute; top: 20px; right: 20px; font-family: monospace; font-weight: bold; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="slip-container">
-                            <div class="case-id">#${violation.caseId}</div>
-                            <div class="header">
-                                <h1>Entrance Slip</h1>
-                                <p>Office of Student Affairs and Services (OSAS)</p>
-                            </div>
-                            <div class="content">
-                                <div class="field">
-                                    <div class="label">Student Name</div>
-                                    <div class="value">${violation.studentName}</div>
-                                </div>
-                                <div class="field">
-                                    <div class="label">Student ID</div>
-                                    <div class="value">${violation.studentId}</div>
-                                </div>
-                                <div class="field">
-                                    <div class="label">Department / Section</div>
-                                    <div class="value">${violation.department} - ${violation.section}</div>
-                                </div>
-                                <div class="field">
-                                    <div class="label">Violation</div>
-                                    <div class="value">${violation.violationTypeLabel}</div>
-                                </div>
-                            </div>
-                            <div class="footer">
-                                <div class="date-stamp">
-                                    Issued on: ${new Date().toLocaleString()}
-                                </div>
-                                <div class="signature-line">
-                                    OSAS Authorized Representative
-                                </div>
-                            </div>
-                        </div>
-                    </body>
-                </html>
-            `;
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(printContent);
-            printWindow.document.close();
+            console.log('🖨️ Requesting Server-Side Entrance Slip for:', violation.studentName);
+            
+            showLoadingOverlay('Generating Entrance Slip...');
+
+            // New Server-Side Method
+            // We use the existing API structure but trigger a download
+            const apiUrl = API_BASE + 'violations.php?action=generate_slip&violation_id=' + violation.caseId;
+            
+            // Check if violation has ID
+            if (!violation.caseId || violation.caseId.includes('PENDING')) {
+                hideLoadingOverlay();
+                showNotification('Cannot print slip for unsaved violation. Please save first.', 'warning');
+                return;
+            }
+
+            // Trigger download via hidden iframe or window.location
+            // window.location.href = apiUrl; // Simple redirect
+            
+            // Better: Create a temporary link
+            const link = document.createElement('a');
+            link.href = apiUrl;
+            link.setAttribute('download', 'Entrance_Slip.docx');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
             setTimeout(() => {
-                printWindow.print();
-            }, 500);
+                hideLoadingOverlay();
+                showNotification('Entrance Slip download started!', 'success');
+            }, 1000);
         }
 
         // 4. ESCAPE KEY TO CLOSE MODAL
