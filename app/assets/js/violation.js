@@ -800,7 +800,11 @@ function initViolationsModule() {
                 loadViolations(false).catch(console.error);
                 
                 // Check if the new violation is in the global list (Manual Fallback Strategy)
-                let savedViolation = violations.find(v => v.id == result.id || v.caseId == result.case_id);
+                // API returns data in result.data
+                const resultId = result.data ? result.data.id : result.id;
+                const resultCaseId = result.data ? result.data.case_id : result.case_id;
+                
+                let savedViolation = violations.find(v => v.id == resultId || v.caseId == resultCaseId);
                 
                 if (!savedViolation) {
                     console.warn('⚠️ New violation not found in reloaded data. Injecting manual fallback...');
@@ -822,8 +826,8 @@ function initViolationsModule() {
                     
                     // 4. Construct Object
                     savedViolation = {
-                        id: result.id,
-                        caseId: result.case_id || 'PENDING',
+                        id: resultId,
+                        caseId: resultCaseId || 'PENDING',
                         studentId: violationData.studentId,
                         studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
                         studentImage: student ? student.avatar : '',
@@ -1304,8 +1308,10 @@ function initViolationsModule() {
             console.log('🛠️ Generating table rows for', filteredViolations.length, 'violations');
 
             const tableRows = filteredViolations.map(v => {
-                console.log('📝 Processing violation:', v.caseId, v.studentName);
-
+                if (!v.id && v.id !== 0) {
+                    console.error('❌ Missing violation ID for item:', v);
+                }
+                
                 const typeClass = getViolationTypeClass(v.violationTypeLabel);
                 const levelClass = getViolationLevelClass(v.violationLevelLabel || '');
                 const deptClass = getDepartmentClass(v.department);
@@ -1442,7 +1448,7 @@ function initViolationsModule() {
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Edit Violation</span>';
                 }
-                const violation = violations.find(v => v.id === editId);
+                const violation = violations.find(v => v.id == editId);
                 if (violation) {
                     // Populate student info
                     document.getElementById('modalStudentId').textContent = violation.studentId;
@@ -1646,10 +1652,19 @@ function initViolationsModule() {
         }
 
         function openDetailsModal(violationId) {
-            if (!detailsModal) return;
+            console.log('📖 openDetailsModal called with ID:', violationId);
+            if (!detailsModal) {
+                console.error('❌ Details modal element (#ViolationDetailsModal) not found!');
+                return;
+            }
             
-            const violation = violations.find(v => v.id === violationId);
-            if (!violation) return;
+            const violation = violations.find(v => v.id == violationId);
+            if (!violation) {
+                console.error('❌ Violation not found for ID:', violationId);
+                console.log('Available violations:', violations.map(v => v.id));
+                alert('Error: Violation details not found. Please refresh the page.');
+                return;
+            }
             
             console.log('Opening details modal for violation:', violation);
             
@@ -1686,13 +1701,72 @@ function initViolationsModule() {
             setElementText('detailStudentContact', violation.studentContact);
             
             // Violation details
-            setElementText('detailViolationType', violation.violationTypeLabel);
-            setElementClass('detailViolationType', `detail-value badge ${getViolationTypeClass(violation.violationTypeLabel)}`);
-            setElementText('detailViolationLevel', violation.violationLevelLabel);
-            setElementClass('detailViolationLevel', `detail-value badge ${getViolationLevelClass(violation.violationLevelLabel || '')}`);
-            setElementText('detailDateTime', violation.dateTime);
-            setElementText('detailLocation', violation.locationLabel);
-            setElementText('detailReportedBy', violation.reportedBy);
+            // Aggregate all violation types and levels for this student
+            let studentViolations = violations.filter(v => v.studentId === violation.studentId);
+            
+            // Sort violations by date descending (newest first)
+            studentViolations.sort((a, b) => {
+                 const dateA = new Date((a.dateReported || a.date || a.violationDate) + ' ' + (a.violationTime || '00:00'));
+                 const dateB = new Date((b.dateReported || b.date || b.violationDate) + ' ' + (b.violationTime || '00:00'));
+                 return dateB - dateA;
+            });
+
+            // Keep only the latest record per violation type
+            const latestByType = new Map();
+            studentViolations.forEach(v => {
+                const type = v.violationTypeLabel || 'Unknown';
+                if (!latestByType.has(type)) {
+                    latestByType.set(type, v);
+                }
+            });
+            
+            // Convert back to array
+            studentViolations = Array.from(latestByType.values());
+            
+            // No need to sort again as the Map insertion order (or the source array order) was already sorted,
+            // but for safety let's sort again to ensure display order is correct
+             studentViolations.sort((a, b) => {
+                 const dateA = new Date((a.dateReported || a.date || a.violationDate) + ' ' + (a.violationTime || '00:00'));
+                 const dateB = new Date((b.dateReported || b.date || b.violationDate) + ' ' + (b.violationTime || '00:00'));
+                 return dateB - dateA;
+            });
+
+            // Helper to render list preserving order
+            const renderList = (containerId, items, renderer) => {
+                const container = document.getElementById(containerId);
+                if (container) {
+                     container.className = 'detail-value-container';
+                     container.innerHTML = items.map(item => {
+                         // Ensure we render SOMETHING to maintain vertical slot, even if empty
+                         // Use min-height to ensure alignment
+                         const content = renderer(item);
+                         return `<div style="margin-bottom: 4px; min-height: 24px; line-height: 24px;">${content}</div>`;
+                     }).join('');
+                }
+            };
+
+            // Types
+            renderList('detailViolationType', studentViolations, v => {
+                const type = v.violationTypeLabel || 'Unknown';
+                return `<span class="badge ${getViolationTypeClass(type)}">${type}</span>`;
+            });
+
+            // Levels
+            renderList('detailViolationLevel', studentViolations, v => {
+                const level = v.violationLevelLabel || '-';
+                const badgeClass = level !== '-' ? `badge ${getViolationLevelClass(level)}` : '';
+                return `<span class="${badgeClass}">${level}</span>`;
+            });
+
+            // Dates
+            renderList('detailDateTime', studentViolations, v => v.dateTime || v.dateReported || '-');
+
+            // Locations
+            renderList('detailLocation', studentViolations, v => v.locationLabel || v.location || '-');
+
+            // Reported By
+            renderList('detailReportedBy', studentViolations, v => v.reportedBy || '-');
+            
             setElementText('detailStatus', violation.statusLabel);
             setElementClass('detailStatus', `detail-value badge ${getStatusClass(violation.status)}`);
             setElementText('detailNotes', violation.notes || 'No notes available.');
@@ -1701,7 +1775,19 @@ function initViolationsModule() {
             const timelineEl = document.getElementById('detailTimeline');
             if (timelineEl) {
                 // Filter violations for this student
-                const studentHistory = violations.filter(v => v.studentId === violation.studentId);
+                let studentHistory = violations.filter(v => v.studentId === violation.studentId);
+                
+                // Deduplicate history for timeline
+                const seenHistory = new Set();
+                studentHistory = studentHistory.filter(v => {
+                    // Create a unique key based on visible content (same as above)
+                    const key = `${v.violationTypeLabel}|${v.violationLevelLabel}|${v.violationDate}|${v.violationTime}|${v.location}|${v.reportedBy}`;
+                    if (seenHistory.has(key)) {
+                        return false;
+                    }
+                    seenHistory.add(key);
+                    return true;
+                });
                 
                 // Sort by date (newest first)
                 studentHistory.sort((a, b) => {
@@ -1713,7 +1799,14 @@ function initViolationsModule() {
                 if (studentHistory.length > 0) {
                     timelineEl.innerHTML = studentHistory.map(v => {
                         // Highlight the current violation being viewed
-                        const isCurrent = v.id === violation.id;
+                        // Since we deduplicated, we need to check if the current violation MATCHES one of the history items content-wise
+                        // instead of just ID check, because the specific ID we are viewing might have been filtered out as a duplicate
+                        // but its "content equivalent" is still there.
+                        
+                        const viewingKey = `${violation.violationTypeLabel}|${violation.violationLevelLabel}|${violation.violationDate}|${violation.violationTime}|${violation.location}|${violation.reportedBy}`;
+                        const currentKey = `${v.violationTypeLabel}|${v.violationLevelLabel}|${v.violationDate}|${v.violationTime}|${v.location}|${v.reportedBy}`;
+                        
+                        const isCurrent = viewingKey === currentKey;
                         const activeClass = isCurrent ? 'current-viewing' : '';
                         const dateStr = formatDate(v.dateReported || v.date);
                         const timeStr = formatTime(v.violationTime);
@@ -1809,26 +1902,31 @@ function initViolationsModule() {
             const entranceBtn = e.target.closest('.Violations-action-btn.entrance');
 
             if (viewBtn) {
-                const id = parseInt(viewBtn.dataset.id);
+                const id = viewBtn.dataset.id;
+                console.log('👁 View button clicked. ID:', id);
+                if (!id || id === 'undefined' || id === 'null') {
+                    console.error('❌ Invalid violation ID:', id);
+                    return;
+                }
                 openDetailsModal(id);
             }
 
             if (editBtn) {
-                const id = parseInt(editBtn.dataset.id);
+                const id = editBtn.dataset.id;
                 openRecordModal(id);
             }
 
             if (entranceBtn) {
-                const id = parseInt(entranceBtn.dataset.id);
-                const violation = violations.find(v => v.id === id);
+                const id = entranceBtn.dataset.id;
+                const violation = violations.find(v => v.id == id);
                 if (violation) {
                     printEntranceSlip(violation);
                 }
             }
 
             if (resolveBtn) {
-                const id = parseInt(resolveBtn.dataset.id);
-                const violation = violations.find(v => v.id === id);
+                const id = resolveBtn.dataset.id;
+                const violation = violations.find(v => v.id == id);
                 if (violation && confirm(`Mark violation ${violation.caseId} as resolved?`)) {
                     updateViolation(id, { status: 'resolved' })
                         .then(() => {
@@ -1842,8 +1940,8 @@ function initViolationsModule() {
             }
 
             if (reopenBtn) {
-                const id = parseInt(reopenBtn.dataset.id);
-                const violation = violations.find(v => v.id === id);
+                const id = reopenBtn.dataset.id;
+                const violation = violations.find(v => v.id == id);
                 if (violation && confirm(`Reopen violation ${violation.caseId}?`)) {
                     updateViolation(id, { status: 'warning' })
                         .then(() => {
@@ -2030,7 +2128,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                const violation = violations.find(v => v.id === parseInt(violationId));
+                const violation = violations.find(v => v.id == violationId);
                 if (!violation) {
                     showNotification('Violation not found', 'error');
                     return;
@@ -2043,7 +2141,7 @@ function initViolationsModule() {
 
                 if (confirm(`Mark violation ${violation.caseId} as resolved?`)) {
                     try {
-                        await updateViolation(parseInt(violationId), { status: 'resolved' });
+                        await updateViolation(violationId, { status: 'resolved' });
                         showNotification('Violation marked as resolved!', 'success');
                         closeDetailsModal();
                     } catch (error) {
@@ -2062,7 +2160,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                const violation = violations.find(v => v.id === parseInt(violationId));
+                const violation = violations.find(v => v.id == violationId);
                 if (!violation) {
                     showNotification('Violation not found', 'error');
                     return;
@@ -2070,7 +2168,7 @@ function initViolationsModule() {
 
                 if (confirm(`Escalate violation ${violation.caseId} to disciplinary action?`)) {
                     try {
-                        await updateViolation(parseInt(violationId), { status: 'disciplinary' });
+                        await updateViolation(violationId, { status: 'disciplinary' });
                         showNotification('Violation escalated to disciplinary!', 'success');
                         closeDetailsModal();
                     } catch (error) {
@@ -2089,7 +2187,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                const violation = violations.find(v => v.id === parseInt(violationId));
+                const violation = violations.find(v => v.id == violationId);
                 if (violation) {
                     // Print violation details
                     const printContent = `
