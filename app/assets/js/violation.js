@@ -1926,10 +1926,18 @@ function initViolationsModule() {
             const detailEscalateBtn = document.getElementById('detailEscalateBtn');
             
             if (detailResolveBtn) {
-                if (violation.status === 'resolved') {
-                    detailResolveBtn.style.display = 'none';
-                } else {
+                let currentStatus = violation.status;
+                const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
+                
+                // Treat Warning 3 as disciplinary for button visibility
+                if (violation.status !== 'resolved' && (levelLabel.includes('warning 3') || levelLabel.includes('3rd'))) {
+                    currentStatus = 'disciplinary';
+                }
+
+                if (currentStatus === 'disciplinary') {
                     detailResolveBtn.style.display = 'inline-flex';
+                } else {
+                    detailResolveBtn.style.display = 'none';
                 }
             }
 
