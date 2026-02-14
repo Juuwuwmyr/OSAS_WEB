@@ -528,14 +528,23 @@ function initViolationsModule() {
                 container.appendChild(div);
             });
 
-            // Event delegation for level selection
-            container.addEventListener('change', (e) => {
+            // Event delegation for level selection (use onchange to prevent duplicate listeners)
+            container.onchange = (e) => {
                 if (e.target.name === 'violationLevel') {
                     // Update visual selection state of options
                     document.querySelectorAll('.violation-level-option').forEach(c => c.classList.remove('active'));
-                    e.target.closest('.violation-level-option').classList.add('active');
+                    const option = e.target.closest('.violation-level-option');
+                    if (option) option.classList.add('active');
                 }
-            });
+            };
+
+            // Default to first level (Warning 1)
+            const firstRadio = container.querySelector('input[type="radio"]');
+            if (firstRadio) {
+                firstRadio.checked = true;
+                const optionDiv = firstRadio.closest('.violation-level-option');
+                if (optionDiv) optionDiv.classList.add('active');
+            }
 
             // Check history if student is already selected
             checkStudentViolationHistory();
@@ -674,7 +683,12 @@ function initViolationsModule() {
                         
                         // Append to the title
                         const titleSpan = label.querySelector('.level-title');
-                        if (titleSpan) titleSpan.appendChild(badge);
+                        if (titleSpan) {
+                            // Remove existing badges first to be safe
+                            const existing = titleSpan.querySelector('.violation-history-badge');
+                            if (existing) existing.remove();
+                            titleSpan.appendChild(badge);
+                        }
                     }
                     
                     // Track the highest level index found
@@ -686,10 +700,47 @@ function initViolationsModule() {
                 }
             });
 
+            // STRICT PROGRESSION ENFORCEMENT
+            // Disable any level that is more than 1 step ahead of the max recorded level
+            // Special Case: If Warning 3 is reached, stop there (disable Disciplinary Action level).
+            
+            const isWarning3Reached = lastViolationLevelName.toLowerCase().includes('warning 3') || 
+                                     lastViolationLevelName.toLowerCase().includes('3rd');
+
+            levelInputs.forEach((input, index) => {
+                let limit = maxLevelIndex + 1;
+                
+                // If Warning 3 is reached, do not allow proceeding to the next level (Disciplinary Action)
+                // effectively disabling it.
+                if (isWarning3Reached) {
+                    limit = maxLevelIndex; 
+                }
+
+                if (index > limit) {
+                    input.disabled = true;
+                    const optionContainer = input.closest('.violation-level-option');
+                    if (optionContainer) {
+                        optionContainer.classList.add('disabled', 'locked');
+                        optionContainer.title = isWarning3Reached 
+                            ? 'Maximum violation level reached (Disciplinary Status Active)' 
+                            : 'Complete previous levels first';
+                    }
+                }
+            });
+
             if (!history || history.length === 0) return;
 
             // Auto-select the next level
             if (maxLevelIndex > -1) {
+                // If Warning 3 is reached, don't select the next level
+                if (isWarning3Reached) {
+                    showNotification(`
+                        <strong>Maximum Violation Level Reached</strong><br>
+                        Student has reached Warning 3. Status is now Disciplinary.
+                    `, 'warning', 6000);
+                    return;
+                }
+
                 // If the student has violations, select the NEXT level if available
                 if (maxLevelIndex < levelInputs.length - 1) {
                     const nextInput = levelInputs[maxLevelIndex + 1];
@@ -1323,10 +1374,22 @@ function initViolationsModule() {
                     console.error('❌ Missing violation ID for item:', v);
                 }
                 
+                // Override Status Display Logic:
+                // If the level is Warning 3, it should ALWAYS display as Disciplinary, 
+                // regardless of what the database status says (to fix legacy data).
+                let displayStatus = v.status;
+                let displayStatusLabel = v.statusLabel;
+
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                    displayStatus = 'disciplinary';
+                    displayStatusLabel = 'Disciplinary';
+                }
+
                 const typeClass = getViolationTypeClass(v.violationTypeLabel);
                 const levelClass = getViolationLevelClass(v.violationLevelLabel || '');
                 const deptClass = getDepartmentClass(v.department);
-                const statusClass = getStatusClass(v.status);
+                const statusClass = getStatusClass(displayStatus);
 
                 return `
                 <tr data-id="${v.id}">
@@ -1361,7 +1424,7 @@ function initViolationsModule() {
                     </td>
                     <td class="violation-date">${formatDate(v.dateReported)}</td>
                     <td>
-                        <span class="Violations-status-badge ${statusClass}">${v.statusLabel}</span>
+                        <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
                     </td>
                     <td>
                         <div class="Violations-action-buttons">
@@ -1372,7 +1435,7 @@ function initViolationsModule() {
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${v.status === 'resolved' ? 
+                            ${displayStatus === 'resolved' ? 
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
                                 </button>` : 
@@ -1696,9 +1759,19 @@ function initViolationsModule() {
             };
             
             // Case header
+            // Override Status Display Logic for Modal:
+            let displayStatus = violation.status;
+            let displayStatusLabel = violation.statusLabel;
+
+            const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
+            if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                displayStatus = 'disciplinary';
+                displayStatusLabel = 'Disciplinary';
+            }
+
             setElementText('detailCaseId', violation.caseId);
-            setElementText('detailStatusBadge', violation.statusLabel);
-            setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(violation.status)}`);
+            setElementText('detailStatusBadge', displayStatusLabel);
+            setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
             
             // Student info with fixed image URL
             const studentImageUrl = getImageUrl(violation.studentImage, violation.studentName);
@@ -1778,8 +1851,8 @@ function initViolationsModule() {
             // Reported By
             renderList('detailReportedBy', studentViolations, v => v.reportedBy || '-');
             
-            setElementText('detailStatus', violation.statusLabel);
-            setElementClass('detailStatus', `detail-value badge ${getStatusClass(violation.status)}`);
+            setElementText('detailStatus', displayStatusLabel);
+            setElementClass('detailStatus', `detail-value badge ${getStatusClass(displayStatus)}`);
             setElementText('detailNotes', violation.notes || 'No notes available.');
             
             // Populate timeline
@@ -2618,7 +2691,7 @@ function initViolationsModule() {
 
                             if (levelName.includes('permitted')) {
                                 status = 'permitted';
-                            } else if (levelName.includes('disciplinary')) {
+                            } else if (levelName.includes('disciplinary') || levelName.includes('3rd') || levelName.includes('warning 3')) {
                                 status = 'disciplinary';
                             }
                         }
@@ -2667,7 +2740,7 @@ function initViolationsModule() {
 
                             if (levelName.includes('permitted')) {
                                 status = 'permitted';
-                            } else if (levelName.includes('disciplinary')) {
+                            } else if (levelName.includes('disciplinary') || levelName.includes('3rd') || levelName.includes('warning 3')) {
                                 status = 'disciplinary';
                             }
                         }
