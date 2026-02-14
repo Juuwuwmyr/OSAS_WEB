@@ -419,17 +419,25 @@ function initViolationsModule() {
             container.innerHTML = '';
             
             violationTypes.forEach(type => {
+                const nameLower = type.name.toLowerCase();
+                
+                // Filter: Only show Uniform, Footwear, and ID
+                const isAllowed = nameLower.includes('uniform') || 
+                                  nameLower.includes('footwear') || 
+                                  nameLower.includes('shoe') || 
+                                  nameLower.includes('id');
+                
+                if (!isAllowed) return;
+
                 const card = document.createElement('div');
                 card.className = 'violation-type-card';
                 card.dataset.violation = type.id;
                 
                 // Choose icon based on name (simple logic)
                 let icon = 'bx-error-circle';
-                const nameLower = type.name.toLowerCase();
                 if (nameLower.includes('uniform')) icon = 'bx-t-shirt';
                 else if (nameLower.includes('footwear')) icon = 'bx-walk';
                 else if (nameLower.includes('id')) icon = 'bx-id-card';
-                else if (nameLower.includes('misconduct') || nameLower.includes('behavior')) icon = 'bx-message-alt-error';
                 
                 card.innerHTML = `
                     <input type="radio" id="type_${type.id}" name="violationType" value="${type.id}">
@@ -441,6 +449,27 @@ function initViolationsModule() {
                 
                 container.appendChild(card);
             });
+
+            // Add "Add" button as requested
+            const addCard = document.createElement('div');
+            addCard.className = 'violation-type-card';
+            addCard.style.border = '2px dashed #ccc';
+            addCard.innerHTML = `
+                <button type="button" class="add-violation-type-btn" style="width:100%; height:100%; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; color: #666;">
+                    <i class='bx bx-plus' style="font-size: 24px; margin-bottom: 8px;"></i>
+                    <span>Add</span>
+                </button>
+            `;
+            addCard.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Placeholder for now
+                if (typeof showNotification === 'function') {
+                    showNotification('Add Violation Type feature coming soon!', 'info');
+                } else {
+                    alert('Add Violation Type feature coming soon!');
+                }
+            });
+            container.appendChild(addCard);
 
             // Event delegation for type selection
             container.addEventListener('change', (e) => {
