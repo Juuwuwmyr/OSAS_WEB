@@ -54,6 +54,11 @@ function initViolationsModule() {
             
             // Extract project base from API_BASE (e.g., /OSAS_WEBSYS/)
             const projectBase = API_BASE.replace('/api/', '/');
+
+            // IDEMPOTENCY CHECK: If it already starts with projectBase, return it to avoid double prefixing
+            if (imagePath.startsWith(projectBase)) {
+                return imagePath;
+            }
             
             // If the path starts with assets/, prepend the project base
             if (imagePath.startsWith('assets/') || imagePath.startsWith('app/assets/')) {
@@ -1340,7 +1345,13 @@ function initViolationsModule() {
                     document.getElementById('modalStudentId').textContent = violation.studentId;
                     document.getElementById('modalStudentName').textContent = violation.studentName;
                     const modalStudentImage = document.getElementById('modalStudentImage');
-                    if (modalStudentImage) modalStudentImage.src = violation.studentImage;
+                    if (modalStudentImage) {
+                        modalStudentImage.src = violation.studentImage;
+                        modalStudentImage.onerror = function() {
+                            this.onerror = null;
+                            this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(violation.studentName)}&background=ffd700&color=333&size=80`;
+                        };
+                    }
                     document.getElementById('modalStudentDept').textContent = violation.studentDept;
                     document.getElementById('modalStudentSection').textContent = violation.studentSection;
                     document.getElementById('modalStudentYearlevel').textContent = violation.studentYearlevel || 'N/A';
@@ -1799,7 +1810,12 @@ function initViolationsModule() {
                 
                 document.getElementById('modalStudentId').textContent = student.studentId;
                 document.getElementById('modalStudentName').textContent = fullName;
-                document.getElementById('modalStudentImage').src = imageUrl;
+                const img = document.getElementById('modalStudentImage');
+                img.src = imageUrl;
+                img.onerror = function() {
+                    this.onerror = null; // prevent infinite loop
+                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80`;
+                };
                 document.getElementById('modalStudentDept').textContent = student.department || 'N/A';
                 document.getElementById('modalStudentSection').textContent = student.section || 'N/A';
                 document.getElementById('modalStudentYearlevel').textContent = student.yearlevel || 'N/A';
