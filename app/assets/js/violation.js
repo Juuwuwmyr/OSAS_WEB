@@ -1439,9 +1439,10 @@ function initViolationsModule() {
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
                                 </button>` : 
+                                (displayStatus === 'disciplinary' ? 
                                 `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
                                     <i class='bx bx-check'></i>
-                                </button>`
+                                </button>` : '')
                             }
                         </div>
                     </td>
@@ -2011,15 +2012,30 @@ function initViolationsModule() {
             if (resolveBtn) {
                 const id = resolveBtn.dataset.id;
                 const violation = violations.find(v => v.id == id);
-                if (violation && confirm(`Mark violation ${violation.caseId} as resolved?`)) {
-                    updateViolation(id, { status: 'resolved' })
-                        .then(() => {
-                            alert('Violation marked as resolved!');
-                        })
-                        .catch(error => {
-                            console.error('Error resolving violation:', error);
-                            alert('Failed to resolve violation. Please try again.');
-                        });
+                
+                if (violation) {
+                    // Check status - logic must match renderViolations
+                    let currentStatus = violation.status;
+                    const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
+                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                        currentStatus = 'disciplinary';
+                    }
+
+                    if (currentStatus !== 'disciplinary') {
+                        alert('Only disciplinary violations can be marked as resolved.');
+                        return;
+                    }
+
+                    if (confirm(`Mark violation ${violation.caseId} as resolved?`)) {
+                        updateViolation(id, { status: 'resolved' })
+                            .then(() => {
+                                alert('Violation marked as resolved!');
+                            })
+                            .catch(error => {
+                                console.error('Error resolving violation:', error);
+                                alert('Failed to resolve violation. Please try again.');
+                            });
+                    }
                 }
             }
 
@@ -2220,6 +2236,18 @@ function initViolationsModule() {
 
                 if (violation.status === 'resolved') {
                     showNotification('This violation is already resolved', 'warning');
+                    return;
+                }
+
+                // Check if disciplinary
+                let currentStatus = violation.status;
+                const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                    currentStatus = 'disciplinary';
+                }
+
+                if (currentStatus !== 'disciplinary') {
+                    showNotification('Only disciplinary violations can be marked as resolved.', 'warning');
                     return;
                 }
 
