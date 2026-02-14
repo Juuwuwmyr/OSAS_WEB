@@ -281,21 +281,60 @@ class ViolationController extends Controller
         }
 
         // Use getAllWithStudentInfo to search by Case ID and get FULL details (joined tables)
-        // We pass 'all' as filter and the case ID as search term
         $violations = $this->model->getAllWithStudentInfo('all', $violationId);
         
         if (empty($violations)) {
             $this->error('Violation not found');
         }
 
-        // Get the first match
+        // Get the current violation
         $violation = $violations[0];
+        $currentDate = $violation['dateReported']; // Fix: use dateReported instead of violation_date
+        $month = date('m', strtotime($currentDate));
+        $year = date('Y', strtotime($currentDate));
+        $studentId = $violation['studentId'] ?? '';
+
+        // 1.1 Fetch Violation History for this Month
+        $history = $this->model->getAllWithStudentInfo('all', '', $studentId);
+        $monthlyViolations = [
+            'Improper Uniform' => [],
+            'Improper Foot Wear' => [],
+            'No ID' => []
+        ];
+
+        foreach ($history as $v) {
+            $vDate = $v['dateReported']; // Fix: use dateReported instead of violation_date
+            // Parse date carefully (handle d/m/Y or Y-m-d)
+            $ts = strtotime(str_replace('/', '-', $vDate));
+            if (!$ts) $ts = strtotime($vDate);
+            
+            if ($ts && date('m', $ts) == $month && date('Y', $ts) == $year) {
+                $type = strtolower($v['violationTypeLabel'] ?? ''); // Fix: use violationTypeLabel
+                
+                // Categorize
+                if (strpos($type, 'uniform') !== false) {
+                    $monthlyViolations['Improper Uniform'][] = $v;
+                } elseif (strpos($type, 'foot') !== false || strpos($type, 'shoe') !== false) {
+                    $monthlyViolations['Improper Foot Wear'][] = $v;
+                } elseif (strpos($type, 'id') !== false) {
+                    $monthlyViolations['No ID'][] = $v;
+                }
+            }
+        }
+
+        // Sort by datetime ASC
+        foreach ($monthlyViolations as $k => &$vList) {
+            usort($vList, function($a, $b) {
+                $tsA = strtotime(str_replace('/', '-', $a['dateReported']) . ' ' . $a['violationTime']);
+                $tsB = strtotime(str_replace('/', '-', $b['dateReported']) . ' ' . $b['violationTime']);
+                return $tsA - $tsB;
+            });
+        }
+        unset($vList);
 
         // 2. Load Template (Native PHP ZipArchive)
-        // Updated to use SLIP.docx as requested
         $templatePath = __DIR__ . '/../assets/SLIP.docx';
         if (!file_exists($templatePath)) {
-            // Fallback to old template if new one missing
             $templatePath = __DIR__ . '/../assets/EntranceSlip.docx';
             if (!file_exists($templatePath)) {
                 $this->error('Template file not found: ' . $templatePath);
@@ -309,17 +348,17 @@ class ViolationController extends Controller
             $this->error('Failed to create temporary file');
         }
 
-        // 3. Prepare Data (Using camelCase keys from getAllWithStudentInfo)
+        // 3. Prepare Data
         $studentName = $violation['studentName'] ?? 'N/A';
-        $studentId = $violation['studentId'] ?? 'N/A';
+        // $studentId already set
         $dept = $violation['studentDept'] ?? 'N/A';
-        $year = $violation['studentYearlevel'] ?? 'N/A';
-        $courseYear = "$dept - $year";
+        $yearLevel = $violation['studentYearlevel'] ?? 'N/A';
+        $courseYear = "$dept - $yearLevel";
         
         $vType = strtolower($violation['violationTypeLabel'] ?? '');
         $vLevel = strtolower($violation['violationLevelLabel'] ?? '');
 
-        // Checkmark Logic
+        // Checkmark Logic (Legacy support + Visual indicator)
         $checkUniform = (strpos($vType, 'uniform') !== false) ? '✔' : ' ';
         $checkFootwear = (strpos($vType, 'foot') !== false || strpos($vType, 'shoe') !== false) ? '✔' : ' ';
         $checkID = (strpos($vType, 'id') !== false || strpos($vType, 'identification') !== false) ? '✔' : ' ';
@@ -333,35 +372,30 @@ class ViolationController extends Controller
         if ($zip->open($tempFile) === TRUE) {
             $xml = $zip->getFromName('word/document.xml');
 
-            // EXACT STRING REPLACEMENT (Based on user's file structure)
-            // Uses robust regex to handle both contiguous and split-tag scenarios
-            // Adds 'w:u' (underline) tag to the replaced value to simulate the underscore line
-            
-            // Define XML structure to break out of current tag, add underlined value, and resume
-            // Pattern: Close <w:t> and <w:r>, Start <w:r> with <w:u> (underline), Add value, Close underline run, Resume <w:r><w:t>
+            // 4.1 Inject Monthly Violation Dates into Table
+            // Note: We do this BEFORE simple str_replace to ensure anchors are intact
+            $xml = $this->injectViolationsIntoTable($xml, 'Improper Uniform', $monthlyViolations['Improper Uniform']);
+            $xml = $this->injectViolationsIntoTable($xml, 'Improper Foot Wear', $monthlyViolations['Improper Foot Wear']);
+            $xml = $this->injectViolationsIntoTable($xml, 'No ID', $monthlyViolations['No ID']);
+
+            // 4.2 Standard Replacements
             
             // Name
             $nameUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentName</w:t></w:r><w:r><w:t>";
-            // Case 1: Contiguous
             $xml = preg_replace('/Name: _+/', "Name: $nameUnderline", $xml);
-            // Case 2: Split
             $xml = preg_replace('/(Name:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$nameUnderline", $xml);
 
             // ID Number
             $idUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentId</w:t></w:r><w:r><w:t>";
-            // Case 1: Contiguous
             $xml = preg_replace('/ID Number: _+/', "ID Number: $idUnderline", $xml);
-            // Case 2: Split
             $xml = preg_replace('/(ID Number:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$idUnderline", $xml);
 
             // Course and Year
             $courseUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$courseYear</w:t></w:r><w:r><w:t>";
-            // Case 1: Contiguous
             $xml = preg_replace('/Course and Year:_+/', "Course and Year: $courseUnderline", $xml);
-            // Case 2: Split
             $xml = preg_replace('/(Course and Year:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$courseUnderline", $xml);
 
-            // Violations (Text replacement)
+            // Violations (Text replacement - appends checkmark to label)
             $xml = str_replace('Improper Uniform', "Improper Uniform $checkUniform", $xml);
             $xml = str_replace('Improper Foot Wear', "Improper Foot Wear $checkFootwear", $xml);
             $xml = str_replace('No ID', "No ID $checkID", $xml);
@@ -375,7 +409,6 @@ class ViolationController extends Controller
             $zip->close();
 
             // 5. Download
-            // Clean output buffer to avoid corrupting the file
             if (ob_get_level()) ob_end_clean();
             
             header('Content-Description: File Transfer');
@@ -395,4 +428,75 @@ class ViolationController extends Controller
             $this->error('Failed to open DOCX template');
         }
     }
+
+    /**
+     * Helper to inject violation dates into the slip table
+     */
+    private function injectViolationsIntoTable($xml, $anchor, $violations) {
+        $pos = strpos($xml, $anchor);
+        if ($pos === false) return $xml;
+
+        // Find the end of the cell containing the anchor
+        $endAnchorCell = strpos($xml, '</w:tc>', $pos);
+        if ($endAnchorCell === false) return $xml;
+        $endAnchorCell += 7; // Length of </w:tc>
+
+        $newXml = substr($xml, 0, $endAnchorCell);
+        $offset = $endAnchorCell;
+
+        // We expect 5 columns after the violation name: Permitted 1, Permitted 2, 1st, 2nd, 3rd
+        // Note: The 'Month' header spans the Permitted columns, so we don't skip any column.
+        for ($i = 0; $i < 5; $i++) {
+            // Find start of next cell
+            $startTc = strpos($xml, '<w:tc', $offset);
+            if ($startTc === false) break;
+
+            // CRITICAL: Preserve content between previous cell end and this cell start (e.g. row tags)
+            $betweenContent = substr($xml, $offset, $startTc - $offset);
+            $newXml .= $betweenContent;
+
+            // Find end of this cell
+            $endTc = strpos($xml, '</w:tc>', $startTc);
+            if ($endTc === false) break;
+            $endTc += 7;
+
+            // Get cell content
+            $cellContent = substr($xml, $startTc, $endTc - $startTc);
+
+            // Map violations: index 0 -> Col 1, index 1 -> Col 2, etc.
+            if (isset($violations[$i])) {
+                $v = $violations[$i];
+                // Format: 02/14/2026- 8:30 AM
+                // Use keys from ViolationModel output (dateReported, violationTime)
+                $dateStrRaw = $v['dateReported'];
+                $timeStrRaw = $v['violationTime'];
+                
+                // Parse date carefully
+                $ts = strtotime(str_replace('/', '-', $dateStrRaw) . ' ' . $timeStrRaw);
+                if (!$ts) $ts = strtotime($dateStrRaw . ' ' . $timeStrRaw);
+                
+                $dateStr = date('m/d/Y- g:i A', $ts);
+                
+                // Inject into <w:p>
+                // We create a new run with slightly smaller font (sz=16 is 8pt, sz=18 is 9pt)
+                $runXml = '<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
+                
+                if (strpos($cellContent, '</w:p>') !== false) {
+                    $cellContent = str_replace('</w:p>', $runXml . '</w:p>', $cellContent);
+                } else {
+                    // Fallback
+                    $cellContent = substr($cellContent, 0, -7) . '<w:p>' . $runXml . '</w:p></w:tc>';
+                }
+            }
+
+            $newXml .= $cellContent;
+            $offset = $endTc;
+        }
+
+        // Append rest of XML
+        $newXml .= substr($xml, $offset);
+        
+        return $newXml;
+    }
+
 }
