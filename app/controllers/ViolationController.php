@@ -292,9 +292,14 @@ class ViolationController extends Controller
         $violation = $violations[0];
 
         // 2. Load Template (Native PHP ZipArchive)
-        $templatePath = __DIR__ . '/../assets/EntranceSlip.docx';
+        // Updated to use SLIP.docx as requested
+        $templatePath = __DIR__ . '/../assets/SLIP.docx';
         if (!file_exists($templatePath)) {
-            $this->error('Template file not found: ' . $templatePath);
+            // Fallback to old template if new one missing
+            $templatePath = __DIR__ . '/../assets/EntranceSlip.docx';
+            if (!file_exists($templatePath)) {
+                $this->error('Template file not found: ' . $templatePath);
+            }
         }
 
         // Create temp file
@@ -329,15 +334,32 @@ class ViolationController extends Controller
             $xml = $zip->getFromName('word/document.xml');
 
             // EXACT STRING REPLACEMENT (Based on user's file structure)
+            // Uses robust regex to handle both contiguous and split-tag scenarios
+            // Adds 'w:u' (underline) tag to the replaced value to simulate the underscore line
             
-            // "Name: ___________________________________________"
-            $xml = preg_replace('/Name: _+/', "Name: $studentName", $xml);
+            // Define XML structure to break out of current tag, add underlined value, and resume
+            // Pattern: Close <w:t> and <w:r>, Start <w:r> with <w:u> (underline), Add value, Close underline run, Resume <w:r><w:t>
             
-            // "ID Number: _________________"
-            $xml = preg_replace('/ID Number: _+/', "ID Number: $studentId", $xml);
-            
-            // "Course and Year:________________"
-            $xml = preg_replace('/Course and Year:_+/', "Course and Year: $courseYear", $xml);
+            // Name
+            $nameUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentName</w:t></w:r><w:r><w:t>";
+            // Case 1: Contiguous
+            $xml = preg_replace('/Name: _+/', "Name: $nameUnderline", $xml);
+            // Case 2: Split
+            $xml = preg_replace('/(Name:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$nameUnderline", $xml);
+
+            // ID Number
+            $idUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentId</w:t></w:r><w:r><w:t>";
+            // Case 1: Contiguous
+            $xml = preg_replace('/ID Number: _+/', "ID Number: $idUnderline", $xml);
+            // Case 2: Split
+            $xml = preg_replace('/(ID Number:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$idUnderline", $xml);
+
+            // Course and Year
+            $courseUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$courseYear</w:t></w:r><w:r><w:t>";
+            // Case 1: Contiguous
+            $xml = preg_replace('/Course and Year:_+/', "Course and Year: $courseUnderline", $xml);
+            // Case 2: Split
+            $xml = preg_replace('/(Course and Year:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$courseUnderline", $xml);
 
             // Violations (Text replacement)
             $xml = str_replace('Improper Uniform', "Improper Uniform $checkUniform", $xml);
