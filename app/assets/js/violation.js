@@ -767,14 +767,60 @@ function initViolationsModule() {
 
                 console.log('✅ Violation saved successfully');
 
-                // Reload violations data with a small delay to ensure DB consistency
-                await new Promise(resolve => setTimeout(resolve, 200));
-                const newViolations = await loadViolations(false);
+                // Reload violations data in background (Manual Fallback handles immediate UI)
+                loadViolations(false).catch(console.error);
                 
-                // Verify if the new violation is in the list
-                if (result.id) {
-                    const exists = newViolations.find(v => v.id == result.id || v.caseId == result.case_id);
-                    console.log('🔍 verification of saved violation:', exists ? 'Found' : 'NOT FOUND');
+                // Check if the new violation is in the global list (Manual Fallback Strategy)
+                let savedViolation = violations.find(v => v.id == result.id || v.caseId == result.case_id);
+                
+                if (!savedViolation) {
+                    console.warn('⚠️ New violation not found in reloaded data. Injecting manual fallback...');
+                    
+                    // 1. Find Student
+                    const student = students.find(s => s.studentId === violationData.studentId);
+                    
+                    // 2. Find Type Label
+                    let typeLabel = 'Violation';
+                    const typeObj = violationTypes.find(t => t.id == violationData.violationType);
+                    if (typeObj) typeLabel = typeObj.name;
+                    
+                    // 3. Find Level Label
+                    let levelLabel = 'Level';
+                    if (typeObj && typeObj.levels) {
+                         const levelObj = typeObj.levels.find(l => l.id == violationData.violationLevel);
+                         if (levelObj) levelLabel = levelObj.name;
+                    }
+                    
+                    // 4. Construct Object
+                    savedViolation = {
+                        id: result.id,
+                        caseId: result.case_id || 'PENDING',
+                        studentId: violationData.studentId,
+                        studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
+                        studentImage: student ? student.avatar : '',
+                        violationType: violationData.violationType,
+                        violationTypeLabel: typeLabel,
+                        violationLevel: violationData.violationLevel,
+                        violationLevelLabel: levelLabel,
+                        department: violationData.department || (student ? student.department : 'N/A'),
+                        section: student ? student.section : 'N/A',
+                        studentYearlevel: student ? student.yearlevel : 'N/A',
+                        dateReported: violationData.violationDate,
+                        violationTime: violationData.violationTime,
+                        dateTime: `${formatDate(violationData.violationDate)} ${formatTime(violationData.violationTime)}`,
+                        location: violationData.location,
+                        locationLabel: violationData.location,
+                        reportedBy: violationData.reportedBy,
+                        status: violationData.status,
+                        statusLabel: violationData.status.charAt(0).toUpperCase() + violationData.status.slice(1),
+                        notes: violationData.notes
+                    };
+                    
+                    // 5. Inject at the beginning (assuming desc sort)
+                    violations.unshift(savedViolation);
+                    console.log('✅ Manually injected violation:', savedViolation);
+                } else {
+                    console.log('✅ Saved violation found in reloaded data');
                 }
 
                 renderViolations();
@@ -832,9 +878,37 @@ function initViolationsModule() {
                      if (existing) studentId = existing.studentId;
                 }
 
-                // Reload violations data with delay
-                await new Promise(resolve => setTimeout(resolve, 200));
-                await loadViolations(false);
+                // Reload violations data in background
+                loadViolations(false).catch(console.error);
+                
+                // Manual Fallback: Ensure the updated violation reflects changes immediately
+                const updated = violations.find(v => v.id == violationId);
+                if (updated) {
+                    console.log('🔄 Applying optimistic updates to violation:', violationId);
+                    
+                    // Update simple fields
+                    Object.assign(updated, violationData);
+                    
+                    // Update complex fields (labels) if necessary
+                    if (violationData.violationType) {
+                        const typeObj = violationTypes.find(t => t.id == violationData.violationType);
+                        if (typeObj) updated.violationTypeLabel = typeObj.name;
+                    }
+                    
+                    if (violationData.violationLevel) {
+                         const typeId = violationData.violationType || updated.violationType;
+                         const typeObj = violationTypes.find(t => t.id == typeId);
+                         if (typeObj && typeObj.levels) {
+                             const levelObj = typeObj.levels.find(l => l.id == violationData.violationLevel);
+                             if (levelObj) updated.violationLevelLabel = levelObj.name;
+                         }
+                    }
+                    
+                    if (violationData.status) {
+                        updated.statusLabel = violationData.status.charAt(0).toUpperCase() + violationData.status.slice(1);
+                    }
+                }
+                
                 renderViolations();
 
                 if (studentId) {
@@ -1759,6 +1833,18 @@ function initViolationsModule() {
             if (!searchTerm) {
                 showNotification('Please enter a student ID or name to search.', 'warning');
                 return;
+            }
+
+            // Sync latest data before searching to ensure badges and history are accurate
+            // This ensures that if a violation was just recorded (even from another device),
+            // the history check will be up to date.
+            showLoadingOverlay('Syncing records...');
+            try {
+                await loadViolations(false);
+            } catch (error) {
+                console.error('Error syncing data during search:', error);
+            } finally {
+                hideLoadingOverlay();
             }
             
             console.log('🔍 Searching for student:', searchTerm);

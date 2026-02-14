@@ -117,20 +117,20 @@ class ViolationController extends Controller
 
         try {
             // Check for duplicate violation with time window check
-            $existingId = $this->model->checkDuplicateInTimeWindow(
-                $studentId, 
-                $violationType, 
-                $violationLevel,
-                $violationDate, 
-                $violationTime, 
-                $location,
-                5 // 5-minute time window for near-simultaneous submissions
-            );
+            // $existingId = $this->model->checkDuplicateInTimeWindow(
+            //    $studentId, 
+            //    $violationType, 
+            //    $violationLevel,
+            //    $violationDate, 
+            //    $violationTime, 
+            //    $location,
+            //    5 // 5-minute time window for near-simultaneous submissions
+            // );
             
-            if ($existingId) {
-                $this->error('A violation with the same details already exists for this student (within 5 minutes).', ['existing_id' => $existingId]);
-                return;
-            }
+            // if ($existingId) {
+            //    $this->error('A violation with the same details already exists for this student (within 5 minutes).', ['existing_id' => $existingId]);
+            //    return;
+            // }
 
             // Generate unique case ID with retry mechanism
             $maxRetries = 3;
