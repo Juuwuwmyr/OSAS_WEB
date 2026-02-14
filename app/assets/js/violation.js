@@ -1138,7 +1138,22 @@ function initViolationsModule() {
 
             console.log('🔍 Filter values:', { searchTerm, deptValue, statusValue });
 
-            const filteredViolations = violations.filter(v => {
+            // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
+            let sourceViolations = violations;
+            
+            if (!searchTerm) {
+                const uniqueStudentMap = new Map();
+                violations.forEach(v => {
+                    // Violations are sorted by date DESC from backend, so first encounter is latest
+                    if (!uniqueStudentMap.has(v.studentId)) {
+                        uniqueStudentMap.set(v.studentId, v);
+                    }
+                });
+                sourceViolations = Array.from(uniqueStudentMap.values());
+                console.log('📉 Grouped by student (latest only):', sourceViolations.length, 'unique students');
+            }
+
+            const filteredViolations = sourceViolations.filter(v => {
                 if (!v) {
                     console.warn('⚠️ Found null/undefined violation object');
                     return false;
@@ -1151,7 +1166,7 @@ function initViolationsModule() {
                 const matchesDept = deptValue === 'all' || v.department === deptValue;
                 const matchesStatus = statusValue === 'all' || v.status === statusValue;
 
-                console.log(`🔍 Violation ${v.caseId}: search=${matchesSearch}, dept=${matchesDept}, status=${matchesStatus}`);
+                // console.log(`🔍 Violation ${v.caseId}: search=${matchesSearch}, dept=${matchesDept}, status=${matchesStatus}`);
                 return matchesSearch && matchesDept && matchesStatus;
             });
 
@@ -1228,9 +1243,7 @@ function initViolationsModule() {
                             <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                 <i class='bx bx-show'></i>
                             </button>
-                            <button class="Violations-action-btn edit" data-id="${v.id}" title="Edit">
-                                <i class='bx bx-edit'></i>
-                            </button>
+                            <!-- Edit button removed as per request -->
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
@@ -1463,7 +1476,18 @@ function initViolationsModule() {
                     
                     // Clear student search and details
                     if (studentSearchInput) studentSearchInput.value = '';
+                    
+                    // Explicitly clear all student info fields
                     document.getElementById('modalStudentId').textContent = '';
+                    document.getElementById('modalStudentName').textContent = '';
+                    const modalStudentImage = document.getElementById('modalStudentImage');
+                    if (modalStudentImage) modalStudentImage.src = ''; // Clear image or set to default
+                    document.getElementById('modalStudentDept').textContent = '';
+                    document.getElementById('modalStudentSection').textContent = '';
+                    document.getElementById('modalStudentYearlevel').textContent = '';
+                    document.getElementById('modalStudentContact').textContent = '';
+                    
+                    if (selectedStudentCard) selectedStudentCard.style.display = 'none';
                     
                     // Re-set default values after reset
                     setTimeout(() => {
@@ -1638,6 +1662,18 @@ function initViolationsModule() {
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
             if (studentCard) studentCard.style.display = 'none';
+
+            // Explicitly clear student info on close as well
+            if (document.getElementById('modalStudentName')) {
+                document.getElementById('modalStudentId').textContent = '';
+                document.getElementById('modalStudentName').textContent = '';
+                const img = document.getElementById('modalStudentImage');
+                if (img) img.src = '';
+                document.getElementById('modalStudentDept').textContent = '';
+                document.getElementById('modalStudentSection').textContent = '';
+                document.getElementById('modalStudentYearlevel').textContent = '';
+                document.getElementById('modalStudentContact').textContent = '';
+            }
             
             delete recordModal.dataset.editingId;
         }
