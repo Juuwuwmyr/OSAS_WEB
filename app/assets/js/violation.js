@@ -1,5 +1,16 @@
 // violations.js - COMPLETE WORKING VERSION
 function initViolationsModule() {
+    // Prevent double initialization to avoid duplicate event listeners and race conditions
+    // This fixes the "Violation details not found" error caused by duplicate table click handlers
+    const initCheck = document.getElementById('ViolationsTableBody');
+    if (initCheck) {
+        if (initCheck.dataset.moduleInitialized === 'true') {
+            console.log('⚠️ Violations module already initialized on this table. Skipping to prevent duplicate listeners.');
+            return;
+        }
+        initCheck.dataset.moduleInitialized = 'true';
+    }
+
     console.log('🛠 Violations module initializing...');
     
     try {

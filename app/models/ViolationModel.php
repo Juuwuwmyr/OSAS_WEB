@@ -279,6 +279,38 @@ class ViolationModel extends Model {
     }
 
     /**
+     * Check for duplicate violation submission (exact match or created recently)
+     */
+    public function checkDuplicateSubmission($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location) {
+        // 1. Check for exact match (same details)
+        // We check for records created recently (last 10 seconds) with same details to catch double-clicks
+        // OR simply check if such a violation exists at all. 
+        // Given "only one", we assume strict uniqueness for (student, type, date, time).
+        
+        $query = "SELECT id FROM violations 
+                  WHERE student_id = ? 
+                  AND violation_type_id = ? 
+                  AND violation_level_id = ?
+                  AND violation_date = ? 
+                  AND violation_time = ? 
+                  AND location = ? 
+                  AND deleted_at IS NULL";
+        
+        $result = $this->query($query, [$studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location]);
+        
+        if (!empty($result)) {
+            return $result[0]['id'];
+        }
+
+        // 2. Check for "same violation, different timestamp" if needed (e.g. submitted 1 second apart but with different input time?)
+        // If the user inputs the time manually, it will be the same.
+        // If the system auto-generates time, it might differ.
+        // Assuming user inputs time or system sets it once in frontend.
+        
+        return false;
+    }
+
+    /**
      * Check for duplicate violation within time window (for near-simultaneous submissions)
      */
     public function checkDuplicateInTimeWindow($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location, $timeWindowMinutes = 5) {
@@ -289,6 +321,7 @@ class ViolationModel extends Model {
         }
 
         // Check for violations within time window
+        // Use CAST(? AS TIME) to handle various time formats safely
         $query = "SELECT id, violation_time FROM violations 
                   WHERE student_id = ? 
                   AND violation_type_id = ? 
@@ -296,7 +329,7 @@ class ViolationModel extends Model {
                   AND violation_date = ? 
                   AND location = ? 
                   AND deleted_at IS NULL
-                  AND ABS(TIMESTAMPDIFF(MINUTE, STR_TO_DATE(?, '%H:%i:%s'), violation_time)) <= ?";
+                  AND ABS(TIMESTAMPDIFF(MINUTE, CAST(? AS TIME), violation_time)) <= ?";
         
         $result = $this->query($query, [$studentId, $violationTypeId, $violationLevelId, $violationDate, $location, $violationTime, $timeWindowMinutes]);
         return !empty($result) ? $result[0]['id'] : false;
