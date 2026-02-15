@@ -26,9 +26,16 @@ const ANNOUNCEMENT_API = getAnnouncementAPIPath();
 let currentFilter = 'all';
 let announcements = [];
 
+// Pagination state
+let currentPage = 1;
+let itemsPerPage = 10;
+let totalRecords = 0;
+let totalPages = 1;
+
 // Initialize Announcement Module
 function initAnnouncementModule() {
     console.log('📢 Initializing Announcement Module');
+    ensurePaginationContainer();
     loadAnnouncements();
 }
 
@@ -128,7 +135,29 @@ function renderAnnouncements() {
     const tbody = document.getElementById('announcementsTableBody');
     if (!tbody) return;
 
-    if (announcements.length === 0) {
+    // Apply client-side search filter
+    const searchTermEl = document.getElementById('announcementSearch');
+    const searchTerm = searchTermEl ? searchTermEl.value.toLowerCase().trim() : '';
+
+    let filtered = announcements;
+    if (searchTerm) {
+        filtered = announcements.filter(a => {
+            const title = (a.title || '').toLowerCase();
+            const msg = (a.message || '').toLowerCase();
+            return title.includes(searchTerm) || msg.includes(searchTerm);
+        });
+    }
+
+    // Pagination calculations
+    totalRecords = filtered.length;
+    totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = filtered.slice(start, end);
+
+    if (pageItems.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="5">
@@ -139,12 +168,13 @@ function renderAnnouncements() {
                 </td>
             </tr>
         `;
+        renderAnnouncementsPagination();
         return;
     }
 
     tbody.innerHTML = '';
 
-    announcements.forEach(announcement => {
+    pageItems.forEach(announcement => {
         const row = document.createElement('tr');
         const typeClass = announcement.type || 'info';
         const statusClass = announcement.status === 'active' ? 'active' : 'archived';
@@ -185,11 +215,14 @@ function renderAnnouncements() {
         `;
         tbody.appendChild(row);
     });
+
+    renderAnnouncementsPagination();
 }
 
 // Filter announcements
 function setFilter(filter) {
     currentFilter = filter;
+    currentPage = 1;
     
     // Update active button
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -204,13 +237,8 @@ function setFilter(filter) {
 
 // Search announcements
 function filterAnnouncements() {
-    const searchTerm = document.getElementById('announcementSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('#announcementsTableBody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
+    currentPage = 1;
+    renderAnnouncements();
 }
 
 // Open add announcement modal
@@ -420,3 +448,85 @@ window.closeAnnouncementModal = closeAnnouncementModal;
 window.setFilter = setFilter;
 window.filterAnnouncements = filterAnnouncements;
 
+// Ensure pagination container exists
+function ensurePaginationContainer() {
+    const wrapper = document.querySelector('.table-wrapper');
+    if (!wrapper) return;
+    let pagination = document.querySelector('.announcements-pagination');
+    if (!pagination) {
+        pagination = document.createElement('div');
+        pagination.className = 'announcements-pagination';
+        pagination.style.display = 'flex';
+        pagination.style.gap = '6px';
+        pagination.style.justifyContent = 'flex-end';
+        pagination.style.alignItems = 'center';
+        pagination.style.padding = '12px 0';
+        wrapper.appendChild(pagination);
+        pagination.addEventListener('click', handleAnnouncementsPaginationClick);
+    }
+}
+
+function renderAnnouncementsPagination() {
+    const container = document.querySelector('.announcements-pagination');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const makeBtn = (label, opts = {}) => {
+        const btn = document.createElement('button');
+        btn.className = 'announcement-page-btn' + (opts.active ? ' active' : '');
+        btn.textContent = label;
+        btn.style.padding = '6px 10px';
+        btn.style.border = '1px solid var(--border)';
+        btn.style.background = 'var(--light)';
+        btn.style.borderRadius = '6px';
+        btn.style.cursor = 'pointer';
+        if (opts.disabled) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+        if (opts.page) btn.dataset.page = String(opts.page);
+        if (opts.action) btn.dataset.action = opts.action;
+        return btn;
+    };
+
+    container.appendChild(makeBtn('‹', { disabled: currentPage === 1, action: 'prev' }));
+
+    const maxButtons = 7;
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+        container.appendChild(makeBtn(String(p), { active: p === currentPage, page: p }));
+    }
+
+    container.appendChild(makeBtn('›', { disabled: currentPage === totalPages, action: 'next' }));
+}
+
+function handleAnnouncementsPaginationClick(e) {
+    const target = e.target.closest('button');
+    if (!target) return;
+    const action = target.dataset.action;
+    const pageAttr = target.dataset.page;
+    if (action === 'prev') {
+        if (currentPage > 1) currentPage--;
+    } else if (action === 'next') {
+        if (currentPage < totalPages) currentPage++;
+    } else if (pageAttr) {
+        const pageNum = parseInt(pageAttr, 10);
+        if (!isNaN(pageNum)) currentPage = pageNum;
+    } else {
+        return;
+    }
+    renderAnnouncements();
+}
+
+// Auto-initialize when DOM is ready (safe guard)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAnnouncementModule);
+} else {
+    setTimeout(initAnnouncementModule, 300);
+}

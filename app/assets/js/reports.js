@@ -29,6 +29,7 @@ function initReportsModule() {
         const resetFiltersBtn = document.getElementById('resetFilters');
         const dateRangeGroup = document.getElementById('dateRangeGroup');
         const viewButtons = document.querySelectorAll('.Reports-view-btn');
+        const paginationContainer = document.querySelector('.Reports-pagination');
 
         // Debug logging
         console.log('🔍 Generate button found:', btnGenerateReport);
@@ -79,6 +80,11 @@ function initReportsModule() {
         // Reports data loaded from API
         let reports = [];
         let allReports = []; // Store all reports for client-side filtering
+
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalRecords = 0;
+        let totalPages = 1;
 
         // ========== HELPER FUNCTIONS ==========
         
@@ -330,6 +336,13 @@ function initReportsModule() {
                 }
             });
 
+            totalRecords = filteredReports.length;
+            totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = filteredReports.slice(start, end);
+
             // Show/hide empty state
             const emptyState = document.getElementById('ReportsEmptyState');
             if (emptyState) {
@@ -348,7 +361,7 @@ function initReportsModule() {
                 }
             }
 
-            tableBody.innerHTML = filteredReports.map(report => {
+            tableBody.innerHTML = pageItems.map(report => {
                 const deptClass = getDepartmentClass(report.deptCode);
                 const statusClass = getStatusClass(report.status);
                 const uniformClass = getCountBadgeClass(report.uniformCount);
@@ -410,9 +423,61 @@ function initReportsModule() {
                 </tr>
             `}).join('');
 
-            // Update showing count
-            document.getElementById('showingReportsCount').textContent = filteredReports.length;
             calculateStats();
+            const showingEl = document.getElementById('showingReportsCount');
+            const totalEl = document.getElementById('totalReportsCount');
+            if (showingEl) showingEl.textContent = pageItems.length;
+            if (totalEl) totalEl.textContent = totalRecords;
+
+            renderReportsPagination();
+        }
+
+        function renderReportsPagination() {
+            if (!paginationContainer) return;
+            paginationContainer.innerHTML = '';
+
+            const makeBtn = (label, opts = {}) => {
+                const btn = document.createElement('button');
+                btn.className = 'Reports-pagination-btn' + (opts.active ? ' active' : '');
+                btn.textContent = label;
+                if (opts.disabled) btn.disabled = true;
+                if (opts.page) btn.dataset.page = String(opts.page);
+                if (opts.action) btn.dataset.action = opts.action;
+                return btn;
+            };
+
+            paginationContainer.appendChild(makeBtn('‹', { disabled: currentPage === 1, action: 'prev' }));
+
+            const maxButtons = 7;
+            let startPage = Math.max(1, currentPage - 3);
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                paginationContainer.appendChild(makeBtn(String(p), { active: p === currentPage, page: p }));
+            }
+
+            paginationContainer.appendChild(makeBtn('›', { disabled: currentPage === totalPages, action: 'next' }));
+        }
+
+        function handlePaginationClick(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
+            const action = target.dataset.action;
+            const pageAttr = target.dataset.page;
+            if (action === 'prev') {
+                if (currentPage > 1) currentPage--;
+            } else if (action === 'next') {
+                if (currentPage < totalPages) currentPage++;
+            } else if (pageAttr) {
+                const pageNum = parseInt(pageAttr, 10);
+                if (!isNaN(pageNum)) currentPage = pageNum;
+            } else {
+                return;
+            }
+            renderReports();
         }
 
         // ========== MODAL FUNCTIONS ==========
@@ -708,26 +773,33 @@ function initReportsModule() {
             tableBody.addEventListener('click', handleTableClick);
         }
 
+        if (paginationContainer) {
+            paginationContainer.addEventListener('click', handlePaginationClick);
+        }
+
         // 9. SEARCH FUNCTIONALITY
         if (searchInput) {
-            searchInput.addEventListener('input', handleStudentSearch);
+            searchInput.addEventListener('input', () => { currentPage = 1; handleStudentSearch(); });
         }
 
         // 10. FILTER FUNCTIONALITY
         if (deptFilter) {
             deptFilter.addEventListener('change', function() {
+                currentPage = 1;
                 loadReports(true);
             });
         }
 
         if (sectionFilter) {
             sectionFilter.addEventListener('change', function() {
+                currentPage = 1;
                 loadReports(true);
             });
         }
 
         if (statusFilter) {
             statusFilter.addEventListener('change', function() {
+                currentPage = 1;
                 loadReports(true);
             });
         }
@@ -738,18 +810,20 @@ function initReportsModule() {
                     if (dateRangeGroup) dateRangeGroup.style.display = 'block';
                 } else {
                     if (dateRangeGroup) dateRangeGroup.style.display = 'none';
+                    currentPage = 1;
                     loadReports(true);
                 }
             });
         }
 
         if (sortByFilter) {
-            sortByFilter.addEventListener('change', renderReports);
+            sortByFilter.addEventListener('change', () => { currentPage = 1; renderReports(); });
         }
 
         // 11. APPLY FILTERS BUTTON
         if (applyFiltersBtn) {
             applyFiltersBtn.addEventListener('click', function() {
+                currentPage = 1;
                 loadReports(true);
             });
         }
@@ -764,6 +838,7 @@ function initReportsModule() {
                 if (sortByFilter) sortByFilter.value = 'total_desc';
                 if (dateRangeGroup) dateRangeGroup.style.display = 'none';
                 if (searchInput) searchInput.value = '';
+                currentPage = 1;
                 loadReports(true);
             });
         }
@@ -774,6 +849,7 @@ function initReportsModule() {
                 if (deptFilter) deptFilter.value = 'all';
                 if (sectionFilter) sectionFilter.value = 'all';
                 if (statusFilter) statusFilter.value = 'all';
+                currentPage = 1;
                 loadReports(true);
             });
         }
