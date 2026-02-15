@@ -60,6 +60,7 @@ class ViolationModel extends Model {
                     s.department as student_dept,
                     s.section_id as student_section,
                     s.yearlevel as student_yearlevel,
+                    s.department as student_dept_code,
                     COALESCE(d.department_name, s.department) as department_name,
                     COALESCE(sec.section_name, 'N/A') as section_name,
                     COALESCE(sec.section_code, 'N/A') as section_code
@@ -240,6 +241,7 @@ class ViolationModel extends Model {
                     'violationLevel' => $row['violation_level_id'] ?? '',
                     'violationLevelLabel' => $violationLevelLabel,
                     'department' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
+                    'department_code' => $row['student_dept_code'] ?? $row['student_dept'] ?? 'N/A',
                     'section' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
                     'dateReported' => $row['violation_date'] ?? '',
                     'violationTime' => $row['violation_time'] ?? '',

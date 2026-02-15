@@ -146,6 +146,52 @@ function initViolationsModule() {
 
         // ========== DATA LOADING FUNCTIONS ==========
 
+        /**
+         * Load departments from the database and populate the filter dropdowns
+         */
+        async function loadDepartments() {
+            try {
+                console.log('🔄 Loading departments for filters...');
+                const response = await fetch(API_BASE + 'departments.php?action=get&filter=active');
+                if (!response.ok) throw new Error('Failed to load departments');
+                
+                const data = await response.json();
+                if (data.status === 'success' && Array.isArray(data.data)) {
+                    console.log('✅ Loaded departments:', data.data.length);
+                    populateDepartmentFilters(data.data);
+                }
+            } catch (error) {
+                console.error('❌ Error loading departments:', error);
+            }
+        }
+
+        /**
+         * Populate the department filter dropdowns in the UI
+         */
+        function populateDepartmentFilters(depts) {
+            const filters = [
+                document.getElementById('ViolationsFilter'),
+                document.getElementById('ArchiveDeptFilter')
+            ];
+
+            filters.forEach(select => {
+                if (!select) return;
+
+                // Keep only the "All Departments" option
+                const allOption = select.querySelector('option[value="all"]');
+                select.innerHTML = '';
+                if (allOption) select.appendChild(allOption);
+
+                // Add departments from database
+                depts.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.code;
+                    option.textContent = dept.code; // Or dept.name if you prefer
+                    select.appendChild(option);
+                });
+            });
+        }
+
         // Check API connectivity - using GET instead of HEAD for better compatibility
         async function checkAPIConnectivity() {
             try {
@@ -1333,22 +1379,24 @@ function initViolationsModule() {
             const dateToValue = dateToFilter ? dateToFilter.value : '';
 
             // Get archive filters if in archive view
-            const archiveDeptFilter = document.getElementById('ArchiveViolationsFilter');
-            const archiveStatusFilter = document.getElementById('ArchiveViolationsStatusFilter');
-            const archiveDateFromFilter = document.getElementById('ArchiveViolationDateFrom');
-            const archiveDateToFilter = document.getElementById('ArchiveViolationDateTo');
+            const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
+            const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+            const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
+            const archiveDateToFilter = document.getElementById('ArchiveDateTo');
+            const archiveSearchInput = document.getElementById('searchViolationArchive');
 
             const currentDept = currentView === 'current' ? deptValue : (archiveDeptFilter ? archiveDeptFilter.value : 'all');
-            const currentStatus = currentView === 'current' ? statusValue : (archiveStatusFilter ? archiveStatusFilter.value : 'all');
+            const currentMonth = currentView === 'archive' && archiveMonthFilter ? archiveMonthFilter.value : 'all';
             const currentDateFrom = currentView === 'current' ? dateFromValue : (archiveDateFromFilter ? archiveDateFromFilter.value : '');
             const currentDateTo = currentView === 'current' ? dateToValue : (archiveDateToFilter ? archiveDateToFilter.value : '');
+            const currentSearchTerm = currentView === 'current' ? searchTerm : (archiveSearchInput ? archiveSearchInput.value.toLowerCase() : searchTerm);
 
-            console.log('🔍 Filter values:', { searchTerm, currentDept, currentStatus, currentDateFrom, currentDateTo, currentView });
+            console.log('🔍 Filter values:', { currentSearchTerm, currentDept, currentMonth, currentDateFrom, currentDateTo, currentView });
 
             // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
             let sourceViolations = violations;
             
-            if (!searchTerm && currentView === 'current') {
+            if (!currentSearchTerm && currentView === 'current') {
                 const uniqueStudentMap = new Map();
                 violations.forEach(v => {
                     // Violations are sorted by date DESC from backend, so first encounter is latest
@@ -1366,12 +1414,26 @@ function initViolationsModule() {
                     return false;
                 }
 
-                const matchesSearch = v.studentName.toLowerCase().includes(searchTerm) ||
-                                    v.caseId.toLowerCase().includes(searchTerm) ||
-                                    v.studentId.toLowerCase().includes(searchTerm) ||
-                                    v.violationTypeLabel.toLowerCase().includes(searchTerm);
-                const matchesDept = currentDept === 'all' || v.department === currentDept;
-                const matchesStatus = currentStatus === 'all' || v.status === currentStatus;
+                const matchesSearch = v.studentName.toLowerCase().includes(currentSearchTerm) ||
+                                    v.caseId.toLowerCase().includes(currentSearchTerm) ||
+                                    v.studentId.toLowerCase().includes(currentSearchTerm) ||
+                                    v.violationTypeLabel.toLowerCase().includes(currentSearchTerm);
+                const matchesDept = currentDept === 'all' || v.department === currentDept || v.department_code === currentDept;
+                const matchesStatus = currentView === 'current' ? (statusValue === 'all' || v.status === statusValue) : true;
+
+                // Month filtering for archive
+                let matchesMonth = true;
+                if (currentMonth !== 'all') {
+                    const violationDateStr = v.dateReported || v.violationDate;
+                    if (violationDateStr) {
+                        const violationDate = new Date(violationDateStr);
+                        if ((violationDate.getMonth() + 1).toString() !== currentMonth) {
+                            matchesMonth = false;
+                        }
+                    } else {
+                        matchesMonth = false;
+                    }
+                }
 
                 // Date filtering logic
                 let matchesDate = true;
@@ -1397,7 +1459,7 @@ function initViolationsModule() {
                     }
                 }
 
-                return matchesSearch && matchesDept && matchesStatus && matchesDate;
+                return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth;
             });
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
@@ -3011,15 +3073,17 @@ function initViolationsModule() {
         }
 
         // Archive filters
-        const archiveDeptFilter = document.getElementById('ArchiveViolationsFilter');
-        const archiveStatusFilter = document.getElementById('ArchiveViolationsStatusFilter');
-        const archiveDateFromFilter = document.getElementById('ArchiveViolationDateFrom');
-        const archiveDateToFilter = document.getElementById('ArchiveViolationDateTo');
+        const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
+        const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+        const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
+        const archiveDateToFilter = document.getElementById('ArchiveDateTo');
+        const archiveSearchInput = document.getElementById('searchViolationArchive');
 
         if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', renderViolations);
-        if (archiveStatusFilter) archiveStatusFilter.addEventListener('change', renderViolations);
+        if (archiveMonthFilter) archiveMonthFilter.addEventListener('change', renderViolations);
         if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', renderViolations);
         if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', renderViolations);
+        if (archiveSearchInput) archiveSearchInput.addEventListener('input', renderViolations);
 
         // 13. TAB NAVIGATION
         const tabBtns = document.querySelectorAll('.Violations-tab-btn');
@@ -3277,7 +3341,8 @@ function initViolationsModule() {
                 const [violationsData, studentsData] = await Promise.all([
                     loadViolations(false),
                     loadStudents(false),
-                    loadViolationTypes(false)
+                    loadViolationTypes(false),
+                    loadDepartments(false)
                 ]);
 
                 console.log('Data loaded, violations:', violationsData.length, 'students:', studentsData.length);
