@@ -1197,8 +1197,18 @@ function initViolationsModule() {
             // Calculate statistics
             const totalViolations = studentViolations.length;
             const resolvedViolations = studentViolations.filter(v => v.status === 'resolved').length;
-            const pendingViolations = studentViolations.filter(v => ['warning', 'permitted'].includes(v.status)).length;
-            const disciplinaryViolations = studentViolations.filter(v => v.status === 'disciplinary').length;
+            
+            // Apply Warning 3 -> Disciplinary logic for counts
+            const disciplinaryViolations = studentViolations.filter(v => {
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd');
+            }).length;
+            
+            const pendingViolations = studentViolations.filter(v => {
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) return false;
+                return ['warning', 'permitted'].includes(v.status);
+            }).length;
 
             // Render student profile
             const profileCard = document.getElementById('studentProfileCard');
@@ -1260,13 +1270,19 @@ function initViolationsModule() {
                 );
 
                 timeline.innerHTML = sortedViolations.map(violation => {
-                    const statusClass = getStatusClass(violation.status);
+                    let displayStatus = violation.status;
+                    const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
+                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                        displayStatus = 'disciplinary';
+                    }
+                    
+                    const statusClass = getStatusClass(displayStatus);
                     const typeClass = getViolationTypeClass(violation.violationTypeLabel);
 
                     return `
                         <div class="student-violation-item">
                             <div class="student-violation-icon ${statusClass}">
-                                <i class='bx bx-${violation.status === 'resolved' ? 'check' : violation.status === 'disciplinary' ? 'x' : 'error'}-circle'></i>
+                                <i class='bx bx-${displayStatus === 'resolved' ? 'check' : displayStatus === 'disciplinary' ? 'x' : 'error'}-circle'></i>
                             </div>
                             <div class="student-violation-content">
                                 <div class="student-violation-header">
@@ -1466,8 +1482,18 @@ function initViolationsModule() {
         function updateStats() {
             const total = violations.length;
             const resolved = violations.filter(v => v.status === 'resolved').length;
-            const pending = violations.filter(v => v.status === 'warning' || v.status === 'permitted').length;
-            const disciplinary = violations.filter(v => v.status === 'disciplinary').length;
+            
+            // Apply Warning 3 -> Disciplinary logic for counts
+            const disciplinary = violations.filter(v => {
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd');
+            }).length;
+            
+            const pending = violations.filter(v => {
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) return false;
+                return v.status === 'warning' || v.status === 'permitted';
+            }).length;
             
             const totalEl = document.getElementById('totalViolations');
             const resolvedEl = document.getElementById('resolvedViolations');
@@ -1852,8 +1878,20 @@ function initViolationsModule() {
             // Reported By
             renderList('detailReportedBy', studentViolations, v => v.reportedBy || '-');
             
-            setElementText('detailStatus', displayStatusLabel);
-            setElementClass('detailStatus', `detail-value badge ${getStatusClass(displayStatus)}`);
+            // Statuses
+            renderList('detailStatus', studentViolations, v => {
+                let itemStatus = v.status;
+                let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
+                
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                    itemStatus = 'disciplinary';
+                    itemStatusLabel = 'Disciplinary';
+                }
+                
+                return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
+            });
+            
             setElementText('detailNotes', violation.notes || 'No notes available.');
             
             // Populate timeline
@@ -1907,7 +1945,20 @@ function initViolationsModule() {
                                 </span>
                                 <span class="timeline-desc">
                                     Reported at ${v.locationLabel || v.location} 
-                                    ${v.status === 'resolved' ? '<span style="color: green; font-weight: bold;">(Resolved)</span>' : ''}
+                                    ${(() => {
+                                        let itemStatus = v.status;
+                                        const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                                        if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                                            itemStatus = 'disciplinary';
+                                        }
+                                        
+                                        if (itemStatus === 'resolved') {
+                                            return '<span style="color: green; font-weight: bold;">(Resolved)</span>';
+                                        } else if (itemStatus === 'disciplinary') {
+                                            return '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
+                                        }
+                                        return '';
+                                    })()}
                                 </span>
                             </div>
                         </div>
