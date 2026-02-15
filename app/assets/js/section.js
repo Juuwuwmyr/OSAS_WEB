@@ -26,29 +26,61 @@ function initSectionsModule() {
             console.warn('⚠️ #sectionsModal not found');
         }
 
-        // Sections data from database
         let sections = [];
-        let allSections = []; // Store all sections for filtering
+        let allSections = [];
 
-        // API base URL
-        const apiBase = '../api/sections.php';
+        let apiBase;
+        (function resolveApiBase() {
+            const path = window.location.pathname;
+            if (path.includes('admin_page') || path.includes('/views/admin/')) {
+                apiBase = '../../api/sections.php';
+            } else {
+                apiBase = '../api/sections.php';
+            }
+        })();
 
-        // Track current view mode
-        let currentView = 'active'; // 'active' or 'archived'
+        let currentView = 'active';
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalRecords = 0;
+        let totalPages = 0;
 
-        // --- API Functions ---
+        function renderPagination() {
+            const paginationContainer = document.querySelector('.sections-pagination');
+            if (!paginationContainer) return;
+
+            let html = '';
+            html += `<button class="sections-pagination-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.changeSectionsPage(${currentPage - 1})"><i class='bx bx-chevron-left'></i></button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="sections-pagination-btn ${i === currentPage ? 'active' : ''}" onclick="window.changeSectionsPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span class="sections-pagination-ellipsis">...</span>`;
+                }
+            }
+
+            html += `<button class="sections-pagination-btn ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} onclick="window.changeSectionsPage(${currentPage + 1})"><i class='bx bx-chevron-right'></i></button>`;
+            paginationContainer.innerHTML = html;
+        }
+
+        window.changeSectionsPage = function(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            fetchSections();
+        };
+
         async function fetchSections() {
             try {
-                // Determine filter based on current view
                 const filter = currentView === 'archived' ? 'archived' : 'active';
                 const search = searchInput ? searchInput.value : '';
                 
-                let url = `${apiBase}?action=get&filter=${filter}`;
+                let url = `${apiBase}?action=get&filter=${filter}&page=${currentPage}&limit=${itemsPerPage}`;
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
 
-                console.log('Fetching sections from:', url); // Debug log
+                console.log('Fetching sections from:', url);
 
                 const response = await fetch(url);
                 
@@ -57,7 +89,7 @@ function initSectionsModule() {
                 }
 
                 const text = await response.text();
-                console.log('Raw API Response:', text); // Debug log
+                console.log('Raw API Response:', text);
 
                 let data;
                 try {
@@ -68,13 +100,31 @@ function initSectionsModule() {
                     throw new Error('Invalid JSON response from server');
                 }
 
-                console.log('Parsed API Response:', data); // Debug log
+                console.log('Parsed API Response:', data);
 
                 if (data.status === 'success') {
-                    sections = data.data;
-                    allSections = data.data; // Store all for stats
+                    const payload = data.data;
+                    if (Array.isArray(payload)) {
+                        allSections = payload;
+                        totalRecords = payload.length;
+                        totalPages = Math.ceil(totalRecords / itemsPerPage);
+                        const start = (currentPage - 1) * itemsPerPage;
+                        const end = start + itemsPerPage;
+                        sections = payload.slice(start, end);
+                    } else if (payload && Array.isArray(payload.sections)) {
+                        sections = payload.sections;
+                        totalRecords = typeof payload.total === 'number' ? payload.total : sections.length;
+                        totalPages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
+                        currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
+                        allSections = sections;
+                    } else {
+                        console.error('Unexpected API data shape:', payload);
+                        showError('Unexpected response from server while loading sections.');
+                        return;
+                    }
                     renderSections();
                     updateStats();
+                    renderPagination();
                 } else {
                     console.error('Error fetching sections:', data.message);
                     showError('Failed to load sections: ' + data.message);
@@ -235,13 +285,15 @@ function initSectionsModule() {
 
         // --- Render function ---
         function renderSections() {
-            if (sections.length === 0) {
+            const list = Array.isArray(sections) ? sections : [];
+            if (list.length === 0) {
                 tableBody.innerHTML = '';
                 const emptyState = document.getElementById('sectionsEmptyState');
                 if (emptyState) {
                     emptyState.style.display = 'flex';
                 }
                 updateCounts([]);
+                renderPagination();
                 return;
             }
 
@@ -250,7 +302,7 @@ function initSectionsModule() {
                 emptyState.style.display = 'none';
             }
 
-            tableBody.innerHTML = sections.map(s => `
+            tableBody.innerHTML = list.map(s => `
                 <tr data-id="${s.id}">
                     <td class="section-id">${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
                     <td class="section-name">
@@ -289,7 +341,8 @@ function initSectionsModule() {
                 </tr>
             `).join('');
 
-            updateCounts(sections);
+            updateCounts(list);
+            renderPagination();
         }
 
         function updateStats() {
@@ -311,7 +364,7 @@ function initSectionsModule() {
             const totalCountEl = document.getElementById('totalSectionsCount');
             
             if (showingEl) showingEl.textContent = filteredSections.length;
-            if (totalCountEl) totalCountEl.textContent = allSections.length;
+            if (totalCountEl) totalCountEl.textContent = totalRecords;
         }
 
         // --- Modal functions ---
@@ -482,6 +535,7 @@ function initSectionsModule() {
                 searchInput.addEventListener('input', () => {
                     clearTimeout(searchTimeout);
                     searchTimeout = setTimeout(() => {
+                        currentPage = 1;
                         fetchSections();
                     }, 500); // Debounce search
                 });
@@ -499,6 +553,7 @@ function initSectionsModule() {
                     } else {
                         currentView = 'active';
                     }
+                    currentPage = 1;
                     fetchSections();
                     // Update archived button state
                     const btnArchived = document.getElementById('btnArchivedSections');

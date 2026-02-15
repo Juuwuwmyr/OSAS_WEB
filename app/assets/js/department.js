@@ -28,6 +28,10 @@ function initDepartmentModule() {
   // --- Department data (loaded from database) ---
   let departments = [];
   let currentView = 'active'; // 'active' or 'archived'
+  let currentPage = 1;
+  let itemsPerPage = 10;
+  let totalRecords = 0;
+  let totalPages = 0;
 
   // Get department icon based on code
   function getDeptIcon(code) {
@@ -46,29 +50,19 @@ function initDepartmentModule() {
 
   // --- Render helper (updated for new table structure) ---
   function renderDepartments(deptArray = departments) {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-    const filterValue = filterSelect ? filterSelect.value : 'all';
-    
-    // Filter departments
-    const filteredDepts = deptArray.filter(d => {
-      const matchesSearch = d.name.toLowerCase().includes(searchTerm) || 
-                           d.code.toLowerCase().includes(searchTerm) ||
-                           d.hod.toLowerCase().includes(searchTerm);
-      const matchesFilter = filterValue === 'all' || d.status === filterValue;
-      return matchesSearch && matchesFilter;
-    });
-
     // Show/hide empty state
     const emptyState = document.getElementById('emptyState');
-    if (filteredDepts.length === 0) {
+    if (deptArray.length === 0) {
       if (emptyState) emptyState.style.display = 'flex';
       tableBody.innerHTML = '';
+      updateCounts(0);
+      renderPagination();
       return;
     } else {
       if (emptyState) emptyState.style.display = 'none';
     }
 
-    tableBody.innerHTML = filteredDepts.map(d => `
+    tableBody.innerHTML = deptArray.map(d => `
       <tr data-id="${d.id}">
         <td class="department-id">${d.id}</td>
         <td class="department-name">
@@ -109,7 +103,8 @@ function initDepartmentModule() {
 
     // Update stats and counts
     updateStats();
-    updateCounts(filteredDepts);
+    updateCounts(deptArray.length);
+    renderPagination();
   }
 
   // Update statistics (now loaded from database)
@@ -119,23 +114,77 @@ function initDepartmentModule() {
   }
 
   // Update showing/total counts
-  function updateCounts(filteredDepts) {
+  function updateCounts(showingCount) {
     const showingEl = document.getElementById('showingCount');
     const totalCountEl = document.getElementById('totalCount');
     
-    if (showingEl) showingEl.textContent = filteredDepts.length;
-    if (totalCountEl) totalCountEl.textContent = departments.length;
+    if (showingEl) showingEl.textContent = showingCount;
+    if (totalCountEl) totalCountEl.textContent = totalRecords;
   }
+
+  // --- Pagination Renderer ---
+  function renderPagination() {
+    const paginationContainer = document.querySelector('.pagination');
+    if (!paginationContainer) return;
+
+    let html = '';
+    
+    // Previous button
+    html += `
+      <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
+              ${currentPage === 1 ? 'disabled' : ''} 
+              onclick="window.changeDepartmentPage(${currentPage - 1})">
+        <i class='bx bx-chevron-left'></i>
+      </button>
+    `;
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+        html += `
+          <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                  onclick="window.changeDepartmentPage(${i})">${i}</button>
+        `;
+      } else if (i === currentPage - 2 || i === currentPage + 2) {
+        html += `<span class="pagination-ellipsis">...</span>`;
+      }
+    }
+
+    // Next button
+    html += `
+      <button class="pagination-btn ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}" 
+              ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} 
+              onclick="window.changeDepartmentPage(${currentPage + 1})">
+        <i class='bx bx-chevron-right'></i>
+      </button>
+    `;
+
+    paginationContainer.innerHTML = html;
+  }
+
+  // Global function for pagination buttons
+  window.changeDepartmentPage = function(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    currentPage = page;
+    loadDepartments(filterSelect ? filterSelect.value : currentView);
+  };
 
   // --- Load departments from database ---
   async function loadDepartments(filter = 'active') {
     try {
       // Determine correct API path based on context
-      const apiPath = window.location.pathname.includes('admin_page') 
-        ? '../../api/departments.php' 
-        : '../api/departments.php';
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
       
-      const url = `${apiPath}?action=get&filter=${filter}`;
+      const searchTerm = searchInput ? searchInput.value : '';
+      const url = `${apiPath}?action=get&filter=${filter}&search=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${itemsPerPage}`;
       console.log('Fetching from:', url); // Debug log
       
       const response = await fetch(url);
@@ -159,7 +208,36 @@ function initDepartmentModule() {
       console.log('Parsed API Response:', result); // Debug log
       
       if (result.status === 'success') {
-        departments = result.data.map(dept => ({
+        const payload = result.data;
+
+        let list = [];
+        let meta = {
+          total: 0,
+          page: currentPage || 1,
+          limit: itemsPerPage,
+          total_pages: 1
+        };
+
+        if (Array.isArray(payload)) {
+          list = payload;
+          meta.total = payload.length;
+        } else if (payload && Array.isArray(payload.departments)) {
+          list = payload.departments;
+          meta.total = typeof payload.total === 'number' ? payload.total : list.length;
+          meta.page = typeof payload.page === 'number' ? payload.page : meta.page;
+          meta.limit = typeof payload.limit === 'number' ? payload.limit : meta.limit;
+          meta.total_pages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(meta.total / meta.limit);
+        } else {
+          console.error('Unexpected API data shape:', payload);
+          alert('Unexpected response from server while loading departments.');
+          return;
+        }
+
+        totalRecords = meta.total;
+        totalPages = meta.total_pages;
+        currentPage = meta.page;
+
+        departments = list.map(dept => ({
           id: dept.department_id,
           name: dept.name,
           code: dept.code,
@@ -170,7 +248,7 @@ function initDepartmentModule() {
           description: dept.description,
           dbId: dept.id // Store database ID for API calls
         }));
-        renderDepartments();
+        renderDepartments(departments);
         loadStats();
       } else {
         console.error('Error loading departments:', result.message);
@@ -186,7 +264,17 @@ function initDepartmentModule() {
   // --- Load statistics from database ---
   async function loadStats() {
     try {
-      const response = await fetch('../api/departments.php?action=stats');
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+        
+      const response = await fetch(`${apiPath}?action=stats`);
       const result = await response.json();
       
       if (result.status === 'success') {
@@ -370,42 +458,10 @@ function initDepartmentModule() {
     searchInput.addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
-        const searchTerm = searchInput.value.trim();
-        if (searchTerm) {
-          loadDepartmentsWithSearch(currentView, searchTerm);
-        } else {
-          loadDepartments(currentView);
-        }
+        currentPage = 1; // Reset to first page on search
+        loadDepartments(currentView);
       }, 300); // Debounce search
     });
-  }
-
-  // --- Load departments with search ---
-  async function loadDepartmentsWithSearch(filter = 'active', search = '') {
-    try {
-      const url = `../api/departments.php?action=get&filter=${filter}&search=${encodeURIComponent(search)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        departments = result.data.map(dept => ({
-          id: dept.department_id,
-          name: dept.name,
-          code: dept.code,
-          hod: dept.hod,
-          studentCount: dept.student_count,
-          date: dept.date,
-          status: dept.status,
-          description: dept.description,
-          dbId: dept.id
-        }));
-        renderDepartments();
-      } else {
-        console.error('Error loading departments:', result.message);
-      }
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
   }
 
   // --- Archived button functionality ---
@@ -414,6 +470,7 @@ function initDepartmentModule() {
   // --- Filter functionality ---
   if (filterSelect) {
     filterSelect.addEventListener('change', () => {
+      currentPage = 1; // Reset to first page on filter change
       const filterValue = filterSelect.value;
       if (filterValue === 'archived') {
         currentView = 'archived';
@@ -433,6 +490,7 @@ function initDepartmentModule() {
 
   if (btnArchived) {
     btnArchived.addEventListener('click', () => {
+      currentPage = 1; // Reset to first page on view change
       if (currentView === 'archived') {
         // Switch back to active view
         currentView = 'active';

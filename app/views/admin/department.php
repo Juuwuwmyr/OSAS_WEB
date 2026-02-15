@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <?php
@@ -171,15 +171,7 @@ include '../../config/db_connect.php';
           Showing <span id="showingCount">3</span> of <span id="totalCount">12</span> departments
         </div>
         <div class="pagination">
-          <button class="pagination-btn" disabled>
-            <i class='bx bx-chevron-left'></i>
-          </button>
-          <button class="pagination-btn active">1</button>
-          <button class="pagination-btn">2</button>
-          <button class="pagination-btn">3</button>
-          <button class="pagination-btn">
-            <i class='bx bx-chevron-right'></i>
-          </button>
+          <!-- JS will populate pagination buttons -->
         </div>
       </div>
     </div>
@@ -247,7 +239,7 @@ include '../../config/db_connect.php';
       </button>
     </div>
   </main>
-  <script src="<?= View::asset('js/department.js') ?>"></script>
+  <script src="<?= View::asset('js/department.js') ?>?v=<?= time() ?>"></script>
 </body>
 
 </html>

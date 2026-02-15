@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <?php
@@ -258,7 +258,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
       </button>
     </div>
   </main>
-  <script src="<?= View::asset('js/section.js') ?>"></script>
+  <script src="<?= View::asset('js/section.js') ?>?v=<?= time() ?>"></script>
 </body>
 
 </html>

@@ -8,7 +8,7 @@ class StudentModel extends Model {
     /**
      * Get all students with filters and search
      */
-    public function getAllWithDetails($filter = 'all', $search = '') {
+    public function getAllWithDetails($filter = 'all', $search = '', $page = null, $limit = null) {
         // Check if sections and departments tables exist
         $sectionsExist = $this->tableExists('sections');
         $deptExist = $this->tableExists('departments');
@@ -83,6 +83,14 @@ class StudentModel extends Model {
         }
         
         $query .= " ORDER BY s.created_at DESC";
+
+        if (!is_null($page) && !is_null($limit)) {
+            $offset = max(0, ($page - 1) * $limit);
+            $query .= " LIMIT ? OFFSET ?";
+            $params[] = (int)$limit;
+            $params[] = (int)$offset;
+            $types .= "ii";
+        }
         
         $stmt = $this->conn->prepare($query);
         if (!empty($params)) {
@@ -143,6 +151,72 @@ class StudentModel extends Model {
         
         $stmt->close();
         return $students;
+    }
+
+    public function getCountWithFilters($filter = 'all', $search = '') {
+        $sectionsExist = $this->tableExists('sections');
+        $deptExist = $this->tableExists('departments');
+
+        if ($sectionsExist && $deptExist) {
+            $query = "SELECT COUNT(DISTINCT s.id) as total
+                      FROM students s
+                      LEFT JOIN sections sec ON s.section_id = sec.id
+                      LEFT JOIN departments d ON s.department = d.department_code
+                      WHERE 1=1";
+        } elseif ($sectionsExist) {
+            $query = "SELECT COUNT(DISTINCT s.id) as total
+                      FROM students s
+                      LEFT JOIN sections sec ON s.section_id = sec.id
+                      WHERE 1=1";
+        } else {
+            $query = "SELECT COUNT(*) as total
+                      FROM students s
+                      WHERE 1=1";
+        }
+
+        $params = [];
+        $types = "";
+
+        if ($filter === 'active') {
+            $query .= " AND s.status = 'active'";
+        } elseif ($filter === 'inactive') {
+            $query .= " AND s.status = 'inactive'";
+        } elseif ($filter === 'graduating') {
+            $query .= " AND s.status = 'graduating'";
+        } elseif ($filter === 'archived') {
+            $query .= " AND s.status = 'archived'";
+        } else {
+            $query .= " AND s.status != 'archived'";
+        }
+
+        if (!empty($search)) {
+            if ($sectionsExist && $deptExist) {
+                $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR d.department_name LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params = array_fill(0, 9, $searchTerm);
+                $types = "sssssssss";
+            } elseif ($sectionsExist) {
+                $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ?)";
+                $searchTerm = "%$search%";
+                $params = array_fill(0, 8, $searchTerm);
+                $types = "ssssssss";
+            } else {
+                $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ?)";
+                $searchTerm = "%$search%";
+                $params = array_fill(0, 6, $searchTerm);
+                $types = "ssssss";
+            }
+        }
+
+        $stmt = $this->conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (int)($row['total'] ?? 0);
     }
 
     /**

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <?php
@@ -353,7 +353,7 @@ require_once '../../config/db_connect.php';
 </main>
 
 <!-- Load Student JavaScript -->
-<script src="<?= View::asset('js/student.js') ?>"></script>
+<script src="<?= View::asset('js/student.js') ?>?v=<?= time() ?>"></script>
 <script>
     // Initialize the students module when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {

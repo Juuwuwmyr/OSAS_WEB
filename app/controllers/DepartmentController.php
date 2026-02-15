@@ -15,10 +15,20 @@ class DepartmentController extends Controller {
     public function index() {
         $filter = $this->getGet('filter', 'all');
         $search = $this->getGet('search', '');
+        $page = intval($this->getGet('page', 1));
+        $limit = intval($this->getGet('limit', 10));
         
         try {
-            $departments = $this->model->getAllWithFilters($filter, $search);
-            $this->success('Departments retrieved successfully', $departments);
+            $departments = $this->model->getAllWithFilters($filter, $search, $page, $limit);
+            $totalCount = $this->model->getCountWithFilters($filter, $search);
+            
+            $this->success('Departments retrieved successfully', [
+                'departments' => $departments,
+                'total' => $totalCount,
+                'page' => $page,
+                'limit' => $limit,
+                'total_pages' => ceil($totalCount / $limit)
+            ]);
         } catch (Exception $e) {
             $this->error('Failed to retrieve departments: ' . $e->getMessage());
         }

@@ -6,9 +6,9 @@ class DepartmentModel extends Model {
     protected $primaryKey = 'id';
 
     /**
-     * Get all departments with filters
+     * Get all departments with filters and pagination
      */
-    public function getAllWithFilters($filter = 'all', $search = '') {
+    public function getAllWithFilters($filter = 'all', $search = '', $page = null, $limit = null) {
         $query = "SELECT d.*, 
                          COUNT(DISTINCT s.id) as student_count
                   FROM departments d
@@ -31,6 +31,14 @@ class DepartmentModel extends Model {
         }
 
         $query .= " GROUP BY d.id ORDER BY d.department_name ASC";
+
+        if ($limit !== null && $page !== null) {
+            $offset = ($page - 1) * $limit;
+            $query .= " LIMIT ?, ?";
+            $params[] = $offset;
+            $params[] = $limit;
+            $types .= "ii";
+        }
 
         $stmt = $this->conn->prepare($query);
         if (!empty($params)) {
@@ -56,6 +64,39 @@ class DepartmentModel extends Model {
 
         $stmt->close();
         return $departments;
+    }
+
+    /**
+     * Get total count with filters
+     */
+    public function getCountWithFilters($filter = 'all', $search = '') {
+        $query = "SELECT COUNT(*) as count FROM departments d WHERE 1=1";
+        $params = [];
+        $types = "";
+
+        if ($filter === 'active') {
+            $query .= " AND d.status = 'active'";
+        } elseif ($filter === 'archived') {
+            $query .= " AND d.status = 'archived'";
+        }
+
+        if (!empty($search)) {
+            $query .= " AND (d.department_name LIKE ? OR d.department_code LIKE ?)";
+            $searchTerm = "%$search%";
+            $params = [$searchTerm, $searchTerm];
+            $types = "ss";
+        }
+
+        $stmt = $this->conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return (int)$row['count'];
     }
 
     /**

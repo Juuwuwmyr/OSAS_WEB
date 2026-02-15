@@ -36,7 +36,7 @@ class SectionModel extends Model {
     /**
      * Get all sections with filters
      */
-    public function getAllWithFilters($filter = 'all', $search = '') {
+    public function getAllWithFilters($filter = 'all', $search = '', $page = null, $limit = null) {
         $query = "SELECT s.*, 
                          d.department_name, 
                          d.department_code,
@@ -63,6 +63,14 @@ class SectionModel extends Model {
 
         $query .= " GROUP BY s.id ORDER BY s.section_code ASC";
 
+        if (!is_null($page) && !is_null($limit)) {
+            $offset = max(0, ($page - 1) * $limit);
+            $query .= " LIMIT ? OFFSET ?";
+            $params[] = (int)$limit;
+            $params[] = (int)$offset;
+            $types .= "ii";
+        }
+
         $stmt = $this->conn->prepare($query);
         if (!empty($params)) {
             $stmt->bind_param($types, ...$params);
@@ -88,6 +96,38 @@ class SectionModel extends Model {
 
         $stmt->close();
         return $sections;
+    }
+
+    public function getCountWithFilters($filter = 'all', $search = '') {
+        $query = "SELECT COUNT(s.id) as total
+                  FROM sections s
+                  LEFT JOIN departments d ON s.department_id = d.id
+                  WHERE 1=1";
+        $params = [];
+        $types = "";
+
+        if ($filter === 'active') {
+            $query .= " AND s.status = 'active'";
+        } elseif ($filter === 'archived') {
+            $query .= " AND s.status = 'archived'";
+        }
+
+        if (!empty($search)) {
+            $query .= " AND (s.section_name LIKE ? OR s.section_code LIKE ? OR d.department_name LIKE ?)";
+            $searchTerm = "%$search%";
+            $params = [$searchTerm, $searchTerm, $searchTerm];
+            $types = "sss";
+        }
+
+        $stmt = $this->conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (int)($row['total'] ?? 0);
     }
 
     /**

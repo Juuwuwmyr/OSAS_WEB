@@ -529,11 +529,11 @@ function loadModuleScript(moduleName) {
 
     const scriptPath = moduleScripts[moduleName];
     
-    if (scriptPath && !document.querySelector(`script[src="${scriptPath}"]`)) {
+    if (scriptPath && !document.querySelector(`script[src^="${scriptPath}"]`)) {
         console.log(`📥 Loading ${moduleName} module script: ${scriptPath}`);
         
         const script = document.createElement('script');
-        script.src = scriptPath;
+        script.src = scriptPath + '?v=' + new Date().getTime();
         script.onload = function() {
             console.log(`✅ ${moduleName} script loaded`);
             

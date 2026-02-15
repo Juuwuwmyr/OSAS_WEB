@@ -710,6 +710,14 @@ body.dark #departmentModal .close-btn:hover {
   cursor: not-allowed;
 }
 
+.pagination-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  color: var(--dark-grey);
+}
+
 /* ========================================= */
 /*           MODAL STYLES                   */
 /* ========================================= */

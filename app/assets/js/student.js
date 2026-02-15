@@ -33,6 +33,10 @@ function initStudentsModule() {
         let allStudents = []; // Store all students for stats
         let currentView = 'active'; // 'active' or 'archived'
         let editingStudentId = null;
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalRecords = 0;
+        let totalPages = 0;
 
         // ========== DYNAMIC API PATH DETECTION ==========
         // Detect the correct API path based on current page location
@@ -73,13 +77,39 @@ function initStudentsModule() {
         console.log('📡 Departments API:', departmentsApiBase);
         console.log('📡 Sections API:', sectionsApiBase);
 
+        // Pagination renderer
+        function renderPagination() {
+            const paginationContainer = document.querySelector('.Students-pagination');
+            if (!paginationContainer) return;
+
+            let html = '';
+            html += `<button class="Students-pagination-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.changeStudentsPage(${currentPage - 1})"><i class='bx bx-chevron-left'></i></button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="Students-pagination-btn ${i === currentPage ? 'active' : ''}" onclick="window.changeStudentsPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span class="Students-pagination-ellipsis">...</span>`;
+                }
+            }
+
+            html += `<button class="Students-pagination-btn ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} onclick="window.changeStudentsPage(${currentPage + 1})"><i class='bx bx-chevron-right'></i></button>`;
+            paginationContainer.innerHTML = html;
+        }
+
+        window.changeStudentsPage = function(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            fetchStudents();
+        };
+
         // --- API Functions ---
         async function fetchStudents() {
             try {
                 const filter = filterSelect ? filterSelect.value : 'all';
                 const search = searchInput ? searchInput.value : '';
                 
-                let url = `${apiBase}?action=get&filter=${filter}`;
+                let url = `${apiBase}?action=get&filter=${filter}&page=${currentPage}&limit=${itemsPerPage}`;
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
@@ -107,16 +137,32 @@ function initStudentsModule() {
                 console.log('Parsed API Response:', result); // Debug log
                 
                 if (result.status === 'success') {
-                    allStudents = result.data || [];
-                    
-                    // Filter by current view
-                    if (currentView === 'archived') {
-                        students = allStudents.filter(s => s.status === 'archived');
+                    const payload = result.data;
+                    if (Array.isArray(payload)) {
+                        // Legacy array response - client-side pagination
+                        allStudents = payload;
+                        const viewFiltered = currentView === 'archived' ? allStudents.filter(s => s.status === 'archived') : allStudents.filter(s => s.status !== 'archived');
+                        totalRecords = viewFiltered.length;
+                        totalPages = Math.ceil(totalRecords / itemsPerPage);
+                        const start = (currentPage - 1) * itemsPerPage;
+                        const end = start + itemsPerPage;
+                        students = viewFiltered.slice(start, end);
+                    } else if (payload && Array.isArray(payload.students)) {
+                        // New paginated response
+                        allStudents = payload.students;
+                        totalRecords = typeof payload.total === 'number' ? payload.total : allStudents.length;
+                        totalPages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
+                        currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
+                        const viewFiltered = currentView === 'archived' ? allStudents.filter(s => s.status === 'archived') : allStudents.filter(s => s.status !== 'archived');
+                        students = viewFiltered;
                     } else {
-                        students = allStudents.filter(s => s.status !== 'archived');
+                        console.error('Unexpected API data shape:', payload);
+                        showError('Unexpected response from server while loading students.');
+                        return;
                     }
-                    
+
                     renderStudents();
+                    renderPagination();
                     await loadStats();
                 } else {
                     console.error('Error fetching students:', result.message);
@@ -403,7 +449,8 @@ function initStudentsModule() {
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             const filterValue = filterSelect ? filterSelect.value : 'all';
             
-            const filteredStudents = students.filter(s => {
+            const list = Array.isArray(students) ? students : [];
+            const filteredStudents = list.filter(s => {
                 const fullName = `${s.firstName || ''} ${s.middleName || ''} ${s.lastName || ''}`.toLowerCase();
                 const matchesSearch = fullName.includes(searchTerm) || 
                                     (s.studentId || '').toLowerCase().includes(searchTerm) ||
@@ -437,6 +484,7 @@ function initStudentsModule() {
                         </td>
                     </tr>
                 `;
+                renderPagination();
             } else {
                 tableBody.innerHTML = filteredStudents.map(s => {
                     const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
@@ -510,6 +558,7 @@ function initStudentsModule() {
             }
 
             updateCounts(filteredStudents);
+            renderPagination();
         }
 
         function escapeHtml(text) {
@@ -552,7 +601,7 @@ function initStudentsModule() {
             const totalCountEl = document.getElementById('totalStudentsCount');
             
             if (showingEl) showingEl.textContent = filteredStudents.length;
-            if (totalCountEl) totalCountEl.textContent = allStudents.length;
+            if (totalCountEl) totalCountEl.textContent = totalRecords;
         }
 
         // --- Modal functions ---
@@ -725,6 +774,26 @@ function initStudentsModule() {
 
             // Initial load - only active students
             await fetchStudents();
+
+            // Search functionality with debounce and page reset
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', () => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        currentPage = 1;
+                        fetchStudents();
+                    }, 500);
+                });
+            }
+
+            // Filter change resets page and fetches
+            if (filterSelect) {
+                filterSelect.addEventListener('change', () => {
+                    currentPage = 1;
+                    fetchStudents();
+                });
+            }
 
             // Event listeners for table
             tableBody.addEventListener('click', handleTableClick);

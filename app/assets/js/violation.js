@@ -141,6 +141,10 @@ function initViolationsModule() {
         let violationTypes = [];
         let isLoading = false;
         let isSubmitting = false; // Form submission lock
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalRecords = 0;
+        let totalPages = 0;
 
         // Student data will be loaded dynamically
 
@@ -371,7 +375,7 @@ function initViolationsModule() {
                 console.log('🔄 Loading students data...');
 
                 // Add timestamp to prevent caching
-                const response = await fetch(API_BASE + 'students.php?t=' + new Date().getTime());
+                const response = await fetch(API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000&t=' + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('Students API Error Response:', errorText);
@@ -385,8 +389,22 @@ function initViolationsModule() {
                     throw new Error(data.message || 'API returned error');
                 }
 
-                // Handle different response formats
-                students = data.students || data.data || [];
+                // Handle different response formats (supports paginated and legacy)
+                let list = [];
+                if (Array.isArray(data)) {
+                    list = data;
+                } else if (Array.isArray(data.students)) {
+                    list = data.students;
+                } else if (data && data.data) {
+                    const payload = data.data;
+                    if (Array.isArray(payload)) {
+                        list = payload;
+                    } else if (payload && Array.isArray(payload.students)) {
+                        list = payload.students;
+                    }
+                }
+
+                students = Array.isArray(list) ? list : [];
                 console.log(`✅ Loaded ${students.length} students`);
 
                 // Process student data to fix image paths
@@ -1363,6 +1381,44 @@ function initViolationsModule() {
 
         // ========== RENDER FUNCTIONS ==========
         
+        function renderViolationsPagination() {
+            const container = document.querySelector('.Violations-pagination');
+            if (!container) return;
+            
+            if (!totalPages || totalPages <= 1) {
+                container.innerHTML = `
+                    <button class="Violations-pagination-btn" disabled>
+                      <i class='bx bx-chevron-left'></i>
+                    </button>
+                    <button class="Violations-pagination-btn active">1</button>
+                    <button class="Violations-pagination-btn" disabled>
+                      <i class='bx bx-chevron-right'></i>
+                    </button>
+                `;
+                return;
+            }
+            
+            let html = '';
+            html += `<button class="Violations-pagination-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.changeViolationsPage(${currentPage - 1})"><i class='bx bx-chevron-left'></i></button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="Violations-pagination-btn ${i === currentPage ? 'active' : ''}" onclick="window.changeViolationsPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span class="Violations-pagination-ellipsis">...</span>`;
+                }
+            }
+            
+            html += `<button class="Violations-pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.changeViolationsPage(${currentPage + 1})"><i class='bx bx-chevron-right'></i></button>`;
+            container.innerHTML = html;
+        }
+        
+        window.changeViolationsPage = function(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            renderViolations();
+        };
+        
         function renderViolations() {
             console.log('🎨 renderViolations called, tableBody exists:', !!tableBody);
             console.log('📊 Current violations data:', violations.length, 'items');
@@ -1463,6 +1519,16 @@ function initViolationsModule() {
             });
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
+            
+            // Pagination calculations
+            totalRecords = filteredViolations.length;
+            totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = filteredViolations.slice(start, end);
 
             // Check for student ID search and show student details
             const trimmedSearchTerm = searchInput ? searchInput.value.trim() : '';
@@ -1485,9 +1551,9 @@ function initViolationsModule() {
                 console.log('📭 Empty state display:', filteredViolations.length === 0 ? 'shown' : 'hidden');
             }
 
-            console.log('🛠️ Generating table rows for', filteredViolations.length, 'violations');
+            console.log('🛠️ Generating table rows for', pageItems.length, 'violations');
 
-            const tableRows = filteredViolations.map(v => {
+            const tableRows = pageItems.map(v => {
                 if (!v.id && v.id !== 0) {
                     console.error('❌ Missing violation ID for item:', v);
                 }
@@ -1575,10 +1641,12 @@ function initViolationsModule() {
             console.log('✅ Table HTML set, row count in DOM:', tableBody.querySelectorAll('tr').length);
 
             updateStats();
-            updateCounts(filteredViolations);
+            updateCounts(pageItems);
+            renderViolationsPagination();
 
             updateStats();
-            updateCounts(filteredViolations);
+            updateCounts(pageItems);
+            renderViolationsPagination();
         }
 
         function updateStats() {
@@ -1613,7 +1681,7 @@ function initViolationsModule() {
             const totalCountEl = document.getElementById('totalViolationsCount');
             
             if (showingEl) showingEl.textContent = filteredViolations.length;
-            if (totalCountEl) totalCountEl.textContent = violations.length;
+            if (totalCountEl) totalCountEl.textContent = totalRecords;
         }
 
         // ========== MODAL FUNCTIONS ==========
@@ -3011,6 +3079,7 @@ function initViolationsModule() {
         // 11. SEARCH FUNCTIONALITY
         if (searchInput) {
             searchInput.addEventListener('input', function() {
+                currentPage = 1;
                 renderViolations();
 
                 // Show hint for student ID searches
@@ -3057,19 +3126,19 @@ function initViolationsModule() {
 
         // 12. FILTER FUNCTIONALITY
         if (deptFilter) {
-            deptFilter.addEventListener('change', renderViolations);
+            deptFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         }
 
         if (statusFilter) {
-            statusFilter.addEventListener('change', renderViolations);
+            statusFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         }
 
         if (dateFromFilter) {
-            dateFromFilter.addEventListener('change', renderViolations);
+            dateFromFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         }
 
         if (dateToFilter) {
-            dateToFilter.addEventListener('change', renderViolations);
+            dateToFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         }
 
         // Archive filters
@@ -3079,11 +3148,11 @@ function initViolationsModule() {
         const archiveDateToFilter = document.getElementById('ArchiveDateTo');
         const archiveSearchInput = document.getElementById('searchViolationArchive');
 
-        if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', renderViolations);
-        if (archiveMonthFilter) archiveMonthFilter.addEventListener('change', renderViolations);
-        if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', renderViolations);
-        if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', renderViolations);
-        if (archiveSearchInput) archiveSearchInput.addEventListener('input', renderViolations);
+        if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveMonthFilter) archiveMonthFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveSearchInput) archiveSearchInput.addEventListener('input', () => { currentPage = 1; renderViolations(); });
 
         // 13. TAB NAVIGATION
         const tabBtns = document.querySelectorAll('.Violations-tab-btn');
@@ -3113,7 +3182,8 @@ function initViolationsModule() {
                     if (btnAddViolation) btnAddViolation.style.display = 'none';
                 }
 
-                // Reload data for the selected view
+                // Reset page and reload data for the selected view
+                currentPage = 1;
                 loadViolations(true).then(() => {
                     renderViolations();
                     updateStats();
