@@ -236,7 +236,11 @@ require_once __DIR__ . '/../../core/View.php';
                 <i class='bx bx-sort'></i>
               </div>
             </th>
-            <th>Student Info</th>
+            <th>
+              <div class="Reports-table-header-content">
+                <span>Student Info</span>
+              </div>
+            </th>
             <th class="Reports-sortable" data-sort="department">
               <div class="Reports-table-header-content">
                 <span>Department</span>
@@ -249,7 +253,11 @@ require_once __DIR__ . '/../../core/View.php';
                 <i class='bx bx-sort'></i>
               </div>
             </th>
-            <th>Year Level</th>
+            <th>
+              <div class="Reports-table-header-content">
+                <span>Year Level</span>
+              </div>
+            </th>
             <th class="Reports-sortable" data-sort="uniform">
               <div class="Reports-table-header-content">
                 <span>Improper Uniform</span>
@@ -274,8 +282,16 @@ require_once __DIR__ . '/../../core/View.php';
                 <i class='bx bx-sort'></i>
               </div>
             </th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>
+              <div class="Reports-table-header-content">
+                <span>Status</span>
+              </div>
+            </th>
+            <th>
+              <div class="Reports-table-header-content">
+                <span>Actions</span>
+              </div>
+            </th>
           </tr>
         </thead>
 

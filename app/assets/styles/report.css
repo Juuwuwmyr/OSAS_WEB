@@ -595,7 +595,7 @@ body.dark {
 .Reports-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1200px;
+  min-width: 1400px;
   table-layout: fixed;
 }
 
@@ -611,13 +611,28 @@ body.dark {
   padding: 16px 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--dark);
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.4;
   border-bottom: 2px solid var(--border);
   background: var(--light);
+  vertical-align: middle;
+}
+
+.Reports-table-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.Reports-table-header-content i {
+  font-size: 14px;
+  color: var(--dark-grey);
+  flex-shrink: 0;
 }
 
 .Reports-table th.Reports-sortable {
@@ -659,14 +674,14 @@ body.dark {
 
 .Reports-table th:nth-child(2), /* Student Info */
 .Reports-table td:nth-child(2) {
-  width: 200px;
-  min-width: 180px;
+  width: 220px;
+  min-width: 200px;
 }
 
 .Reports-table th:nth-child(3), /* Department */
 .Reports-table td:nth-child(3) {
-  width: 110px;
-  min-width: 110px;
+  width: 150px;
+  min-width: 140px;
 }
 
 .Reports-table th:nth-child(4), /* Section */
@@ -683,26 +698,26 @@ body.dark {
 
 .Reports-table th:nth-child(6), /* Uniform */
 .Reports-table td:nth-child(6) {
-  width: 100px;
-  min-width: 100px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .Reports-table th:nth-child(7), /* Footwear */
 .Reports-table td:nth-child(7) {
-  width: 100px;
-  min-width: 100px;
+  width: 120px;
+  min-width: 120px;
 }
 
 .Reports-table th:nth-child(8), /* No ID */
 .Reports-table td:nth-child(8) {
-  width: 80px;
-  min-width: 80px;
+  width: 70px;
+  min-width: 70px;
 }
 
 .Reports-table th:nth-child(9), /* Total Violations */
 .Reports-table td:nth-child(9) {
-  width: 100px;
-  min-width: 100px;
+  width: 110px;
+  min-width: 110px;
 }
 
 .Reports-table th:nth-child(10), /* Status */
