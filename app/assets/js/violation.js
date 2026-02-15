@@ -136,6 +136,7 @@ function initViolationsModule() {
         // Dynamic data
         let violations = [];
         let filteredViolations = []; // To store currently filtered items for printing/stats
+        let currentView = 'current'; // 'current' or 'archive'
         let students = [];
         let violationTypes = [];
         let isLoading = false;
@@ -231,14 +232,14 @@ function initViolationsModule() {
                 overlay.style.display = 'none';
             }
         }
-        async function loadViolations(showLoading = true) {
+        async function loadViolations(showLoading = false) {
             try {
                 if (showLoading) showLoadingOverlay('Loading violations...');
+                console.log('🔄 Fetching violations data...', { currentView });
         
-                console.log('🔄 Loading violations data...');
-        
-                // Add timestamp to prevent caching
-                const response = await fetch(API_BASE + 'violations.php?t=' + new Date().getTime());
+                // Add timestamp to prevent caching and include isArchived parameter
+                const isArchived = currentView === 'archive' ? 1 : 0;
+                const response = await fetch(API_BASE + `violations.php?isArchived=${isArchived}&t=` + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('HTTP Error Response:', errorText);
@@ -1331,12 +1332,23 @@ function initViolationsModule() {
             const dateFromValue = dateFromFilter ? dateFromFilter.value : '';
             const dateToValue = dateToFilter ? dateToFilter.value : '';
 
-            console.log('🔍 Filter values:', { searchTerm, deptValue, statusValue, dateFromValue, dateToValue });
+            // Get archive filters if in archive view
+            const archiveDeptFilter = document.getElementById('ArchiveViolationsFilter');
+            const archiveStatusFilter = document.getElementById('ArchiveViolationsStatusFilter');
+            const archiveDateFromFilter = document.getElementById('ArchiveViolationDateFrom');
+            const archiveDateToFilter = document.getElementById('ArchiveViolationDateTo');
+
+            const currentDept = currentView === 'current' ? deptValue : (archiveDeptFilter ? archiveDeptFilter.value : 'all');
+            const currentStatus = currentView === 'current' ? statusValue : (archiveStatusFilter ? archiveStatusFilter.value : 'all');
+            const currentDateFrom = currentView === 'current' ? dateFromValue : (archiveDateFromFilter ? archiveDateFromFilter.value : '');
+            const currentDateTo = currentView === 'current' ? dateToValue : (archiveDateToFilter ? archiveDateToFilter.value : '');
+
+            console.log('🔍 Filter values:', { searchTerm, currentDept, currentStatus, currentDateFrom, currentDateTo, currentView });
 
             // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
             let sourceViolations = violations;
             
-            if (!searchTerm) {
+            if (!searchTerm && currentView === 'current') {
                 const uniqueStudentMap = new Map();
                 violations.forEach(v => {
                     // Violations are sorted by date DESC from backend, so first encounter is latest
@@ -1358,25 +1370,25 @@ function initViolationsModule() {
                                     v.caseId.toLowerCase().includes(searchTerm) ||
                                     v.studentId.toLowerCase().includes(searchTerm) ||
                                     v.violationTypeLabel.toLowerCase().includes(searchTerm);
-                const matchesDept = deptValue === 'all' || v.department === deptValue;
-                const matchesStatus = statusValue === 'all' || v.status === statusValue;
+                const matchesDept = currentDept === 'all' || v.department === currentDept;
+                const matchesStatus = currentStatus === 'all' || v.status === currentStatus;
 
                 // Date filtering logic
                 let matchesDate = true;
-                if (dateFromValue || dateToValue) {
+                if (currentDateFrom || currentDateTo) {
                     const violationDateStr = v.dateReported || v.violationDate;
                     if (violationDateStr) {
                         const violationDate = new Date(violationDateStr);
                         violationDate.setHours(0, 0, 0, 0);
                         
-                        if (dateFromValue) {
-                            const fromDate = new Date(dateFromValue);
+                        if (currentDateFrom) {
+                            const fromDate = new Date(currentDateFrom);
                             fromDate.setHours(0, 0, 0, 0);
                             if (violationDate < fromDate) matchesDate = false;
                         }
                         
-                        if (dateToValue && matchesDate) {
-                            const toDate = new Date(dateToValue);
+                        if (currentDateTo && matchesDate) {
+                            const toDate = new Date(currentDateTo);
                             toDate.setHours(0, 0, 0, 0);
                             if (violationDate > toDate) matchesDate = false;
                         }
@@ -2998,7 +3010,92 @@ function initViolationsModule() {
             dateToFilter.addEventListener('change', renderViolations);
         }
 
-        // 13. PRINT FUNCTIONALITY
+        // Archive filters
+        const archiveDeptFilter = document.getElementById('ArchiveViolationsFilter');
+        const archiveStatusFilter = document.getElementById('ArchiveViolationsStatusFilter');
+        const archiveDateFromFilter = document.getElementById('ArchiveViolationDateFrom');
+        const archiveDateToFilter = document.getElementById('ArchiveViolationDateTo');
+
+        if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', renderViolations);
+        if (archiveStatusFilter) archiveStatusFilter.addEventListener('change', renderViolations);
+        if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', renderViolations);
+        if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', renderViolations);
+
+        // 13. TAB NAVIGATION
+        const tabBtns = document.querySelectorAll('.Violations-tab-btn');
+        const currentFiltersGroup = document.getElementById('currentFilters');
+        const archiveFiltersGroup = document.getElementById('archiveFilters');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const view = this.dataset.view;
+                if (currentView === view) return;
+
+                // Update state
+                currentView = view;
+
+                // Update UI
+                tabBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show/Hide filter groups
+                if (view === 'current') {
+                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'flex';
+                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
+                    if (btnAddViolation) btnAddViolation.style.display = 'flex';
+                } else {
+                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
+                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'flex';
+                    if (btnAddViolation) btnAddViolation.style.display = 'none';
+                }
+
+                // Reload data for the selected view
+                loadViolations(true).then(() => {
+                    renderViolations();
+                    updateStats();
+                });
+            });
+        });
+
+        // 14. MONTHLY RESET FUNCTIONALITY
+        const btnMonthlyReset = document.getElementById('btnMonthlyReset');
+        if (btnMonthlyReset) {
+            btnMonthlyReset.addEventListener('click', async function() {
+                const confirmMessage = "Are you sure you want to perform a monthly reset?\n\n" +
+                                     "This will:\n" +
+                                     "1. Archive all violations from previous months\n" +
+                                     "2. Reset all student violation levels and counts\n\n" +
+                                     "This action cannot be undone.";
+
+                if (confirm(confirmMessage)) {
+                    try {
+                        showLoadingOverlay('Performing monthly reset...');
+                        const response = await fetch(API_BASE + 'violations.php?action=archive', {
+                            method: 'POST'
+                        });
+
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            showNotification(result.message, 'success', 5000);
+                            // Refresh current view
+                            loadViolations(true).then(() => {
+                                renderViolations();
+                                updateStats();
+                            });
+                        } else {
+                            throw new Error(result.message || 'Failed to perform reset');
+                        }
+                    } catch (error) {
+                        console.error('Error during monthly reset:', error);
+                        showNotification('Reset failed: ' + error.message, 'error');
+                    } finally {
+                        hideLoadingOverlay();
+                    }
+                }
+            });
+        }
+
+        // 15. PRINT FUNCTIONALITY
         if (printBtn) {
             printBtn.addEventListener('click', function() {
                 const tableTitle = document.querySelector('.Violations-table-title')?.textContent || 'Violations List';

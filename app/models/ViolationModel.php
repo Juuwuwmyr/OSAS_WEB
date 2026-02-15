@@ -8,23 +8,34 @@ class ViolationModel extends Model {
     /**
      * Get all violations with student info
      */
-    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '') {
+    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0) {
         // Check if violations table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
             throw new Exception('Violations table does not exist. Please run the database setup SQL file: database/osas.sql');
         }
+
+        // Auto-fix: Check if is_archived column exists, if not add it
+        $columnCheck = @$this->conn->query("SHOW COLUMNS FROM violations LIKE 'is_archived'");
+        if ($columnCheck === false || $columnCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violations ADD COLUMN is_archived TINYINT(1) DEFAULT 0");
+            @$this->conn->query("ALTER TABLE violations ADD INDEX idx_is_archived (is_archived)");
+        }
         
         // First, check if there are any violations at all (without JOIN)
-        $countQuery = "SELECT COUNT(*) as total FROM violations";
-        $countResult = $this->conn->query($countQuery);
+        $countQuery = "SELECT COUNT(*) as total FROM violations WHERE is_archived = ?";
+        $stmtCount = $this->conn->prepare($countQuery);
+        $stmtCount->bind_param("i", $isArchived);
+        $stmtCount->execute();
+        $countResult = $stmtCount->get_result();
+        
         $totalCount = 0;
         if ($countResult) {
             $countRow = $countResult->fetch_assoc();
             $totalCount = (int)$countRow['total'];
         }
         
-        error_log("ViolationsModel: Total violations in database: $totalCount");
+        error_log("ViolationsModel: Total violations in database (archived=$isArchived): $totalCount");
         
         // If no violations exist, return empty array immediately
         if ($totalCount === 0) {
@@ -58,10 +69,10 @@ class ViolationModel extends Model {
                   LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
                   LEFT JOIN departments d ON s.department = d.department_code
                   LEFT JOIN sections sec ON s.section_id = sec.id
-                  WHERE 1=1";
+                  WHERE v.is_archived = ?";
         
-        $params = [];
-        $types = "";
+        $params = [$isArchived];
+        $types = "i";
 
         if (!empty($studentId)) {
             // If it's a numeric ID, allow filtering by students.id as well.
@@ -261,6 +272,102 @@ class ViolationModel extends Model {
         }
         
         return $violations;
+    }
+
+    /**
+     * Check if a monthly reset is needed and trigger it automatically
+     */
+    public function checkAndTriggerAutoArchive() {
+        // Check if settings table exists
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'settings'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return false;
+        }
+
+        // Get last reset month from settings
+        $query = "SELECT setting_value FROM settings WHERE setting_key = 'last_monthly_reset' LIMIT 1";
+        $result = $this->conn->query($query);
+        
+        $lastResetMonth = '';
+        if ($result && $row = $result->fetch_assoc()) {
+            $lastResetMonth = $row['setting_value'];
+        } else {
+            // Setting doesn't exist, create it
+            // Default to current month so we don't archive everything on the very first run 
+            // unless the admin explicitly clicks the reset button
+            $lastResetMonth = date('Y-m');
+            $insertQuery = "INSERT INTO settings (setting_key, setting_value, setting_type, category, description) 
+                           VALUES ('last_monthly_reset', ?, 'string', 'system', 'Last month when the violations were archived')";
+            $stmt = $this->conn->prepare($insertQuery);
+            $stmt->bind_param("s", $lastResetMonth);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        $currentMonth = date('Y-m');
+        if ($lastResetMonth !== $currentMonth) {
+            error_log("ViolationModel: Triggering automatic monthly reset for $currentMonth (last reset was $lastResetMonth)");
+            
+            try {
+                // Trigger archive
+                $this->archiveOldViolations();
+                
+                // Update last reset date
+                $updateQuery = "UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = 'last_monthly_reset'";
+                $stmt = $this->conn->prepare($updateQuery);
+                $stmt->bind_param("s", $currentMonth);
+                $stmt->execute();
+                $stmt->close();
+                
+                return true;
+            } catch (Exception $e) {
+                error_log("ViolationModel: Automatic reset failed: " . $e->getMessage());
+                return false;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Archive violations from previous months and reset student violation levels
+     */
+    public function archiveOldViolations() {
+        // Start transaction
+        $this->conn->begin_transaction();
+
+        try {
+            // 1. Mark violations from previous months as archived
+            // A violation is "old" if its violation_date is before the first day of the current month
+            $currentMonthStart = date('Y-m-01');
+            
+            $archiveQuery = "UPDATE violations SET is_archived = 1 WHERE violation_date < ? AND is_archived = 0";
+            $stmt = $this->conn->prepare($archiveQuery);
+            $stmt->bind_param("s", $currentMonthStart);
+            $stmt->execute();
+            $archivedCount = $stmt->affected_rows;
+            $stmt->close();
+
+            // 2. Reset student_violation_levels
+            // We reset counts and levels for all students who had violations that were just archived
+            // Or simply reset everyone if "reset every month" means a fresh start for all.
+            // Usually, it means everyone starts fresh.
+            $resetQuery = "UPDATE student_violation_levels SET 
+                            current_level = 'permitted1',
+                            permitted_count = 0,
+                            warning_count = 0,
+                            total_violations = 0,
+                            status = 'active',
+                            updated_at = CURRENT_TIMESTAMP";
+            $this->conn->query($resetQuery);
+
+            $this->conn->commit();
+            return $archivedCount;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            error_log("Error archiving violations: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**

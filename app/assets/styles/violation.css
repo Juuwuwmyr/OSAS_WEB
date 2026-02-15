@@ -10,6 +10,51 @@ body.dark {
 }
 
 /* ========================================= */
+/*            TABS SECTION                  */
+/* ========================================= */
+
+.Violations-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.Violations-tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--dark-grey);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.Violations-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--dark);
+}
+
+.Violations-tab-btn.active {
+  background: var(--gold);
+  color: #333;
+}
+
+.Violations-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+/* ========================================= */
 /*         BASE STYLES FOR PAGE             */
 /* ========================================= */
 

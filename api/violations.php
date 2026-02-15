@@ -26,7 +26,13 @@ try {
             break;
 
         case 'POST':
-            $controller->create();
+            // Check for action in query string even for POST
+            $action = $_GET['action'] ?? '';
+            if ($action === 'archive') {
+                $controller->index();
+            } else {
+                $controller->create();
+            }
             break;
 
         case 'PUT':

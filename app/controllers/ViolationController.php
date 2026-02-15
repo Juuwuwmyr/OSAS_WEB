@@ -16,6 +16,9 @@ class ViolationController extends Controller
 
         $this->model = new ViolationModel();
         $this->studentModel = new StudentModel();
+
+        // Automatically check and trigger monthly reset if needed
+        $this->model->checkAndTriggerAutoArchive();
     }
 
     /**
@@ -43,6 +46,21 @@ class ViolationController extends Controller
         $search    = $this->getGet('search', '');
         $dateFrom  = $this->getGet('date_from', '');
         $dateTo    = $this->getGet('date_to', '');
+        $isArchived = (int)$this->getGet('is_archived', 0);
+
+        if ($action === 'archive') {
+            try {
+                $count = $this->model->archiveOldViolations();
+                $this->json([
+                    'status' => 'success',
+                    'message' => "Successfully archived $count violations and reset all student violation levels."
+                ]);
+                return;
+            } catch (Exception $e) {
+                $this->error('Failed to archive violations: ' . $e->getMessage());
+                return;
+            }
+        }
 
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
             $studentId = $_SESSION['student_id_code'] ?? '';
@@ -57,7 +75,8 @@ class ViolationController extends Controller
                 $search,
                 $studentId,
                 $dateFrom,
-                $dateTo
+                $dateTo,
+                $isArchived
             );
 
             $this->json([

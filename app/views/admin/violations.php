@@ -28,6 +28,10 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-header-actions">
       <div class="Violations-button-group">
+        <button id="btnMonthlyReset" class="Violations-btn outline small warning" title="Archive old violations and reset student levels">
+          <i class='bx bx-reset'></i>
+          <span>Monthly Reset</span>
+        </button>
         <button id="btnImportViolations" class="Violations-btn outline small">
           <i class='bx bx-upload'></i>
           <span>Import</span>
@@ -104,17 +108,21 @@ require_once __DIR__ . '/../../core/View.php';
     <!-- Table Header -->
     <div class="Violations-table-header">
       <div class="Violations-header-left">
-        <h2 class="Violations-table-title">Violations List</h2>
-        <p class="Violations-table-subtitle">All student violation records and their status</p>
+        <h2 class="Violations-table-title" id="violationsTableTitle">Violations List</h2>
+        <div class="Violations-tabs">
+          <button class="Violations-tab-btn active" data-view="current">Current Month</button>
+          <button class="Violations-tab-btn" data-view="archive">Archive</button>
+        </div>
       </div>
 
       <div class="Violations-header-right">
-        <div class="Violations-search-box">
-          <i class='bx bx-search'></i>
-          <input type="text" id="searchViolation" placeholder="Search violations...">
-        </div>
+        <!-- Current Month Filters -->
+        <div id="currentFilters" class="Violations-filter-group">
+          <div class="Violations-search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchViolation" placeholder="Search violations...">
+          </div>
 
-        <div class="Violations-filter-group">
           <div class="Violations-date-filter">
             <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
             <span>to</span>
@@ -136,11 +144,43 @@ require_once __DIR__ . '/../../core/View.php';
             <option value="disciplinary">Disciplinary</option>
             <option value="resolved">Resolved</option>
           </select>
-
-          <button class="Violations-filter-btn" title="More filters">
-            <i class='bx bx-filter-alt'></i>
-          </button>
         </div>
+
+        <!-- Archive Filters (Initially Hidden) -->
+        <div id="archiveFilters" class="Violations-filter-group" style="display: none;">
+          <div class="Violations-search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchViolationArchive" placeholder="Search archive...">
+          </div>
+
+          <div class="Violations-date-filter">
+            <input type="date" id="ArchiveDateFrom" class="Violations-filter-date" title="From Date">
+            <span>to</span>
+            <input type="date" id="ArchiveDateTo" class="Violations-filter-date" title="To Date">
+          </div>
+
+          <select id="ArchiveDeptFilter" class="Violations-filter-select">
+            <option value="all">All Departments</option>
+            <option value="BSIS">BSIS</option>
+            <option value="WFT">WFT</option>
+            <option value="BTVTED">BTVTED</option>
+            <option value="CHS">CHS</option>
+          </select>
+          
+          <select id="ArchiveMonthFilter" class="Violations-filter-select">
+            <option value="all">All Months</option>
+            <?php
+            for ($i = 1; $i <= 12; $i++) {
+                $month = date('F', mktime(0, 0, 0, $i, 1));
+                echo "<option value='$i'>$month</option>";
+            }
+            ?>
+          </select>
+        </div>
+
+        <button class="Violations-filter-btn" title="More filters">
+          <i class='bx bx-filter-alt'></i>
+        </button>
       </div>
     </div>
 
