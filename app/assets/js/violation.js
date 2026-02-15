@@ -107,6 +107,8 @@ function initViolationsModule() {
         const searchInput = document.getElementById('searchViolation');
         const deptFilter = document.getElementById('ViolationsFilter');
         const statusFilter = document.getElementById('ViolationsStatusFilter');
+        const dateFromFilter = document.getElementById('ViolationDateFrom');
+        const dateToFilter = document.getElementById('ViolationDateTo');
         const printBtn = document.getElementById('btnPrintViolations');
         const studentSearchInput = document.getElementById('studentSearch');
         const searchStudentBtn = document.getElementById('searchStudentBtn');
@@ -133,6 +135,7 @@ function initViolationsModule() {
         
         // Dynamic data
         let violations = [];
+        let filteredViolations = []; // To store currently filtered items for printing/stats
         let students = [];
         let violationTypes = [];
         let isLoading = false;
@@ -1325,8 +1328,10 @@ function initViolationsModule() {
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             const deptValue = deptFilter ? deptFilter.value : 'all';
             const statusValue = statusFilter ? statusFilter.value : 'all';
+            const dateFromValue = dateFromFilter ? dateFromFilter.value : '';
+            const dateToValue = dateToFilter ? dateToFilter.value : '';
 
-            console.log('🔍 Filter values:', { searchTerm, deptValue, statusValue });
+            console.log('🔍 Filter values:', { searchTerm, deptValue, statusValue, dateFromValue, dateToValue });
 
             // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
             let sourceViolations = violations;
@@ -1343,7 +1348,7 @@ function initViolationsModule() {
                 console.log('📉 Grouped by student (latest only):', sourceViolations.length, 'unique students');
             }
 
-            const filteredViolations = sourceViolations.filter(v => {
+            filteredViolations = sourceViolations.filter(v => {
                 if (!v) {
                     console.warn('⚠️ Found null/undefined violation object');
                     return false;
@@ -1356,8 +1361,31 @@ function initViolationsModule() {
                 const matchesDept = deptValue === 'all' || v.department === deptValue;
                 const matchesStatus = statusValue === 'all' || v.status === statusValue;
 
-                // console.log(`🔍 Violation ${v.caseId}: search=${matchesSearch}, dept=${matchesDept}, status=${matchesStatus}`);
-                return matchesSearch && matchesDept && matchesStatus;
+                // Date filtering logic
+                let matchesDate = true;
+                if (dateFromValue || dateToValue) {
+                    const violationDateStr = v.dateReported || v.violationDate;
+                    if (violationDateStr) {
+                        const violationDate = new Date(violationDateStr);
+                        violationDate.setHours(0, 0, 0, 0);
+                        
+                        if (dateFromValue) {
+                            const fromDate = new Date(dateFromValue);
+                            fromDate.setHours(0, 0, 0, 0);
+                            if (violationDate < fromDate) matchesDate = false;
+                        }
+                        
+                        if (dateToValue && matchesDate) {
+                            const toDate = new Date(dateToValue);
+                            toDate.setHours(0, 0, 0, 0);
+                            if (violationDate > toDate) matchesDate = false;
+                        }
+                    } else {
+                        matchesDate = false;
+                    }
+                }
+
+                return matchesSearch && matchesDept && matchesStatus && matchesDate;
             });
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
@@ -2962,6 +2990,14 @@ function initViolationsModule() {
             statusFilter.addEventListener('change', renderViolations);
         }
 
+        if (dateFromFilter) {
+            dateFromFilter.addEventListener('change', renderViolations);
+        }
+
+        if (dateToFilter) {
+            dateToFilter.addEventListener('change', renderViolations);
+        }
+
         // 13. PRINT FUNCTIONALITY
         if (printBtn) {
             printBtn.addEventListener('click', function() {
@@ -2987,7 +3023,7 @@ function initViolationsModule() {
                         <tbody>
                 `;
 
-                violations.forEach(violation => {
+                filteredViolations.forEach(violation => {
                     const typeClass = getViolationTypeClass(violation.violationType);
                     const levelClass = getViolationLevelClass(violation.violationLevel);
                     const deptClass = getDepartmentClass(violation.department);

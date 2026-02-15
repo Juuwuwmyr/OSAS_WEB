@@ -8,7 +8,7 @@ class ViolationModel extends Model {
     /**
      * Get all violations with student info
      */
-    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '') {
+    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '') {
         // Check if violations table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -95,6 +95,18 @@ class ViolationModel extends Model {
             $searchParams = array_fill(0, 5, $searchTerm);
             $params = array_merge($params, $searchParams);
             $types .= "sssss";
+        }
+
+        if (!empty($dateFrom)) {
+            $query .= " AND v.violation_date >= ?";
+            $params[] = $dateFrom;
+            $types .= "s";
+        }
+
+        if (!empty($dateTo)) {
+            $query .= " AND v.violation_date <= ?";
+            $params[] = $dateTo;
+            $types .= "s";
         }
 
         $query .= " ORDER BY v.created_at DESC";

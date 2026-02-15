@@ -41,6 +41,8 @@ class ViolationController extends Controller
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
+        $dateFrom  = $this->getGet('date_from', '');
+        $dateTo    = $this->getGet('date_to', '');
 
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
             $studentId = $_SESSION['student_id_code'] ?? '';
@@ -53,7 +55,9 @@ class ViolationController extends Controller
             $violations = $this->model->getAllWithStudentInfo(
                 $filter,
                 $search,
-                $studentId  // Empty string means get all violations
+                $studentId,
+                $dateFrom,
+                $dateTo
             );
 
             $this->json([

@@ -115,6 +115,12 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
 
         <div class="Violations-filter-group">
+          <div class="Violations-date-filter">
+            <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
+            <span>to</span>
+            <input type="date" id="ViolationDateTo" class="Violations-filter-date" title="To Date">
+          </div>
+
           <select id="ViolationsFilter" class="Violations-filter-select">
             <option value="all">All Departments</option>
             <option value="BSIS">BSIS</option>
