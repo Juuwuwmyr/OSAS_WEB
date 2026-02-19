@@ -303,11 +303,21 @@ class ViolationController extends Controller
             $this->error('Violation ID is required');
         }
 
-        // Use getAllWithStudentInfo to search by Case ID and get FULL details (joined tables)
-        $violations = $this->model->getAllWithStudentInfo('all', $violationId);
+        // Use getAllWithStudentInfo to search by specific ID and get FULL details (joined tables)
+        // pass specificId as the 7th argument
+        $violations = $this->model->getAllWithStudentInfo('all', '', '', '', '', 0, $violationId);
         
         if (empty($violations)) {
             $this->error('Violation not found');
+        }
+
+        // Security check: If user is student, ensure violation belongs to them
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+            $currentStudentId = $_SESSION['student_id_code'] ?? '';
+            // Check if violation's student_id matches
+            if ($violations[0]['studentId'] !== $currentStudentId) {
+                $this->error('Unauthorized access to this violation slip');
+            }
         }
 
         // Get the current violation

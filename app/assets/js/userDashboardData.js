@@ -18,6 +18,7 @@ class UserDashboardData {
         this.stats = {
             activeViolations: 0,
             totalViolations: 0,
+            resolvedViolations: 0,
             daysClean: 0,
             violationTypes: {}
         };
@@ -102,6 +103,15 @@ class UserDashboardData {
 
             this.violations = data.violations || data.data || [];
             console.log('✅ Loaded', this.violations.length, 'violations');
+            
+            // SYNC with userViolations.js so viewViolationDetails works
+            if (typeof window.userViolations !== 'undefined') {
+                window.userViolations = this.violations;
+                console.log('🔗 Synced violations with userViolations.js');
+            } else {
+                window.userViolations = this.violations; // Define it if not exists
+            }
+
             this.calculateViolationStats();
         } catch (error) {
             console.error('❌ Error loading violations:', error);
@@ -117,6 +127,11 @@ class UserDashboardData {
             return status !== 'resolved' && status !== 'permitted' && status !== 'cleared';
         }).length;
 
+        this.stats.resolvedViolations = this.violations.filter(v => {
+            const status = (v.status || '').toLowerCase();
+            return status === 'resolved' || status === 'permitted' || status === 'cleared';
+        }).length;
+
         this.stats.violationTypes = {};
         this.violations.forEach(v => {
             const type = (v.violation_type || v.type || 'unknown').toLowerCase().replace(/\s+/g, '_');
@@ -124,12 +139,12 @@ class UserDashboardData {
         });
 
         if (this.violations.length > 0) {
-            const sorted = [...this.violations].sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at));
-            const lastDate = new Date(sorted[0].date || sorted[0].created_at);
+            const sorted = [...this.violations].sort((a, b) => new Date(b.date || b.created_at || b.violation_date) - new Date(a.date || a.created_at || a.violation_date));
+            const lastDate = new Date(sorted[0].date || sorted[0].created_at || sorted[0].violation_date);
             const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
             this.stats.daysClean = diffDays;
         } else {
-            this.stats.daysClean = 0;
+            this.stats.daysClean = 'Always'; // No violations ever
         }
     }
 
@@ -198,6 +213,17 @@ class UserDashboardData {
 
     updateDashboardDisplay() {
         console.log('🔄 Updating dashboard display...');
+
+        // Update Stats
+        const setStat = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setStat('statActiveViolations', this.stats.activeViolations);
+        setStat('statTotalViolations', this.stats.totalViolations);
+        setStat('statResolvedViolations', this.stats.resolvedViolations);
+        setStat('statDaysClean', this.stats.daysClean);
+
         this.updateViolationSummary();
         this.updateRecentViolationsTable();
         this.updateAnnouncementsDisplay();
@@ -293,16 +319,44 @@ class UserDashboardData {
             // Use dynamic label
             const typeLabel = v.violationTypeLabel || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
+            
             const status = (v.status || 'pending').toLowerCase();
-            const statusClass = status === 'resolved' || status === 'permitted' ? 'resolved' : 'pending';
-            const statusText = statusClass === 'resolved' ? 'Permitted' : 'Pending';
+            const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
+            const levelVal = String(level).toLowerCase();
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+
+            let statusClass = 'pending';
+            let statusText = 'Pending';
+
+            if (status === 'resolved' || status === 'permitted') {
+                statusClass = 'completed'; // Changed from success to match dashboard style usually, or keep 'resolved'
+                statusText = isDisciplinary ? 'Resolved' : 'Permitted';
+            } else if (isDisciplinary || status === 'disciplinary') {
+                 statusClass = 'process';
+                 statusText = 'Disciplinary';
+            } else if (status === 'warning') {
+                statusClass = 'pending';
+                statusText = 'Warning';
+            }
+
+            // Note: The original code used 'resolved', 'pending', 'process' classes.
+            // Let's map our statusClass to those.
+            // pending -> orange/yellow
+            // completed -> green
+            // process -> red/purple
+            
+            let badgeClass = 'pending';
+            if (statusText === 'Resolved' || statusText === 'Permitted') badgeClass = 'completed';
+            else if (statusText === 'Disciplinary') badgeClass = 'process';
+            else badgeClass = 'pending'; // Warning/Pending
+
             const icon = getIcon(typeLabel);
 
             return `
                 <tr>
                     <td>${date}</td>
                     <td><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
-                    <td><span class="status ${statusClass}">${statusText}</span></td>
+                    <td><span class="status ${badgeClass}">${statusText}</span></td>
                     <td><button class="btn-view-details" onclick="viewViolationDetails(${v.id || v.violation_id})">View Details</button></td>
                 </tr>
             `;

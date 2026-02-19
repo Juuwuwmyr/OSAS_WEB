@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <!-- USER DASHBOARD CONTENT - NOT ADMIN -->
@@ -48,28 +48,28 @@ require_once __DIR__ . '/../../core/View.php';
     <li>
       <i class='bx bxs-user-check'></i>
       <span class="text">
-        <h3>0</h3>
+        <h3 id="statActiveViolations">0</h3>
         <p>Active Violations</p>
       </span>
     </li>
     <li>
       <i class='bx bxs-calendar-check'></i>
       <span class="text">
-        <h3>3</h3>
+        <h3 id="statTotalViolations">0</h3>
         <p>Total Violations</p>
       </span>
     </li>
     <li>
       <i class='bx bxs-shield-check'></i>
       <span class="text">
-        <h3>Good</h3>
-        <p>Permitted</p>
+        <h3 id="statResolvedViolations">0</h3>
+        <p>Resolved / Permitted</p>
       </span>
     </li>
     <li>
       <i class='bx bxs-time'></i>
       <span class="text">
-        <h3>7</h3>
+        <h3 id="statDaysClean">0</h3>
         <p>Days Clean</p>
       </span>
     </li>
@@ -155,6 +155,108 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </div>
 </main>
+
+<!-- DETAILS MODAL (Same as my_violations.php) -->
+<div id="ViolationDetailsModal" class="Violations-modal" style="display: none;">
+    <div class="Violations-modal-overlay" id="modalOverlay" onclick="closeViolationModal()"></div>
+    <div class="Violations-modal-container">
+        <div class="Violations-modal-header">
+            <h2>
+                <i class='bx bxs-info-circle'></i>
+                <span>Violation Details</span>
+            </h2>
+            <button class="Violations-close-btn" onclick="closeViolationModal()">
+                <i class='bx bx-x'></i>
+            </button>
+        </div>
+
+        <div class="violation-details-content">
+            <!-- Case Header -->
+            <div class="case-header">
+                <span class="case-id">Case: <span id="detailCaseId">-</span></span>
+                <span class="case-status-badge" id="detailStatusBadge">-</span>
+            </div>
+
+            <!-- Student Info -->
+            <div class="violation-student-info-card detailed">
+                <div class="violation-student-image">
+                    <img id="detailStudentImage" 
+                         src="https://ui-avatars.com/api/?name=Student&background=ffd700&color=333&size=80" 
+                         alt="Student"
+                         onerror="this.src='https://ui-avatars.com/api/?name=Student&background=ffd700&color=333&size=80'">
+                </div>
+                <div class="violation-student-details">
+                    <h3 id="detailStudentName">Student Name</h3>
+                    <div class="student-meta">
+                        <span class="student-id">ID: <span id="detailStudentId">-</span></span>
+                        <span class="student-dept badge" id="detailStudentDept">-</span>
+                        <span class="student-section">Section: <span id="detailStudentSection">-</span></span>
+                    </div>
+                    <div class="student-contact">
+                        <i class='bx bx-phone'></i> <span id="detailStudentContact">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="violation-details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Violation Type:</span>
+                    <span class="detail-value badge" id="detailViolationType">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Level:</span>
+                    <span class="detail-value badge warning" id="detailViolationLevel">-</span>
+                </div>
+                 <div class="detail-item">
+                    <span class="detail-label">Date & Time:</span>
+                    <span class="detail-value" id="detailDateTime">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value" id="detailLocation">-</span>
+                </div>
+                 <div class="detail-item">
+                    <span class="detail-label">Reported By:</span>
+                    <span class="detail-value" id="detailReportedBy">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value badge warning" id="detailStatus">-</span>
+                </div>
+            </div>
+
+            <div class="violation-notes-section">
+                <h4>Violation Description</h4>
+                <div class="notes-content">
+                    <p id="detailNotes">-</p>
+                </div>
+            </div>
+            
+             <div class="violation-notes-section" id="resolutionSection" style="display:none;">
+                <h4>Resolution</h4>
+                <div class="notes-content">
+                    <p id="detailResolution">-</p>
+                </div>
+            </div>
+
+            <!-- History Timeline -->
+            <div class="violation-history">
+                <h4>Violation History</h4>
+                <div class="timeline" id="detailTimeline">
+                    <!-- Populated dynamically -->
+                    <p style="color: #6c757d; font-size: 14px;">No history available.</p>
+                </div>
+            </div>
+
+            <div class="Violations-form-actions">
+                <button class="Violations-btn primary" onclick="printViolationSlip()">
+                    <i class='bx bxs-printer'></i> Print Slip
+                </button>
+                <button class="Violations-btn-outline" onclick="closeViolationModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 

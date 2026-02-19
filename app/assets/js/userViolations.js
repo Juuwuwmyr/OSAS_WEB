@@ -5,6 +5,7 @@ const API_BASE = '/OSAS_WEB/api/';
 
 let studentId = null;
 let userViolations = [];
+let currentViolationId = null;
 
 /*********************************************************
  * INIT
@@ -25,8 +26,14 @@ async function initUserViolations() {
         return;
     }
 
+    // Attach search listener
+    const searchInput = document.getElementById('searchViolation');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterViolations);
+    }
+
     studentId = getStudentId();
-    console.log('Student ID:', studentId); // Debug: check student ID
+    console.log('Student ID:', studentId);
 
     if (!studentId) {
         tbody.innerHTML = errorRow('Student ID not found. Please login again.');
@@ -40,41 +47,20 @@ async function initUserViolations() {
  * HELPERS
  *********************************************************/
 function getStudentId() {
-    // Priority 1: PHP-injected variable
-    if (window.STUDENT_ID) {
-        console.log('✅ Student ID from window.STUDENT_ID:', window.STUDENT_ID);
-        return window.STUDENT_ID;
-    }
-
-    // Priority 2: Data attribute on main-content
+    if (window.STUDENT_ID) return window.STUDENT_ID;
     const mainContent = document.getElementById('main-content');
-    if (mainContent && mainContent.dataset.studentId) {
-        console.log('✅ Student ID from data attribute:', mainContent.dataset.studentId);
-        return mainContent.dataset.studentId;
-    }
-
-    // Priority 3: Cookie fallback - prefer student_id_code (actual student ID string) over student_id (database ID)
+    if (mainContent && mainContent.dataset.studentId) return mainContent.dataset.studentId;
+    
     const cookies = Object.fromEntries(
-        document.cookie
-            .split(';')
-            .map(c => c.trim().split('='))
-            .map(([k,v]) => [k, decodeURIComponent(v)])
+        document.cookie.split(';').map(c => c.trim().split('=')).map(([k,v]) => [k, decodeURIComponent(v)])
     );
-
-    const studentIdFromCookie = cookies.student_id_code || cookies.student_id;
-    if (studentIdFromCookie) {
-        console.log('✅ Student ID from cookie:', studentIdFromCookie);
-        return studentIdFromCookie;
-    }
-
-    console.error('❌ Student ID not found in any source');
-    return null;
+    return cookies.student_id_code || cookies.student_id;
 }
 
 function errorRow(message) {
     return `
         <tr>
-            <td colspan="5" style="text-align:center; padding:40px; color:#ef4444;">
+            <td colspan="6" style="text-align:center; padding:40px; color:#ef4444;">
                 ${message}
             </td>
         </tr>
@@ -92,18 +78,10 @@ async function loadUserViolations() {
         console.log('📡 Fetching violations from:', apiUrl);
         
         const res = await fetch(apiUrl);
-        console.log('📡 Response status:', res.status);
-        
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         
         const json = await res.json();
-        console.log('📡 Response data:', json);
-
-        if (json.status !== 'success') {
-            throw new Error(json.message || 'Failed to load violations');
-        }
+        if (json.status !== 'success') throw new Error(json.message || 'Failed to load violations');
 
         userViolations = json.data || [];
         console.log('✅ Loaded', userViolations.length, 'violations');
@@ -123,13 +101,12 @@ async function loadUserViolations() {
 function updateViolationStats() {
     const total = userViolations.length;
 
-    // Count violations by specific type from database
     const countByType = (type) => {
         return userViolations.filter(v => {
-            const violationType = (v.violation_type || v.violationType || '').toLowerCase();
-            const violationTypeLabel = (v.violationTypeLabel || '').toLowerCase();
+            const rawType = v.violation_type_name || v.violation_type || v.violationType || '';
+            const violationType = String(rawType).toLowerCase();
+            const violationTypeLabel = String(v.violationTypeLabel || '').toLowerCase();
             
-            // Check for specific violation types
             if (type === 'uniform') {
                 return violationType.includes('uniform') || violationTypeLabel.includes('uniform');
             } else if (type === 'footwear') {
@@ -143,50 +120,95 @@ function updateViolationStats() {
         }).length;
     };
 
-    const boxes = document.querySelectorAll('.box-info li h3');
-    if (!boxes.length) return;
+    const setStat = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
 
-    boxes[0].textContent = countByType('uniform');
-    boxes[1].textContent = countByType('footwear');
-    boxes[2].textContent = countByType('id');
-    boxes[3].textContent = total;
+    setStat('statUniform', countByType('uniform'));
+    setStat('statFootwear', countByType('footwear'));
+    setStat('statId', countByType('id'));
+    setStat('statTotal', total);
 }
 
 /*********************************************************
- * TABLE
+ * TABLE & FILTER
  *********************************************************/
 function renderViolationTable() {
     const tbody = document.getElementById('violationsTableBody');
+    const showingCount = document.getElementById('showingViolationsCount');
+    
+    // Apply filters
+    const searchTerm = (document.getElementById('searchViolation')?.value || '').toLowerCase();
+    const typeFilter = document.getElementById('violationFilter')?.value || 'all';
+    const statusFilter = document.getElementById('statusFilter')?.value || 'all';
 
-    if (userViolations.length === 0) {
+    const filtered = userViolations.filter(v => {
+        // Search filter (Case ID, Type, Date)
+        const searchStr = `${v.case_id || v.id} ${v.violation_type_name || ''} ${v.violation_type || ''} ${v.violationTypeLabel || ''} ${v.created_at || ''}`.toLowerCase();
+        const matchesSearch = !searchTerm || searchStr.includes(searchTerm);
+
+        // Type filter
+        const rawType = String(v.violation_type_name || v.violation_type || v.violationType || '').toLowerCase();
+        const matchesType = typeFilter === 'all' || rawType.includes(typeFilter.replace('improper_', '')); // simple mapping
+
+        // Status filter
+        const status = (v.status || 'pending').toLowerCase();
+        const matchesStatus = statusFilter === 'all' || 
+                             (statusFilter === 'resolved' && (status === 'resolved' || status === 'permitted')) ||
+                             status === statusFilter;
+
+        return matchesSearch && matchesType && matchesStatus;
+    });
+
+    if (showingCount) showingCount.textContent = filtered.length;
+
+    if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" style="text-align:center; padding:40px;">
-                    No violations found
+                <td colspan="6" style="text-align:center; padding:40px; color: #666;">
+                    No violations found matching your filters
                 </td>
             </tr>
         `;
         return;
     }
 
-    tbody.innerHTML = userViolations.map(v => {
+    tbody.innerHTML = filtered.map(v => {
         const status = (v.status || 'pending').toLowerCase();
-        const statusClass = status === 'resolved' || status === 'permitted' ? 'resolved' : 'pending';
-        const statusText = statusClass === 'resolved' ? 'Permitted' : 'Pending';
         
-        // Format violation type
-        const violationType = v.violationTypeLabel || v.violation_type || 'Unknown';
-        const violationTypeFormatted = formatViolationType(violationType);
+        // Determine Level and Disciplinary status
+        const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
+        const levelVal = String(level).toLowerCase();
+        const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+
+        let statusClass = 'pending';
+        let statusText = 'Pending';
+
+        if (status === 'resolved' || status === 'permitted') {
+            statusClass = 'success';
+            statusText = isDisciplinary ? 'Resolved' : 'Permitted';
+        } else if (isDisciplinary || status === 'disciplinary') {
+             statusClass = 'danger';
+             statusText = 'Disciplinary';
+        } else if (status === 'warning') {
+            statusClass = 'warning';
+            statusText = 'Warning';
+        }
+
+        const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
+        const violationTypeFormatted = formatViolationType(String(violationType));
 
         return `
-            <tr class="violation-row" data-status="${statusClass}" data-type="${(violationType || '').toLowerCase()}">
-                <td>${formatDate(v.created_at || v.violation_date || v.date)}</td>
+            <tr class="violation-row">
+                <td><span style="font-family:monospace; font-weight:600;">#${v.case_id || v.id}</span></td>
                 <td>${escapeHtml(violationTypeFormatted)}</td>
-                <td>${escapeHtml(v.notes || v.description || '-')}</td>
-                <td><span class="status ${statusClass}">${statusText}</span></td>
+                <td><span class="Violations-badge warning">${level}</span></td>
+                <td>${formatDate(v.created_at || v.violation_date || v.date)}</td>
+                <td><span class="Violations-status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    <button class="btn-view-details" onclick="viewViolationDetails(${v.id})">
-                        View Details
+                    <button class="Violations-btn small" onclick="viewViolationDetails(${v.id})" title="View Details">
+                        <i class='bx bx-show'></i> View
                     </button>
                 </td>
             </tr>
@@ -194,62 +216,198 @@ function renderViolationTable() {
     }).join('');
 }
 
-/*********************************************************
- * FILTERS
- *********************************************************/
 function filterViolations() {
-    const type = document.getElementById('violationFilter').value;
-    const status = document.getElementById('statusFilter').value;
-
-    document.querySelectorAll('.violation-row').forEach(row => {
-        const rowType = row.dataset.type || '';
-        const matchesType = type === 'all' || rowType.includes(type.toLowerCase().replace(' ', '_'));
-        const matchesStatus = status === 'all' || row.dataset.status === status;
-        row.style.display = matchesType && matchesStatus ? '' : 'none';
-    });
+    renderViolationTable();
 }
 
 /*********************************************************
  * MODAL
  *********************************************************/
+function getImageUrl(imagePath, fallbackName = 'Student') {
+    if (!imagePath || imagePath.trim() === '') {
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=ffd700&color=333&size=80`;
+    }
+    if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+    
+    // Adjust based on your path structure
+    // Assuming relative to project root if not absolute
+    // Note: API_BASE is /OSAS_WEB/api/, so we want /OSAS_WEB/
+    const projectBase = API_BASE.replace('api/', '');
+
+    if (imagePath.startsWith('assets/')) return projectBase + 'app/' + imagePath;
+    if (imagePath.startsWith('app/assets/')) return projectBase + imagePath;
+    
+    return projectBase + 'app/assets/img/students/' + imagePath;
+}
+
+function getStatusClass(status) {
+    status = (status || '').toLowerCase();
+    if (status === 'resolved' || status === 'permitted') return 'success';
+    if (status === 'disciplinary') return 'danger';
+    if (status === 'warning') return 'warning';
+    return 'info';
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    try {
+        const [hours, minutes] = timeStr.split(':');
+        const h = parseInt(hours);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${minutes} ${ampm}`;
+    } catch (e) {
+        return timeStr;
+    }
+}
+
 function viewViolationDetails(id) {
     const v = userViolations.find(x => x.id == id);
     if (!v) return;
+    currentViolationId = id;
 
-    // Format violation type
-    const violationType = formatViolationType(v.violationTypeLabel || v.violation_type || 'Unknown');
-    
-    // Format date
-    const date = formatDate(v.created_at || v.violation_date || v.date);
-    
-    // Format status
-    const status = (v.status || 'pending').toLowerCase();
-    const statusText = status === 'resolved' || status === 'permitted' ? 'Permitted' : 
-                      status === 'warning' ? 'Warning' : 
-                      status === 'disciplinary' ? 'Disciplinary' : 'Pending';
+    // Helper functions for safe element access
+    const setElementText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text || 'N/A';
+    };
+    const setElementSrc = (id, src) => {
+        const el = document.getElementById(id);
+        if (el) el.src = src;
+    };
+    const setElementClass = (id, className) => {
+        const el = document.getElementById(id);
+        if (el) el.className = className;
+    };
 
-    document.getElementById('modalDate').textContent = date;
-    document.getElementById('modalType').textContent = violationType;
-    document.getElementById('modalDescription').textContent = v.notes || v.description || '-';
-    document.getElementById('modalStatus').textContent = statusText;
-    document.getElementById('modalReportedBy').textContent = v.reported_by || v.reportedBy || 'N/A';
-    
-    // Show resolution if available
-    const resolutionEl = document.getElementById('modalResolution');
-    if (resolutionEl) {
-        resolutionEl.textContent = v.resolution || v.resolution_notes || 'N/A';
+    // --- Case Header ---
+    let displayStatus = (v.status || '').toLowerCase();
+    let displayStatusLabel = v.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'Unknown');
+
+    const levelLabel = (v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
+    const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('disciplinary');
+
+    if (displayStatus === 'resolved' || displayStatus === 'permitted') {
+        displayStatusLabel = isDisciplinary ? 'Resolved' : 'Permitted';
+        // Ensure we use the success color
+        displayStatus = 'resolved'; 
+    } else if (isDisciplinary || displayStatus === 'disciplinary') {
+        displayStatus = 'disciplinary';
+        displayStatusLabel = 'Disciplinary';
     }
 
-    // Show modal with proper styling
-    const modal = document.getElementById('violationModal');
+    setElementText('detailCaseId', v.case_id || '#' + v.id);
+    setElementText('detailStatusBadge', displayStatusLabel);
+    setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
+
+    // --- Student Info ---
+    // Note: Student info might be partial in the violation object depending on the API query.
+    // If we have it, use it. Otherwise, use what's available or placeholders.
+    const studentName = v.student_name || v.studentName || 'Student';
+    const studentImg = v.student_image || v.studentImage || '';
+    
+    const studentImageUrl = getImageUrl(studentImg, studentName);
+    setElementSrc('detailStudentImage', studentImageUrl);
+    setElementText('detailStudentName', studentName);
+    setElementText('detailStudentId', v.student_id || studentId); // Fallback to global studentId
+    setElementText('detailStudentDept', v.department || v.department_name || 'N/A');
+    setElementClass('detailStudentDept', `student-dept badge`); // Could add dept specific class if mapped
+    setElementText('detailStudentSection', v.section || 'N/A');
+    setElementText('detailStudentContact', v.student_contact || v.studentContact || 'N/A');
+
+    // --- Violation Details Grid ---
+    setElementText('detailViolationType', formatViolationType(v.violation_type_name || v.violationTypeLabel || v.violation_type));
+    setElementText('detailViolationLevel', v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1');
+    
+    const dateStr = formatDate(v.created_at || v.violation_date || v.date);
+    const timeStr = formatTime(v.violation_time || '');
+    setElementText('detailDateTime', `${dateStr} ${timeStr ? '• ' + timeStr : ''}`);
+    
+    setElementText('detailLocation', v.locationLabel || v.location || 'N/A');
+    setElementText('detailReportedBy', v.reported_by || v.reportedBy || 'N/A');
+    
+    setElementText('detailStatus', displayStatusLabel);
+    const statusBadge = document.getElementById('detailStatus');
+    if(statusBadge) statusBadge.className = `detail-value badge ${getStatusClass(displayStatus)}`;
+
+    // --- Description / Notes ---
+    setElementText('detailNotes', v.notes || v.description || 'No description provided.');
+
+    // --- Resolution (if exists) ---
+    const resSection = document.getElementById('resolutionSection');
+    const resText = document.getElementById('detailResolution');
+    if (v.resolution || v.resolution_notes) {
+        resSection.style.display = 'block';
+        resText.textContent = v.resolution || v.resolution_notes;
+    } else {
+        resSection.style.display = 'none';
+    }
+
+    // --- History Timeline ---
+    const timelineEl = document.getElementById('detailTimeline');
+    if (timelineEl) {
+        // Since userViolations contains ALL violations for this student, we just use it directly.
+        // Filter out duplicates if any (though API shouldn't return dupes)
+        // Sort by date descending
+        let history = [...userViolations];
+        
+        history.sort((a, b) => {
+             const dateA = new Date((a.created_at || a.violation_date) + ' ' + (a.violation_time || '00:00'));
+             const dateB = new Date((b.created_at || b.violation_date) + ' ' + (b.violation_time || '00:00'));
+             return dateB - dateA;
+        });
+
+        if (history.length > 0) {
+            timelineEl.innerHTML = history.map(h => {
+                const isCurrent = String(h.id) === String(v.id);
+                const activeClass = isCurrent ? 'current-viewing' : '';
+                const hDateStr = formatDate(h.created_at || h.violation_date);
+                const hTimeStr = formatTime(h.violation_time);
+                
+                let itemStatus = (h.status || '').toLowerCase();
+                const hLevel = (h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || '').toLowerCase();
+                const hIsDisciplinary = hLevel.includes('warning 3') || hLevel.includes('3rd') || hLevel.includes('disciplinary');
+                
+                let statusHtml = '';
+                if (itemStatus === 'resolved' || itemStatus === 'permitted') {
+                    const label = hIsDisciplinary ? 'Resolved' : 'Permitted';
+                    statusHtml = `<span style="color: green; font-weight: bold;">(${label})</span>`;
+                } else if (hIsDisciplinary || itemStatus === 'disciplinary') {
+                    statusHtml = '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
+                }
+
+                return `
+                <div class="timeline-item ${activeClass}">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-date">${hDateStr} ${hTimeStr ? '• ' + hTimeStr : ''}</span>
+                        <span class="timeline-title">
+                            ${h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || 'Level'} - ${formatViolationType(h.violation_type_name || h.violationTypeLabel || h.violation_type || 'Type')}
+                            ${isCurrent ? '<span style="font-size: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Current</span>' : ''}
+                        </span>
+                        <span class="timeline-desc">
+                            Reported at ${h.locationLabel || h.location || 'N/A'} 
+                            ${statusHtml}
+                        </span>
+                    </div>
+                </div>
+            `}).join('');
+        } else {
+            timelineEl.innerHTML = '<p style="color: #6c757d; font-size: 14px; text-align: center; padding: 10px;">No history available.</p>';
+        }
+    }
+
+    // Show Modal
+    const modal = document.getElementById('ViolationDetailsModal');
     if (modal) {
         modal.style.display = 'flex';
+        // Add active class if CSS requires it for animation
         modal.classList.add('active');
     }
 }
 
 function closeViolationModal() {
-    const modal = document.getElementById('violationModal');
+    const modal = document.getElementById('ViolationDetailsModal');
     if (modal) {
         modal.style.display = 'none';
         modal.classList.remove('active');
@@ -258,30 +416,37 @@ function closeViolationModal() {
 
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {
-    const modal = document.getElementById('violationModal');
-    if (modal && modal.classList.contains('active')) {
-        if (e.target === modal || e.target.classList.contains('modal')) {
+    const modal = document.getElementById('ViolationDetailsModal');
+    if (modal && modal.style.display === 'flex') {
+        if (e.target === modal || e.target.classList.contains('Violations-modal-overlay')) {
             closeViolationModal();
         }
     }
 });
 
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeViolationModal();
+function printViolationSlip() {
+    if (!currentViolationId) {
+        alert('No violation selected');
+        return;
     }
-});
+    const url = `${API_BASE}violations.php?action=generate_slip&violation_id=${currentViolationId}`;
+    window.open(url, '_blank');
+}
 
 /*********************************************************
  * UTILS
  *********************************************************/
 function formatDate(d) {
     if (!d) return '-';
-    return new Date(d).toLocaleDateString();
+    return new Date(d).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -289,6 +454,7 @@ function escapeHtml(text) {
 
 function formatViolationType(type) {
     if (!type) return 'Unknown';
+    type = String(type);
     
     const typeMap = {
         'improper_uniform': 'Improper Uniform',
@@ -297,12 +463,8 @@ function formatViolationType(type) {
         'misconduct': 'Misconduct'
     };
     
-    // Check if it's already formatted
-    if (typeMap[type.toLowerCase()]) {
-        return typeMap[type.toLowerCase()];
-    }
+    if (typeMap[type.toLowerCase()]) return typeMap[type.toLowerCase()];
     
-    // If it contains the key, return the formatted version
     const lowerType = type.toLowerCase();
     for (const [key, value] of Object.entries(typeMap)) {
         if (lowerType.includes(key.replace('_', ' ')) || lowerType === key) {
@@ -310,7 +472,6 @@ function formatViolationType(type) {
         }
     }
     
-    // Otherwise, format it nicely
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
@@ -321,3 +482,4 @@ window.initUserViolations = initUserViolations;
 window.filterViolations = filterViolations;
 window.viewViolationDetails = viewViolationDetails;
 window.closeViolationModal = closeViolationModal;
+window.printViolationSlip = printViolationSlip;
