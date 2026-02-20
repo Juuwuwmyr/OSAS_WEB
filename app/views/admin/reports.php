@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <!DOCTYPE html>
@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../core/View.php';
   <link rel="stylesheet" href="<?= View::asset('styles/report.css') ?>">
 </head>
 <body>
-  
+
 <!-- Reports.html -->
 <main id="Reports-page">
   <!-- Theme Toggle Button -->
@@ -652,6 +652,7 @@ require_once __DIR__ . '/../../core/View.php';
 
 </main>
 
+<script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 <script src="<?= View::asset('js/reports.js') ?>"></script>
 </body>
 </html>

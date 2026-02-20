@@ -40,6 +40,15 @@ async function initUserViolations() {
         return;
     }
 
+    // Attach download listener
+    const btnDownload = document.getElementById('btnDownloadReport');
+    if (btnDownload) {
+        btnDownload.addEventListener('click', function(e) {
+            e.preventDefault();
+            downloadViolationsReport();
+        });
+    }
+
     await loadUserViolations();
 }
 
@@ -177,20 +186,19 @@ function renderViolationTable() {
     tbody.innerHTML = filtered.map(v => {
         const status = (v.status || 'pending').toLowerCase();
         
-        // Determine Level and Disciplinary status
         const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
         const levelVal = String(level).toLowerCase();
         const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
-
-        let statusClass = 'pending';
+       
+        let statusClass = 'warning';
         let statusText = 'Pending';
 
         if (status === 'resolved' || status === 'permitted') {
-            statusClass = 'success';
+            statusClass = isDisciplinary ? 'resolved' : 'permitted';
             statusText = isDisciplinary ? 'Resolved' : 'Permitted';
         } else if (isDisciplinary || status === 'disciplinary') {
-             statusClass = 'danger';
-             statusText = 'Disciplinary';
+            statusClass = 'disciplinary';
+            statusText = 'Disciplinary';
         } else if (status === 'warning') {
             statusClass = 'warning';
             statusText = 'Warning';
@@ -242,10 +250,11 @@ function getImageUrl(imagePath, fallbackName = 'Student') {
 
 function getStatusClass(status) {
     status = (status || '').toLowerCase();
-    if (status === 'resolved' || status === 'permitted') return 'success';
-    if (status === 'disciplinary') return 'danger';
+    if (status === 'resolved') return 'resolved';
+    if (status === 'permitted') return 'permitted';
+    if (status === 'disciplinary') return 'disciplinary';
     if (status === 'warning') return 'warning';
-    return 'info';
+    return 'warning';
 }
 
 function formatTime(timeStr) {
@@ -423,6 +432,66 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+function downloadViolationsReport() {
+    if (!userViolations || userViolations.length === 0) {
+        alert('No violations to download.');
+        return;
+    }
+
+    const lines = [];
+    const now = new Date();
+    
+    // Header Info
+    lines.push('My Violation Report');
+    lines.push('Generated,' + csvEscape(now.toLocaleString()));
+    lines.push('');
+    
+    // Column Headers
+    lines.push(['Case ID', 'Violation Type', 'Level', 'Status', 'Date Reported'].map(csvEscape).join(','));
+
+    // Data Rows
+    userViolations.forEach(v => {
+        const type = formatViolationType(v.violation_type || v.type);
+        const date = formatDate(v.created_at || v.violation_date || v.date);
+        const level = v.violation_level || v.level || 'Minor';
+        const status = v.status || 'Unknown';
+        
+        lines.push([
+            v.case_id || v.id,
+            type,
+            level,
+            status,
+            date
+        ].map(csvEscape).join(','));
+    });
+
+    const csvContent = lines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const fileName = 'my_violations_' + now.toISOString().slice(0, 10) + '.csv';
+    
+    if (typeof saveAs === 'function') {
+        saveAs(blob, fileName);
+    } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+}
+
+function csvEscape(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+}
 
 function printViolationSlip() {
     if (!currentViolationId) {

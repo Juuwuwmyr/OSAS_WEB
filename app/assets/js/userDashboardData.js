@@ -251,7 +251,7 @@ class UserDashboardData {
         const getIcon = (label) => {
             const lower = label.toLowerCase();
             if (lower.includes('uniform')) return 'bxs-t-shirt';
-            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shoe';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shopping-bag-alt';
             if (lower.includes('id')) return 'bxs-id-card';
             if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
             if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
@@ -308,7 +308,7 @@ class UserDashboardData {
         const getIcon = (label) => {
             const lower = (label || '').toLowerCase();
             if (lower.includes('uniform')) return 'bxs-t-shirt';
-            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shoe';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shopping-bag-alt';
             if (lower.includes('id')) return 'bxs-id-card';
             if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
             if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';

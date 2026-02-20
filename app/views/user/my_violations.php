@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../core/View.php';
       </ul>
     </div>
     <div class="Violations-header-actions">
-        <a href="#" class="Violations-btn primary">
+        <a href="#" class="Violations-btn primary" id="btnDownloadReport">
             <i class='bx bxs-download'></i> Download Report
         </a>
     </div>
@@ -35,7 +35,7 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-stat-card">
         <div class="Violations-stat-icon">
-            <i class='bx bxs-shoe'></i>
+            <i class='bx bxs-shopping-bag-alt'></i>
         </div>
         <div class="Violations-stat-content">
             <h3 class="Violations-stat-title">Improper Footwear</h3>

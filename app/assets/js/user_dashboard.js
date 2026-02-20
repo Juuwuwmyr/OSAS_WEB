@@ -857,7 +857,87 @@ function initializeUserDashboard() {
   // Update violation counts and status
   updateViolationStats();
 
+  // Dashboard Download Report
+  const btnDashDownload = document.getElementById('btnDashDownloadReport');
+  if (btnDashDownload) {
+      btnDashDownload.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (window.userDashboardData && window.userDashboardData.violations) {
+              downloadDashboardReport(window.userDashboardData.violations);
+          } else {
+              alert('Dashboard data is loading or empty. Please try again in a moment.');
+          }
+      });
+  }
+
   console.log('⚡ User dashboard initialized');
+}
+
+function downloadDashboardReport(violations) {
+    if (!violations || violations.length === 0) {
+        alert('No violations to download.');
+        return;
+    }
+
+    const lines = [];
+    const now = new Date();
+    
+    // Header Info
+    lines.push('My Dashboard Report');
+    lines.push('Generated,' + csvEscape(now.toLocaleString()));
+    lines.push('');
+    
+    // Stats Summary
+    if (window.userDashboardData && window.userDashboardData.stats) {
+        const s = window.userDashboardData.stats;
+        lines.push('Summary Stats');
+        lines.push(['Active Violations', s.violations || 0].map(csvEscape).join(','));
+        lines.push(['Total Violations', violations.length].map(csvEscape).join(','));
+        lines.push('');
+    }
+
+    // Column Headers
+    lines.push(['Case ID', 'Violation Type', 'Status', 'Date Reported'].map(csvEscape).join(','));
+
+    // Data Rows
+    violations.forEach(v => {
+        const type = v.violationType || v.violation_type || 'Unknown';
+        const date = v.violationDate || v.violation_date || v.dateReported || v.created_at;
+        const status = v.status || 'Unknown';
+        
+        lines.push([
+            v.case_id || v.id,
+            type,
+            status,
+            date
+        ].map(csvEscape).join(','));
+    });
+
+    const csvContent = lines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const fileName = 'dashboard_report_' + now.toISOString().slice(0, 10) + '.csv';
+    
+    if (typeof saveAs === 'function') {
+        saveAs(blob, fileName);
+    } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+}
+
+function csvEscape(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
 }
 
 // Show violation details

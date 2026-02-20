@@ -143,6 +143,7 @@ if (!$student_id) {
     <!-- CONTENT -->
 
     <!-- JS Scripts -->
+    <script src="../app/assets/js/lib/FileSaver.js"></script>
     <script src="../app/assets/js/utils/theme.js"></script>
     <script src="../app/assets/js/utils/eyeCare.js"></script>
     <script src="../app/assets/js/initModules.js"></script>

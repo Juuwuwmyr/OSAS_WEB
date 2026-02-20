@@ -20,9 +20,8 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
     <div class="header-actions">
-      <a href="#" class="btn-download">
-        <i class='bx bxs-download'></i>
-        <span class="text">Download Report</span>
+      <a href="#" class="Violations-btn primary" id="btnDashDownloadReport" style="text-decoration: none;">
+        <i class='bx bxs-download'></i> Download Report
       </a>
     </div>
   </div>
@@ -136,7 +135,7 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
       <div class="tip-item">
         <div class="tip-icon">
-          <i class='bx bxs-shoe'></i>
+          <i class='bx bxs-shopping-bag-alt'></i>
         </div>
         <div class="tip-details">
           <h4>Appropriate Footwear</h4>

@@ -1184,21 +1184,39 @@ body.dark #eye-care-overlay.active {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border: 1.5px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .status.resolved {
   background: var(--light-green);
   color: var(--green);
+  border-color: rgba(76, 175, 80, 0.4);
 }
 
 .status.pending {
   background: var(--light-yellow);
   color: var(--yellow);
+  border-color: rgba(255, 152, 0, 0.4);
 }
 
 .status.warning {
   background: var(--light-orange);
   color: var(--orange);
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+.status.completed {
+  background: rgba(76, 175, 80, 0.25);
+  color: #1b5e20;
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.status.process {
+  background: rgba(244, 67, 54, 0.25);
+  color: #b71c1c;
+  border-color: rgba(244, 67, 54, 0.4);
 }
 
 /* Table Data Styles */

@@ -682,8 +682,7 @@ function initReportsModule() {
                 const id = parseInt(exportBtn.dataset.id);
                 const report = reports.find(r => r.id === id);
                 if (report) {
-                    alert(`Exporting report ${report.reportId} for ${report.studentName}`);
-                    // In a real app, this would trigger a download
+                    downloadSingleReport(report);
                 }
             }
 
@@ -718,8 +717,7 @@ function initReportsModule() {
         // 3. EXPORT REPORTS
         if (btnExportReports) {
             btnExportReports.addEventListener('click', function() {
-                alert('Exporting all reports...');
-                // In a real app, this would trigger a bulk export
+                downloadAllReports();
             });
         }
 
@@ -925,7 +923,7 @@ function initReportsModule() {
                 const reportId = detailsModal.dataset.viewingId;
                 const report = reports.find(r => r.id === parseInt(reportId));
                 if (report) {
-                    alert(`Exporting report ${report.reportId}`);
+                    downloadSingleReport(report);
                 }
             });
         }
@@ -954,12 +952,138 @@ function initReportsModule() {
 
         if (detailDownloadBtn) {
             detailDownloadBtn.addEventListener('click', function() {
-                alert('Download PDF feature would trigger here');
+                const reportId = detailsModal.dataset.viewingId;
+                const report = reports.find(r => r.id === parseInt(reportId));
+                if (report) {
+                    downloadSingleReport(report);
+                }
             });
         }
 
         // ========== UTILITY FUNCTIONS ==========
         
+        function csvEscape(value) {
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (/[",\n]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        function downloadSingleReport(report) {
+            const lines = [];
+            const now = new Date();
+            lines.push('Student Violation Report');
+            lines.push('Generated,' + csvEscape(now.toLocaleString()));
+            lines.push('');
+            lines.push([
+                'Report ID',
+                'Student ID',
+                'Student Name',
+                'Department',
+                'Section',
+                'Year Level',
+                'Uniform Violations',
+                'Footwear Violations',
+                'No ID Violations',
+                'Total Violations',
+                'Status'
+            ].map(csvEscape).join(','));
+            lines.push([
+                report.reportId,
+                report.studentId,
+                report.studentName,
+                report.department,
+                report.section,
+                report.yearlevel || '',
+                report.uniformCount,
+                report.footwearCount,
+                report.noIdCount,
+                report.totalViolations,
+                report.statusLabel
+            ].map(csvEscape).join(','));
+            lines.push('');
+            lines.push('Violation History');
+            lines.push(['Date', 'Violation', 'Description'].map(csvEscape).join(','));
+            if (Array.isArray(report.history)) {
+                report.history.forEach(item => {
+                    lines.push([
+                        item.date,
+                        item.title,
+                        item.desc
+                    ].map(csvEscape).join(','));
+                });
+            }
+            const csvContent = lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const fileName = 'report_' + (report.reportId || report.id || 'student') + '.csv';
+            if (typeof saveAs === 'function') {
+                saveAs(blob, fileName);
+            } else {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function downloadAllReports() {
+            if (!Array.isArray(reports) || reports.length === 0) return;
+            const lines = [];
+            const now = new Date();
+            lines.push('All Student Violation Reports');
+            lines.push('Generated,' + csvEscape(now.toLocaleString()));
+            lines.push('');
+            lines.push([
+                'Report ID',
+                'Student ID',
+                'Student Name',
+                'Department',
+                'Section',
+                'Year Level',
+                'Uniform Violations',
+                'Footwear Violations',
+                'No ID Violations',
+                'Total Violations',
+                'Status'
+            ].map(csvEscape).join(','));
+            reports.forEach(report => {
+                lines.push([
+                    report.reportId,
+                    report.studentId,
+                    report.studentName,
+                    report.department,
+                    report.section,
+                    report.yearlevel || '',
+                    report.uniformCount,
+                    report.footwearCount,
+                    report.noIdCount,
+                    report.totalViolations,
+                    report.statusLabel
+                ].map(csvEscape).join(','));
+            });
+            const csvContent = lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const fileName = 'reports_export_' + now.toISOString().slice(0, 10) + '.csv';
+            if (typeof saveAs === 'function') {
+                saveAs(blob, fileName);
+            } else {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
         function printReport(report) {
             const printContent = `
                 <html>
