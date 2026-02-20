@@ -195,7 +195,7 @@ function renderAnnouncements() {
             </td>
             <td>${createdDate}</td>
             <td style="white-space: nowrap;">
-                <div class="action-buttons" style="justify-content: flex-end;">
+                <div class="action-buttons">
                     ${announcement.status === 'archived' 
                         ? `<button class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore">
                              <i class='bx bx-undo'></i>
@@ -456,11 +456,6 @@ function ensurePaginationContainer() {
     if (!pagination) {
         pagination = document.createElement('div');
         pagination.className = 'announcements-pagination';
-        pagination.style.display = 'flex';
-        pagination.style.gap = '6px';
-        pagination.style.justifyContent = 'flex-end';
-        pagination.style.alignItems = 'center';
-        pagination.style.padding = '12px 0';
         wrapper.appendChild(pagination);
         pagination.addEventListener('click', handleAnnouncementsPaginationClick);
     }
@@ -475,15 +470,8 @@ function renderAnnouncementsPagination() {
         const btn = document.createElement('button');
         btn.className = 'announcement-page-btn' + (opts.active ? ' active' : '');
         btn.textContent = label;
-        btn.style.padding = '6px 10px';
-        btn.style.border = '1px solid var(--border)';
-        btn.style.background = 'var(--light)';
-        btn.style.borderRadius = '6px';
-        btn.style.cursor = 'pointer';
         if (opts.disabled) {
             btn.disabled = true;
-            btn.style.opacity = '0.6';
-            btn.style.cursor = 'not-allowed';
         }
         if (opts.page) btn.dataset.page = String(opts.page);
         if (opts.action) btn.dataset.action = opts.action;

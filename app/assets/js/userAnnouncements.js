@@ -37,11 +37,17 @@ function initializeUserAnnouncements() {
     console.log('🔄 Initializing announcements module...');
     
     // Make sure we're on the announcements page
-    const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+    const container = document.querySelector('.announcements-list') || 
+                      document.getElementById('announcementsListContainer') ||
+                      document.getElementById('announcementsContent');
+
     if (!container) {
         console.warn('⚠️ Announcements container not found, not on announcements page');
         return;
     }
+    
+    // Restore collapsed state if applicable (for dashboard widget)
+    restoreAnnouncementState();
     
     // Check if announcements are already rendered from PHP
     const existingCards = container.querySelectorAll('.announcement-card');
@@ -77,7 +83,8 @@ function initializeAnnouncementsModule() {
     // Check if we're on the announcements page
     const announcementsPage = document.getElementById('announcementsListContainer') || 
                              document.querySelector('.announcements-list') ||
-                             document.getElementById('categoryFilter');
+                             document.getElementById('categoryFilter') ||
+                             document.getElementById('announcementsContent');
     
     if (announcementsPage) {
         // Page elements exist, initialize immediately
@@ -112,7 +119,10 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 async function loadAnnouncements() {
     try {
-        const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+        const container = document.querySelector('.announcements-list') || 
+                          document.getElementById('announcementsListContainer') ||
+                          document.getElementById('announcementsContent');
+
         if (!container) {
             console.warn('⚠️ Announcements container not found, retrying in 500ms...');
             setTimeout(loadAnnouncements, 500);
@@ -120,7 +130,10 @@ async function loadAnnouncements() {
         }
 
         console.log('🔄 Loading announcements from:', USER_API_BASE + 'announcements.php?action=active');
-        container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading-spinner"></div><p>Loading announcements...</p></div>';
+        // Only show loading if empty
+        if (!container.innerHTML.trim() || container.innerHTML.includes('Loading')) {
+             container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading-spinner"></div><p>Loading announcements...</p></div>';
+        }
 
         const response = await fetch(USER_API_BASE + 'announcements.php?action=active');
         if (!response.ok) {
@@ -174,7 +187,10 @@ async function loadAnnouncements() {
 }
 
 function renderAnnouncements() {
-    const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
+    const container = document.querySelector('.announcements-list') || 
+                      document.getElementById('announcementsListContainer') ||
+                      document.getElementById('announcementsContent');
+
     if (!container) {
         console.warn('⚠️ Announcements container not found');
         return;
@@ -435,7 +451,34 @@ function showNotification(message, type) {
     // You can integrate with your notification system here
 }
 
+function toggleAnnouncements() {
+    const content = document.getElementById('announcementsContent');
+    const toggle = document.querySelector('.announcement-toggle');
+    
+    if (content && toggle) {
+        content.classList.toggle('collapsed');
+        toggle.classList.toggle('rotated');
+        
+        // Save state to localStorage
+        const isCollapsed = content.classList.contains('collapsed');
+        localStorage.setItem('announcementsCollapsed', isCollapsed);
+    }
+}
+
+function restoreAnnouncementState() {
+    const savedState = localStorage.getItem('announcementsCollapsed');
+    const content = document.getElementById('announcementsContent');
+    const toggle = document.querySelector('.announcement-toggle');
+    
+    if (content && toggle && savedState === 'true') {
+        content.classList.add('collapsed');
+        toggle.classList.add('rotated');
+    }
+}
+
 // Export functions
+window.toggleAnnouncements = toggleAnnouncements;
+window.restoreAnnouncementState = restoreAnnouncementState;
 window.filterAnnouncements = filterAnnouncements;
 window.searchAnnouncements = searchAnnouncements;
 window.markAsRead = markAsRead;

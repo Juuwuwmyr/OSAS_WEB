@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 // Get user profile image or default
 $userImage = View::asset('img/default.png');
@@ -7,6 +7,26 @@ if (file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
 }
 $username = $_SESSION['username'] ?? 'User';
 $role = $_SESSION['role'] ?? 'user';
+
+// Use passed student data if available
+if (isset($student) && $student) {
+    // Construct full name
+    $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
+    if (!empty($fullName)) {
+        $username = $fullName;
+    }
+    
+    // Set avatar
+    if (!empty($student['avatar'])) {
+        // If avatar is a URL, use it directly
+        if (filter_var($student['avatar'], FILTER_VALIDATE_URL)) {
+            $userImage = $student['avatar'];
+        } else {
+            // Use View::asset to resolve the path
+            $userImage = View::asset($student['avatar']);
+        }
+    }
+}
 ?>
 <!-- SIDEBAR -->
 <section id="sidebar">
@@ -30,7 +50,7 @@ $role = $_SESSION['role'] ?? 'user';
   <!-- Profile Section -->
   <div class="sidebar-profile-section" id="sidebarProfileSection">
     <div class="sidebar-profile-image-wrapper">
-      <img src="<?= View::asset('img/default.png') ?>" alt="Profile" class="sidebar-profile-image" id="sidebarProfileImage">
+      <img src="<?= $userImage ?>" alt="Profile" class="sidebar-profile-image" id="sidebarProfileImage">
       <div class="profile-status-indicator"></div>
     </div>
     <div class="sidebar-profile-info">

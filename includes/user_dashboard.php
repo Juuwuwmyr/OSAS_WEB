@@ -110,7 +110,19 @@ if (!$student_id) {
 <body>
     <?php
     require_once __DIR__ . '/../app/core/View.php';
-    View::partial('user_sidebar');
+    require_once __DIR__ . '/../app/models/StudentModel.php';
+
+    // Fetch student details
+    $studentModel = new StudentModel();
+    $studentData = $studentModel->getByStudentId($student_id);
+
+    // Prepare data for views
+    $viewData = [
+        'role' => $_SESSION['role'] ?? 'user',
+        'student' => $studentData
+    ];
+
+    View::partial('user_sidebar', $viewData);
     ?>
 
     <!-- CONTENT -->
@@ -118,7 +130,9 @@ if (!$student_id) {
         <?php
         $role = $_SESSION['role'] ?? 'user';
         $notificationCount = 7;
-        View::partial('user_topnav', ['role' => $role, 'notificationCount' => $notificationCount]);
+        // Merge notification count into view data
+        $topnavData = array_merge($viewData, ['notificationCount' => $notificationCount]);
+        View::partial('user_topnav', $topnavData);
         ?>
 
         <!-- MAIN CONTENT -->

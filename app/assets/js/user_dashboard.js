@@ -1246,6 +1246,12 @@ function loadSidebarProfile() {
           const lastName = student.last_name || student.lastName || '';
           const fullName = `${firstName} ${lastName}`.trim() || 'Student';
           sidebarUsername.textContent = fullName;
+          
+          // Also update topnav username
+          const topnavUsername = document.querySelector('.nav-user-menu .user-name');
+          if (topnavUsername) {
+            topnavUsername.textContent = fullName;
+          }
         }
         
         // Update profile image
@@ -1259,8 +1265,23 @@ function loadSidebarProfile() {
             sidebarProfileImage.onerror = function() {
               this.src = '../app/assets/img/default.png';
             };
+            
+            // Also update topnav avatar
+            const topnavAvatar = document.querySelector('.nav-user-menu .user-avatar img');
+            if (topnavAvatar) {
+              topnavAvatar.src = avatarUrl;
+              topnavAvatar.onerror = function() {
+                this.src = '../app/assets/img/default.png';
+              };
+            }
           } else {
             sidebarProfileImage.src = '../app/assets/img/default.png';
+            
+            // Also update topnav avatar
+            const topnavAvatar = document.querySelector('.nav-user-menu .user-avatar img');
+            if (topnavAvatar) {
+              topnavAvatar.src = '../app/assets/img/default.png';
+            }
           }
         }
       } else {

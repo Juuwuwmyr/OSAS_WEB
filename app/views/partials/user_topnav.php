@@ -1,12 +1,34 @@
 <?php
 require_once __DIR__ . '/../../core/View.php';
 // Get user profile image or default
-$userImage = View::asset('img/user.jpg');
-if (!file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
-    $userImage = View::asset('img/default.png');
+$userImage = View::asset('img/default.png');
+if (file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
+    $userImage = View::asset('img/user.jpg');
 }
+
 $username = $_SESSION['username'] ?? 'User';
 $role = $_SESSION['role'] ?? 'user';
+
+// Use passed student data if available
+if (isset($student) && $student) {
+    // Construct full name
+    $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
+    if (!empty($fullName)) {
+        $username = $fullName;
+    }
+    
+    // Set avatar
+    if (!empty($student['avatar'])) {
+        // If avatar is a URL, use it directly
+        if (filter_var($student['avatar'], FILTER_VALIDATE_URL)) {
+            $userImage = $student['avatar'];
+        } else {
+            // Use View::asset to resolve the path
+            // The StudentModel returns paths starting with app/assets/..., which View::asset handles
+            $userImage = View::asset($student['avatar']);
+        }
+    }
+}
 ?>
 <!-- TOP NAVIGATION -->
 <nav class="top-nav">
