@@ -361,9 +361,11 @@ body, html {
 }
 
 .user-name {
-  color: var(--dark);
-  font-weight: 500;
+  color: var(--name);
+  font-weight: 600;
   font-size: 0.9rem;
+  font-family: var(--poppins);
+  margin-right: 5px;
 }
 
 .user-avatar i {
@@ -645,7 +647,7 @@ body.dark .user-avatar:hover {
 }
 
 body.dark .user-name {
-  color: var(--dark); /* Use same user name color */
+  color: var(--name); /* Use same user name color */
 }
 
 body.dark .user-avatar i {

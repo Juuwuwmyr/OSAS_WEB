@@ -296,9 +296,11 @@
 }
 
 .user-name {
-  color: var(--dark);
-  font-weight: 500;
+  color: var(--name);
+  font-weight: 600;
   font-size: 0.9rem;
+  font-family: var(--poppins);
+  margin-right: 5px;
 }
 
 .user-avatar i {
@@ -502,7 +504,7 @@ body.dark .user-avatar {
 }
 
 body.dark .user-name {
-  color: var(--dark);
+  color: var(--name);
 }
 
 body.dark .user-dropdown {

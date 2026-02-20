@@ -45,28 +45,28 @@ require_once __DIR__ . '/../../core/View.php';
   <!-- Personal Stats -->
   <ul class="box-info">
     <li>
-      <i class='bx bxs-user-check'></i>
+      <i class='bx bxs-error-circle'></i>
       <span class="text">
         <h3 id="statActiveViolations">0</h3>
         <p>Active Violations</p>
       </span>
     </li>
     <li>
-      <i class='bx bxs-calendar-check'></i>
+      <i class='bx bxs-folder-open'></i>
       <span class="text">
         <h3 id="statTotalViolations">0</h3>
         <p>Total Violations</p>
       </span>
     </li>
     <li>
-      <i class='bx bxs-shield-check'></i>
+      <i class='bx bxs-check-circle'></i>
       <span class="text">
         <h3 id="statResolvedViolations">0</h3>
         <p>Resolved / Permitted</p>
       </span>
     </li>
     <li>
-      <i class='bx bxs-time'></i>
+      <i class='bx bxs-time-five'></i>
       <span class="text">
         <h3 id="statDaysClean">0</h3>
         <p>Days Clean</p>

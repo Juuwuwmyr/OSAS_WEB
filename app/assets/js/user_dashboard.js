@@ -467,6 +467,16 @@ function loadContent(page) {
           
           // Initialize modules after scripts are loaded
           if (page.toLowerCase().includes('user_dashcontent') || page.toLowerCase().includes('dashcontent')) {
+            // Ensure userViolations.js is loaded for download modal
+            const vScript = document.createElement('script');
+            vScript.src = '../app/assets/js/userViolations.js';
+            try {
+                await loadScript(vScript);
+                console.log('✅ User violations script loaded for dashboard');
+            } catch (e) {
+                console.warn('⚠️ Failed to pre-load user violations script', e);
+            }
+
             setTimeout(() => {
               console.log('🔄 Initializing dashboard page...');
               if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
@@ -579,6 +589,10 @@ function loadContent(page) {
         
         // Fallback: Initialize modules even if structure is different
         if (page.toLowerCase().includes('user_dashcontent')) {
+          loadScript('../app/assets/js/userViolations.js', () => {
+              console.log('✅ User violations script loaded (fallback)');
+          });
+          
           setTimeout(() => {
             console.log('🔄 Initializing dashboard page...');
             if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
@@ -854,31 +868,104 @@ function initializeUserDashboard() {
     });
   });
 
-  // Update violation counts and status
-  updateViolationStats();
-
   // Dashboard Download Report
   const btnDashDownload = document.getElementById('btnDashDownloadReport');
   if (btnDashDownload) {
-      btnDashDownload.addEventListener('click', function(e) {
+      console.log('✅ Found dashboard download button, attaching listener');
+      // Remove old listeners to prevent duplicates if function runs multiple times
+      const newBtn = btnDashDownload.cloneNode(true);
+      btnDashDownload.parentNode.replaceChild(newBtn, btnDashDownload);
+      
+      newBtn.addEventListener('click', function(e) {
           e.preventDefault();
+          console.log('🖱️ Dashboard download clicked');
+          
           if (window.userDashboardData && window.userDashboardData.violations) {
-              downloadDashboardReport(window.userDashboardData.violations);
+              // Trigger the modal
+              if (typeof window.openDownloadModal === 'function') {
+                  window.downloadContext = 'dashboard'; 
+                  window.openDownloadModal();
+              } else {
+                  console.warn('Download modal functions not found, attempting to load script...');
+                  loadScript('../app/assets/js/userViolations.js', () => {
+                      if (typeof window.openDownloadModal === 'function') {
+                          window.downloadContext = 'dashboard'; 
+                          window.openDownloadModal();
+                      } else {
+                          console.error('Failed to load download functionality');
+                          alert('Download functionality unavailable. Please refresh the page.');
+                      }
+                  });
+              }
           } else {
               alert('Dashboard data is loading or empty. Please try again in a moment.');
           }
       });
+  } else {
+      console.warn('⚠️ Dashboard download button not found');
+  }
+
+  // Update violation counts and status (Safe call)
+  if (typeof updateViolationStats === 'function') {
+    try {
+        updateViolationStats();
+    } catch (e) {
+        console.warn('Error updating violation stats:', e);
+    }
+  } else if (typeof window.updateViolationStats === 'function') {
+      try {
+        window.updateViolationStats();
+      } catch (e) {
+          console.warn('Error updating violation stats (window):', e);
+      }
+  } else {
+      console.log('ℹ️ updateViolationStats function not available');
   }
 
   console.log('⚡ User dashboard initialized');
 }
 
-function downloadDashboardReport(violations) {
+// Make this globally available so confirmDownload can call it
+window.downloadDashboardReport = function(format) {
+    const violations = window.userDashboardData.violations;
     if (!violations || violations.length === 0) {
         alert('No violations to download.');
         return;
     }
 
+    const fmt = format.toLowerCase().trim();
+    if (fmt === 'csv') {
+        downloadCSV(violations, 'dashboard_report');
+    } else if (fmt === 'pdf') {
+        downloadPDF(violations, 'My Dashboard Report', 'dashboard_report');
+    } else if (fmt === 'docx') {
+        downloadDOCX(violations, 'My Dashboard Report', 'dashboard_report');
+    }
+};
+
+function downloadDashboardReport_OLD(violations) {
+    if (!violations || violations.length === 0) {
+        alert('No violations to download.');
+        return;
+    }
+
+    // Ask user for format
+    const format = prompt("Enter download format: csv, pdf, or docx", "pdf");
+    if (!format) return;
+    
+    const fmt = format.toLowerCase().trim();
+    if (fmt === 'csv') {
+        downloadCSV(violations, 'dashboard_report');
+    } else if (fmt === 'pdf') {
+        downloadPDF(violations, 'My Dashboard Report', 'dashboard_report');
+    } else if (fmt === 'docx') {
+        downloadDOCX(violations, 'My Dashboard Report', 'dashboard_report');
+    } else {
+        alert('Invalid format. Please choose csv, pdf, or docx.');
+    }
+}
+
+function downloadCSV(data, filenamePrefix) {
     const lines = [];
     const now = new Date();
     
@@ -892,7 +979,7 @@ function downloadDashboardReport(violations) {
         const s = window.userDashboardData.stats;
         lines.push('Summary Stats');
         lines.push(['Active Violations', s.violations || 0].map(csvEscape).join(','));
-        lines.push(['Total Violations', violations.length].map(csvEscape).join(','));
+        lines.push(['Total Violations', data.length].map(csvEscape).join(','));
         lines.push('');
     }
 
@@ -900,7 +987,7 @@ function downloadDashboardReport(violations) {
     lines.push(['Case ID', 'Violation Type', 'Status', 'Date Reported'].map(csvEscape).join(','));
 
     // Data Rows
-    violations.forEach(v => {
+    data.forEach(v => {
         const type = v.violationType || v.violation_type || 'Unknown';
         const date = v.violationDate || v.violation_date || v.dateReported || v.created_at;
         const status = v.status || 'Unknown';
@@ -915,7 +1002,7 @@ function downloadDashboardReport(violations) {
 
     const csvContent = lines.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const fileName = 'dashboard_report_' + now.toISOString().slice(0, 10) + '.csv';
+    const fileName = filenamePrefix + '_' + now.toISOString().slice(0, 10) + '.csv';
     
     if (typeof saveAs === 'function') {
         saveAs(blob, fileName);
@@ -929,6 +1016,135 @@ function downloadDashboardReport(violations) {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }
+}
+
+async function downloadPDF(data, title, filenamePrefix) {
+    if (!window.jspdf) {
+        alert('PDF library not loaded. Please refresh the page.');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${now.toLocaleString()}`, 14, 30);
+
+    // Stats Summary
+    let startY = 40;
+    if (window.userDashboardData && window.userDashboardData.stats) {
+        const s = window.userDashboardData.stats;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Active Violations: ${s.violations || 0}`, 14, startY);
+        doc.text(`Total Violations: ${data.length}`, 100, startY);
+        startY += 15;
+    }
+
+    // Table Data
+    const tableBody = data.map(v => [
+        v.case_id || v.id,
+        v.violationType || v.violation_type || 'Unknown',
+        v.status || 'Unknown',
+        v.violationDate || v.violation_date || v.dateReported || v.created_at
+    ]);
+
+    doc.autoTable({
+        head: [['Case ID', 'Violation Type', 'Status', 'Date Reported']],
+        body: tableBody,
+        startY: startY,
+        theme: 'grid',
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [255, 193, 7], textColor: 50, fontStyle: 'bold' }
+    });
+
+    doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
+}
+
+function downloadDOCX(data, title, filenamePrefix) {
+    if (!window.docx) {
+        alert('DOCX library not loaded. Please refresh the page.');
+        return;
+    }
+
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel } = window.docx;
+    const now = new Date();
+
+    // Stats
+    let statsParagraph = new Paragraph({});
+    if (window.userDashboardData && window.userDashboardData.stats) {
+        const s = window.userDashboardData.stats;
+        statsParagraph = new Paragraph({
+            children: [
+                new TextRun({ text: `Active Violations: ${s.violations || 0}`, bold: true }),
+                new TextRun({ text: `\tTotal Violations: ${data.length}`, bold: true }),
+            ],
+            spacing: { after: 200 },
+        });
+    }
+
+    // Table Header
+    const tableHeader = new TableRow({
+        children: [
+            new TableCell({ children: [new Paragraph({ text: "Case ID", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Violation Type", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Status", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Date Reported", bold: true })] }),
+        ],
+    });
+
+    // Table Rows
+    const tableRows = data.map(v => {
+        return new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph(String(v.case_id || v.id))] }),
+                new TableCell({ children: [new Paragraph(v.violationType || v.violation_type || 'Unknown')] }),
+                new TableCell({ children: [new Paragraph(v.status || 'Unknown')] }),
+                new TableCell({ children: [new Paragraph(v.violationDate || v.violation_date || v.dateReported || v.created_at)] }),
+            ],
+        });
+    });
+
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: [
+                new Paragraph({
+                    text: title,
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { after: 200 },
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Generated on: ${now.toLocaleString()}`,
+                            italics: true,
+                            color: "666666",
+                        }),
+                    ],
+                    spacing: { after: 400 },
+                }),
+                statsParagraph,
+                new Table({
+                    rows: [tableHeader, ...tableRows],
+                    width: {
+                        size: 100,
+                        type: WidthType.PERCENTAGE,
+                    },
+                }),
+            ],
+        }],
+    });
+
+    Packer.toBlob(doc).then(blob => {
+        saveAs(blob, `${filenamePrefix}_${now.toISOString().slice(0, 10)}.docx`);
+    });
 }
 
 function csvEscape(value) {

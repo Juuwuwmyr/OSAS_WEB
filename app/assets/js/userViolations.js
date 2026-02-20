@@ -433,12 +433,57 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Global state for download context
+window.downloadContext = 'violations'; // 'violations' or 'dashboard'
+
 function downloadViolationsReport() {
     if (!userViolations || userViolations.length === 0) {
         alert('No violations to download.');
         return;
     }
+    window.downloadContext = 'violations';
+    openDownloadModal();
+}
 
+function openDownloadModal() {
+    const modal = document.getElementById('DownloadFormatModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+}
+
+function closeDownloadModal() {
+    const modal = document.getElementById('DownloadFormatModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+}
+
+function confirmDownload(format) {
+    closeDownloadModal();
+    
+    // Give modal time to close
+    setTimeout(() => {
+        if (window.downloadContext === 'violations') {
+            if (format === 'csv') downloadCSV(userViolations, 'my_violations');
+            else if (format === 'pdf') downloadPDF(userViolations, 'My Violation Report', 'my_violations');
+            else if (format === 'docx') downloadDOCX(userViolations, 'My Violation Report', 'my_violations');
+        } else if (window.downloadContext === 'dashboard') {
+            if (window.downloadDashboardReport) {
+                window.downloadDashboardReport(format);
+            }
+        }
+    }, 300);
+}
+
+// Export functions to global scope for the modal
+window.openDownloadModal = openDownloadModal;
+window.closeDownloadModal = closeDownloadModal;
+window.confirmDownload = confirmDownload;
+
+function downloadCSV(data, filenamePrefix) {
     const lines = [];
     const now = new Date();
     
@@ -451,7 +496,7 @@ function downloadViolationsReport() {
     lines.push(['Case ID', 'Violation Type', 'Level', 'Status', 'Date Reported'].map(csvEscape).join(','));
 
     // Data Rows
-    userViolations.forEach(v => {
+    data.forEach(v => {
         const type = formatViolationType(v.violation_type || v.type);
         const date = formatDate(v.created_at || v.violation_date || v.date);
         const level = v.violation_level || v.level || 'Minor';
@@ -468,7 +513,7 @@ function downloadViolationsReport() {
 
     const csvContent = lines.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const fileName = 'my_violations_' + now.toISOString().slice(0, 10) + '.csv';
+    const fileName = filenamePrefix + '_' + now.toISOString().slice(0, 10) + '.csv';
     
     if (typeof saveAs === 'function') {
         saveAs(blob, fileName);
@@ -482,6 +527,113 @@ function downloadViolationsReport() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     }
+}
+
+async function downloadPDF(data, title, filenamePrefix) {
+    if (!window.jspdf) {
+        alert('PDF library not loaded. Please refresh the page.');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${now.toLocaleString()}`, 14, 30);
+
+    // Table Data
+    const tableBody = data.map(v => [
+        v.case_id || v.id,
+        formatViolationType(v.violation_type || v.type),
+        v.violation_level || v.level || 'Minor',
+        v.status || 'Unknown',
+        formatDate(v.created_at || v.violation_date || v.date)
+    ]);
+
+    doc.autoTable({
+        head: [['Case ID', 'Violation Type', 'Level', 'Status', 'Date Reported']],
+        body: tableBody,
+        startY: 40,
+        theme: 'grid',
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [255, 193, 7], textColor: 50, fontStyle: 'bold' } // Gold/Orange header
+    });
+
+    doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
+}
+
+function downloadDOCX(data, title, filenamePrefix) {
+    if (!window.docx) {
+        alert('DOCX library not loaded. Please refresh the page.');
+        return;
+    }
+
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel } = window.docx;
+    const now = new Date();
+
+    // Table Header
+    const tableHeader = new TableRow({
+        children: [
+            new TableCell({ children: [new Paragraph({ text: "Case ID", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Violation Type", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Level", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Status", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ text: "Date Reported", bold: true })] }),
+        ],
+    });
+
+    // Table Rows
+    const tableRows = data.map(v => {
+        return new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph(String(v.case_id || v.id))] }),
+                new TableCell({ children: [new Paragraph(formatViolationType(v.violation_type || v.type))] }),
+                new TableCell({ children: [new Paragraph(v.violation_level || v.level || 'Minor')] }),
+                new TableCell({ children: [new Paragraph(v.status || 'Unknown')] }),
+                new TableCell({ children: [new Paragraph(formatDate(v.created_at || v.violation_date || v.date))] }),
+            ],
+        });
+    });
+
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: [
+                new Paragraph({
+                    text: title,
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { after: 200 },
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Generated on: ${now.toLocaleString()}`,
+                            italics: true,
+                            color: "666666",
+                        }),
+                    ],
+                    spacing: { after: 400 },
+                }),
+                new Table({
+                    rows: [tableHeader, ...tableRows],
+                    width: {
+                        size: 100,
+                        type: WidthType.PERCENTAGE,
+                    },
+                }),
+            ],
+        }],
+    });
+
+    Packer.toBlob(doc).then(blob => {
+        saveAs(blob, `${filenamePrefix}_${now.toISOString().slice(0, 10)}.docx`);
+    });
 }
 
 function csvEscape(value) {
@@ -552,3 +704,7 @@ window.filterViolations = filterViolations;
 window.viewViolationDetails = viewViolationDetails;
 window.closeViolationModal = closeViolationModal;
 window.printViolationSlip = printViolationSlip;
+window.downloadCSV = downloadCSV;
+window.downloadPDF = downloadPDF;
+window.downloadDOCX = downloadDOCX;
+window.updateViolationStats = updateViolationStats;

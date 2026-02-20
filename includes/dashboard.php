@@ -33,8 +33,8 @@ if ($_SESSION['role'] !== 'admin') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
-  <link rel="stylesheet" href="../app/assets/styles/dashboard.css">
-  <link rel="stylesheet" href="../app/assets/styles/topnav.css">
+  <link rel="stylesheet" href="../app/assets/styles/dashboard.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="../app/assets/styles/topnav.css?v=<?= time() ?>">
   <link rel="stylesheet" href="../app/assets/styles/content-layout.css">
   <link rel="stylesheet" href="../app/assets/styles/department.css">
   <link rel="stylesheet" href="../app/assets/styles/section.css">

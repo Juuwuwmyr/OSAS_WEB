@@ -98,8 +98,9 @@ if (!$student_id) {
     
     <!-- CSS -->
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css">
-    <link rel="stylesheet" href="../app/assets/styles/user_topnav.css">
+    <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../app/assets/styles/user_topnav.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../app/assets/styles/violation.css">
     <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
     
     <!-- JS Libraries -->
@@ -144,14 +145,50 @@ if (!$student_id) {
 
     <!-- JS Scripts -->
     <script src="../app/assets/js/lib/FileSaver.js"></script>
+    <script src="../app/assets/js/lib/jspdf.umd.min.js"></script>
+    <script src="../app/assets/js/lib/jspdf.plugin.autotable.min.js"></script>
+    <script src="../app/assets/js/lib/docx.js"></script>
     <script src="../app/assets/js/utils/theme.js"></script>
     <script src="../app/assets/js/utils/eyeCare.js"></script>
     <script src="../app/assets/js/initModules.js"></script>
-    <script src="../app/assets/js/user_dashboard.js"></script>
-    <script src="../app/assets/js/userDashboardData.js"></script>
-    <script src="../app/assets/js/userViolations.js"></script>
+    <script src="../app/assets/js/user_dashboard.js?v=<?= time() ?>"></script>
+    <script src="../app/assets/js/userDashboardData.js?v=<?= time() ?>"></script>
+    <script src="../app/assets/js/userViolations.js?v=<?= time() ?>"></script>
     <script src="../app/assets/js/userAnnouncements.js"></script>
     <script src="../app/assets/js/chatbot.js"></script>
+
+    <!-- Download Format Modal -->
+    <div id="DownloadFormatModal" class="download-modal" style="display: none;">
+        <div class="download-modal-overlay" onclick="closeDownloadModal()"></div>
+        <div class="download-modal-container">
+            <div class="download-modal-header">
+                <h3>Select Download Format</h3>
+                <button class="close-btn" onclick="closeDownloadModal()">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+            <div class="download-modal-body">
+                <p>Please choose your preferred file format:</p>
+                <div class="download-options">
+                    <button class="download-option" onclick="confirmDownload('csv')">
+                        <i class='bx bxs-file-txt' style="color: #28a745;"></i>
+                        <span>CSV</span>
+                        <small>Spreadsheet compatible</small>
+                    </button>
+                    <button class="download-option" onclick="confirmDownload('pdf')">
+                        <i class='bx bxs-file-pdf' style="color: #dc3545;"></i>
+                        <span>PDF</span>
+                        <small>Portable Document Format</small>
+                    </button>
+                    <button class="download-option" onclick="confirmDownload('docx')">
+                        <i class='bx bxs-file-doc' style="color: #007bff;"></i>
+                        <span>DOCX</span>
+                        <small>Microsoft Word</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
