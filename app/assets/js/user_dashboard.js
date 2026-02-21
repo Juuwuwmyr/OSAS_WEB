@@ -868,6 +868,97 @@ function initializeUserDashboard() {
     });
   });
 
+  if (typeof window.ensureDownloadModal !== 'function') {
+      window.ensureDownloadModal = function() {
+          let modal = document.getElementById('DownloadFormatModal');
+          if (!modal) {
+              modal = document.createElement('div');
+              modal.id = 'DownloadFormatModal';
+              modal.className = 'download-modal';
+              modal.style.display = 'none';
+              modal.innerHTML = '' +
+                  '<div class="download-modal-overlay"></div>' +
+                  '<div class="download-modal-container">' +
+                  '  <div class="download-modal-header">' +
+                  '    <h3>Select Download Format</h3>' +
+                  '    <button class="close-btn"><i class="bx bx-x"></i></button>' +
+                  '  </div>' +
+                  '  <div class="download-modal-body">' +
+                  '    <p>Please choose your preferred file format:</p>' +
+                  '    <div class="download-options">' +
+                  '      <button class="download-option" data-format="csv">' +
+                  '        <i class="bx bxs-file-txt" style="color:#28a745;"></i>' +
+                  '        <span>CSV</span>' +
+                  '        <small>Spreadsheet compatible</small>' +
+                  '      </button>' +
+                  '      <button class="download-option" data-format="pdf">' +
+                  '        <i class="bx bxs-file-pdf" style="color:#dc3545;"></i>' +
+                  '        <span>PDF</span>' +
+                  '        <small>Portable Document Format</small>' +
+                  '      </button>' +
+                  '      <button class="download-option" data-format="docx">' +
+                  '        <i class="bx bxs-file-doc" style="color:#007bff;"></i>' +
+                  '        <span>DOCX</span>' +
+                  '        <small>Microsoft Word</small>' +
+                  '      </button>' +
+                  '    </div>' +
+                  '  </div>' +
+                  '</div>';
+              document.body.appendChild(modal);
+              const overlay = modal.querySelector('.download-modal-overlay');
+              const closeBtn = modal.querySelector('.close-btn');
+              const options = modal.querySelectorAll('.download-option');
+              if (overlay) overlay.addEventListener('click', () => { if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal(); });
+              if (closeBtn) closeBtn.addEventListener('click', () => { if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal(); });
+              options.forEach(btn => btn.addEventListener('click', () => {
+                  const fmt = btn.getAttribute('data-format');
+                  if (typeof window.confirmDownload === 'function') {
+                      window.confirmDownload(fmt);
+                  }
+              }));
+          }
+          if (typeof window.openDownloadModal !== 'function') {
+              window.openDownloadModal = function() {
+                  const m = document.getElementById('DownloadFormatModal');
+                  if (m) {
+                      m.style.display = 'flex';
+                      setTimeout(() => m.classList.add('active'), 10);
+                  }
+              };
+          }
+          if (typeof window.closeDownloadModal !== 'function') {
+              window.closeDownloadModal = function() {
+                  const m = document.getElementById('DownloadFormatModal');
+                  if (m) {
+                      m.classList.remove('active');
+                      setTimeout(() => m.style.display = 'none', 300);
+                  }
+              };
+          }
+          if (typeof window.confirmDownload !== 'function') {
+              window.confirmDownload = function(format) {
+                  if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal();
+                  setTimeout(() => {
+                      if (window.downloadContext === 'dashboard') {
+                          if (typeof window.downloadDashboardReport === 'function') {
+                              window.downloadDashboardReport(format);
+                          }
+                      } else if (window.downloadContext === 'violations') {
+                          if (typeof window.downloadCSV === 'function' || typeof window.downloadPDF === 'function' || typeof window.downloadDOCX === 'function') {
+                              if (format === 'csv' && typeof downloadCSV === 'function' && window.userViolations) downloadCSV(window.userViolations, 'my_violations');
+                              else if (format === 'pdf' && typeof downloadPDF === 'function' && window.userViolations) downloadPDF(window.userViolations, 'My Violation Report', 'my_violations');
+                              else if (format === 'docx' && typeof downloadDOCX === 'function' && window.userViolations) downloadDOCX(window.userViolations, 'My Violation Report', 'my_violations');
+                          }
+                      }
+                  }, 300);
+              };
+          }
+      };
+  }
+  if (typeof window.ensureDownloadModal === 'function') {
+      window.ensureDownloadModal();
+  }
+
   // Dashboard Download Report
   const btnDashDownload = document.getElementById('btnDashDownloadReport');
   if (btnDashDownload) {
@@ -879,6 +970,9 @@ function initializeUserDashboard() {
       newBtn.addEventListener('click', function(e) {
           e.preventDefault();
           console.log('🖱️ Dashboard download clicked');
+          if (typeof window.ensureDownloadModal === 'function') {
+              window.ensureDownloadModal();
+          }
           
           if (window.userDashboardData && window.userDashboardData.violations) {
               // Trigger the modal
@@ -943,6 +1037,111 @@ window.downloadDashboardReport = function(format) {
     }
 };
 
+if (typeof window.ensureDownloadModal !== 'function') {
+    window.ensureDownloadModal = function() {
+        let modal = document.getElementById('DownloadFormatModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'DownloadFormatModal';
+            modal.className = 'download-modal';
+            modal.style.display = 'none';
+            modal.innerHTML = '' +
+                '<div class="download-modal-overlay"></div>' +
+                '<div class="download-modal-container">' +
+                '  <div class="download-modal-header">' +
+                '    <h3>Select Download Format</h3>' +
+                '    <button class="close-btn"><i class="bx bx-x"></i></button>' +
+                '  </div>' +
+                '  <div class="download-modal-body">' +
+                '    <p>Please choose your preferred file format:</p>' +
+                '    <div class="download-options">' +
+                '      <button class="download-option" data-format="csv">' +
+                '        <i class="bx bxs-file-txt" style="color:#28a745;"></i>' +
+                '        <span>CSV</span>' +
+                '        <small>Spreadsheet compatible</small>' +
+                '      </button>' +
+                '      <button class="download-option" data-format="pdf">' +
+                '        <i class="bx bxs-file-pdf" style="color:#dc3545;"></i>' +
+                '        <span>PDF</span>' +
+                '        <small>Portable Document Format</small>' +
+                '      </button>' +
+                '      <button class="download-option" data-format="docx">' +
+                '        <i class="bx bxs-file-doc" style="color:#007bff;"></i>' +
+                '        <span>DOCX</span>' +
+                '        <small>Microsoft Word</small>' +
+                '      </button>' +
+                '    </div>' +
+                '  </div>' +
+                '</div>';
+            document.body.appendChild(modal);
+            const overlay = modal.querySelector('.download-modal-overlay');
+            const closeBtn = modal.querySelector('.close-btn');
+            const options = modal.querySelectorAll('.download-option');
+            if (overlay) overlay.addEventListener('click', () => { if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal(); });
+            if (closeBtn) closeBtn.addEventListener('click', () => { if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal(); });
+            options.forEach(btn => btn.addEventListener('click', () => {
+                const fmt = btn.getAttribute('data-format');
+                if (typeof window.confirmDownload === 'function') {
+                    window.confirmDownload(fmt);
+                }
+            }));
+        }
+        if (typeof window.openDownloadModal !== 'function') {
+            window.openDownloadModal = function() {
+                const m = document.getElementById('DownloadFormatModal');
+                if (m) {
+                    m.style.display = 'flex';
+                    setTimeout(() => m.classList.add('active'), 10);
+                }
+            };
+        }
+        if (typeof window.closeDownloadModal !== 'function') {
+            window.closeDownloadModal = function() {
+                const m = document.getElementById('DownloadFormatModal');
+                if (m) {
+                    m.classList.remove('active');
+                    setTimeout(() => m.style.display = 'none', 300);
+                }
+            };
+        }
+        if (typeof window.confirmDownload !== 'function') {
+            window.confirmDownload = function(format) {
+                if (typeof window.closeDownloadModal === 'function') window.closeDownloadModal();
+                setTimeout(() => {
+                    if (window.downloadContext === 'dashboard') {
+                        if (typeof window.downloadDashboardReport === 'function') {
+                            window.downloadDashboardReport(format);
+                        }
+                    } else if (window.downloadContext === 'violations') {
+                        if (format === 'csv' && typeof downloadCSV === 'function' && window.userViolations) downloadCSV(window.userViolations, 'my_violations');
+                        else if (format === 'pdf' && typeof downloadPDF === 'function' && window.userViolations) downloadPDF(window.userViolations, 'My Violation Report', 'my_violations');
+                        else if (format === 'docx' && typeof downloadDOCX === 'function' && window.userViolations) downloadDOCX(window.userViolations, 'My Violation Report', 'my_violations');
+                    }
+                }, 300);
+            };
+        }
+    };
+}
+
+if (typeof document !== 'undefined' && !window.__dashDownloadDelegated) {
+    document.addEventListener('click', function(e) {
+        const btn = e.target && e.target.closest ? e.target.closest('#btnDashDownloadReport') : null;
+        if (btn) {
+            e.preventDefault();
+            if (typeof window.ensureDownloadModal === 'function') {
+                window.ensureDownloadModal();
+            }
+            window.downloadContext = 'dashboard';
+            if (typeof window.openDownloadModal === 'function') {
+                window.openDownloadModal();
+            } else if (typeof window.downloadDashboardReport === 'function') {
+                window.downloadDashboardReport('pdf');
+            }
+        }
+    });
+    window.__dashDownloadDelegated = true;
+}
+
 function downloadDashboardReport_OLD(violations) {
     if (!violations || violations.length === 0) {
         alert('No violations to download.');
@@ -978,7 +1177,7 @@ function downloadCSV(data, filenamePrefix) {
     if (window.userDashboardData && window.userDashboardData.stats) {
         const s = window.userDashboardData.stats;
         lines.push('Summary Stats');
-        lines.push(['Active Violations', s.violations || 0].map(csvEscape).join(','));
+        lines.push(['Active Violations', s.activeViolations || 0].map(csvEscape).join(','));
         lines.push(['Total Violations', data.length].map(csvEscape).join(','));
         lines.push('');
     }
@@ -1042,7 +1241,7 @@ async function downloadPDF(data, title, filenamePrefix) {
         const s = window.userDashboardData.stats;
         doc.setFontSize(12);
         doc.setTextColor(0);
-        doc.text(`Active Violations: ${s.violations || 0}`, 14, startY);
+        doc.text(`Active Violations: ${s.activeViolations || 0}`, 14, startY);
         doc.text(`Total Violations: ${data.length}`, 100, startY);
         startY += 15;
     }
@@ -1082,7 +1281,7 @@ function downloadDOCX(data, title, filenamePrefix) {
         const s = window.userDashboardData.stats;
         statsParagraph = new Paragraph({
             children: [
-                new TextRun({ text: `Active Violations: ${s.violations || 0}`, bold: true }),
+                new TextRun({ text: `Active Violations: ${s.activeViolations || 0}`, bold: true }),
                 new TextRun({ text: `\tTotal Violations: ${data.length}`, bold: true }),
             ],
             spacing: { after: 200 },
