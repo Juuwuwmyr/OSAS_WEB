@@ -1,0 +1,107 @@
+<?php
+require_once __DIR__ . '/../core/Controller.php';
+require_once __DIR__ . '/../models/UserModel.php';
+
+class UserController extends Controller {
+    private $model;
+
+    public function __construct() {
+        ob_start();
+        header('Content-Type: application/json');
+        @session_start();
+        $this->model = new UserModel();
+    }
+
+    public function listAdmins() {
+        try {
+            $this->requireAdmin();
+            $admins = $this->model->getAdmins();
+            $formatted = array_map(function ($row) {
+                return [
+                    'id' => isset($row['id']) ? (int)$row['id'] : 0,
+                    'username' => $row['username'] ?? '',
+                    'email' => $row['email'] ?? '',
+                    'full_name' => $row['full_name'] ?? '',
+                    'student_id' => $row['student_id'] ?? '',
+                    'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : true,
+                    'created_at' => $row['created_at'] ?? null,
+                    'updated_at' => $row['updated_at'] ?? null
+                ];
+            }, $admins);
+
+            $this->success('Admins retrieved successfully', ['admins' => $formatted]);
+        } catch (Exception $e) {
+            $this->error('Failed to load admins: ' . $e->getMessage());
+        }
+    }
+
+    public function createAdmin() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $this->requireAdmin();
+
+        $username = $this->sanitize($this->getPost('username', ''));
+        $email = $this->sanitize($this->getPost('email', ''));
+        $fullName = $this->sanitize($this->getPost('full_name', ''));
+        $password = $this->getPost('password', '');
+        $confirmPassword = $this->getPost('confirm_password', '');
+        $studentId = $this->sanitize($this->getPost('student_id', ''));
+
+        if ($username === '' || $email === '' || $fullName === '' || $password === '' || $confirmPassword === '') {
+            $this->error('All required fields must be filled.');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->error('Invalid email address.');
+        }
+
+        if ($password !== $confirmPassword) {
+            $this->error('Passwords do not match.');
+        }
+
+        if ($this->model->usernameExists($username)) {
+            $this->error('Username already exists.');
+        }
+
+        if ($this->model->emailExists($email)) {
+            $this->error('Email already exists.');
+        }
+
+        try {
+            $data = [
+                'username' => $username,
+                'email' => $email,
+                'password' => $password,
+                'role' => 'admin',
+                'full_name' => $fullName,
+                'student_id' => $studentId !== '' ? $studentId : null,
+                'is_active' => 1
+            ];
+
+            $id = $this->model->create($data);
+            $admin = $this->model->getById($id);
+
+            if (!$admin) {
+                $this->error('Admin account created but could not be loaded.');
+            }
+
+            $response = [
+                'id' => isset($admin['id']) ? (int)$admin['id'] : 0,
+                'username' => $admin['username'] ?? '',
+                'email' => $admin['email'] ?? '',
+                'full_name' => $admin['full_name'] ?? '',
+                'student_id' => $admin['student_id'] ?? '',
+                'is_active' => isset($admin['is_active']) ? (bool)$admin['is_active'] : true,
+                'created_at' => $admin['created_at'] ?? null,
+                'updated_at' => $admin['updated_at'] ?? null
+            ];
+
+            $this->success('Admin account created successfully', ['admin' => $response]);
+        } catch (Exception $e) {
+            $this->error('Failed to create admin: ' . $e->getMessage());
+        }
+    }
+}
+

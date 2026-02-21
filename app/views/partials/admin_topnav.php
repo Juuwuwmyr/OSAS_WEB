@@ -102,13 +102,11 @@ $role = $_SESSION['role'] ?? 'admin';
         <i class='bx bx-chevron-down'></i>
       </div>
       
-      <!-- Dropdown Menu -->
       <div class="user-dropdown">
-        <a href="#" class="dropdown-item settings-item">
+        <a href="#" class="dropdown-item settings-link">
           <i class='bx bx-cog'></i>
           <span>Settings</span>
         </a>
-        <div class="dropdown-divider"></div>
         <a href="#" class="dropdown-item logout" onclick="logout()">
           <i class='bx bx-log-out'></i>
           <span>Logout</span>

@@ -36,11 +36,11 @@ if ($_SESSION['role'] !== 'admin') {
   <link rel="stylesheet" href="../app/assets/styles/dashboard.css?v=<?= time() ?>">
   <link rel="stylesheet" href="../app/assets/styles/topnav.css?v=<?= time() ?>">
   <link rel="stylesheet" href="../app/assets/styles/content-layout.css">
+  <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <link rel="stylesheet" href="../app/assets/styles/department.css">
   <link rel="stylesheet" href="../app/assets/styles/section.css">
   <link rel="stylesheet" href="../app/assets/styles/students.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
-  <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
 </head>
@@ -49,7 +49,6 @@ if ($_SESSION['role'] !== 'admin') {
   <?php
   require_once __DIR__ . '/../app/core/View.php';
   View::partial('admin_topnav');
-  View::partial('settings_modal');
   ?>
 
   <!-- CONTENT -->
@@ -75,7 +74,6 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="../app/assets/js/reports.js"></script>
   <script src="../app/assets/js/announcement.js"></script>
   <script src="../app/assets/js/chatbot.js"></script>
-  <script src="../app/assets/js/settings.js"></script>
 </body>
 
 </html>
