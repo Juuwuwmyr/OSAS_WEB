@@ -3,11 +3,13 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/ViolationModel.php';
 require_once __DIR__ . '/../models/StudentModel.php';
+require_once __DIR__ . '/../models/ReportModel.php';
 
 class ViolationController extends Controller
 {
     private $model;
     private $studentModel;
+    private $reportModel;
 
     public function __construct()
     {
@@ -16,6 +18,7 @@ class ViolationController extends Controller
 
         $this->model = new ViolationModel();
         $this->studentModel = new StudentModel();
+        $this->reportModel = new ReportModel();
 
         // Automatically check and trigger monthly reset if needed
         $this->model->checkAndTriggerAutoArchive();
@@ -197,6 +200,14 @@ class ViolationController extends Controller
 
             $id = $this->model->create($data);
 
+            // Update reports
+            try {
+                $this->reportModel->generateReportsFromViolations();
+            } catch (Exception $e) {
+                error_log("Failed to auto-update reports: " . $e->getMessage());
+                // Don't fail the request, just log it
+            }
+
             $this->success('Violation recorded successfully', [
                 'id'      => $id,
                 'case_id' => $caseId
@@ -243,6 +254,14 @@ class ViolationController extends Controller
 
         try {
             $this->model->update($id, $data);
+            
+            // Update reports
+            try {
+                $this->reportModel->generateReportsFromViolations();
+            } catch (Exception $e) {
+                error_log("Failed to auto-update reports: " . $e->getMessage());
+            }
+
             $this->success('Violation updated successfully');
         } catch (Exception $e) {
             $this->error('Failed to update violation');
@@ -261,6 +280,14 @@ class ViolationController extends Controller
 
         try {
             $this->model->delete($id);
+
+            // Update reports
+            try {
+                $this->reportModel->generateReportsFromViolations();
+            } catch (Exception $e) {
+                error_log("Failed to auto-update reports: " . $e->getMessage());
+            }
+
             $this->success('Violation deleted successfully');
         } catch (Exception $e) {
             $this->error('Failed to delete violation');

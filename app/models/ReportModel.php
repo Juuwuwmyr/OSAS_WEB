@@ -6,6 +6,78 @@ class ReportModel extends Model {
     protected $primaryKey = 'id';
     
     /**
+     * Create reports tables if they don't exist
+     */
+    private function createReportsTables() {
+        $queries = [
+            "CREATE TABLE IF NOT EXISTS `reports` (
+              `id` INT NOT NULL AUTO_INCREMENT,
+              `report_id` VARCHAR(50) NOT NULL,
+              `student_id` VARCHAR(50) NOT NULL,
+              `student_name` VARCHAR(255) NOT NULL,
+              `student_contact` VARCHAR(100) NULL,
+              `department` VARCHAR(255) NULL,
+              `department_code` VARCHAR(50) NULL,
+              `section` VARCHAR(100) NULL,
+              `section_id` VARCHAR(50) NULL,
+              `yearlevel` VARCHAR(20) NULL,
+              `uniform_count` INT NOT NULL DEFAULT 0,
+              `footwear_count` INT NOT NULL DEFAULT 0,
+              `no_id_count` INT NOT NULL DEFAULT 0,
+              `total_violations` INT NOT NULL DEFAULT 0,
+              `status` VARCHAR(50) NOT NULL DEFAULT 'permitted',
+              `last_violation_date` DATE NULL,
+              `report_period_start` DATE NULL,
+              `report_period_end` DATE NULL,
+              `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+              `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `uniq_reports_report_id` (`report_id`),
+              KEY `idx_reports_student_id` (`student_id`),
+              KEY `idx_reports_status` (`status`),
+              KEY `idx_reports_total_violations` (`total_violations`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+            
+            "CREATE TABLE IF NOT EXISTS `report_violations` (
+              `id` INT NOT NULL AUTO_INCREMENT,
+              `report_id` INT NOT NULL,
+              `violation_id` INT NOT NULL,
+              `violation_type` VARCHAR(100) NOT NULL,
+              `violation_level` VARCHAR(100) NULL,
+              `violation_date` DATE NULL,
+              `violation_time` TIME NULL,
+              `status` VARCHAR(50) NULL,
+              `notes` TEXT NULL,
+              `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `uniq_report_violation` (`report_id`, `violation_id`),
+              KEY `idx_report_violations_report_id` (`report_id`),
+              KEY `idx_report_violations_violation_id` (`violation_id`),
+              CONSTRAINT `fk_report_violations_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+            
+            "CREATE TABLE IF NOT EXISTS `report_recommendations` (
+              `id` INT NOT NULL AUTO_INCREMENT,
+              `report_id` INT NOT NULL,
+              `recommendation` TEXT NOT NULL,
+              `priority` VARCHAR(20) NOT NULL DEFAULT 'medium',
+              `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              KEY `idx_report_recommendations_report_id` (`report_id`),
+              KEY `idx_report_recommendations_priority` (`priority`),
+              CONSTRAINT `fk_report_recommendations_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
+        ];
+        
+        foreach ($queries as $sql) {
+            if (!$this->conn->query($sql)) {
+                error_log("Failed to create table: " . $this->conn->error);
+                throw new Exception("Failed to create reports tables: " . $this->conn->error);
+            }
+        }
+    }
+
+    /**
      * Generate or update reports from violations
      * This should be called periodically or when violations are added/updated
      */
@@ -13,13 +85,16 @@ class ReportModel extends Model {
         // Check if reports table exists, if not create it
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'reports'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
-            throw new Exception('Reports table does not exist. Please run database/reports_table.sql');
+            $this->createReportsTables();
         }
         
         // Check if violations table exists
         $violationCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($violationCheck === false || $violationCheck->num_rows === 0) {
-            throw new Exception('Violations table does not exist.');
+            // Check if we can create it or just return 0
+            // Assuming violations table must exist for this to work
+            // But if it doesn't, we can't generate anything
+            return ['generated' => 0, 'updated' => 0, 'total' => 0];
         }
         
         // Build query to aggregate violations by student
@@ -184,11 +259,26 @@ class ReportModel extends Model {
         // Check if reports table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'reports'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
-            // If table doesn't exist, generate reports first
+            // If table doesn't exist, try to create and generate
             try {
+                $this->createReportsTables();
                 $this->generateReportsFromViolations();
             } catch (Exception $e) {
-                throw new Exception('Reports table does not exist and could not be generated: ' . $e->getMessage());
+                // If violations table missing or other error
+                return [];
+            }
+        }
+        
+        // Also check if table is empty and try to auto-generate
+        $countCheck = @$this->conn->query("SELECT COUNT(*) as count FROM reports");
+        if ($countCheck) {
+            $row = $countCheck->fetch_assoc();
+            if ($row['count'] == 0) {
+                try {
+                    $this->generateReportsFromViolations();
+                } catch (Exception $e) {
+                    // Ignore error if violations table is empty/missing
+                }
             }
         }
         
