@@ -32,10 +32,7 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-reset'></i>
           <span>Monthly Reset</span>
         </button>
-        <button id="btnImportViolations" class="Violations-btn outline small">
-          <i class='bx bx-upload'></i>
-          <span>Import</span>
-        </button>
+        <!-- Import button removed -->
         <button id="btnExportViolations" class="Violations-btn outline small">
           <i class='bx bx-download'></i>
           <span>Export</span>
