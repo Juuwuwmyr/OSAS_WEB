@@ -2633,36 +2633,222 @@ function initViolationsModule() {
         }
 
         function printEntranceSlip(violation) {
-            console.log('🖨️ Requesting Server-Side Entrance Slip for:', violation.studentName);
-            
-            showLoadingOverlay('Generating Entrance Slip...');
-
-            // New Server-Side Method
-            // We use the existing API structure but trigger a download
-            const apiUrl = API_BASE + 'violations.php?action=generate_slip&violation_id=' + violation.caseId;
+            console.log('🖨️ Requesting Entrance Slip for:', violation.studentName);
             
             // Check if violation has ID
             if (!violation.caseId || violation.caseId.includes('PENDING')) {
-                hideLoadingOverlay();
                 showNotification('Cannot print slip for unsaved violation. Please save first.', 'warning');
                 return;
             }
 
-            // Trigger download via hidden iframe or window.location
-            // window.location.href = apiUrl; // Simple redirect
-            
-            // Better: Create a temporary link
-            const link = document.createElement('a');
-            link.href = apiUrl;
-            link.setAttribute('download', 'Entrance_Slip.docx');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Use Client-Side Generation to bypass server ZipArchive issues
+            generateEntranceSlipClientSide(violation);
+        }
 
-            setTimeout(() => {
+        async function generateEntranceSlipClientSide(violation) {
+            try {
+                showLoadingOverlay('Generating Entrance Slip...');
+                
+                // 1. Fetch Template
+                const response = await fetch(API_BASE + 'violations.php?action=get_slip_template');
+                if (!response.ok) throw new Error('Failed to fetch template file');
+                const blob = await response.blob();
+                
+                // 1.1 Fetch Violation History for this Student
+                let monthlyViolations = {
+                    'Improper Uniform': [],
+                    'Improper Foot Wear': [],
+                    'No ID': []
+                };
+
+                try {
+                    const histResponse = await fetch(API_BASE + 'violations.php?student_id=' + (violation.studentId || ''));
+                    if (histResponse.ok) {
+                        const histData = await histResponse.json();
+                        const history = histData.data || histData.violations || [];
+                        
+                        // Filter for current month/year of the VIOLATION DATE
+                        // If violation.dateTime is "2/22/2026, 10:00:00 AM", we parse it.
+                        // Ideally we use the raw dateReported if available, or current date
+                        const vDate = new Date(); // Default to now
+                        const currentMonth = vDate.getMonth();
+                        const currentYear = vDate.getFullYear();
+
+                        history.forEach(v => {
+                            // Parse dateReported: "02/14/2026" or "2026-02-14"
+                            const dStr = v.dateReported || v.violation_date;
+                            if (!dStr) return;
+                            
+                            const vTime = new Date(dStr);
+                            if (isNaN(vTime.getTime())) return;
+
+                            if (vTime.getMonth() === currentMonth && vTime.getFullYear() === currentYear) {
+                                const type = (v.violationTypeLabel || '').toLowerCase();
+                                if (type.includes('uniform')) monthlyViolations['Improper Uniform'].push(v);
+                                else if (type.includes('foot') || type.includes('shoe')) monthlyViolations['Improper Foot Wear'].push(v);
+                                else if (type.includes('id')) monthlyViolations['No ID'].push(v);
+                            }
+                        });
+
+                        // Sort by date/time
+                        const sortFn = (a, b) => {
+                            const da = new Date((a.dateReported || '') + ' ' + (a.violationTime || ''));
+                            const db = new Date((b.dateReported || '') + ' ' + (b.violationTime || ''));
+                            return da - db;
+                        };
+                        monthlyViolations['Improper Uniform'].sort(sortFn);
+                        monthlyViolations['Improper Foot Wear'].sort(sortFn);
+                        monthlyViolations['No ID'].sort(sortFn);
+                    }
+                } catch (e) {
+                    console.error('Error fetching history:', e);
+                }
+
+                // 2. Load Zip
+                const zip = new PizZip(await blob.arrayBuffer());
+                
+                // 3. Get Document XML
+                let xml = zip.file("word/document.xml").asText();
+                
+                // 4. Prepare Data
+                const studentName = violation.studentName || 'N/A';
+                const studentId = violation.studentId || 'N/A';
+                const dept = violation.department || violation.studentDept || '';
+                const section = violation.section || violation.studentSection || '';
+                const yearLevel = violation.studentYearlevel || '';
+                const courseYear = `${dept} ${section} - ${yearLevel}`;
+                
+                const vType = (violation.violationTypeLabel || '').toLowerCase();
+                const vLevel = (violation.violationLevelLabel || '').toLowerCase();
+                
+                const checkUniform = vType.includes('uniform') ? '✔' : ' ';
+                const checkFootwear = (vType.includes('foot') || vType.includes('shoe')) ? '✔' : ' ';
+                const checkID = (vType.includes('id') || vType.includes('identification')) ? '✔' : ' ';
+                
+                const check1st = vLevel.includes('1st') ? '✔' : ' ';
+                const check2nd = vLevel.includes('2nd') ? '✔' : ' ';
+                const check3rd = vLevel.includes('3rd') ? '✔' : ' ';
+
+                // 5. Perform Replacements (XML Injection)
+                
+                // Helper for Underline XML injection
+                const createUnderlineXML = (text) => 
+                    `</w:t></w:r><w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${text}</w:t></w:r><w:r><w:t>`;
+
+                // Name
+                xml = xml.replace(/Name: _+/g, `Name: ${createUnderlineXML(studentName)}`);
+                xml = xml.replace(/(Name:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(studentName)}`);
+
+                // ID
+                xml = xml.replace(/ID Number: _+/g, `ID Number: ${createUnderlineXML(studentId)}`);
+                xml = xml.replace(/(ID Number:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(studentId)}`);
+
+                // Course
+                xml = xml.replace(/Course and Year: _+/g, `Course and Year: ${createUnderlineXML(courseYear)}`);
+                xml = xml.replace(/Course and Year:_+/g, `Course and Year: ${createUnderlineXML(courseYear)}`);
+                xml = xml.replace(/(Course and Year:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(courseYear)}`);
+
+                // Checkmarks - ADDED TO LABELS
+                xml = xml.replace(/Improper Uniform/g, `Improper Uniform ${checkUniform}`);
+                xml = xml.replace(/Improper Foot Wear/g, `Improper Foot Wear ${checkFootwear}`);
+                xml = xml.replace(/No ID/g, `No ID ${checkID}`);
+                
+                // These replace the HEADER text if it matches exactly
+                xml = xml.replace(/1st Offense/g, `1st Offense ${check1st}`);
+                xml = xml.replace(/2nd Offense/g, `2nd Offense ${check2nd}`);
+                xml = xml.replace(/3rd Offense/g, `3rd Offense ${check3rd}`);
+
+                // 5.1 Inject Table Data (History)
+                xml = injectViolationsIntoTable(xml, 'Improper Uniform', monthlyViolations['Improper Uniform']);
+                xml = injectViolationsIntoTable(xml, 'Improper Foot Wear', monthlyViolations['Improper Foot Wear']);
+                xml = injectViolationsIntoTable(xml, 'No ID', monthlyViolations['No ID']);
+
+                // 6. Update Zip
+                zip.file("word/document.xml", xml);
+                
+                // 7. Generate Blob
+                const out = zip.generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                });
+                
+                // 8. Download
+                saveAs(out, `Entrance_Slip_${studentId}.docx`);
+                
+                showNotification('Entrance Slip downloaded successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Client-side generation error:', error);
+                showNotification('Failed to generate slip: ' + error.message, 'error');
+            } finally {
                 hideLoadingOverlay();
-                showNotification('Entrance Slip download started!', 'success');
-            }, 1000);
+            }
+        }
+
+        // Helper to inject violation dates into the slip table (Ported from PHP)
+        function injectViolationsIntoTable(xml, anchor, violations) {
+            const pos = xml.indexOf(anchor);
+            if (pos === -1) return xml;
+
+            // Find the end of the cell containing the anchor
+            let endAnchorCell = xml.indexOf('</w:tc>', pos);
+            if (endAnchorCell === -1) return xml;
+            endAnchorCell += 7; // Length of </w:tc>
+
+            let newXml = xml.substring(0, endAnchorCell);
+            let offset = endAnchorCell;
+
+            // We expect 5 columns after the violation name: Permitted 1, Permitted 2, 1st, 2nd, 3rd
+            for (let i = 0; i < 5; i++) {
+                // Find start of next cell
+                const startTc = xml.indexOf('<w:tc', offset);
+                if (startTc === -1) break;
+
+                // Preserve content between previous cell end and this cell start
+                const betweenContent = xml.substring(offset, startTc);
+                newXml += betweenContent;
+
+                // Find end of this cell
+                let endTc = xml.indexOf('</w:tc>', startTc);
+                if (endTc === -1) break;
+                endTc += 7;
+
+                // Get cell content
+                let cellContent = xml.substring(startTc, endTc);
+
+                // Map violations: index 0 -> Col 1, index 1 -> Col 2, etc.
+                if (violations[i]) {
+                    const v = violations[i];
+                    // Format: 02/14/2026- 8:30 AM
+                    const dStrRaw = v.dateReported || v.violation_date;
+                    const tStrRaw = v.violationTime || '';
+                    
+                    const d = new Date(dStrRaw + ' ' + tStrRaw);
+                    let dateStr = dStrRaw;
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toLocaleDateString('en-US') + '- ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                    }
+                    
+                    // Inject into <w:p>
+                    // Use slightly smaller font sz=16 (8pt)
+                    const runXml = `<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>${dateStr}</w:t></w:r>`;
+                    
+                    if (cellContent.includes('</w:p>')) {
+                        cellContent = cellContent.replace('</w:p>', runXml + '</w:p>');
+                    } else {
+                        // Fallback
+                        cellContent = cellContent.substring(0, cellContent.length - 7) + '<w:p>' + runXml + '</w:p></w:tc>';
+                    }
+                }
+
+                newXml += cellContent;
+                offset = endTc;
+            }
+
+            // Append rest of XML
+            newXml += xml.substring(offset);
+            
+            return newXml;
         }
 
         // 4. ESCAPE KEY TO CLOSE MODAL

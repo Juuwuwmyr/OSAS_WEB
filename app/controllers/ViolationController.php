@@ -44,6 +44,11 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'get_slip_template') {
+            $this->get_slip_template();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -322,6 +327,30 @@ class ViolationController extends Controller
     /**
      * Generate Entrance Slip DOCX
      */
+    public function get_slip_template() {
+        $templatePath = __DIR__ . '/../assets/SLIP.docx';
+        if (!file_exists($templatePath)) {
+            $templatePath = __DIR__ . '/../assets/EntranceSlip.docx';
+        }
+
+        if (file_exists($templatePath)) {
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            header('Content-Disposition: attachment; filename="template.docx"');
+            header('Content-Transfer-Encoding: binary');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($templatePath));
+            readfile($templatePath);
+            exit;
+        } else {
+            http_response_code(404);
+            echo "Template not found.";
+            exit;
+        }
+    }
+
     private function generate_slip()
     {
         // 1. Get Violation Data
