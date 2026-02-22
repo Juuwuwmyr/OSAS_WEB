@@ -81,7 +81,7 @@ class ReportModel extends Model {
      * Generate or update reports from violations
      * This should be called periodically or when violations are added/updated
      */
-    public function generateReportsFromViolations($startDate = null, $endDate = null) {
+    public function generateReportsFromViolations($startDate = null, $endDate = null, $filters = []) {
         // Check if reports table exists, if not create it
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'reports'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -148,6 +148,33 @@ class ReportModel extends Model {
             $query .= " AND v.violation_date <= ?";
             $params[] = $endDate;
             $types .= "s";
+        }
+
+        // Apply department filters
+        if (!empty($filters['departments'])) {
+            $deptPlaceholders = implode(',', array_fill(0, count($filters['departments']), '?'));
+            $query .= " AND s.department IN ($deptPlaceholders)";
+            foreach ($filters['departments'] as $dept) {
+                $params[] = $dept;
+                $types .= "s";
+            }
+        }
+
+        // Apply violation type filters
+        if (!empty($filters['violationTypes'])) {
+            $violationConditions = [];
+            foreach ($filters['violationTypes'] as $type) {
+                if ($type === 'uniform') {
+                    $violationConditions[] = "vt.name LIKE '%Uniform%'";
+                } elseif ($type === 'footwear') {
+                    $violationConditions[] = "(vt.name LIKE '%Footwear%' OR vt.name LIKE '%Shoe%')";
+                } elseif ($type === 'no_id') {
+                    $violationConditions[] = "vt.name LIKE '%ID%'";
+                }
+            }
+            if (!empty($violationConditions)) {
+                $query .= " AND (" . implode(' OR ', $violationConditions) . ")";
+            }
         }
         
         $query .= " GROUP BY s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
@@ -299,9 +326,19 @@ class ReportModel extends Model {
         
         // Apply filters
         if ($department !== 'all' && !empty($department)) {
-            $query .= " AND r.department_code = ?";
-            $params[] = $department;
-            $types .= "s";
+            if (strpos($department, ',') !== false) {
+                $depts = explode(',', $department);
+                $placeholders = implode(',', array_fill(0, count($depts), '?'));
+                $query .= " AND r.department_code IN ($placeholders)";
+                foreach ($depts as $dept) {
+                    $params[] = trim($dept);
+                    $types .= "s";
+                }
+            } else {
+                $query .= " AND r.department_code = ?";
+                $params[] = $department;
+                $types .= "s";
+            }
         }
         
         if ($section !== 'all' && !empty($section)) {

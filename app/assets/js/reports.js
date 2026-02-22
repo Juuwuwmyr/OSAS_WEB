@@ -173,6 +173,17 @@ function initReportsModule() {
             if (totalReportsCountEl) totalReportsCountEl.textContent = totalStudents;
         }
         
+        // ========== CHART FUNCTIONS ==========
+        // Charts removed as per request
+        
+        function initCharts() {
+            // Functionality removed
+        }
+
+        function updateCharts(data) {
+            // Functionality removed
+        }
+
         // ========== API FUNCTIONS ==========
         
         async function loadReports(showLoading = true) {
@@ -274,9 +285,9 @@ function initReportsModule() {
                 }
                 
                 // Apply client-side filtering and sorting
-                renderReports();
-                
-            } catch (error) {
+            updateCharts(reports); // Initial chart update with all data
+            renderReports();
+        } catch (error) {
                 console.error('❌ Error loading reports:', error);
                 console.error('Error details:', error.stack);
                 if (tableBody) {
@@ -335,6 +346,9 @@ function initReportsModule() {
                         return b.id - a.id;
                 }
             });
+
+            // Update charts with filtered data
+            updateCharts(filteredReports);
 
             totalRecords = filteredReports.length;
             totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
@@ -875,11 +889,43 @@ function initReportsModule() {
                     if (startDate) params.append('startDate', startDate);
                     if (endDate) params.append('endDate', endDate);
                     
+                    if (reportFormat) params.append('reportFormat', reportFormat);
+                    if (reportType) params.append('reportType', reportType);
+
+                    // Add filters
+                    const departments = Array.from(document.querySelectorAll('input[name="departments"]:checked'))
+                        .map(cb => cb.value).join(',');
+                    if (departments) params.append('departments', departments);
+
+                    const violationTypes = Array.from(document.querySelectorAll('input[name="violationTypes"]:checked'))
+                        .map(cb => cb.value).join(',');
+                    if (violationTypes) params.append('violationTypes', violationTypes);
+
                     const response = await fetch(API_BASE + 'reports.php?' + params.toString());
                     const data = await response.json();
                     
                     if (data.status === 'success') {
-                        alert(`Reports generated successfully!\nGenerated: ${data.generated}\nUpdated: ${data.updated}\nTotal: ${data.total}`);
+                        // Use message from server
+                        alert(data.message || `Reports generated successfully!\nGenerated: ${data.generated}\nUpdated: ${data.updated}\nTotal: ${data.total}`);
+                        
+                        // Check for download URL (CSV/Excel)
+                        if (data.downloadUrl) {
+                            window.location.href = API_BASE + data.downloadUrl;
+                        }
+
+                        // Check for client-side download (PDF/DOCX)
+                        if (reportFormat === 'pdf' || reportFormat === 'docx') {
+                             if (data.reports && data.reports.length > 0) {
+                                 if (reportFormat === 'pdf') {
+                                     downloadPDF(data.reports, reportName || 'Violation Report');
+                                 } else if (reportFormat === 'docx') {
+                                     downloadDOCX(data.reports, reportName || 'Violation Report');
+                                 }
+                             } else {
+                                 alert('No reports found to export for the selected criteria.');
+                             }
+                        }
+                        
                         closeGenerateModal();
                         // Reload reports
                         loadReports(true);
@@ -969,6 +1015,137 @@ function initReportsModule() {
                 return '"' + str.replace(/"/g, '""') + '"';
             }
             return str;
+        }
+
+        async function downloadPDF(reportsData, filenamePrefix) {
+            if (!window.jspdf) {
+                alert('PDF library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            
+            // Header
+            doc.setFontSize(18);
+            doc.text('Student Violation Report', 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${now.toLocaleString()}`, 14, 30);
+            
+            // Summary
+            doc.text(`Total Students: ${reportsData.length}`, 14, 40);
+            
+            // Table
+            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"];
+            const tableRows = [];
+
+            reportsData.forEach(report => {
+                const reportData = [
+                    report.studentId,
+                    report.studentName,
+                    report.department,
+                    report.section,
+                    report.uniformCount,
+                    report.footwearCount,
+                    report.noIdCount,
+                    report.totalViolations,
+                    report.statusLabel
+                ];
+                tableRows.push(reportData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 50,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [41, 128, 185] }
+            });
+
+            doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
+        }
+
+        async function downloadDOCX(reportsData, filenamePrefix) {
+            if (!window.docx) {
+                alert('DOCX library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun } = window.docx;
+            const now = new Date();
+            
+            // Table Header
+            const tableHeader = new TableRow({
+                children: [
+                    "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"
+                ].map(text => new TableCell({
+                    children: [new Paragraph({ text, bold: true, size: 20 })], // size is in half-points
+                    width: { size: 100 / 9, type: WidthType.PERCENTAGE },
+                    shading: { fill: "E0E0E0" }
+                }))
+            });
+            
+            // Table Rows
+            const tableRows = reportsData.map(report => new TableRow({
+                children: [
+                    report.studentId,
+                    report.studentName,
+                    report.department,
+                    report.section,
+                    String(report.uniformCount),
+                    String(report.footwearCount),
+                    String(report.noIdCount),
+                    String(report.totalViolations),
+                    report.statusLabel
+                ].map(text => new TableCell({
+                    children: [new Paragraph({ text: text || "", size: 18 })],
+                    width: { size: 100 / 9, type: WidthType.PERCENTAGE }
+                }))
+            }));
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            text: "Student Violation Report",
+                            heading: HeadingLevel.HEADING_1,
+                            alignment: "center"
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `Generated: ${now.toLocaleString()}`,
+                                    italics: true,
+                                    color: "666666"
+                                })
+                            ],
+                            alignment: "center",
+                            spacing: { after: 400 }
+                        }),
+                        new Paragraph({
+                            text: `Total Students: ${reportsData.length}`,
+                            spacing: { after: 200 }
+                        }),
+                        new Table({
+                            rows: [tableHeader, ...tableRows],
+                            width: { size: 100, type: WidthType.PERCENTAGE }
+                        })
+                    ]
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => {
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, `${filenamePrefix}_${now.toISOString().slice(0, 10)}.docx`);
+                } else {
+                    console.error('FileSaver.js not loaded');
+                    alert('Error: FileSaver.js not loaded');
+                }
+            });
         }
 
         function downloadSingleReport(report) {
@@ -1315,6 +1492,13 @@ function initReportsModule() {
         }
         
         // ========== INITIAL LOAD ==========
+        // Ensure we are on the reports page before proceeding
+        if (!document.getElementById('Reports-page')) {
+            console.log('Not on Reports page, skipping initialization');
+            return;
+        }
+
+        initCharts(); // Initialize charts
         loadDepartments();
         loadSections();
         loadReports(true);

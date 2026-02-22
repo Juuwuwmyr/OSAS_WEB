@@ -115,6 +115,11 @@ require_once __DIR__ . '/../../core/View.php';
         <select id="ReportsDepartmentFilter" class="Reports-filter-select">
           <option value="all">All Departments</option>
           <option value="BSIS">BS Information System</option>
+          <option value="BSBA">BS Business Administration</option>
+          <option value="BEED">Bachelor of Elementary Education</option>
+          <option value="BSIT">BS Information Technology</option>
+          <option value="BSIS-1">BSIT (BSIS-1)</option>
+          <option value="BSCS">BS Computer Science</option>
           <option value="WFT">Welding & Fabrication Tech</option>
           <option value="BTVTED">BTVTED</option>
           <option value="CHS">Computer Hardware Servicing</option>
@@ -374,9 +379,8 @@ require_once __DIR__ . '/../../core/View.php';
             <select id="reportFormat" name="reportFormat" required>
               <option value="">Select format</option>
               <option value="pdf">PDF Document</option>
-              <option value="excel">Excel Spreadsheet</option>
+              <option value="docx">Word Document</option>
               <option value="csv">CSV File</option>
-              <option value="html">HTML Report</option>
             </select>
           </div>
         </div>
@@ -407,15 +411,35 @@ require_once __DIR__ . '/../../core/View.php';
               <span>BS Information System</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="WFT" checked>
+              <input type="checkbox" name="departments" value="BSBA" checked>
+              <span>BS Business Administration</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="departments" value="BEED" checked>
+              <span>Bachelor of Elementary Education</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="departments" value="BSIT" checked>
+              <span>BS Information Technology</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="departments" value="BSIS-1" checked>
+              <span>BSIT (BSIS-1)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="departments" value="BSCS" checked>
+              <span>BS Computer Science</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="departments" value="WFT">
               <span>Welding & Fabrication Tech</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BTVTED" checked>
+              <input type="checkbox" name="departments" value="BTVTED">
               <span>BTVTED</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="CHS" checked>
+              <input type="checkbox" name="departments" value="CHS">
               <span>Computer Hardware Servicing</span>
             </label>
           </div>
@@ -652,6 +676,9 @@ require_once __DIR__ . '/../../core/View.php';
 
 </main>
 
+<script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 <script src="<?= View::asset('js/reports.js') ?>"></script>
 </body>
