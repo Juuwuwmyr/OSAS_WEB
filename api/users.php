@@ -12,6 +12,8 @@ if ($method === 'GET' && ($action === 'admins' || $action === '')) {
     $controller->listAdmins();
 } elseif ($method === 'POST' && $action === 'addAdmin') {
     $controller->createAdmin();
+} elseif ($method === 'POST' && $action === 'deleteAdmin') {
+    $controller->deleteAdmin();
 } else {
     while (ob_get_level() > 0) {
         ob_end_clean();

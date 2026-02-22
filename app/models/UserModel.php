@@ -79,7 +79,7 @@ class UserModel extends Model {
     }
 
     public function getAdmins() {
-        $query = "SELECT id, username, email, full_name, student_id, is_active, created_at, updated_at FROM {$this->table} WHERE role = 'admin' ORDER BY created_at DESC";
+        $query = "SELECT id, username, email, full_name, student_id, role, is_active, created_at, updated_at FROM {$this->table} WHERE role != 'user' ORDER BY created_at DESC";
         return $this->query($query);
     }
 }

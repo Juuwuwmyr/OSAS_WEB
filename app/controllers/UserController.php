@@ -23,6 +23,7 @@ class UserController extends Controller {
                     'email' => $row['email'] ?? '',
                     'full_name' => $row['full_name'] ?? '',
                     'student_id' => $row['student_id'] ?? '',
+                    'role' => $row['role'] ?? 'Admin',
                     'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : true,
                     'created_at' => $row['created_at'] ?? null,
                     'updated_at' => $row['updated_at'] ?? null
@@ -45,6 +46,7 @@ class UserController extends Controller {
         $username = $this->sanitize($this->getPost('username', ''));
         $email = $this->sanitize($this->getPost('email', ''));
         $fullName = $this->sanitize($this->getPost('full_name', ''));
+        $role = $this->sanitize($this->getPost('role', 'admin'));
         $password = $this->getPost('password', '');
         $confirmPassword = $this->getPost('confirm_password', '');
         $studentId = $this->sanitize($this->getPost('student_id', ''));
@@ -74,7 +76,7 @@ class UserController extends Controller {
                 'username' => $username,
                 'email' => $email,
                 'password' => $password,
-                'role' => 'admin',
+                'role' => $role,
                 'full_name' => $fullName,
                 'student_id' => $studentId !== '' ? $studentId : null,
                 'is_active' => 1
@@ -93,6 +95,7 @@ class UserController extends Controller {
                 'email' => $admin['email'] ?? '',
                 'full_name' => $admin['full_name'] ?? '',
                 'student_id' => $admin['student_id'] ?? '',
+                'role' => $admin['role'] ?? 'Admin',
                 'is_active' => isset($admin['is_active']) ? (bool)$admin['is_active'] : true,
                 'created_at' => $admin['created_at'] ?? null,
                 'updated_at' => $admin['updated_at'] ?? null
@@ -101,6 +104,43 @@ class UserController extends Controller {
             $this->success('Admin account created successfully', ['admin' => $response]);
         } catch (Exception $e) {
             $this->error('Failed to create admin: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteAdmin() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $this->requireAdmin();
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+
+        // Prevent deleting yourself
+        if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $id) {
+            $this->error('You cannot delete your own account.');
+        }
+
+        try {
+            // Check if user exists
+            $user = $this->model->getById($id);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+
+            // Perform deletion
+            // Using generic delete from Model class
+            if ($this->model->delete($id)) {
+                $this->success('User deleted successfully.');
+            } else {
+                $this->error('Failed to delete user.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error deleting user: ' . $e->getMessage());
         }
     }
 }

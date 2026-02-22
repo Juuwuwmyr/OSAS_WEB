@@ -12,6 +12,7 @@
   --settings-success: #10b981;
   --settings-radius: 12px;
   --settings-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+  --poppins: 'Poppins', sans-serif;
 }
 
 /* Modal Overlay */
@@ -96,66 +97,73 @@
   text-align: left;
 }
 
-.settings-sidebar-item i {
-  font-size: 18px;
-  opacity: 0.7;
-}
-
 .settings-sidebar-item:hover {
-  background: rgba(0,0,0,0.03);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--settings-text-main);
 }
 
 .settings-sidebar-item.active {
-  background: rgba(212, 175, 55, 0.08); /* Light gold bg */
+  background: white;
   color: var(--settings-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   font-weight: 600;
 }
 
-.settings-sidebar-item.active i {
-  opacity: 1;
+.settings-sidebar-item.danger {
+  margin-top: auto;
+  color: var(--settings-danger);
 }
 
-.settings-sidebar-item-danger {
-  color: var(--settings-danger);
-  margin-top: auto; /* Push to bottom if needed, or just style */
+.settings-sidebar-item.danger:hover {
+  background: #FEF2F2;
 }
 
-.settings-sidebar-item-danger:hover {
-  background: #fef2f2;
-  color: var(--settings-danger);
+.settings-sidebar-item i {
+  font-size: 18px;
 }
 
 /* Content Area */
 .settings-content {
   flex: 1;
-  padding: 24px 28px;
+  padding: 32px;
   overflow-y: auto;
-  position: relative;
+  background: var(--settings-bg);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.settings-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--settings-text-main);
+  margin: 0;
 }
 
 .settings-close-btn {
-  position: absolute;
-  top: 24px;
-  right: 24px;
   background: transparent;
   border: none;
+  font-size: 24px;
   color: var(--settings-text-muted);
   cursor: pointer;
-  font-size: 24px;
   padding: 4px;
-  border-radius: 4px;
-  transition: color 0.2s;
+  border-radius: 50%;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .settings-close-btn:hover {
+  background: var(--settings-sidebar-bg);
   color: var(--settings-text-main);
-  background: #f1f5f9;
 }
 
+/* Sections */
 .settings-section {
   display: none;
   animation: fadeIn 0.3s ease;
@@ -166,49 +174,33 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.settings-section-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--settings-text-main);
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-}
-
-.settings-section-description {
-  color: var(--settings-text-muted);
-  font-size: 14px;
-  margin-bottom: 32px;
-  line-height: 1.5;
-  max-width: 600px;
-}
-
-/* Form Styles */
+/* Forms */
 .settings-form-group {
   margin-bottom: 20px;
 }
 
 .settings-label {
   display: block;
+  margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--settings-text-main);
-  margin-bottom: 8px;
 }
 
 .settings-input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 16px;
   border: 1px solid var(--settings-border);
-  border-radius: 6px;
+  border-radius: 8px;
   font-family: var(--poppins);
   font-size: 14px;
   color: var(--settings-text-main);
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: #fff;
+  transition: all 0.2s;
+  background: white;
 }
 
 .settings-input:focus {
@@ -217,169 +209,95 @@
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-/* Buttons */
-.settings-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--settings-border);
-}
-
-.settings-btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: var(--poppins);
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-}
-
 .settings-btn-primary {
   background: var(--settings-primary);
   color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-family: var(--poppins);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .settings-btn-primary:hover {
   background: var(--settings-primary-hover);
+  transform: translateY(-1px);
 }
 
-.settings-btn-secondary {
-  background: white;
-  border-color: var(--settings-border);
-  color: var(--settings-text-main);
+.settings-btn-primary:active {
+  transform: translateY(0);
 }
 
-.settings-btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+.settings-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* Cards (for radio options like the image) */
-.settings-cards-group {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.settings-card-option {
-  border: 1px solid var(--settings-border);
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.settings-card-option:hover {
-  border-color: var(--settings-primary);
-}
-
-.settings-card-option.active {
-  border-color: var(--settings-primary);
-  background: rgba(212, 175, 55, 0.08);
-  box-shadow: 0 0 0 1px var(--settings-primary);
-}
-
-.settings-card-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 12px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--settings-text-muted);
-}
-
-.settings-card-option.active .settings-card-icon {
-  background: rgba(212, 175, 55, 0.2);
-  color: var(--settings-primary);
-}
-
-.settings-card-title {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: var(--settings-text-main);
-}
-
-.settings-card-desc {
-  font-size: 12px;
-  color: var(--settings-text-muted);
-  line-height: 1.4;
-}
-
-/* Alert */
 .settings-alert {
   padding: 12px 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-bottom: 20px;
   font-size: 14px;
   display: none;
 }
 
 .settings-alert.success {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: #DEF7EC;
+  color: #03543F;
+  border: 1px solid #BCF0DA;
   display: block;
 }
 
 .settings-alert.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: #FDE8E8;
+  color: #9B1C1C;
+  border: 1px solid #FBD5D5;
   display: block;
 }
 
-/* Table */
+/* Tables */
 .settings-table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  margin-top: 16px;
   border: 1px solid var(--settings-border);
   border-radius: 8px;
+  overflow-x: auto;
+  margin-top: 16px;
 }
 
 .settings-table {
   width: 100%;
-  min-width: 800px;
   border-collapse: collapse;
-  font-family: var(--poppins);
-  font-size: 14px;
+  min-width: 800px;
+}
+
+.settings-table th,
+.settings-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--settings-border);
+  white-space: nowrap;
 }
 
 .settings-table th {
-  text-align: left;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--settings-border);
-  color: var(--settings-text-muted);
-  font-weight: 500;
-  font-family: var(--poppins);
-  font-size: 12px;
-  text-transform: uppercase;
-  white-space: nowrap;
   background: var(--settings-sidebar-bg);
+  font-weight: 600;
+  color: var(--settings-text-muted);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
 }
 
 .settings-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--settings-border);
   color: var(--settings-text-main);
-  white-space: nowrap;
+  font-size: 14px;
 }
 
 .settings-table tr:last-child td {
@@ -390,61 +308,80 @@
   padding: 32px;
   text-align: center;
   color: var(--settings-text-muted);
-  font-size: 14px;
+  font-style: italic;
 }
 
+/* Status Badges */
 .settings-status-badge {
   display: inline-flex;
-  padding: 4px 8px;
-  border-radius: 12px;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  background: #ecfdf5;
-  color: #059669;
+  background: #DEF7EC;
+  color: #03543F;
 }
 
 .settings-status-badge.inactive {
-  background: #f1f5f9;
-  color: #64748b;
+  background: #FDE8E8;
+  color: #9B1C1C;
 }
 
-/* Dark Mode Support */
-body.dark .settings-modal {
+/* Action Buttons */
+.settings-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+  color: var(--settings-text-muted);
+}
+
+.settings-action-btn:hover {
+  background: var(--settings-sidebar-bg);
+  color: var(--settings-text-main);
+}
+
+.settings-action-btn.delete {
+  color: var(--settings-danger);
+}
+
+.settings-action-btn.delete:hover {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #DC2626;
+}
+
+/* Dark Mode Overrides (if needed) */
+body.dark-mode {
   --settings-bg: #1e293b;
   --settings-sidebar-bg: #0f172a;
   --settings-border: #334155;
-  --settings-text-main: #f8fafc;
+  --settings-text-main: #f1f5f9;
   --settings-text-muted: #94a3b8;
 }
 
-body.dark .settings-sidebar-item:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-body.dark .settings-sidebar-item.active {
-  background: rgba(212, 175, 55, 0.15);
-}
-
-body.dark .settings-input {
+body.dark-mode .settings-input {
   background: #0f172a;
-  border-color: #334155;
-  color: #f8fafc;
+  color: #f1f5f9;
 }
 
-body.dark .settings-btn-secondary {
-  background: transparent;
-  border-color: #334155;
-  color: #f8fafc;
+body.dark-mode .settings-sidebar-item.active {
+  background: #1e293b;
 }
 
-body.dark .settings-btn-secondary:hover {
-  background: rgba(255,255,255,0.05);
+body.dark-mode .settings-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-body.dark .settings-card-option {
-  background: #0f172a; /* Or transparent */
-}
-
-body.dark .settings-card-option.active {
-  background: rgba(212, 175, 55, 0.15);
+body.dark-mode .settings-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
 }

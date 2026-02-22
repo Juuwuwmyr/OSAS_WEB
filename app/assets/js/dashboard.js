@@ -586,6 +586,16 @@ function createSettingsModal() {
                                 <input class="settings-input" type="email" id="adminEmail" name="email" placeholder="admin@example.com">
                             </div>
                             <div class="settings-form-group">
+                                <label class="settings-label" for="adminRole">Role</label>
+                                <select class="settings-input" id="adminRole" name="role">
+                                    <option value="admin">Admin</option>
+                                    <option value="OSAS Staff">OSAS Staff</option>
+                                    <option value="CSC Officer">CSC Officer</option>
+                                    <option value="Faculty Member">Faculty Member</option>
+                                    <option value="Student">Student</option>
+                                </select>
+                            </div>
+                            <div class="settings-form-group">
                                 <label class="settings-label" for="adminUsername">Username</label>
                                 <input class="settings-input" type="text" id="adminUsername" name="username" placeholder="Username for login">
                             </div>
@@ -615,13 +625,15 @@ function createSettingsModal() {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Username</th>
-                                    <th>Student ID</th>
+                                    <th>ID</th>
+                                    <th>Role</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="settingsAdminTableBody">
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="7">
                                         <div class="settings-empty-state">Loading admins...</div>
                                     </td>
                                 </tr>
@@ -781,7 +793,7 @@ async function loadAdminAccounts() {
         if (admins.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5">
+                    <td colspan="7">
                         <div class="settings-empty-state">No admin accounts found.</div>
                     </td>
                 </tr>
@@ -794,9 +806,11 @@ async function loadAdminAccounts() {
             const email = admin.email || '';
             const username = admin.username || '';
             const studentId = admin.student_id || '';
+            const role = admin.role || 'Admin';
             const active = admin.is_active !== undefined ? admin.is_active : true;
             const statusClass = active ? 'settings-status-badge' : 'settings-status-badge inactive';
             const statusLabel = active ? 'Active' : 'Inactive';
+            const id = admin.id;
 
             return `
                 <tr>
@@ -804,8 +818,14 @@ async function loadAdminAccounts() {
                     <td>${email}</td>
                     <td>${username}</td>
                     <td>${studentId}</td>
+                    <td>${role}</td>
                     <td>
                         <span class="${statusClass}">${statusLabel}</span>
+                    </td>
+                    <td>
+                        <button type="button" class="settings-action-btn delete" onclick="deleteAdmin(${id}, '${username}')" title="Remove User">
+                            <i class='bx bx-trash'></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -816,7 +836,7 @@ async function loadAdminAccounts() {
         console.error('Error loading admins', error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5">
+                <td colspan="7">
                     <div class="settings-empty-state">Network error while loading admins.</div>
                 </td>
             </tr>
@@ -878,6 +898,46 @@ async function submitAdminForm() {
         alertBox.textContent = 'Network error while creating admin.';
     } finally {
         submitButton.disabled = false;
+    }
+}
+
+async function deleteAdmin(id, username) {
+    if (!confirm(`Are you sure you want to remove the user "${username}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/users.php?action=deleteAdmin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id=${id}`
+        });
+
+        const text = await response.text();
+        let payload;
+        try {
+            payload = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid JSON:', text);
+            alert('Server error occurred.');
+            return;
+        }
+
+        if (payload.status === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification('success', 'User Removed', `User "${username}" has been removed.`);
+            } else {
+                alert(`User "${username}" has been removed.`);
+            }
+            loadAdminAccounts();
+        } else {
+            alert(payload.message || 'Failed to remove user.');
+        }
+    } catch (error) {
+        console.error('Error removing user:', error);
+        alert('Network error while removing user.');
     }
 }
 
