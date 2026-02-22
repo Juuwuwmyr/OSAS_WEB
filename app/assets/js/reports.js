@@ -914,17 +914,19 @@ function initReportsModule() {
                         }
 
                         // Check for client-side download (PDF/DOCX)
-                        if (reportFormat === 'pdf' || reportFormat === 'docx') {
-                             if (data.reports && data.reports.length > 0) {
-                                 if (reportFormat === 'pdf') {
-                                     downloadPDF(data.reports, reportName || 'Violation Report');
-                                 } else if (reportFormat === 'docx') {
-                                     downloadDOCX(data.reports, reportName || 'Violation Report');
-                                 }
-                             } else {
-                                 alert('No reports found to export for the selected criteria.');
+                    if (reportFormat === 'pdf' || reportFormat === 'docx') {
+                         if (data.reports && data.reports.length > 0) {
+                             const includeCharts = document.getElementById('includeCharts') ? document.getElementById('includeCharts').checked : false;
+                             
+                             if (reportFormat === 'pdf') {
+                                 downloadPDF(data.reports, reportName || 'Violation Report', includeCharts);
+                             } else if (reportFormat === 'docx') {
+                                 downloadDOCX(data.reports, reportName || 'Violation Report', includeCharts);
                              }
-                        }
+                         } else {
+                             alert('No reports found to export for the selected criteria.');
+                         }
+                    }
                         
                         closeGenerateModal();
                         // Reload reports
@@ -1017,7 +1019,62 @@ function initReportsModule() {
             return str;
         }
 
-        async function downloadPDF(reportsData, filenamePrefix) {
+        async function loadImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => {
+                    console.warn('Could not load image:', url);
+                    resolve(null);
+                }
+                img.src = url;
+            });
+        }
+
+        async function createChartImage(type, data, options) {
+            return new Promise((resolve) => {
+                const wrapper = document.createElement('div');
+                wrapper.style.position = 'absolute';
+                wrapper.style.left = '-9999px';
+                wrapper.style.top = '-9999px';
+                wrapper.style.width = '600px';
+                wrapper.style.height = '400px';
+                document.body.appendChild(wrapper);
+
+                const canvas = document.createElement('canvas');
+                wrapper.appendChild(canvas);
+
+                const chart = new Chart(canvas, {
+                    type: type,
+                    data: data,
+                    options: {
+                        ...options,
+                        animation: false,
+                        responsive: false,
+                        maintainAspectRatio: false,
+                        devicePixelRatio: 2
+                    }
+                });
+
+                // Small delay to ensure render
+                setTimeout(() => {
+                    const imgData = canvas.toDataURL('image/png');
+                    chart.destroy();
+                    document.body.removeChild(wrapper);
+                    resolve(imgData);
+                }, 100);
+            });
+        }
+
+        async function downloadPDF(reportsData, filenamePrefix, includeCharts = false) {
             if (!window.jspdf) {
                 alert('PDF library not loaded. Please refresh the page.');
                 return;
@@ -1027,16 +1084,59 @@ function initReportsModule() {
             const doc = new jsPDF();
             const now = new Date();
             
-            // Header
-            doc.setFontSize(18);
-            doc.text('Student Violation Report', 14, 22);
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text(`Generated: ${now.toLocaleString()}`, 14, 30);
+            // --- Header Design ---
+            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
+            const logoData = await loadImage(logoPath);
+
+            // Left Side: Logo & Institution Name
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+                
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80); // Dark Blue-Gray
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 40, 18);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141); // Gray
+                doc.text("Office of Student Affairs and Services", 40, 24);
+            } else {
+                // Fallback Layout
+                doc.setFontSize(22);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141);
+                doc.text("Office of Student Affairs and Services", 14, 28);
+            }
+
+            // Right Side: Report Title & Date
+            doc.setFontSize(14);
+            doc.setTextColor(41, 128, 185); // Accent Blue
+            doc.setFont("helvetica", "bold");
+            doc.text("VIOLATION REPORT", 196, 18, { align: 'right' });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+            // Divider Line
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.5);
+            doc.line(14, 35, 196, 35);
             
-            // Summary
-            doc.text(`Total Students: ${reportsData.length}`, 14, 40);
+            // Summary Stats
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Total Records: ${reportsData.length}`, 14, 45);
             
+            let startY = 50;
+
             // Table
             const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"];
             const tableRows = [];
@@ -1059,16 +1159,110 @@ function initReportsModule() {
             doc.autoTable({
                 head: [tableColumn],
                 body: tableRows,
-                startY: 50,
+                startY: startY,
                 theme: 'grid',
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [41, 128, 185] }
+                styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+                headStyles: { 
+                    fillColor: [245, 245, 245], 
+                    textColor: [44, 62, 80], 
+                    fontStyle: 'bold',
+                    lineWidth: 0.1,
+                    lineColor: [200, 200, 200]
+                },
+                columnStyles: {
+                    0: { cellWidth: 25 }, // Student ID
+                    1: { cellWidth: 'auto' }, // Name
+                    7: { halign: 'center' }, // Total
+                    8: { halign: 'center' }  // Status
+                },
+                alternateRowStyles: { fillColor: [255, 255, 255] },
+                margin: { top: 60 }
             });
+
+            // Charts Section (Bottom)
+            if (includeCharts) {
+                try {
+                    let finalY = doc.lastAutoTable.finalY + 20;
+                    
+                    // Check if we need a new page for charts
+                    if (finalY + 100 > 280) {
+                        doc.addPage();
+                        finalY = 20;
+                    }
+
+                    // Section Title
+                    doc.setFontSize(16);
+                    doc.setTextColor(41, 128, 185);
+                    doc.text("Visual Analysis", 105, finalY, { align: 'center' });
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(70, finalY + 2, 140, finalY + 2); // Underline
+                    
+                    finalY += 15;
+
+                    // Department Data
+                    const deptCounts = {};
+                    reportsData.forEach(r => {
+                        const dept = r.department || 'Unknown';
+                        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+                    });
+
+                    const deptChartData = {
+                        labels: Object.keys(deptCounts),
+                        datasets: [{
+                            data: Object.values(deptCounts),
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#76A346']
+                        }]
+                    };
+                    
+                    // Type Data
+                    const typeCounts = { uniform: 0, footwear: 0, noId: 0 };
+                    reportsData.forEach(r => {
+                        typeCounts.uniform += parseInt(r.uniformCount) || 0;
+                        typeCounts.footwear += parseInt(r.footwearCount) || 0;
+                        typeCounts.noId += parseInt(r.noIdCount) || 0;
+                    });
+
+                    const typeChartData = {
+                        labels: ['Uniform', 'Footwear', 'No ID'],
+                        datasets: [{
+                            label: 'Violations',
+                            data: [typeCounts.uniform, typeCounts.footwear, typeCounts.noId],
+                            backgroundColor: ['#4e73df', '#f6c23e', '#e74a3b']
+                        }]
+                    };
+
+                    // Generate Images
+                    const deptImg = await createChartImage('doughnut', deptChartData, { 
+                        plugins: { 
+                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
+                            title: { display: true, text: 'By Department' }
+                        } 
+                    });
+                    const typeImg = await createChartImage('bar', typeChartData, { 
+                        plugins: { 
+                            legend: { display: false },
+                            title: { display: true, text: 'By Violation Type' }
+                        } 
+                    });
+
+                    // Add to PDF (Side by Side)
+                    // Page width is 210mm. Margins 14mm. Usable ~180mm.
+                    // Each chart 85mm wide.
+                    
+                    doc.addImage(deptImg, 'PNG', 14, finalY, 85, 60);
+                    doc.addImage(typeImg, 'PNG', 110, finalY, 85, 60);
+                    
+                    // Add captions/titles manually if needed, but chart title plugin handles it cleaner inside the image
+                    
+                } catch (e) {
+                    console.error('Error adding charts to PDF:', e);
+                }
+            }
 
             doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
-        async function downloadDOCX(reportsData, filenamePrefix) {
+        async function downloadDOCX(reportsData, filenamePrefix, includeCharts = false) {
             if (!window.docx) {
                 alert('DOCX library not loaded. Please refresh the page.');
                 return;
