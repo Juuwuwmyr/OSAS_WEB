@@ -270,12 +270,36 @@
   border-radius: 8px;
   overflow-x: auto;
   margin-top: 16px;
+  
+  /* Force scrollbar visibility */
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+.settings-table-wrapper::-webkit-scrollbar {
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.settings-table-wrapper::-webkit-scrollbar-track {
+  background: var(--settings-sidebar-bg);
+  border-radius: 4px;
+}
+
+.settings-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.settings-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .settings-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
+  min-width: 1100px;
 }
 
 .settings-table th,

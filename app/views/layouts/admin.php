@@ -58,8 +58,8 @@ $notificationCount = 1; // Can be dynamic later
   </section>
   <!-- CONTENT -->
 
-  <script src="<?= View::asset('js/dashboard.js') ?>"></script>
-  <script src="<?= View::asset('js/utils/notification.js') ?>"></script>
+  <script src="<?= View::asset('js/dashboard.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>

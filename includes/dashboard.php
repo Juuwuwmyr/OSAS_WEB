@@ -60,8 +60,8 @@ if ($_SESSION['role'] !== 'admin') {
   </section>
   <!-- CONTENT -->
 
-  <script src="../app/assets/js/dashboard.js"></script>
-  <script src="../app/assets/js/utils/notification.js"></script>
+  <script src="../app/assets/js/dashboard.js?v=<?= time() ?>"></script>
+  <script src="../app/assets/js/utils/notification.js?v=<?= time() ?>"></script>
   <script src="../app/assets/js/dashboardData.js"></script>
   <script src="../app/assets/js/modules/dashboardModule.js"></script>
   <script src="../app/assets/js/utils/theme.js"></script>

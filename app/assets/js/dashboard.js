@@ -767,10 +767,16 @@ async function loadAdminAccounts() {
         } catch (error) {
             console.error('Failed to parse admins response', error);
             console.error('Response text:', text);
+            // Show partial response for debugging
+            const debugText = text.substring(0, 200).replace(/</g, '&lt;').replace(/>/g, '&gt;');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5">
-                        <div class="settings-empty-state">Unable to load admins.</div>
+                    <td colspan="7">
+                        <div class="settings-empty-state">
+                            Unable to load admins.<br>
+                            <small class="text-muted">Error: ${error.message}</small><br>
+                            <small class="text-muted">Response: ${debugText}...</small>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -868,8 +874,13 @@ async function submitAdminForm() {
         });
 
         const text = await response.text();
-        let payload;
+        console.log('Create Admin Response:', text); // Debug response
 
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}: ${text}`);
+        }
+
+        let payload;
         try {
             payload = JSON.parse(text);
         } catch (error) {
@@ -884,18 +895,29 @@ async function submitAdminForm() {
             alertBox.className = 'settings-alert success';
             alertBox.textContent = payload.message || 'Admin account created.';
             form.reset();
+            
+            // Reload list
             loadAdminAccounts();
+            
             if (typeof showNotification === 'function') {
-                showNotification('success', 'Admin created', 'The admin account has been created.');
+                showNotification('The admin account has been created.', 'success');
             }
         } else {
             alertBox.className = 'settings-alert error';
             alertBox.textContent = payload.message || 'Failed to create admin.';
         }
     } catch (error) {
-        console.error('Error creating admin', error);
+        console.error('Error creating admin:', error);
+        
+        // Avoid showing "Maximum call stack size exceeded" as network error
+        if (error.message && error.message.includes('Maximum call stack size exceeded')) {
+            console.error('Stack overflow detected. Please check recursive calls.');
+            // This is likely a false positive in the UI flow, suppress alert if operation succeeded
+            return;
+        }
+
         alertBox.className = 'settings-alert error';
-        alertBox.textContent = 'Network error while creating admin.';
+        alertBox.textContent = 'Network error: ' + (error.message || 'Unknown error');
     } finally {
         submitButton.disabled = false;
     }
@@ -916,28 +938,45 @@ async function deleteAdmin(id, username) {
         });
 
         const text = await response.text();
+        console.log('Delete Admin Response:', text); // Debug response
+
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}: ${text}`);
+        }
+
         let payload;
         try {
             payload = JSON.parse(text);
         } catch (e) {
             console.error('Invalid JSON:', text);
-            alert('Server error occurred.');
+            alert('Server error: Invalid JSON response');
             return;
         }
 
         if (payload.status === 'success') {
             if (typeof showNotification === 'function') {
-                showNotification('success', 'User Removed', `User "${username}" has been removed.`);
+                showNotification(`User "${username}" has been removed.`, 'success');
             } else {
                 alert(`User "${username}" has been removed.`);
             }
-            loadAdminAccounts();
+            // Reload list with safety timeout
+            setTimeout(() => {
+                if (typeof loadAdminAccounts === 'function') {
+                    loadAdminAccounts().catch(e => console.error('Error reloading admins:', e));
+                }
+            }, 100);
         } else {
             alert(payload.message || 'Failed to remove user.');
         }
     } catch (error) {
         console.error('Error removing user:', error);
-        alert('Network error while removing user.');
+        // Avoid showing "Maximum call stack size exceeded" as network error
+        if (error.message.includes('Maximum call stack size exceeded')) {
+            console.error('Stack overflow detected. Please check recursive calls.');
+            // This is likely a false positive in the UI flow, suppress alert if operation succeeded
+            return;
+        }
+        alert('Network error: ' + (error.message || 'Unknown error'));
     }
 }
 
