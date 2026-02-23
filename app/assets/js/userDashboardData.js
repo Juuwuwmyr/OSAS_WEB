@@ -357,7 +357,7 @@ class UserDashboardData {
                     <td>${date}</td>
                     <td><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
                     <td><span class="status ${badgeClass}">${statusText}</span></td>
-                    <td><button class="btn-view-details" onclick="viewViolationDetails(${v.id || v.violation_id})">View Details</button></td>
+                    <td><button class="btn-view-details-icon" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details"><i class='bx bx-show'></i></button></td>
                 </tr>
             `;
         }).join('');

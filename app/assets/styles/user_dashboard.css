@@ -2687,3 +2687,26 @@ body.dark .announcement-item:hover {
   color: var(--dark);
   font-size: 14px;
 }
+
+/* Modern View Details Icon Button */
+.btn-view-details-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--light);
+  color: var(--dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--grey);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 20px;
+}
+
+.btn-view-details-icon:hover {
+  background: var(--grey);
+  color: var(--dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
