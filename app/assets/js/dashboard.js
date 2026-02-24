@@ -745,11 +745,12 @@ function createSettingsModal() {
                                     <th>Student ID</th>
                                     <th>Role</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="settingsUserTableBody">
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="7">
                                         <div class="settings-empty-state">Loading users...</div>
                                     </td>
                                 </tr>
@@ -1687,6 +1688,17 @@ async function loadUserAccounts() {
                     <td>
                         <span class="${statusClass}">${statusLabel}</span>
                     </td>
+                    <td>
+                        <button type="button" class="settings-action-btn secondary" onclick="toggleUserActive('${user.id}', ${active ? 0 : 1})" title="${active ? 'Deactivate' : 'Activate'}">
+                            <i class='bx ${active ? 'bx-user-x' : 'bx-user-check'}'></i>
+                        </button>
+                        <button type="button" class="settings-action-btn" onclick="resetUserPassword('${user.id}', '${username}')" title="Reset Password">
+                            <i class='bx bx-reset'></i>
+                        </button>
+                        <button type="button" class="settings-action-btn delete" onclick="deleteUser('${user.id}', '${username}')" title="Delete">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         }).join('');
@@ -1701,5 +1713,71 @@ async function loadUserAccounts() {
                 </td>
             </tr>
         `;
+    }
+}
+
+async function resetUserPassword(id, username) {
+    if (!confirm(`Reset password for "${username}" to default?`)) {
+        return;
+    }
+    try {
+        const response = await fetch('../api/users.php?action=resetPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
+        });
+        const text = await response.text();
+        let payload;
+        try { payload = JSON.parse(text); } catch (e) { alert('Server error'); return; }
+        if (payload.status === 'success') {
+            if (typeof showNotification === 'function') showNotification('Password reset', 'success');
+        } else {
+            alert(payload.message || 'Failed to reset');
+        }
+    } catch (e) {
+        alert('Network error');
+    }
+}
+
+async function toggleUserActive(id, isActive) {
+    try {
+        const response = await fetch('../api/users.php?action=updateStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}&is_active=${isActive}`
+        });
+        const text = await response.text();
+        let payload;
+        try { payload = JSON.parse(text); } catch (e) { alert('Server error'); return; }
+        if (payload.status === 'success') {
+            loadUserAccounts();
+        } else {
+            alert(payload.message || 'Failed to update');
+        }
+    } catch (e) {
+        alert('Network error');
+    }
+}
+
+async function deleteUser(id, username) {
+    if (!confirm(`Delete user "${username}"? This cannot be undone.`)) {
+        return;
+    }
+    try {
+        const response = await fetch('../api/users.php?action=deleteUser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
+        });
+        const text = await response.text();
+        let payload;
+        try { payload = JSON.parse(text); } catch (e) { alert('Server error'); return; }
+        if (payload.status === 'success') {
+            loadUserAccounts();
+        } else {
+            alert(payload.message || 'Failed to delete');
+        }
+    } catch (e) {
+        alert('Network error');
     }
 }

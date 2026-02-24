@@ -774,10 +774,7 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Login
                 </a>
-                <a href="includes/signup.php" class="btn btn-primary">
-                    <i class="fas fa-user-plus"></i>
-                    Sign Up
-                </a>
+                
             </div>
         </div>
     </nav>

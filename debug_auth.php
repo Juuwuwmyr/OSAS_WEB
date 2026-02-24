@@ -187,6 +187,6 @@ echo "</div>";
 
 echo "<div style='margin: 20px 0;'>";
 echo "<a href='index.php?direct=true' style='padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-right: 10px;'>🔐 Test Login</a>";
-echo "<a href='includes/signup.php' style='padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px;'>📝 Test Signup</a>";
+echo "<span style='padding: 10px 20px; background: #6c757d; color: white; border-radius: 5px;'>📝 Signup disabled</span>";
 echo "</div>";
 ?>

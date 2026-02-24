@@ -90,7 +90,7 @@ def seed_database():
         # Insert into users table
         add_user = ("INSERT INTO users "
                     "(username, email, password, role, full_name, student_id, is_active, created_at) "
-                    "VALUES (%s, %s, %s, 'student', %s, %s, 1, NOW())")
+                    "VALUES (%s, %s, %s, 'user', %s, %s, 1, NOW())")
 
         # Valid BCRYPT hash for 'password123' generated from PHP
         default_password_hash = '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy'

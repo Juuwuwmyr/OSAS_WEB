@@ -27,6 +27,12 @@ try {
         $controller->createAdmin();
     } elseif ($method === 'POST' && $action === 'deleteAdmin') {
         $controller->deleteAdmin();
+    } elseif ($method === 'POST' && $action === 'updateStatus') {
+        $controller->updateStatus();
+    } elseif ($method === 'POST' && $action === 'resetPassword') {
+        $controller->resetPassword();
+    } elseif ($method === 'POST' && $action === 'deleteUser') {
+        $controller->deleteUser();
     } elseif ($method === 'POST' && $action === 'updateProfile') {
         $controller->updateProfile();
     } else {
@@ -54,4 +60,3 @@ try {
     ]);
 }
 exit;
-

@@ -322,5 +322,77 @@ class UserController extends Controller {
             $this->error('Error retrieving profile: ' . $e->getMessage());
         }
     }
-}
 
+    public function updateStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+        $this->requireAdmin();
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        $isActive = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+        try {
+            $user = $this->model->getById($id);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+            if ($this->model->update($id, ['is_active' => $isActive])) {
+                $this->success('User status updated.', ['id' => $id, 'is_active' => $isActive]);
+            } else {
+                $this->error('Failed to update user status.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error updating user status: ' . $e->getMessage());
+        }
+    }
+
+    public function resetPassword() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+        $this->requireAdmin();
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+        try {
+            $user = $this->model->getById($id);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+            if ($this->model->update($id, ['password' => 'password123'])) {
+                $this->success('Password reset to default.', ['id' => $id]);
+            } else {
+                $this->error('Failed to reset password.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error resetting password: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteUser() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+        $this->requireAdmin();
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+        try {
+            $user = $this->model->getById($id);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+            if ($this->model->delete($id)) {
+                $this->success('User deleted successfully.');
+            } else {
+                $this->error('Failed to delete user.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error deleting user: ' . $e->getMessage());
+        }
+    }
+}

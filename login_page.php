@@ -297,9 +297,7 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </form>
 
             <div class="login-footer">
-                <p>Don't have an account?
-                    <a href="./includes/signup.php" class="signup-link">Sign up</a>
-                </p>
+                <p>Use the email provided by the admin and the default password to login.</p>
             </div>
         </div>
     </div>
