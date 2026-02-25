@@ -825,7 +825,7 @@ class DashboardData {
         tbody.innerHTML = '';
 
         if (recentViolations.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px;">No violations found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No violations found</td></tr>';
             return;
         }
 
@@ -834,15 +834,15 @@ class DashboardData {
                               `${violation.firstName || ''} ${violation.lastName || ''}`.trim() || 
                               'Unknown Student';
             const date = violation.violationDate || violation.violation_date || violation.dateReported || 'N/A';
-            const enrolledDate = violation.studentEnrolledDate || violation.student_enrolled_date || violation.created_at || 'N/A';
-            const remarks = violation.remarks || violation.notes || 'N/A';
-            const status = violation.status || 'pending';
+            const violationType = violation.violation_type || violation.violationType || violation.notes || violation.remarks || 'N/A';
+            const status = (violation.status || 'pending').toLowerCase();
             const avatar = violation.studentImage || violation.avatar || '../app/assets/img/default.png';
 
-            const statusClass = status === 'completed' || status === 'resolved' ? 'completed' :
+            const statusClass = status === 'completed' || status === 'resolved' || status === 'permitted' ? 'completed' :
                                status === 'warning' ? 'process' : 'pending';
             const statusText = status === 'completed' || status === 'resolved' ? 'Resolved' :
                               status === 'warning' ? 'Warning' :
+                              status === 'permitted' ? 'Permitted' :
                               status === 'disciplinary' ? 'Disciplinary Action' : 'Pending';
 
             const row = document.createElement('tr');
@@ -851,9 +851,8 @@ class DashboardData {
                     <img src="${avatar}" alt="Student Image" onerror="this.src='../app/assets/img/default.png'">
                     <p>${this.escapeHtml(studentName)}</p>
                 </td>
-                <td>${this.formatDate(enrolledDate)}</td>
                 <td>${this.formatDate(date)}</td>
-                <td>${this.escapeHtml(remarks)}</td>
+                <td>${this.escapeHtml(violationType)}</td>
                 <td><span class="status ${statusClass}">${statusText}</span></td>
             `;
             tbody.appendChild(row);

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 
 // Initialize counts with default values
@@ -211,9 +211,8 @@ try {
           <thead>
             <tr>
               <th>Violator</th>
-              <th>Enrolled Date</th>
               <th>Date</th>
-              <th>Remarks</th>
+              <th>Violation</th>
               <th>Status</th>
             </tr>
           </thead>
