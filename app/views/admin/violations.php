@@ -379,12 +379,16 @@ require_once __DIR__ . '/../../core/View.php';
         <!-- Attachments -->
         <div class="violation-attachments">
           <h4>Attachments (Optional)</h4>
-          <div class="attachment-upload">
-            <input type="file" id="violationAttachment" name="violationAttachment" accept="image/*,.pdf,.doc,.docx" multiple>
-            <label for="violationAttachment" class="attachment-label">
-              <i class='bx bx-paperclip'></i>
-              <span>Upload evidence (photos, documents)</span>
-            </label>
+          <div class="attachments-compact-wrapper">
+            <div class="attachment-upload">
+              <input type="file" id="violationAttachment" name="violationAttachment" accept="image/*,.pdf,.doc,.docx" multiple>
+              <label for="violationAttachment" class="attachment-label">
+                <i class='bx bx-plus-circle'></i>
+                <span>Add Evidence</span>
+              </label>
+            </div>
+            <!-- Attachment Previews -->
+            <div id="attachmentPreviews" class="attachment-previews-container"></div>
           </div>
         </div>
 

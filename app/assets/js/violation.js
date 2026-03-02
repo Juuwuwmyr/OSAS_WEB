@@ -145,6 +145,7 @@ function initViolationsModule() {
         let itemsPerPage = 10;
         let totalRecords = 0;
         let totalPages = 0;
+        let selectedFiles = []; // To store selected attachment files
 
         // Student data will be loaded dynamically
 
@@ -1702,6 +1703,10 @@ function initViolationsModule() {
             recordModal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
+            // Clear previous attachments selection
+            selectedFiles = [];
+            updateAttachmentPreviews();
+            
             // Show/hide entrance slip button
             if (modalEntranceBtn) {
                 modalEntranceBtn.style.display = editId ? 'flex' : 'none';
@@ -1904,7 +1909,12 @@ function initViolationsModule() {
                     }, 50);
                 }
                 if (selectedStudentCard) selectedStudentCard.style.display = 'none';
-                delete recordModal.dataset.editingId;
+            
+            // Clear attachments
+            selectedFiles = [];
+            updateAttachmentPreviews();
+            
+            delete recordModal.dataset.editingId;
 
                 // Reset notes counter
                 updateNotesCounter(0);
@@ -3102,6 +3112,110 @@ function initViolationsModule() {
             }
         }
 
+        // --- Attachment Preview Functions ---
+        function updateAttachmentPreviews() {
+            const container = document.getElementById('attachmentPreviews');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            if (selectedFiles.length === 0) {
+                // Keep the container visible if needed by layout, or let CSS handle it
+                return;
+            }
+
+            selectedFiles.forEach((file, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                // Format file size
+                const fileSize = file.size < 1024 * 1024 
+                    ? (file.size / 1024).toFixed(1) + ' KB' 
+                    : (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+
+                // If it's an image, show a thumbnail
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="preview">
+                            <div class="file-size">${fileSize}</div>
+                            <button type="button" class="remove-btn" data-index="${index}" title="Remove file">
+                                <i class='bx bx-x'></i>
+                            </button>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // Show file icon for other types
+                    previewItem.innerHTML = `
+                        <div class="file-icon-preview">
+                            <i class='bx bxs-file-blank' style="font-size: 24px; color: #ffcc00;"></i>
+                            <div class="file-size">${fileSize}</div>
+                        </div>
+                        <button type="button" class="remove-btn" data-index="${index}" title="Remove file">
+                            <i class='bx bx-x'></i>
+                        </button>
+                    `;
+                }
+                
+                container.appendChild(previewItem);
+            });
+
+            // Event delegation for removal to handle async FileReader renders
+            container.onclick = function(e) {
+                const removeBtn = e.target.closest('.remove-btn');
+                if (!removeBtn) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const idx = parseInt(removeBtn.dataset.index);
+                const fileName = selectedFiles[idx]?.name || 'file';
+                
+                console.log(`🗑️ Removing attachment: ${fileName} at index ${idx}`);
+                
+                const item = removeBtn.closest('.preview-item');
+                if (item) {
+                    item.style.transform = 'scale(0.8)';
+                    item.style.opacity = '0';
+                    item.style.transition = 'all 0.2s ease';
+                }
+                
+                setTimeout(() => {
+                    selectedFiles.splice(idx, 1);
+                    updateAttachmentPreviews();
+                }, 200);
+            };
+        }
+
+        function setupAttachmentHandler() {
+            const fileInput = document.getElementById('violationAttachment');
+            if (!fileInput) return;
+
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    // Add new files to the array
+                    for (let i = 0; i < this.files.length; i++) {
+                        // Check if file already exists in selection to avoid duplicates
+                        const alreadyExists = selectedFiles.some(f => 
+                            f.name === this.files[i].name && 
+                            f.size === this.files[i].size
+                        );
+                        
+                        if (!alreadyExists) {
+                            selectedFiles.push(this.files[i]);
+                        }
+                    }
+                    
+                    // Clear the input so it can trigger change again for same file
+                    this.value = '';
+                    
+                    updateAttachmentPreviews();
+                }
+            });
+        }
+
         function populateSuggestedNotes(violationType) {
             const notesField = document.getElementById('violationNotes');
             if (!notesField || notesField.value.trim() !== '') return;
@@ -3123,6 +3237,9 @@ function initViolationsModule() {
         if (violationForm) {
             // Setup real-time validation
             setupRealTimeValidation();
+            
+            // Setup attachment handling
+            setupAttachmentHandler();
 
             violationForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -3251,12 +3368,11 @@ function initViolationsModule() {
                         formData.append('notes', notes);
                         formData.append('department', studentDepartment);
 
-                        // Append files
-                        const attachmentInput = document.getElementById('violationAttachment');
-                        if (attachmentInput && attachmentInput.files.length > 0) {
-                            for (let i = 0; i < attachmentInput.files.length; i++) {
-                                formData.append('attachments[]', attachmentInput.files[i]);
-                            }
+                        // Append files from selectedFiles array
+                        if (selectedFiles.length > 0) {
+                            selectedFiles.forEach(file => {
+                                formData.append('attachments[]', file);
+                            });
                         }
 
                         await saveViolation(formData);
