@@ -65,6 +65,7 @@ $notificationCount = 1; // Can be dynamic later
 
   <script src="<?= View::asset('js/dashboard.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/utils/offlineDB.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
@@ -76,6 +77,7 @@ $notificationCount = 1; // Can be dynamic later
   <script src="<?= View::asset('js/reports.js') ?>"></script>
   <script src="<?= View::asset('js/announcement.js') ?>"></script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
+  <script src="<?= View::asset('js/pwa.js') ?>"></script>
 </body>
 
 </html>

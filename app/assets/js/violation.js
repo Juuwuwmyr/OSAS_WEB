@@ -290,6 +290,18 @@ function initViolationsModule() {
         
                 // Add timestamp to prevent caching and include is_archived parameter
                 const isArchived = currentView === 'archive' ? 1 : 0;
+
+                // CHECK OFFLINE STATUS
+                if (!navigator.onLine && window.offlineDB) {
+                    console.log('📡 OFFLINE: Loading violations from IndexedDB...');
+                    const cachedViolations = await window.offlineDB.getViolations();
+                    if (cachedViolations && cachedViolations.length > 0) {
+                        violations = cachedViolations;
+                        console.log(`✅ Loaded ${violations.length} violations from cache`);
+                        return violations;
+                    }
+                }
+
                 const response = await fetch(API_BASE + `violations.php?is_archived=${isArchived}&t=` + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
@@ -322,6 +334,12 @@ function initViolationsModule() {
                 
                 // FIXED: Make sure we're accessing the correct property
                 violations = data.violations || data.data || [];
+                
+                // Cache for offline use
+                if (window.offlineDB && violations.length > 0) {
+                    window.offlineDB.saveViolations(violations).catch(err => console.error('Cache failed:', err));
+                }
+                
                 console.log(`✅ Loaded ${violations.length} violations`);
                 console.log('Violations array:', violations);
                 
@@ -879,6 +897,54 @@ function initViolationsModule() {
             try {
                 console.log('💾 Saving violation (FormData)...');
 
+                // OFFLINE HANDLING
+                if (!navigator.onLine && window.offlineDB) {
+                    console.log('📡 OFFLINE: Queueing violation for sync...');
+                    
+                    // Convert FormData to simple object for storage
+                    const data = {};
+                    formData.forEach((value, key) => {
+                        // Handle file separately if needed, but for now we skip files offline
+                        if (!(value instanceof File)) {
+                            data[key] = value;
+                        }
+                    });
+
+                    await window.offlineDB.queueAction('POST_VIOLATION', data);
+                    
+                    showNotification('You are offline. Violation saved locally and will sync when online.', 'warning', 6000);
+                    
+                    // Optimistic UI update
+                    const tempId = 'TEMP-' + Date.now();
+                    const studentId = formData.get('studentId');
+                    const student = students.find(s => s.studentId === studentId);
+                    
+                    const offlineViolation = {
+                        id: tempId,
+                        caseId: 'OFFLINE-SYNC',
+                        studentId: studentId,
+                        studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
+                        studentImage: student ? student.avatar : '',
+                        violationTypeLabel: 'Sync Pending...',
+                        violationLevelLabel: '...',
+                        dateReported: formData.get('violationDate'),
+                        violationTime: formData.get('violationTime'),
+                        status: 'pending',
+                        statusLabel: 'Pending Sync'
+                    };
+                    
+                    violations.unshift(offlineViolation);
+                    renderViolations();
+                    
+                    // Close modal
+                    if (recordModal) {
+                        recordModal.style.display = 'none';
+                        if (recordOverlay) recordOverlay.style.display = 'none';
+                    }
+                    
+                    return { status: 'offline', data: offlineViolation };
+                }
+
                 showLoadingOverlay('Saving violation...');
 
                 const response = await fetch(API_BASE + 'violations.php', {
@@ -1216,9 +1282,51 @@ function initViolationsModule() {
 
         function generateCaseId() {
             const year = new Date().getFullYear();
-            const lastId = violations.length > 0 ? Math.max(...violations.map(v => parseInt(v.caseId.split('-').pop()))) : 0;
+            const lastId = violations.length > 0 ? Math.max(...violations.map(v => {
+                const parts = v.caseId.split('-');
+                return parts.length > 1 ? parseInt(parts.pop()) : 0;
+            })) : 0;
             return `VIOL-${year}-${String(lastId + 1).padStart(3, '0')}`;
         }
+
+        // SYNC OFFLINE ACTIONS
+        window.syncOfflineActions = async function() {
+            if (!navigator.onLine || !window.offlineDB) return;
+            
+            const queue = await window.offlineDB.getSyncQueue();
+            if (queue.length === 0) return;
+            
+            console.log(`🔄 Syncing ${queue.length} offline actions...`);
+            showNotification(`Syncing ${queue.length} offline records...`, 'info');
+            
+            for (const item of queue) {
+                try {
+                    if (item.action === 'POST_VIOLATION') {
+                        const formData = new FormData();
+                        for (const key in item.data) {
+                            formData.append(key, item.data[key]);
+                        }
+                        
+                        const response = await fetch(API_BASE + 'violations.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            await window.offlineDB.removeFromQueue(item.tempId);
+                            console.log('✅ Action synced successfully:', item.tempId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Sync failed for item:', item.tempId, error);
+                }
+            }
+            
+            // Reload after sync
+            await loadViolations(false);
+            renderViolations();
+            showNotification('Offline data synced successfully!', 'success');
+        };
 
         // ========== STUDENT DETAILS FUNCTIONS ==========
 

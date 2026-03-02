@@ -62,11 +62,13 @@ $notificationCount = 7; // Can be dynamic later
 
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
   <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/initModules.js') ?>"></script>
   <script src="<?= View::asset('js/user_dashboard.js') ?>"></script>
   <script src="<?= View::asset('js/userViolations.js') ?>"></script>
   <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
+  <script src="<?= View::asset('js/pwa.js') ?>"></script>
 </body>
 
 </html>
