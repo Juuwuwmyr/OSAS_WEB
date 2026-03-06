@@ -276,24 +276,6 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                 <button type="submit" class="login-button" id="loginButton">
                     <span>Login</span>
                 </button>
-
-                <div class="social-login">
-                    <div class="divider">
-                        <span class="divider-line"></span>
-                        <span class="divider-text">OR</span>
-                        <span class="divider-line"></span>
-                    </div>
-                    <div class="social-buttons">
-                        <button type="button" class="social-button google">
-                            <i class="fab fa-google"></i>
-                            Continue with Google
-                        </button>
-                        <button type="button" class="social-button facebook">
-                            <i class="fab fa-facebook-f"></i>
-                            Continue with Facebook
-                        </button>
-                    </div>
-                </div>
             </form>
 
             <div class="login-footer">
@@ -316,11 +298,6 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         Install App
     </button>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="app/assets/js/firebase-config.js"></script>
-    
     <script src="service-worker.js"></script>
     <script src="app/assets/js/pwa.js"></script>
     <script src="app/assets/js/session.js"></script>
