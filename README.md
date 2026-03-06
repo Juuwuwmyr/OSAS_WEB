@@ -24,11 +24,11 @@ The **E-OSAS WEB SYSTEM** is a full-stack, enterprise-ready platform designed to
 
 ## ✨ Key Features
 
-### 🔐 Enterprise-Grade Security
-*   **Multi-Factor Authentication (OTP):** Secure account creation with email-based One-Time Passwords via **PHPMailer**.
-*   **Role-Based Access Control (RBAC):** Granular permissions for Administrators and Students.
-*   **Session Resilience:** Robust session management with persistent login support via encrypted cookies.
-*   **Data Integrity:** Secure password hashing using **BCRYPT** and prepared SQL statements to prevent injection.
+### 🔐 Authentication & Authorization
+*   **User Authentication:** Secure login and registration system.
+*   **Session Management:** PHP-based session handling with cookie restoration support.
+*   **Role-Based Access Control (RBAC):** Distinct admin and student (user) dashboards.
+*   **Data Integrity:** Secure password hashing (BCRYPT) and management.
 
 ### 📊 Advanced Administration
 *   **Real-time Analytics:** Visualized system data using **Chart.js** for violation trends and student demographics.
@@ -70,12 +70,9 @@ OSAS_WEB/
 
 | Component | Technology |
 | :--- | :--- |
-| **Language** | PHP 7.4+ |
+| **Backend** | PHP 7.4+ (MVC Architecture) |
 | **Database** | MySQL / MariaDB |
-| **Frontend** | HTML5, CSS3, JavaScript (ES6+) |
-| **Architecture** | Custom MVC Framework |
-| **Libraries** | PHPMailer, PHPWord, Chart.js, jsPDF, Puter.js |
-| **Mobile** | Progressive Web App (PWA) |
+| **Tools** | Composer (Dependency Management), PHPWord |
 
 ---
 
