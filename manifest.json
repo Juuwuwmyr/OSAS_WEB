@@ -3,8 +3,8 @@
   "short_name": "OSAS",
   "start_url": "index.php",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#F5F5F2",
+  "theme_color": "#D4AF37",
   "icons": [
     {
       "src": "app/assets/img/default.png",

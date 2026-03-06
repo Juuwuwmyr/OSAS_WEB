@@ -38,7 +38,7 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSAS | Login</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4a2d6d">
+    <meta name="theme-color" content="#D4AF37">
     <link rel="apple-touch-icon" href="app/assets/img/default.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -284,17 +284,7 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         </div>
     </div>
 
-    <button id="installPWA" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 12px 18px;
-    border-radius: 10px;
-    background:#4a2d6d;
-    color:white;
-    border:none;
-    cursor:pointer;
-    display:none;">
+    <button id="installPWA" class="pwa-install-btn">
         Install App
     </button>
 

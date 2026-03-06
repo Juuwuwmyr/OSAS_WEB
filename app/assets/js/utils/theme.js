@@ -56,8 +56,8 @@ function updateThemeColor() {
   const appleStatusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   
   // Primary theme colors - darkest dark mode
-  const themeColor = window.darkMode ? '#0F0F0F' : '#ffffff';
-  const secondaryColor = window.darkMode ? '#1A1A1A' : '#ffffff';
+  const themeColor = window.darkMode ? '#0F0F0F' : '#D4AF37';
+  const secondaryColor = window.darkMode ? '#1A1A1A' : '#D4AF37';
   
   // Update or create standard theme-color meta tag
   if (themeColorMeta) {
@@ -135,7 +135,7 @@ function updateCSSVariables() {
     root.style.setProperty('--secondary-bg', '#FAFAF8');
     root.style.setProperty('--text-primary', '#1A1A1A');
     root.style.setProperty('--text-secondary', '#555555');
-    root.style.setProperty('--accent-color', '#4a2d6d');
+    root.style.setProperty('--accent-color', '#D4AF37');
     root.style.setProperty('--border-color', '#D8D8D5');
   }
 }
