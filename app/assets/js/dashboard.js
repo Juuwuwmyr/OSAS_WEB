@@ -583,7 +583,7 @@ function createSettingsModal() {
     const userAvatar = resolvePath('assets/img/user.jpg');
 
     overlay.innerHTML = `
-        <div class="settings-modal">
+        <div class="settings-modal admin-settings-modal">
             <aside class="settings-sidebar">
                 <div class="settings-sidebar-header">Settings</div>
                 <div class="settings-sidebar-list">

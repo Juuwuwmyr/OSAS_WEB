@@ -1010,6 +1010,210 @@ body.dark .sidebar-search-input::placeholder {
   mix-blend-mode: multiply;
 }
 
+/* ========================================= */
+/*       SMALL FONTS OVERRIDE                */
+/* ========================================= */
+
+#main-content,
+#content main {
+  font-size: 12px !important;
+}
+
+#main-content *,
+#content main * {
+  font-size: inherit !important;
+}
+
+#main-content .page-title,
+#content main .page-title {
+  font-size: 17px !important;
+}
+
+#main-content h1,
+#content main h1 {
+  font-size: 17px !important;
+}
+
+#main-content h2,
+#content main h2 {
+  font-size: 15px !important;
+}
+
+#main-content h3,
+#content main h3 {
+  font-size: 14px !important;
+}
+
+#main-content h4,
+#content main h4 {
+  font-size: 13px !important;
+}
+
+#main-content p,
+#content main p,
+#main-content span,
+#content main span,
+#main-content li,
+#content main li,
+#main-content td,
+#content main td,
+#main-content th,
+#content main th,
+#main-content label,
+#content main label,
+#main-content input,
+#content main input,
+#main-content select,
+#content main select,
+#main-content textarea,
+#content main textarea,
+#main-content button,
+#content main button,
+#main-content a,
+#content main a,
+.Violations-modal *,
+.modal * {
+  font-size: 12px !important;
+}
+
+.Violations-modal h2,
+.modal h3 {
+  font-size: 15px !important;
+}
+
+.Violations-modal h3,
+.modal h4 {
+  font-size: 14px !important;
+}
+
+#main-content .page-subtitle,
+#content main .page-subtitle {
+  font-size: 12px !important;
+}
+
+#content main .breadcrumb {
+  font-size: 11px !important;
+}
+
+#content main .box-info li .text h3 {
+  font-size: 14px !important;
+}
+
+#content main .box-info li .text p {
+  font-size: 12px !important;
+}
+
+#content main .table-data .head h3 {
+  font-size: 14px !important;
+}
+
+#content main .table-data .violation-history table th {
+  font-size: 11px !important;
+}
+
+#content main .table-data .violation-history table td {
+  font-size: 11px !important;
+}
+
+#content main .tips-header h3 {
+  font-size: 14px !important;
+}
+
+#content main .tip-details h4 {
+  font-size: 13px !important;
+}
+
+#content main .tip-details p {
+  font-size: 12px !important;
+}
+
+#content main .announcements-header h3 {
+  font-size: 14px !important;
+}
+
+#content main .announcement-details h4 {
+  font-size: 13px !important;
+}
+
+#content main .announcement-details p {
+  font-size: 12px !important;
+}
+
+#content main .announcement-time,
+#content main .announcement-category {
+  font-size: 11px !important;
+}
+
+#content main .status,
+#content main .badge,
+#content main .btn-view-details,
+#content main .btn-read-more,
+#content main .Violations-btn {
+  font-size: 11px !important;
+}
+
+#content main .violation-details h4 {
+  font-size: 13px !important;
+}
+
+#content main .violation-details p {
+  font-size: 12px !important;
+}
+
+#content main .box-info li .bx {
+  width: 43px !important;
+  height: 43px !important;
+  font-size: 21px !important;
+}
+
+#content main .violation-icon {
+  width: 33px !important;
+  height: 33px !important;
+  font-size: 17px !important;
+}
+
+#content main .tip-icon {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 15px !important;
+}
+
+#content main .announcement-icon {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 15px !important;
+}
+
+#content main .page-header {
+  padding: 18px 23px !important;
+}
+
+#content main .box-info li {
+  padding: 15px !important;
+  grid-gap: 15px !important;
+}
+
+#content main .table-data .head {
+  margin-bottom: 15px !important;
+}
+
+#content main .table-data>div {
+  padding: 18px !important;
+}
+
+#content main .tips-container,
+#content main .announcements-container {
+  padding: 18px !important;
+}
+
+#content main .announcements-header {
+  padding: 13px 18px !important;
+}
+
+#content main .announcement-item {
+  padding: 13px 18px !important;
+}
+
 #eye-care-overlay.active {
   opacity: 1;
 }

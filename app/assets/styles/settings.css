@@ -725,3 +725,136 @@ body.dark-mode .settings-input {
     padding: 16px;
   }
 }
+
+/* Ultra-Small Font Overrides for Admin and User Settings */
+.admin-settings-modal,
+.user-settings-modal {
+  font-size: 11px; /* Global base reduction */
+}
+
+.admin-settings-modal .settings-sidebar-header,
+.user-settings-modal .settings-sidebar-header {
+  font-size: 13px;
+  padding: 0 16px 16px;
+}
+
+.admin-settings-modal .settings-sidebar-item,
+.user-settings-modal .settings-sidebar-item {
+  font-size: 10px;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.admin-settings-modal .settings-sidebar-item i,
+.user-settings-modal .settings-sidebar-item i {
+  font-size: 14px;
+}
+
+.admin-settings-modal .settings-content,
+.user-settings-modal .settings-content {
+  padding: 20px;
+}
+
+.admin-settings-modal .settings-title,
+.admin-settings-modal .settings-section-title,
+.user-settings-modal .settings-title,
+.user-settings-modal .settings-section-title {
+  font-size: 16px;
+}
+
+.admin-settings-modal .settings-section-description,
+.user-settings-modal .settings-section-description {
+  font-size: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-settings-modal .settings-label,
+.user-settings-modal .settings-label {
+  font-size: 9px;
+  margin-bottom: 4px;
+}
+
+.admin-settings-modal .settings-input,
+.user-settings-modal .settings-input {
+  font-size: 10px;
+  padding: 8px 12px;
+}
+
+.admin-settings-modal select.settings-input,
+.user-settings-modal select.settings-input {
+  background-size: 12px;
+  padding-right: 32px;
+}
+
+.admin-settings-modal .settings-btn,
+.user-settings-modal .settings-btn {
+  font-size: 10px;
+  padding: 8px 16px;
+  min-width: 100px;
+  gap: 6px;
+}
+
+.admin-settings-modal .settings-btn i,
+.user-settings-modal .settings-btn i {
+  font-size: 12px;
+}
+
+.admin-settings-modal .settings-table th,
+.user-settings-modal .settings-table th {
+  font-size: 8.5px;
+  padding: 8px 12px;
+}
+
+.admin-settings-modal .settings-table td,
+.user-settings-modal .settings-table td {
+  font-size: 9.5px;
+  padding: 8px 12px;
+}
+
+.admin-settings-modal .settings-profile-header,
+.user-settings-modal .settings-profile-header {
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+}
+
+.admin-settings-modal .profile-upload-container,
+.user-settings-modal .profile-upload-container {
+  width: 100px;
+  height: 100px;
+}
+
+.admin-settings-modal .profile-info-text h4,
+.user-settings-modal .profile-info-text h4 {
+  font-size: 16px;
+}
+
+.admin-settings-modal .profile-info-text p,
+.user-settings-modal .profile-info-text p {
+  font-size: 10px;
+}
+
+.admin-settings-modal .settings-status-badge,
+.user-settings-modal .settings-status-badge {
+  font-size: 9px;
+  padding: 2px 8px;
+}
+
+.admin-settings-modal .settings-action-btn,
+.user-settings-modal .settings-action-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.admin-settings-modal .settings-grid,
+.user-settings-modal .settings-grid {
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-settings-modal .settings-form-group,
+.user-settings-modal .settings-form-group {
+  margin-bottom: 12px;
+}
+
