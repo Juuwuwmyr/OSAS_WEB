@@ -385,8 +385,8 @@ function initReportsModule() {
                 
                 return `
                 <tr data-id="${report.id}">
-                    <td class="report-id">${report.reportId}</td>
-                    <td class="report-student-info">
+                    <td class="report-id" data-label="Report ID">${report.reportId}</td>
+                    <td class="report-student-info" data-label="Student">
                         <div class="student-info-wrapper">
                             <div class="student-avatar">
                                 <img src="${report.studentImage}" 
@@ -399,29 +399,29 @@ function initReportsModule() {
                             </div>
                         </div>
                     </td>
-                    <td class="report-dept">
+                    <td class="report-dept" data-label="Department">
                         <span class="dept-badge ${deptClass}">${report.department}</span>
                     </td>
-                    <td class="report-section">${report.section}</td>
-                    <td class="report-yearlevel">
+                    <td class="report-section" data-label="Section">${report.section}</td>
+                    <td class="report-yearlevel" data-label="Year Level">
                         <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
                     </td>
-                    <td class="violation-count uniform">
+                    <td class="violation-count uniform" data-label="Uniform">
                         <div class="count-badge ${uniformClass}">${report.uniformCount}</div>
                     </td>
-                    <td class="violation-count footwear">
+                    <td class="violation-count footwear" data-label="Footwear">
                         <div class="count-badge ${footwearClass}">${report.footwearCount}</div>
                     </td>
-                    <td class="violation-count no-id">
+                    <td class="violation-count no-id" data-label="No ID">
                         <div class="count-badge ${noIdClass}">${report.noIdCount}</div>
                     </td>
-                    <td class="total-violations">
+                    <td class="total-violations" data-label="Total">
                         <div class="total-badge ${totalClass}">${report.totalViolations}</div>
                     </td>
-                    <td>
+                    <td data-label="Status">
                         <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
                     </td>
-                    <td>
+                    <td data-label="Actions">
                         <div class="Reports-action-buttons">
                             <button class="Reports-action-btn view" data-id="${report.id}" title="View Details">
                                 <i class='bx bx-show'></i>

@@ -1070,14 +1070,8 @@ body.dark {
 }
 
 /* ========================================= */
-/*         RESPONSIVE STYLES                */
+/*         RESPONSIVE STYLES (CARD VIEW)     */
 /* ========================================= */
-@media (max-width: 1200px) {
-  .Students-table {
-    min-width: 1000px;
-  }
-}
-
 @media (max-width: 992px) {
   .Students-head-title {
     flex-direction: column;
@@ -1087,6 +1081,8 @@ body.dark {
   .Students-header-actions {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   
   .Students-table-header {
@@ -1096,7 +1092,203 @@ body.dark {
   
   .Students-header-right {
     width: 100%;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .Students-search-box {
+    width: 100%;
+    max-width: none;
+  }
+
+  .Students-filter-group {
+    width: 100%;
     justify-content: space-between;
+  }
+
+  .Students-filter-select {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .Students-head-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+
+  .Students-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .Students-button-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .Students-btn {
+    flex: 1;
+    min-width: calc(50% - 6px);
+    justify-content: center;
+  }
+
+  #btnAddStudents {
+    width: 100%;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .Students-header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .Students-search-box {
+    width: 100% !important;
+  }
+
+  .Students-filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .Students-filter-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .Students-filter-btn {
+    width: 100%;
+    height: 38px;
+  }
+
+  .Students-table-container {
+    overflow-x: hidden !important;
+    background: transparent;
+    padding: 0 !important;
+    box-shadow: none;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .Students-table, 
+  .Students-table thead, 
+  .Students-table tbody, 
+  .Students-table th, 
+  .Students-table td, 
+  .Students-table tr { 
+    display: block; 
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide table headers (but keep for accessibility) */
+  .Students-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .Students-table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--light);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .Students-table tbody tr:hover {
+    transform: translateY(-2px);
+  }
+
+  .Students-table td { 
+    border: none;
+    position: relative;
+    padding-left: 52% !important; 
+    text-align: right !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--grey);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box !important;
+  }
+
+  .Students-table td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 10px !important;
+    text-align: center !important;
+    margin-top: 10px;
+  }
+
+  .Students-table td::before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 45%; 
+    padding-right: 5px; 
+    white-space: normal;
+    line-height: 1.1;
+    text-align: left;
+    font-weight: 700;
+    color: var(--dark-grey);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box !important;
+  }
+  
+  /* Special handling for image cell */
+  .student-image-cell {
+      justify-content: center !important;
+      padding-left: 15px !important;
+      border-bottom: 2px solid var(--grey) !important;
+      margin-bottom: 5px;
+  }
+
+  .student-image-cell::before {
+      display: none;
+  }
+
+  .student-image-wrapper {
+      width: 60px !important;
+      height: 60px !important;
+  }
+
+  /* Actions column */
+  .Students-table td[data-label="Actions"]::before {
+    display: none;
+  }
+
+  /* Adjust badges in card view */
+  .dept-badge, .yearlevel-badge, .Students-status-badge {
+    margin: 0;
   }
 }
 

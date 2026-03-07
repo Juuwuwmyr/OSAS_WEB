@@ -1697,8 +1697,8 @@ function initViolationsModule() {
 
                 return `
                 <tr data-id="${v.id}">
-                    <td class="violation-case-id">${v.caseId}</td>
-                    <td class="violation-student-cell">
+                    <td class="violation-case-id" data-label="Case ID">${v.caseId}</td>
+                    <td class="violation-student-cell" data-label="Student">
                         <div class="violation-student-info">
                             <div class="violation-student-image">
                                 <img src="${v.studentImage}" 
@@ -1712,25 +1712,25 @@ function initViolationsModule() {
                             </div>
                         </div>
                     </td>
-                    <td class="violation-student-id">${v.studentId}</td>
-                    <td class="violation-type">
+                    <td class="violation-student-id" data-label="Student ID">${v.studentId}</td>
+                    <td class="violation-type" data-label="Violation Type">
                         <span class="violation-type-badge ${typeClass}">${v.violationTypeLabel}</span>
                     </td>
-                    <td class="violation-level">
+                    <td class="violation-level" data-label="Offense Level">
                         <span class="violation-level-badge ${levelClass}">${v.violationLevelLabel}</span>
                     </td>
-                    <td class="violation-dept">
+                    <td class="violation-dept" data-label="Department">
                         <span class="dept-badge ${deptClass}">${v.department}</span>
                     </td>
-                    <td class="violation-section">${v.section}</td>
-                    <td class="violation-yearlevel">
+                    <td class="violation-section" data-label="Section">${v.section}</td>
+                    <td class="violation-yearlevel" data-label="Year Level">
                         <span class="yearlevel-badge">${v.studentYearlevel || 'N/A'}</span>
                     </td>
-                    <td class="violation-date">${formatDate(v.dateReported)}</td>
-                    <td>
+                    <td class="violation-date" data-label="Date Reported">${formatDate(v.dateReported)}</td>
+                    <td data-label="Status">
                         <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
                     </td>
-                    <td>
+                    <td data-label="Actions">
                         <div class="Violations-action-buttons">
                             <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                 <i class='bx bx-show'></i>

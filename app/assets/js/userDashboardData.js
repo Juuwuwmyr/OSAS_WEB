@@ -354,10 +354,10 @@ class UserDashboardData {
 
             return `
                 <tr>
-                    <td>${date}</td>
-                    <td><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
-                    <td><span class="status ${badgeClass}">${statusText}</span></td>
-                    <td><button class="btn-view-details-icon" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details"><i class='bx bx-show'></i></button></td>
+                    <td data-label="Date">${date}</td>
+                    <td data-label="Violation"><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
+                    <td data-label="Status"><span class="status ${badgeClass}">${statusText}</span></td>
+                    <td data-label="Actions"><button class="btn-view-details-icon" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details"><i class='bx bx-show'></i></button></td>
                 </tr>
             `;
         }).join('');

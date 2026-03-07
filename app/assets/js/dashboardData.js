@@ -847,13 +847,13 @@ class DashboardData {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>
+                <td data-label="Student">
                     <img src="${avatar}" alt="Student Image" onerror="this.src='../app/assets/img/default.png'">
                     <p>${this.escapeHtml(studentName)}</p>
                 </td>
-                <td>${this.formatDate(date)}</td>
-                <td>${this.escapeHtml(violationType)}</td>
-                <td><span class="status ${statusClass}">${statusText}</span></td>
+                <td data-label="Date">${this.formatDate(date)}</td>
+                <td data-label="Violation">${this.escapeHtml(violationType)}</td>
+                <td data-label="Status"><span class="status ${statusClass}">${statusText}</span></td>
             `;
             tbody.appendChild(row);
         });

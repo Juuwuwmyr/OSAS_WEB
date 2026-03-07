@@ -993,14 +993,8 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 /* ========================================= */
-/*         RESPONSIVE STYLES                */
+/*         RESPONSIVE STYLES (CARD VIEW)     */
 /* ========================================= */
-@media (max-width: 1200px) {
-  .department-table {
-    min-width: 1000px;
-  }
-}
-
 @media (max-width: 992px) {
   .page-header {
     flex-direction: column;
@@ -1010,6 +1004,8 @@ body.dark #departmentModal .close-btn:hover {
   .header-actions {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   
   .table-header {
@@ -1019,66 +1015,188 @@ body.dark #departmentModal .close-btn:hover {
   
   .header-right {
     width: 100%;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .search-box {
+    width: 100%;
+    max-width: none;
   }
 }
 
 @media (max-width: 768px) {
-  #department-page {
-    padding: 16px;
-  }
-  
   .page-header {
-    padding: 20px 24px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 15px;
   }
-  
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .stats-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .table-wrapper {
-    padding: 0 16px;
-  }
-  
-  #departmentModal .modal-container {
-    width: 95%;
-    margin: 16px;
-  }
-  
-  #departmentForm {
-    padding: 24px;
-  }
-}
 
-@media (max-width: 576px) {
-  .stats-overview {
-    grid-template-columns: 1fr;
-  }
-  
-  .stat-card {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn-outline,
-  .btn-primary {
+  #department-page .header-actions {
     width: 100%;
-  }
-  
-  .table-footer {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  #department-page .button-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  #department-page .action-btn {
+    flex: 1;
+    min-width: calc(50% - 6px);
+    justify-content: center;
+  }
+
+  #btnAddDepartment {
+    width: 100%;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .search-box {
+    width: 100% !important;
+  }
+
+  .filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filter-btn {
+    width: 100%;
+    height: 38px;
+  }
+
+  .department-table-container {
+    overflow-x: hidden !important;
+    background: transparent;
+    padding: 0 !important;
+    box-shadow: none;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .department-table, 
+  .department-table thead, 
+  .department-table tbody, 
+  .department-table th, 
+  .department-table td, 
+  .department-table tr { 
+    display: block; 
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide table headers (but keep for accessibility) */
+  .department-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .department-table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--light);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .department-table tbody tr:hover {
+    transform: translateY(-2px);
+  }
+
+  .department-table td { 
+    border: none;
+    position: relative;
+    padding-left: 52% !important; 
+    text-align: right !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--grey);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box !important;
+  }
+
+  .department-table td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 10px !important;
+    text-align: center !important;
+    margin-top: 10px;
+  }
+
+  .department-table td::before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 45%; 
+    padding-right: 5px; 
+    white-space: normal;
+    line-height: 1.1;
+    text-align: left;
+    font-weight: 700;
+    color: var(--dark-grey);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box !important;
+  }
+
+  .name-wrapper {
+    gap: 8px;
+    max-width: 100%;
+  }
+
+  .department-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    flex-shrink: 0;
   }
   
-  .pagination {
-    justify-content: center;
+  /* Actions column */
+  .department-table td[data-label="Actions"]::before {
+    display: none;
+  }
+
+  /* Adjust badges in card view */
+  .status-badge {
+    margin: 0;
   }
 }

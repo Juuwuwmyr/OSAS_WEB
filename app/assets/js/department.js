@@ -64,8 +64,8 @@ function initDepartmentModule() {
 
     tableBody.innerHTML = deptArray.map(d => `
       <tr data-id="${d.id}">
-        <td class="department-id">${d.id}</td>
-        <td class="department-name">
+        <td class="department-id" data-label="ID">${d.id}</td>
+        <td class="department-name" data-label="Department Name">
           <div class="name-wrapper">
             <div class="department-icon">
               <i class='bx ${getDeptIcon(d.code)}'></i>
@@ -76,13 +76,13 @@ function initDepartmentModule() {
             </div>
           </div>
         </td>
-        <td class="hod-name">${d.hod}</td>
-        <td class="student-count">${d.studentCount}</td>
-        <td class="date-created">${d.date}</td>
-        <td>
+        <td class="hod-name" data-label="HOD">${d.hod}</td>
+        <td class="student-count" data-label="Students">${d.studentCount}</td>
+        <td class="date-created" data-label="Date Created">${d.date}</td>
+        <td data-label="Status">
           <span class="status-badge ${d.status}">${d.status === 'active' ? 'Active' : 'Archived'}</span>
         </td>
-        <td>
+        <td data-label="Actions">
           <div class="action-buttons">
             <button class="action-btn edit" data-id="${d.id}" title="Edit">
               <i class='bx bx-edit'></i>

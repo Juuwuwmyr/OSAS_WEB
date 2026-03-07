@@ -875,14 +875,8 @@ body.dark {
 }
 
 /* ========================================= */
-/*         RESPONSIVE STYLES                */
+/*         RESPONSIVE STYLES (CARD VIEW)     */
 /* ========================================= */
-@media (max-width: 1200px) {
-  .sections-table {
-    min-width: 1000px;
-  }
-}
-
 @media (max-width: 992px) {
   .sections-head-title {
     flex-direction: column;
@@ -892,6 +886,8 @@ body.dark {
   .sections-header-actions {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   
   .sections-table-header {
@@ -901,7 +897,175 @@ body.dark {
   
   .sections-header-right {
     width: 100%;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .sections-search-box {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .sections-head-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+
+  .sections-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .sections-button-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .sections-btn {
+    flex: 1;
+    min-width: calc(50% - 6px);
+    justify-content: center;
+  }
+
+  #btnAddSection {
+    width: 100%;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .sections-header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .sections-search-box {
+    width: 100% !important;
+  }
+
+  .sections-filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .sections-filter-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sections-filter-btn {
+    width: 100%;
+    height: 38px;
+  }
+
+  .sections-table-container {
+    overflow-x: hidden !important;
+    background: transparent;
+    padding: 0 !important;
+    box-shadow: none;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .sections-table, 
+  .sections-table thead, 
+  .sections-table tbody, 
+  .sections-table th, 
+  .sections-table td, 
+  .sections-table tr { 
+    display: block; 
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide table headers (but keep for accessibility) */
+  .sections-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .sections-table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--light);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .sections-table tbody tr:hover {
+    transform: translateY(-2px);
+  }
+
+  .sections-table td { 
+    border: none;
+    position: relative;
+    padding-left: 45% !important; 
+    text-align: right !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--grey);
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .sections-table td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 10px !important;
+    text-align: center !important;
+    margin-top: 10px;
+  }
+
+  .sections-table td::before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 40%; 
+    padding-right: 10px; 
+    white-space: normal;
+    line-height: 1.2;
+    text-align: left;
+    font-weight: 700;
+    color: var(--dark-grey);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  /* Actions column */
+  .sections-table td[data-label="Actions"]::before {
+    display: none;
+  }
+
+  /* Adjust badges in card view */
+  .sections-status-badge {
+    margin: 0;
   }
 }
 

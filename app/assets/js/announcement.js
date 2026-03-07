@@ -182,19 +182,19 @@ function renderAnnouncements() {
         const createdDate = formatDate(announcement.created_at);
 
         row.innerHTML = `
-            <td>
+            <td data-label="Title">
                 <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
                 <br>
                 <small style="color: var(--dark-grey); font-size: 13px;">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
             </td>
-            <td>
+            <td data-label="Type">
                 <span class="announcement-type ${typeClass}">${typeClass}</span>
             </td>
-            <td>
+            <td data-label="Status">
                 <span class="status-badge ${statusClass}">${statusText}</span>
             </td>
-            <td>${createdDate}</td>
-            <td style="white-space: nowrap;">
+            <td data-label="Date Created">${createdDate}</td>
+            <td data-label="Actions" style="white-space: nowrap;">
                 <div class="action-buttons">
                     ${announcement.status === 'archived' 
                         ? `<button class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore">

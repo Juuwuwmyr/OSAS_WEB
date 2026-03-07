@@ -304,8 +304,8 @@ function initSectionsModule() {
 
             tableBody.innerHTML = list.map(s => `
                 <tr data-id="${s.id}">
-                    <td class="section-id">${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
-                    <td class="section-name">
+                    <td class="section-id" data-label="ID">${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
+                    <td class="section-name" data-label="Section Name">
                         <div class="section-name-wrapper">
                             <div class="section-icon">
                                 <i class='bx bx-group'></i>
@@ -316,13 +316,13 @@ function initSectionsModule() {
                             </div>
                         </div>
                     </td>
-                    <td class="department-name">${escapeHtml(s.department || 'N/A')}</td>
-                    <td class="student-count">${s.student_count || 0}</td>
-                    <td class="date-created">${s.date || ''}</td>
-                    <td>
+                    <td class="department-name" data-label="Department">${escapeHtml(s.department || 'N/A')}</td>
+                    <td class="student-count" data-label="Students">${s.student_count || 0}</td>
+                    <td class="date-created" data-label="Date Created">${s.date || ''}</td>
+                    <td data-label="Status">
                         <span class="sections-status-badge ${s.status}">${s.status === 'active' ? 'Active' : 'Archived'}</span>
                     </td>
-                    <td>
+                    <td data-label="Actions">
                         <div class="sections-action-buttons">
                             <button class="sections-action-btn edit" data-id="${s.id}" title="Edit">
                                 <i class='bx bx-edit'></i>

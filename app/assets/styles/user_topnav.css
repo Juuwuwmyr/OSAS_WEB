@@ -528,6 +528,258 @@ body.dark .dropdown-item {
 }
 
 @media (max-width: 768px) {
+  #main-content {
+    padding: 10px 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #content main {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #content main .page-header,
+  #content main .announcements-container,
+  #content main .box-info,
+  #content main .table-data > div,
+  #content main .tips-container,
+  #content main .violation-summary-cards,
+  #content main .profile-header,
+  #content main .info-grid,
+  #content main .head-title,
+  #content main .announcement-filters,
+  #content main .announcements-list,
+  #content main .load-more-container,
+  #Violations-page > .Violations-head-title,
+  #Violations-page > .Violations-stats-overview,
+  #Violations-page > .Violations-content-card {
+    width: 88% !important;
+    margin-left: 6% !important;
+    margin-right: 6% !important;
+    box-sizing: border-box !important;
+    max-width: none !important;
+    padding: 15px !important;
+    display: block !important;
+    border-radius: 20px !important;
+    background: var(--light) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  #content main .head-title {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 15px !important;
+  }
+
+  #content main .head-title .left {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  #content main .head-title h1 {
+    font-size: 1.8rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  #content main .breadcrumb {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 10px !important;
+    padding: 0 !important;
+    list-style: none !important;
+    font-size: 14px !important;
+  }
+
+  #content main .breadcrumb li a {
+    color: var(--dark-grey) !important;
+    text-decoration: none !important;
+  }
+
+  #content main .breadcrumb li a.active {
+    color: var(--gold) !important;
+    font-weight: 600 !important;
+  }
+
+  #content main .announcement-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 10px !important;
+  }
+
+  #content main .announcement-actions button {
+    flex: 1 !important;
+    justify-content: center !important;
+    height: 42px !important;
+  }
+
+  #content main .announcement-filters {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+    background: var(--light) !important;
+  }
+
+  #content main .filter-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+  }
+
+  #content main .filter-group select {
+    width: 100% !important;
+    height: 42px !important;
+  }
+
+  #content main .search-group {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #content main .announcement-card {
+    width: 100% !important;
+    margin: 0 0 15px 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  #content main .announcements-list {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  #content main .load-more-container {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  #content main .btn-load-more {
+    width: 100% !important;
+    height: 45px !important;
+    justify-content: center !important;
+  }
+
+  .Violations-left {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .Violations-left h1 {
+    font-size: 1.8rem !important;
+    margin-bottom: 5px !important;
+    text-align: center !important;
+  }
+
+  .Violations-breadcrumb {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 15px !important;
+    padding: 0 !important;
+    list-style: none !important;
+    font-size: 14px !important;
+  }
+
+  .Violations-breadcrumb li a {
+    color: var(--dark-grey) !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+  }
+
+  .Violations-breadcrumb li a:hover {
+    color: var(--gold) !important;
+  }
+
+  .Violations-breadcrumb li a.active {
+    color: var(--gold) !important;
+    font-weight: 600 !important;
+    cursor: default !important;
+  }
+
+  .Violations-breadcrumb li i {
+    font-size: 16px !important;
+    color: var(--dark-grey) !important;
+  }
+
+  .Violations-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .Violations-header-actions .Violations-btn.primary {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 42px !important;
+  }
+
+  #Violations-page > .Violations-stats-overview,
+  #Violations-page > .Violations-content-card {
+    width: 88% !important;
+    margin-left: 6% !important;
+    margin-right: 6% !important;
+    box-sizing: border-box !important;
+    max-width: none !important;
+    padding: 15px !important;
+    display: block !important;
+  }
+
+  #Violations-page .Violations-stats-overview {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+  }
+
+  #Violations-page .Violations-stat-card {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #Violations-page .Violations-content-card {
+    margin-bottom: 30px !important;
+  }
+
+  /* Specifically ensure internal cards also follow the narrowing if they are direct children */
+  #content main .violation-history tbody tr,
+  #content main .violation-type,
+  #Violations-page .Violations-table-container tr {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #content main .box-info {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  #content main .box-info li {
+    padding: 12px 15px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .top-nav {
     padding: 0 1rem;
   }
@@ -547,20 +799,34 @@ body.dark .dropdown-item {
     right: 0;
     background: white;
     border-top: 1px solid var(--grey);
-    justify-content: space-around;
-    padding: 0.5rem 0;
+    display: flex;
+    justify-content: flex-start;
+    padding: 0.5rem 0.5rem; /* Added horizontal padding */
     z-index: 1000;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  }
+  
+  .nav-menu::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
   }
   
   .nav-item {
-    flex: 1;
+    flex: 0 0 25%; /* Show 4 items at a time for user side (less items) */
+    min-width: 80px;
   }
   
   .nav-link {
     flex-direction: column;
-    padding: 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.65rem;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .nav-link i {

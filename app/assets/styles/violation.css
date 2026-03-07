@@ -1274,12 +1274,29 @@ body.dark {
 }
 
 .Violations-refresh-btn {
-  padding: 6px;
-  aspect-ratio: 1;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--light);
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.Violations-refresh-btn i {
+  font-size: 18px;
 }
 
 .Violations-refresh-btn:hover {
   background: var(--grey);
+  border-color: var(--gold);
+  color: var(--gold);
   transform: rotate(180deg);
 }
 
@@ -2331,14 +2348,49 @@ body.dark {
   }
   
   .student-search-wrapper {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 40px;
+    grid-template-areas: 
+      "input refresh"
+      "search search";
     padding: 12px;
+    gap: 10px;
   }
-  
-  .Violations-search-btn,
+
+  #studentSearch {
+    grid-area: input;
+    width: 100%;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
   .Violations-refresh-btn {
+    grid-area: refresh;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin: 0;
+    position: static; /* Remove absolute positioning */
+  }
+
+  .Violations-search-btn {
+    grid-area: search;
     width: 100%;
     justify-content: center;
+  }
+
+  .Violations-refresh-btn i {
+    font-size: 18px;
   }
 
   .violation-student-info-card {
@@ -2497,6 +2549,240 @@ body.dark {
   border-radius: 12px;
   padding: 32px;
   display: flex;
+}
+
+/* ========================================= */
+/*       RESPONSIVE TABLE (CARD VIEW)        */
+/* ========================================= */
+
+@media screen and (max-width: 768px) {
+  .Violations-head-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+
+  .Violations-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .Violations-button-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .Violations-btn {
+    flex: 1;
+    min-width: calc(50% - 6px);
+    justify-content: center;
+  }
+
+  #btnAddViolations {
+    width: 100%;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .Violations-header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .Violations-search-box {
+    width: 100% !important;
+  }
+
+  .Violations-search-box i {
+    font-size: 16px;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .Violations-search-box input {
+    width: 100% !important;
+    height: 42px;
+    font-size: 13px;
+    padding-left: 42px !important;
+  }
+
+  .Violations-filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .Violations-date-filter {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 5px;
+    box-sizing: border-box !important;
+  }
+
+  .Violations-filter-date {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px 0;
+  }
+
+  .Violations-date-filter span {
+    font-size: 12px;
+    color: var(--dark-grey);
+    margin: 0 5px;
+    flex-shrink: 0;
+    font-weight: 600;
+    text-transform: lowercase;
+  }
+
+  .Violations-filter-select {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    font-size: 13px;
+    padding: 0 12px;
+  }
+
+  .Violations-filter-btn {
+    width: 100%;
+    height: 42px;
+    font-size: 16px;
+  }
+
+  .Violations-table-container {
+    overflow-x: hidden !important;
+    background: transparent;
+    padding: 0 !important;
+    box-shadow: none;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .Violations-table, 
+  .Violations-table thead, 
+  .Violations-table tbody, 
+  .Violations-table th, 
+  .Violations-table td, 
+  .Violations-table tr { 
+    display: block; 
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide table headers (but keep for accessibility) */
+  .Violations-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .Violations-table tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--light);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .Violations-table tbody tr:hover {
+    transform: translateY(-2px);
+  }
+
+  .Violations-table td { 
+    border: none;
+    position: relative;
+    padding-left: 52% !important; 
+    text-align: right !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--grey);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box !important;
+  }
+
+  .Violations-table td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 10px !important;
+    text-align: center !important;
+    margin-top: 10px;
+  }
+
+  .Violations-table td::before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 45%; 
+    padding-right: 5px; 
+    white-space: normal;
+    line-height: 1.1;
+    text-align: left;
+    font-weight: 700;
+    color: var(--dark-grey);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box !important;
+  }
+  
+  /* Special handling for certain columns */
+  .Violations-table td[data-label="Actions"]::before {
+    display: none;
+  }
+
+  /* Adjust badges in card view */
+  .Violations-badge, .Violations-status-badge {
+    margin: 0;
+  }
+}
+
+.violations-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.violations-loading-content {
+  background: var(--light);
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
@@ -2506,6 +2792,7 @@ body.dark {
 
 .violations-loading-content i {
   font-size: 32px;
+}
   color: var(--gold);
   animation: spin 1s linear infinite;
 }

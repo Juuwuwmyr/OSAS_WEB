@@ -515,31 +515,31 @@ function initStudentsModule() {
                     
                     return `
                     <tr data-id="${s.id}">
-                        <td class="student-row-id">${s.id}</td>
-                        <td class="student-image-cell">
+                        <td class="student-row-id" data-label="ID">${s.id}</td>
+                        <td class="student-image-cell" data-label="Image">
                             <div class="student-image-wrapper">
                                 <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=40'">
                             </div>
                         </td>
-                        <td class="student-id">${escapeHtml(s.studentId || '')}</td>
-                        <td class="student-name">
+                        <td class="student-id" data-label="Student ID">${escapeHtml(s.studentId || '')}</td>
+                        <td class="student-name" data-label="Name">
                             <div class="student-name-wrapper">
                                 <strong>${escapeHtml(fullName)}</strong>
                                 <small>${escapeHtml(s.email || '')}</small>
                             </div>
                         </td>
-                        <td class="student-dept">
+                        <td class="student-dept" data-label="Department">
                             <span class="dept-badge ${deptClass}">${escapeHtml(s.department || 'N/A')}</span>
                         </td>
-                        <td class="student-section">${escapeHtml(s.section || 'N/A')}</td>
-                        <td class="student-yearlevel">
+                        <td class="student-section" data-label="Section">${escapeHtml(s.section || 'N/A')}</td>
+                        <td class="student-yearlevel" data-label="Year Level">
                             <span class="yearlevel-badge">${escapeHtml(s.yearlevel || 'N/A')}</span>
                         </td>
-                        <td class="student-contact">${escapeHtml(s.contact || 'N/A')}</td>
-                        <td>
+                        <td class="student-contact" data-label="Contact No">${escapeHtml(s.contact || 'N/A')}</td>
+                        <td data-label="Status">
                             <span class="Students-status-badge ${s.status || 'active'}">${formatStatus(s.status || 'active')}</span>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                             <div class="Students-action-buttons">
                                 <button class="Students-action-btn view" data-id="${s.id}" title="View Profile">
                                     <i class='bx bx-user'></i>

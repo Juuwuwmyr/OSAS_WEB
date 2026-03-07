@@ -685,3 +685,98 @@ body.dark {
   margin: 0;
   font-weight: 500;
 }
+
+/* ========================================= */
+/*       RESPONSIVE TABLE (CARD VIEW)        */
+/* ========================================= */
+
+@media screen and (max-width: 768px) {
+  .announcements-head-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .announcements-header-actions {
+    width: 100%;
+  }
+
+  .announcements-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .announcements-content-card table, 
+  .announcements-content-card thead, 
+  .announcements-content-card tbody, 
+  .announcements-content-card th, 
+  .announcements-content-card td, 
+  .announcements-content-card tr { 
+    display: block; 
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Hide table headers (but keep for accessibility) */
+  .announcements-content-card thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .announcements-content-card tbody tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--light);
+    box-shadow: var(--shadow-light);
+  }
+
+  .announcements-content-card td { 
+    border: none;
+    position: relative;
+    padding-left: 52% !important; 
+    text-align: right !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--grey);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+    box-sizing: border-box !important;
+  }
+
+  .announcements-content-card td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 0 !important;
+    text-align: center !important;
+    margin-top: 10px;
+  }
+
+  .announcements-content-card td::before { 
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 45%; 
+    padding-right: 5px; 
+    white-space: normal;
+    line-height: 1.1;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark-grey);
+    font-size: 9px;
+    text-transform: uppercase;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box !important;
+  }
+  
+  /* Actions column */
+  .announcements-content-card td[data-label="Actions"]::before {
+    display: none;
+  }
+}
