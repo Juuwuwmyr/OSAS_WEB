@@ -70,6 +70,7 @@ class AuthController extends Controller {
                 
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'] ?: $user['username'];
                 $_SESSION['role'] = $user['role'];
                 if ($studentIdCode) {
                     $_SESSION['student_id_code'] = $studentIdCode;
@@ -92,7 +93,8 @@ class AuthController extends Controller {
 
                 $responseData = [
                     'role' => $user['role'],
-                    'name' => $user['username'],
+                    'name' => $user['full_name'] ?: $user['username'],
+                    'username' => $user['username'],
                     'studentId' => $studentId,
                     'studentIdCode' => $studentIdCode,
                     'expires' => $expiryTime

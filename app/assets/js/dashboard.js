@@ -62,6 +62,39 @@ function syncThemeToggles() {
 
 // Core Functions ==========================================================
 
+// Privilege Check Helper
+function isMainAdmin() {
+    const sessionStr = localStorage.getItem('userSession');
+    if (!sessionStr) {
+        console.log('❌ No userSession found in localStorage');
+        return false;
+    }
+    try {
+        const session = JSON.parse(sessionStr);
+        // Debug: Log the session to help identify the user
+        console.log('🔍 Checking privileges for session user:', session);
+        
+        // Check both session.username (from new login.js) and session.name (as fallback)
+        const mainAdmins = ['admin_demo', 'adminOsas@colegio.edu', 'adminOsas'];
+        
+        // If session.username is available, check it
+        if (session.username && mainAdmins.includes(session.username)) {
+            return true;
+        }
+        
+        // If session.name is available and matches, check it (as a fallback)
+        if (session.name && mainAdmins.includes(session.name)) {
+            return true;
+        }
+        
+        console.log('⚠️ User is not recognized as a Main Admin');
+        return false;
+    } catch (e) {
+        console.error('❌ Error parsing session in isMainAdmin:', e);
+        return false;
+    }
+}
+
 // Path Resolution Helper
 function getProjectRoot() {
     const path = window.location.pathname;
@@ -182,22 +215,25 @@ function checkAuthentication() {
 
 // Enhanced user info update
 function updateUserInfo(session) {
-    // Update profile name if element exists
-    const profileName = document.querySelector('.profile-name');
-    if (profileName) {
-        profileName.textContent = session.name;
-    }
+    // Update profile name if element exists (Top Nav and Sidebar)
+    const profileNames = document.querySelectorAll('.profile-name, .user-name, .nav-user-menu .user-name');
+    profileNames.forEach(el => {
+        el.textContent = session.name || session.full_name || 'Admin';
+    });
 
     // Update profile role if element exists
-    const profileRole = document.querySelector('.profile-role');
-    if (profileRole) {
-        profileRole.textContent = session.role;
-    }
+    const profileRoles = document.querySelectorAll('.profile-role, .user-role');
+    profileRoles.forEach(el => {
+        el.textContent = session.role;
+    });
 
     // Update profile picture if exists
-    const profilePic = document.querySelector('.profile-photo');
-    if (profilePic && session.avatar) {
-        profilePic.src = session.avatar;
+    const profilePics = document.querySelectorAll('.profile-photo, .user-avatar img');
+    if (session.avatar || session.profile_picture) {
+        const avatarPath = resolvePath(session.avatar || session.profile_picture);
+        profilePics.forEach(img => {
+            img.src = avatarPath;
+        });
     }
 }
 
@@ -581,6 +617,9 @@ function createSettingsModal() {
     overlay.className = 'settings-modal-overlay';
     const defaultAvatar = resolvePath('assets/img/default.png');
     const userAvatar = resolvePath('assets/img/user.jpg');
+    
+    // Check privileges
+    const isMain = isMainAdmin();
 
     overlay.innerHTML = `
         <div class="settings-modal admin-settings-modal">
@@ -599,6 +638,7 @@ function createSettingsModal() {
                         <i class='bx bx-group'></i>
                         <span>User Accounts</span>
                     </button>
+                    ${isMain ? `
                     <button type="button" class="settings-sidebar-item" data-section="archive">
                         <i class='bx bx-archive'></i>
                         <span>Archive</span>
@@ -607,6 +647,7 @@ function createSettingsModal() {
                         <i class='bx bx-data'></i>
                         <span>Export Database</span>
                     </button>
+                    ` : ''}
                 </div>
             </aside>
             <div class="settings-content">
@@ -662,11 +703,14 @@ function createSettingsModal() {
                         </div>
                     </form>
                 </div>
+                
                 <div class="settings-section" data-section="admins">
                     <div class="settings-header-group">
                         <div class="settings-header-text">
                             <h3 class="settings-section-title">Admin accounts</h3>
-                            <p class="settings-section-description">Create and manage administrators.</p>
+                            <p class="settings-section-description">
+                                ${isMain ? 'Create and manage administrators.' : 'View administrator accounts.'}
+                            </p>
                         </div>
                         <div class="settings-table-controls">
                             <div class="settings-search-wrapper">
@@ -676,6 +720,8 @@ function createSettingsModal() {
                         </div>
                     </div>
                     <div id="settingsAdminAlert" class="settings-alert"></div>
+                    
+                    ${isMain ? `
                     <form id="settingsAdminForm" class="settings-admin-create-form">
                         <div class="settings-grid">
                             <div class="settings-form-group">
@@ -719,6 +765,8 @@ function createSettingsModal() {
                             </button>
                         </div>
                     </form>
+                    ` : ''}
+
                     <div class="settings-table-wrapper">
                         <table class="settings-table">
                             <thead>
@@ -729,12 +777,12 @@ function createSettingsModal() {
                                     <th>ID</th>
                                     <th>Role</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    ${isMain ? '<th>Actions</th>' : ''}
                                 </tr>
                             </thead>
                             <tbody id="settingsAdminTableBody">
                                 <tr>
-                                    <td colspan="7">
+                                    <td colspan="${isMain ? 7 : 6}">
                                         <div class="settings-empty-state">Loading admins...</div>
                                     </td>
                                 </tr>
@@ -743,11 +791,14 @@ function createSettingsModal() {
                     </div>
                     <div id="settingsAdminPagination" class="settings-pagination"></div>
                 </div>
+
                 <div class="settings-section" data-section="users">
                     <div class="settings-header-group">
                         <div class="settings-header-text">
                             <h3 class="settings-section-title">User Accounts</h3>
-                            <p class="settings-section-description">View and manage registered users.</p>
+                            <p class="settings-section-description">
+                                ${isMain ? 'View and manage registered users.' : 'View registered users.'}
+                            </p>
                         </div>
                         <div class="settings-table-controls">
                             <div class="settings-search-wrapper">
@@ -766,12 +817,12 @@ function createSettingsModal() {
                                     <th>Student ID</th>
                                     <th>Role</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    ${isMain ? '<th>Actions</th>' : ''}
                                 </tr>
                             </thead>
                             <tbody id="settingsUserTableBody">
                                 <tr>
-                                    <td colspan="7">
+                                    <td colspan="${isMain ? 7 : 6}">
                                         <div class="settings-empty-state">Loading users...</div>
                                     </td>
                                 </tr>
@@ -780,6 +831,8 @@ function createSettingsModal() {
                     </div>
                     <div id="settingsUserPagination" class="settings-pagination"></div>
                 </div>
+
+                ${isMain ? `
                 <div class="settings-section" data-section="archive">
                     <div class="settings-header-group">
                         <div class="settings-header-text">
@@ -827,6 +880,7 @@ function createSettingsModal() {
                         </button>
                     </div>
                 </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -1021,9 +1075,18 @@ function openSettingsModal(initialSection) {
     if (!settingsModalOverlay) {
         return;
     }
+    
+    // Validate section access
+    const isMain = isMainAdmin();
+    let targetSection = initialSection || (isMain ? 'admins' : 'profile');
+    
+    // If not main admin, only allow 'profile'
+    if (!isMain && targetSection !== 'profile') {
+        targetSection = 'profile';
+    }
+    
     settingsModalOverlay.classList.add('active');
     document.body.classList.add('settings-modal-open');
-    const targetSection = initialSection || 'admins';
     setActiveSettingsSection(targetSection);
     
     // Enable drag scroll on modal load
@@ -1316,6 +1379,8 @@ async function loadAdminAccounts() {
         // Pagination Logic
         const startIndex = (currentPage - 1) * itemsPerPage;
         const paginatedAdmins = filteredAdmins.slice(startIndex, startIndex + itemsPerPage);
+        
+        const isMain = isMainAdmin();
 
         const rows = paginatedAdmins.map(function (admin) {
             const name = admin.full_name || admin.username || '';
@@ -1338,11 +1403,13 @@ async function loadAdminAccounts() {
                     <td>
                         <span class="${statusClass}">${statusLabel}</span>
                     </td>
+                    ${isMain ? `
                     <td>
                         <button type="button" class="settings-action-btn delete" onclick="deleteAdmin(${id}, '${username}')" title="Archive User">
                             <i class='bx bx-archive-in'></i>
                         </button>
                     </td>
+                    ` : ''}
                 </tr>
             `;
         }).join('');
@@ -1361,7 +1428,7 @@ async function loadAdminAccounts() {
         console.error('Error loading admins', error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="7">
+                <td colspan="${isMainAdmin() ? 7 : 6}">
                     <div class="settings-empty-state">Network error while loading admins.</div>
                 </td>
             </tr>
@@ -1909,6 +1976,8 @@ async function loadUserAccounts() {
         // Pagination Logic
         const startIndex = (currentPage - 1) * itemsPerPage;
         const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+        
+        const isMain = isMainAdmin();
 
         const rows = paginatedUsers.map(function (user) {
             const name = user.full_name || user.username || '';
@@ -1930,6 +1999,7 @@ async function loadUserAccounts() {
                     <td>
                         <span class="${statusClass}">${statusLabel}</span>
                     </td>
+                    ${isMain ? `
                     <td>
                         <button type="button" class="settings-action-btn secondary" onclick="toggleUserActive('${user.id}', ${active ? 0 : 1})" title="${active ? 'Deactivate' : 'Activate'}">
                             <i class='bx ${active ? 'bx-user-x' : 'bx-user-check'}'></i>
@@ -1941,6 +2011,7 @@ async function loadUserAccounts() {
                             <i class='bx bx-archive-in'></i>
                         </button>
                     </td>
+                    ` : ''}
                 </tr>
             `;
         }).join('');
@@ -1959,7 +2030,7 @@ async function loadUserAccounts() {
         console.error('Error loading users', error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="6">
+                <td colspan="${isMainAdmin() ? 7 : 6}">
                     <div class="settings-empty-state">Network error while loading users.</div>
                 </td>
             </tr>

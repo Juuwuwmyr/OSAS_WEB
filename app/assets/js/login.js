@@ -161,7 +161,9 @@ function handleLoginFormSubmit(e) {
                 const payload = data.data || data;
 
                 const sessionData = {
+                    username: payload.username || username,
                     name: payload.name,
+                    full_name: payload.name, // Added full_name for compatibility
                     role: payload.role,
                     user_id: payload.user_id || payload.studentId,
                     studentId: payload.studentId,
