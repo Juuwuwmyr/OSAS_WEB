@@ -663,12 +663,20 @@ function createSettingsModal() {
                     </form>
                 </div>
                 <div class="settings-section" data-section="admins">
-                    <h3 class="settings-section-title">Admin accounts</h3>
-                    <p class="settings-section-description">
-                        Create new admin users with email and password and view existing administrators.
-                    </p>
+                    <div class="settings-header-group">
+                        <div class="settings-header-text">
+                            <h3 class="settings-section-title">Admin accounts</h3>
+                            <p class="settings-section-description">Create and manage administrators.</p>
+                        </div>
+                        <div class="settings-table-controls">
+                            <div class="settings-search-wrapper">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="adminSearch" class="settings-search-input" placeholder="Search admins...">
+                            </div>
+                        </div>
+                    </div>
                     <div id="settingsAdminAlert" class="settings-alert"></div>
-                    <form id="settingsAdminForm">
+                    <form id="settingsAdminForm" class="settings-admin-create-form">
                         <div class="settings-grid">
                             <div class="settings-form-group">
                                 <label class="settings-label" for="adminFullName">Full name</label>
@@ -733,12 +741,21 @@ function createSettingsModal() {
                             </tbody>
                         </table>
                     </div>
+                    <div id="settingsAdminPagination" class="settings-pagination"></div>
                 </div>
                 <div class="settings-section" data-section="users">
-                    <h3 class="settings-section-title">User Accounts</h3>
-                    <p class="settings-section-description">
-                        View registered users and students.
-                    </p>
+                    <div class="settings-header-group">
+                        <div class="settings-header-text">
+                            <h3 class="settings-section-title">User Accounts</h3>
+                            <p class="settings-section-description">View and manage registered users.</p>
+                        </div>
+                        <div class="settings-table-controls">
+                            <div class="settings-search-wrapper">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="userSearch" class="settings-search-input" placeholder="Search users...">
+                            </div>
+                        </div>
+                    </div>
                     <div class="settings-table-wrapper">
                         <table class="settings-table">
                             <thead>
@@ -761,12 +778,21 @@ function createSettingsModal() {
                             </tbody>
                         </table>
                     </div>
+                    <div id="settingsUserPagination" class="settings-pagination"></div>
                 </div>
                 <div class="settings-section" data-section="archive">
-                    <h3 class="settings-section-title">Archived Accounts</h3>
-                    <p class="settings-section-description">
-                        View and restore archived admin or user accounts.
-                    </p>
+                    <div class="settings-header-group">
+                        <div class="settings-header-text">
+                            <h3 class="settings-section-title">Archived Accounts</h3>
+                            <p class="settings-section-description">Restore or view archived accounts.</p>
+                        </div>
+                        <div class="settings-table-controls">
+                            <div class="settings-search-wrapper">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="archiveSearch" class="settings-search-input" placeholder="Search archive...">
+                            </div>
+                        </div>
+                    </div>
                     <div class="settings-table-wrapper">
                         <table class="settings-table">
                             <thead>
@@ -787,6 +813,7 @@ function createSettingsModal() {
                             </tbody>
                         </table>
                     </div>
+                    <div id="settingsArchivePagination" class="settings-pagination"></div>
                 </div>
                 <div class="settings-section" data-section="export">
                     <h3 class="settings-section-title">Export Database</h3>
@@ -850,6 +877,143 @@ function attachSettingsModalEvents() {
             submitProfileForm();
         });
     }
+
+    // Search Events
+    const setupTableControls = (inputId, stateKey, loadFn) => {
+        const input = document.getElementById(inputId);
+        let debounceTimeout;
+
+        if (input) {
+            input.addEventListener('input', (e) => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    settingsPagination[stateKey].search = e.target.value.toLowerCase();
+                    settingsPagination[stateKey].currentPage = 1;
+                    loadFn();
+                }, 300);
+            });
+        }
+    };
+
+    setupTableControls('adminSearch', 'admins', loadAdminAccounts);
+    setupTableControls('userSearch', 'users', loadUserAccounts);
+    setupTableControls('archiveSearch', 'archive', loadArchivedAccounts);
+}
+
+// Pagination State
+let settingsPagination = {
+    admins: { currentPage: 1, itemsPerPage: 10, search: '' },
+    users: { currentPage: 1, itemsPerPage: 10, search: '' },
+    archive: { currentPage: 1, itemsPerPage: 10, search: '' }
+};
+
+function renderPagination(containerId, totalItems, itemsPerPage, currentPage, onPageChange) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+    let html = `
+        <div class="pagination-info">
+            Showing ${startItem}-${endItem} of ${totalItems}
+        </div>
+        <div class="pagination-controls">
+            <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">
+                <i class='bx bx-chevron-left'></i>
+            </button>
+    `;
+
+    // Show first page, current page, and last page with dots if needed
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            html += `
+                <button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">
+                    ${i}
+                </button>
+            `;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            html += `<span class="pagination-dots">...</span>`;
+        }
+    }
+
+    html += `
+            <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">
+                <i class='bx bx-chevron-right'></i>
+            </button>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Add event listeners
+    container.querySelectorAll('.pagination-btn:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = parseInt(btn.getAttribute('data-page'));
+            onPageChange(page);
+        });
+    });
+}
+
+// Drag-to-scroll functionality for settings tables and mobile sidebar (Mouse + Touch)
+function enableDragScroll(selector) {
+    const elements = document.querySelectorAll(selector);
+    
+    elements.forEach(slider => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        // MOUSE EVENTS
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('active');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            slider.classList.remove('active');
+        });
+
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            slider.classList.remove('active');
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2; 
+            slider.scrollLeft = scrollLeft - walk;
+        });
+
+        // TOUCH EVENTS (MOBILE SLIDING)
+        slider.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        }, { passive: true });
+
+        slider.addEventListener('touchend', () => {
+            isDown = false;
+        }, { passive: true });
+
+        slider.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        }, { passive: false }); 
+    });
 }
 
 function openSettingsModal(initialSection) {
@@ -861,6 +1025,11 @@ function openSettingsModal(initialSection) {
     document.body.classList.add('settings-modal-open');
     const targetSection = initialSection || 'admins';
     setActiveSettingsSection(targetSection);
+    
+    // Enable drag scroll on modal load
+    setTimeout(() => {
+        enableDragScroll('.settings-table-wrapper, .settings-sidebar-list');
+    }, 100);
 }
 
 function closeSettingsModal() {
@@ -1121,18 +1290,34 @@ async function loadAdminAccounts() {
 
         const admins = Array.isArray(payload.data.admins) ? payload.data.admins : [];
 
-        if (admins.length === 0) {
+        // Apply Search
+        const { search, currentPage, itemsPerPage } = settingsPagination.admins;
+        const filteredAdmins = admins.filter(admin => {
+            const name = (admin.full_name || '').toLowerCase();
+            const username = (admin.username || '').toLowerCase();
+            const email = (admin.email || '').toLowerCase();
+            
+            return !search || name.includes(search) || username.includes(search) || email.includes(search);
+        });
+
+        if (filteredAdmins.length === 0) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7">
-                        <div class="settings-empty-state">No admin accounts found.</div>
+                        <div class="settings-empty-state">No matching admin accounts found.</div>
                     </td>
                 </tr>
             `;
+            const paginationContainer = document.getElementById('settingsAdminPagination');
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
 
-        const rows = admins.map(function (admin) {
+        // Pagination Logic
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedAdmins = filteredAdmins.slice(startIndex, startIndex + itemsPerPage);
+
+        const rows = paginatedAdmins.map(function (admin) {
             const name = admin.full_name || admin.username || '';
             const email = admin.email || '';
             const username = admin.username || '';
@@ -1163,6 +1348,15 @@ async function loadAdminAccounts() {
         }).join('');
 
         tableBody.innerHTML = rows;
+
+        // Render Pagination
+        renderPagination('settingsAdminPagination', admins.length, itemsPerPage, currentPage, (page) => {
+            settingsPagination.admins.currentPage = page;
+            loadAdminAccounts();
+        });
+
+        // Re-enable drag scroll for the new content (Mouse + Touch)
+        enableDragScroll('.settings-table-wrapper');
     } catch (error) {
         console.error('Error loading admins', error);
         tableBody.innerHTML = `
@@ -1689,18 +1883,34 @@ async function loadUserAccounts() {
 
         const users = Array.isArray(payload.data.users) ? payload.data.users : [];
 
-        if (users.length === 0) {
+        // Apply Search
+        const { search, currentPage, itemsPerPage } = settingsPagination.users;
+        const filteredUsers = users.filter(user => {
+            const name = (user.full_name || '').toLowerCase();
+            const username = (user.username || '').toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            
+            return !search || name.includes(search) || username.includes(search) || email.includes(search);
+        });
+
+        if (filteredUsers.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6">
-                        <div class="settings-empty-state">No user accounts found.</div>
+                    <td colspan="7">
+                        <div class="settings-empty-state">No matching user accounts found.</div>
                     </td>
                 </tr>
             `;
+            const paginationContainer = document.getElementById('settingsUserPagination');
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
 
-        const rows = users.map(function (user) {
+        // Pagination Logic
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+        const rows = paginatedUsers.map(function (user) {
             const name = user.full_name || user.username || '';
             const email = user.email || '';
             const username = user.username || '';
@@ -1736,6 +1946,15 @@ async function loadUserAccounts() {
         }).join('');
 
         tableBody.innerHTML = rows;
+
+        // Render Pagination
+        renderPagination('settingsUserPagination', users.length, itemsPerPage, currentPage, (page) => {
+            settingsPagination.users.currentPage = page;
+            loadUserAccounts();
+        });
+
+        // Re-enable drag scroll for the new content (Mouse + Touch)
+        enableDragScroll('.settings-table-wrapper');
     } catch (error) {
         console.error('Error loading users', error);
         tableBody.innerHTML = `
@@ -1783,12 +2002,28 @@ async function loadArchivedAccounts() {
 
         if (data.status === 'success') {
             const archived = data.data.archived || [];
-            if (archived.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">No archived accounts found.</div></td></tr>`;
+            
+            // Apply Search
+            const { search, currentPage, itemsPerPage } = settingsPagination.archive;
+            const filteredArchived = archived.filter(user => {
+                const name = (user.full_name || '').toLowerCase();
+                const username = (user.username || '').toLowerCase();
+                
+                return !search || name.includes(search) || username.includes(search);
+            });
+
+            if (filteredArchived.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">No matching archived accounts found.</div></td></tr>`;
+                const paginationContainer = document.getElementById('settingsArchivePagination');
+                if (paginationContainer) paginationContainer.innerHTML = '';
                 return;
             }
 
-            tableBody.innerHTML = archived.map(user => {
+            // Pagination Logic
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedArchived = filteredArchived.slice(startIndex, startIndex + itemsPerPage);
+
+            tableBody.innerHTML = paginatedArchived.map(user => {
                 const date = user.deleted_at ? new Date(user.deleted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
                 return `
                     <tr>
@@ -1804,6 +2039,15 @@ async function loadArchivedAccounts() {
                     </tr>
                 `;
             }).join('');
+            
+            // Render Pagination
+            renderPagination('settingsArchivePagination', archived.length, itemsPerPage, currentPage, (page) => {
+                settingsPagination.archive.currentPage = page;
+                loadArchivedAccounts();
+            });
+
+            // Re-enable drag scroll for the new content (Mouse + Touch)
+            enableDragScroll('.settings-table-wrapper');
         } else {
             tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">${data.message || 'Failed to load archived accounts.'}</div></td></tr>`;
         }

@@ -105,12 +105,17 @@
     font-weight: 500;
     text-decoration: none;
     transition: all 0.3s ease;
+    font-size: 12px;
 }
 
 .btn-download:hover {
     background: var(--yellow);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.btn-download i {
+    font-size: 16px;
 }
 
 /* Legacy styles for backward compatibility */
@@ -161,6 +166,7 @@
     align-items: center;
     grid-gap: 10px;
     font-weight: 500;
+    font-size: 12px;
 }
 
 #content main .box-info {
@@ -399,7 +405,7 @@
 
 .announcements-header h3 {
     color: var(--dark);
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 450;
     margin: 0;
     display: flex;
@@ -487,14 +493,14 @@
 .announcement-details h4 {
     margin: 0 0 8px 0;
     color: var(--dark);
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 .announcement-details p {
     margin: 0 0 8px 0;
     color: var(--dark-grey);
-    font-size: 14px;
+    font-size: 10px;
     line-height: 1.5;
 }
 
@@ -721,7 +727,7 @@
 }
 
 .chart-header h3 {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--dark);
     margin: 0;
@@ -760,7 +766,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
 }
 
 /* Colored ranks for top 3 positions */
@@ -780,10 +786,11 @@
     font-weight: 600;
     flex-grow: 1;
     color: var(--name);
+    font-size: 11px;
 }
 
 #content main .table-data .violators .violations {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 500;
 }
 
