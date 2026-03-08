@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../core/Logger.php';
 
 class AuthController extends Controller {
     private $model;
@@ -101,6 +102,10 @@ class AuthController extends Controller {
                 ];
                 
                 error_log("Login successful for username: " . $username . ", role: " . $user['role']);
+                
+                // Log the login event
+                Logger::log('Login', "User logged in: {$user['username']} (Role: {$user['role']})");
+
                 $this->success('Login successful', $responseData);
             } else {
                 error_log("Login failed for username: " . $username . " - invalid credentials");
@@ -113,7 +118,15 @@ class AuthController extends Controller {
     }
 
     public function logout() {
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Log logout before destroying session
+        if (isset($_SESSION['user_id'])) {
+            Logger::log('Logout', "User logged out: {$_SESSION['username']}");
+        }
+
         session_destroy();
         setcookie("user_id", "", time() - 3600, "/");
         setcookie("username", "", time() - 3600, "/");

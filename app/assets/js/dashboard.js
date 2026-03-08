@@ -647,6 +647,10 @@ function createSettingsModal() {
                         <i class='bx bx-data'></i>
                         <span>Export Database</span>
                     </button>
+                    <button type="button" class="settings-sidebar-item" data-section="systemlogs">
+                        <i class='bx bx-history'></i>
+                        <span>System Logs</span>
+                    </button>
                     ` : ''}
                 </div>
             </aside>
@@ -878,6 +882,40 @@ function createSettingsModal() {
                             <i class='bx bx-download'></i>
                             <span>Download SQL Backup</span>
                         </button>
+                    </div>
+                </div>
+
+                <div class="settings-section" data-section="systemlogs">
+                    <div class="settings-header-group">
+                        <div class="settings-header-text">
+                            <h3 class="settings-section-title">System Activity Logs</h3>
+                            <p class="settings-section-description">
+                                View recent administrator actions and session history.
+                            </p>
+                        </div>
+                        <button type="button" class="settings-btn settings-btn-secondary" onclick="loadSettingsLogs()">
+                            <i class='bx bx-refresh'></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                    <div class="settings-table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                        <table class="settings-table">
+                            <thead style="position: sticky; top: 0; background: var(--light); z-index: 1;">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="settingsLogsTableBody">
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="settings-empty-state">Loading logs...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 ` : ''}
@@ -1137,6 +1175,52 @@ function setActiveSettingsSection(section) {
         loadUserAccounts();
     } else if (section === 'archive') {
         loadArchivedAccounts();
+    } else if (section === 'systemlogs') {
+        loadSettingsLogs();
+    }
+}
+
+async function loadSettingsLogs() {
+    const tableBody = document.getElementById('settingsLogsTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '<tr><td colspan="4"><div class="settings-empty-state"><i class="bx bx-loader-alt bx-spin"></i> Fetching logs...</div></td></tr>';
+
+    try {
+        const response = await fetch('../api/system_logs.php?limit=20');
+        const payload = await response.json();
+
+        if (payload.status === 'success') {
+            const logs = payload.data.logs;
+            if (logs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4"><div class="settings-empty-state">No activity logs found.</div></td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = logs.map(log => {
+                const date = new Date(log.created_at);
+                const timeStr = date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <tr>
+                        <td style="font-weight: 600;">${log.username}</td>
+                        <td>${log.action}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${log.details || ''}">${log.details || 'N/A'}</td>
+                        <td style="font-size: 11px; color: var(--dark-grey);">${timeStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="4"><div class="settings-empty-state text-danger">${payload.message}</div></td></tr>`;
+        }
+    } catch (error) {
+        console.error('Error loading settings logs:', error);
+        tableBody.innerHTML = '<tr><td colspan="4"><div class="settings-empty-state text-danger">Network error.</div></td></tr>';
     }
 }
 

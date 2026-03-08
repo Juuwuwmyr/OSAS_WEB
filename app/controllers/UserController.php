@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../core/Logger.php';
 
 class UserController extends Controller {
     private $model;
@@ -113,6 +114,9 @@ class UserController extends Controller {
                 $this->error('Admin account created but could not be loaded.');
             }
 
+            // Log admin creation
+            Logger::log('Admin Created', "New admin created: {$username} (Role: {$role})");
+
             $response = [
                 'id' => isset($admin['id']) ? (int)$admin['id'] : 0,
                 'username' => $admin['username'] ?? '',
@@ -158,6 +162,8 @@ class UserController extends Controller {
 
             // Perform archiving (soft delete)
             if ($this->model->archive($id)) {
+                // Log admin archiving
+                Logger::log('Admin Archived', "Admin account archived: {$user['username']} (ID: {$id})");
                 $this->success('User archived successfully.');
             } else {
                 $this->error('Failed to archive user.');
