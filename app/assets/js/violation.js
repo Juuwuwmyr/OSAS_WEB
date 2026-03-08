@@ -1830,9 +1830,28 @@ function initViolationsModule() {
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const timeInput = document.getElementById('violationTime');
             if (timeInput) timeInput.value = timeStr;
-            
+
             const modalTitle = document.getElementById('violationModalTitle');
             const form = document.getElementById('ViolationRecordForm');
+            
+            // Function to populate admin name
+            const populateAdminName = () => {
+                const reportedByInput = document.getElementById('reportedBy');
+                if (reportedByInput) {
+                    const sessionStr = localStorage.getItem('userSession');
+                    if (sessionStr) {
+                        try {
+                            const session = JSON.parse(sessionStr);
+                            // Prioritize full_name, then name, then username
+                            const adminName = session.full_name || session.name || session.username || '';
+                            reportedByInput.value = adminName;
+                            console.log('👤 Auto-populated reporter:', adminName);
+                        } catch (e) {
+                            console.error('Error parsing session for reporter:', e);
+                        }
+                    }
+                }
+            };
             
             if (editId) {
                 // Edit mode
@@ -1962,7 +1981,16 @@ function initViolationsModule() {
                     document.getElementById('violationDate').value = violation.dateReported;
                     document.getElementById('violationTime').value = violation.violationTime || '08:15';
                     document.getElementById('violationLocation').value = violation.location;
-                    document.getElementById('reportedBy').value = violation.reportedBy;
+                    
+                    const reportedByInput = document.getElementById('reportedBy');
+                    if (reportedByInput) {
+                        reportedByInput.value = violation.reportedBy || '';
+                        // If empty (legacy data), populate with current admin
+                        if (!reportedByInput.value) {
+                            populateAdminName();
+                        }
+                    }
+                    
                     document.getElementById('violationNotes').value = violation.notes || '';
 
                     // Update notes counter
@@ -2014,6 +2042,9 @@ function initViolationsModule() {
                         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                         const timeInput = document.getElementById('violationTime');
                         if (timeInput && !timeInput.value) timeInput.value = timeStr;
+
+                        // Also populate admin name after reset
+                        populateAdminName();
                     }, 50);
                 }
                 if (selectedStudentCard) selectedStudentCard.style.display = 'none';
@@ -3362,6 +3393,18 @@ function initViolationsModule() {
                 const reportedBy = document.getElementById('reportedBy').value.trim();
                 const notes = document.getElementById('violationNotes').value.trim();
                 
+                // FORCE: Always use current admin's full name from session
+                const sessionStr = localStorage.getItem('userSession');
+                let enforcedAdminName = reportedBy;
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        enforcedAdminName = session.full_name || session.name || session.username || reportedBy;
+                    } catch (e) {
+                        console.error('Error parsing session for reporter enforcement:', e);
+                    }
+                }
+                
                 // Get attachments
                 const attachmentInput = document.getElementById('violationAttachment');
                 let attachments = [];
@@ -3415,7 +3458,7 @@ function initViolationsModule() {
                             violationDate: violationDate,
                             violationTime: violationTime,
                             location: location,
-                            reportedBy: reportedBy,
+                            reportedBy: enforcedAdminName,
                             status: status,
                             notes: notes
                         };
@@ -3471,7 +3514,7 @@ function initViolationsModule() {
                         formData.append('violationDate', violationDate);
                         formData.append('violationTime', violationTime);
                         formData.append('location', location);
-                        formData.append('reportedBy', reportedBy);
+                        formData.append('reportedBy', enforcedAdminName);
                         formData.append('status', status);
                         formData.append('notes', notes);
                         formData.append('department', studentDepartment);
