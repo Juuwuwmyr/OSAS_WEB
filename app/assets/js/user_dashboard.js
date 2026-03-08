@@ -50,6 +50,244 @@ function initializeUserDropdown() {
 }
 
 // ===============================
+// NOTIFICATION DROPDOWN
+// ===============================
+function initializeNotifications() {
+  const notifBtn = document.getElementById('notificationBtn');
+  const notifDropdown = document.getElementById('notificationDropdown');
+  const notifList = document.getElementById('notificationList');
+  const notifBadge = document.querySelector('.notification-badge');
+  const markAllReadBtn = document.getElementById('markAllRead');
+
+  if (!notifBtn || !notifDropdown) return;
+
+  // Toggle dropdown
+  notifBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    notifDropdown.classList.toggle('show');
+    
+    // If opening, load notifications
+    if (notifDropdown.classList.contains('show')) {
+      loadNotifications();
+    }
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.nav-notifications')) {
+      notifDropdown.classList.remove('show');
+    }
+  });
+
+  // Mark all as read
+  if (markAllReadBtn) {
+    markAllReadBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      markAllNotificationsAsRead();
+    });
+  }
+
+  // Handle "View all violations" link
+  const viewAllLink = notifDropdown.querySelector('.view-all');
+  if (viewAllLink) {
+    viewAllLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      const page = this.getAttribute('data-page');
+      if (page) {
+        if (typeof window.loadContent === 'function') {
+          window.loadContent(page);
+        } else {
+          window.location.href = page;
+        }
+        notifDropdown.classList.remove('show');
+      }
+    });
+  }
+
+  async function loadNotifications() {
+    // Show loading state if empty
+    if (notifList.innerHTML.includes('no-notifications')) {
+      notifList.innerHTML = '<div style="text-align:center; padding:20px;"><div class="loading-spinner"></div></div>';
+    }
+
+    try {
+      // Get violations from the global state or fetch them
+      let violations = [];
+      if (window.userDashboardData && window.userDashboardData.violations && window.userDashboardData.violations.length > 0) {
+        violations = window.userDashboardData.violations;
+      } else {
+        const apiBase = (function() {
+          const pathParts = window.location.pathname.split('/').filter(p => p);
+          if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
+          return '/api/';
+        })();
+        const res = await fetch(apiBase + 'violations.php');
+        const data = await res.json();
+        violations = data.data || data.violations || [];
+      }
+
+      const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+      const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+      
+      // Sort by date descending
+      violations.sort((a, b) => {
+        const dateA = new Date((a.created_at || a.violation_date).replace(' ', 'T'));
+        const dateB = new Date((b.created_at || b.violation_date).replace(' ', 'T'));
+        return dateB - dateA;
+      });
+
+      // Limit to most recent 5 violations
+      const recentViolations = violations.slice(0, 5);
+
+      if (recentViolations.length === 0) {
+        notifList.innerHTML = `
+          <div class="no-notifications">
+            <i class='bx bx-bell-off'></i>
+            <p>No new notifications</p>
+          </div>`;
+        if (notifBadge) notifBadge.textContent = '0';
+        return;
+      }
+
+      // Count only the LATEST violation as new if it hasn't been seen
+      const latestViolation = recentViolations[0];
+      const unseenCount = !seenNotifs.includes(String(latestViolation.id)) ? 1 : 0;
+      if (notifBadge) notifBadge.textContent = unseenCount;
+
+      notifList.innerHTML = recentViolations.map(v => {
+        const isUnread = !readNotifs.includes(String(v.id));
+        const isLatest = v.id === latestViolation.id;
+        const type = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Violation';
+        
+        // Ensure date is parsed correctly by handling MySQL format (YYYY-MM-DD HH:MM:SS)
+        let dateStr = v.created_at || v.violation_date;
+        if (v.violation_date && v.violation_time && !v.created_at) {
+          dateStr = `${v.violation_date} ${v.violation_time}`;
+        }
+        
+        // Replace space with T for ISO format to ensure consistent cross-browser parsing
+        const date = new Date(dateStr.replace(' ', 'T'));
+        const timeAgo = formatTimeAgo(date);
+        
+        return `
+          <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${v.id}">
+            <div class="notif-icon">
+              <i class='bx bxs-error-circle'></i>
+            </div>
+            <div class="notif-info">
+              <span class="notif-title">${isLatest ? 'New Violation Recorded' : 'Previous Violation'}</span>
+              <span class="notif-desc">${type} reported on ${date.toLocaleDateString()}</span>
+              <span class="notif-time">${timeAgo}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add click listeners to items
+      notifList.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const id = this.dataset.id;
+          markNotificationAsRead(id);
+          markNotificationAsSeen(id);
+          
+          // Close dropdown
+          notifDropdown.classList.remove('show');
+          
+          // Open violation details modal
+          if (typeof window.viewViolationDetails === 'function') {
+            window.viewViolationDetails(id);
+          } else {
+            console.error('viewViolationDetails function not found');
+          }
+        });
+      });
+
+      // Mark the latest as "seen" once the dropdown is opened
+      if (notifDropdown.classList.contains('show')) {
+        markNotificationAsSeen(latestViolation.id);
+      }
+
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      notifList.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Error loading notifications</div>';
+    }
+  }
+
+  function markNotificationAsRead(id) {
+    const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+    if (!readNotifs.includes(String(id))) {
+      readNotifs.push(String(id));
+      localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
+      
+      const item = notifList.querySelector(`.notification-item[data-id="${id}"]`);
+      if (item) item.classList.remove('unread');
+      
+      updateBadgeCount();
+    }
+  }
+
+  function markNotificationAsSeen(id) {
+    const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+    if (!seenNotifs.includes(String(id))) {
+      seenNotifs.push(String(id));
+      localStorage.setItem('seen_notifications', JSON.stringify(seenNotifs));
+      updateBadgeCount();
+    }
+  }
+
+  function markAllNotificationsAsRead() {
+    const items = notifList.querySelectorAll('.notification-item.unread');
+    if (items.length === 0) return;
+
+    const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+    const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+
+    items.forEach(item => {
+      const id = item.dataset.id;
+      if (!readNotifs.includes(String(id))) readNotifs.push(String(id));
+      if (!seenNotifs.includes(String(id))) seenNotifs.push(String(id));
+      item.classList.remove('unread');
+    });
+
+    localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
+    localStorage.setItem('seen_notifications', JSON.stringify(seenNotifs));
+    updateBadgeCount();
+  }
+
+  function updateBadgeCount() {
+    const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+    const items = notifList.querySelectorAll('.notification-item');
+    if (items.length === 0) return;
+    
+    const latestId = items[0].dataset.id;
+    const isLatestSeen = seenNotifs.includes(String(latestId));
+    
+    if (notifBadge) {
+      notifBadge.textContent = isLatestSeen ? '0' : '1';
+    }
+  }
+
+  function formatTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMs < 0) return 'Just now';
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  }
+  
+  // Initial check for notifications
+  setTimeout(loadNotifications, 1000);
+}
+
+// ===============================
 // LOGOUT FUNCTION
 // ===============================
 window.logout = function() {
@@ -85,6 +323,9 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Initialize user dropdown
   initializeUserDropdown();
+
+  // Initialize notifications
+  initializeNotifications();
 
   // Initialize theme state if theme.js is available
   if (typeof initializeTheme === 'function') {

@@ -237,6 +237,10 @@
 }
 
 /* Notifications */
+.nav-notifications {
+  position: relative;
+}
+
 .notification-btn {
   position: relative;
   background: none;
@@ -246,24 +250,27 @@
   cursor: pointer;
   color: var(--dark-grey);
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notification-btn:hover {
-  background: var(--grey);
-  color: var(--dark);
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--gold);
 }
 
 .notification-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: 4px;
+  right: 4px;
   background: var(--gold);
   color: var(--dark);
   font-size: 9px;
   font-weight: 800;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,6 +278,199 @@
   font-family: var(--lato);
   box-shadow: 0 2px 5px rgba(0,0,0,0.25);
   border: 1.5px solid white;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 1100;
+  border: 1px solid var(--grey);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--poppins);
+}
+
+.notification-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.notif-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--grey);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.notif-header a {
+  font-size: 0.75rem;
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.notif-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  border-bottom: 1px solid var(--grey);
+  position: relative;
+}
+
+.notification-item:hover {
+  background: #f9f9f9;
+}
+
+.notification-item.unread {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+.notif-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-icon i {
+  font-size: 1.25rem;
+  color: var(--gold);
+}
+
+.notif-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notif-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.notif-desc {
+  font-size: 0.75rem;
+  color: var(--dark-grey);
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.no-notifications {
+  padding: 2rem;
+  text-align: center;
+  color: var(--dark-grey);
+}
+
+.no-notifications i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.notif-footer {
+  padding: 0.75rem;
+  text-align: center;
+  border-top: 1px solid var(--grey);
+}
+
+.notif-footer a {
+  font-size: 0.8rem;
+  color: var(--dark);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.notif-footer a:hover {
+  color: var(--gold);
+}
+
+/* Dark Mode Support for Notifications */
+body.dark .notification-dropdown {
+  background: var(--light);
+  border-color: var(--border);
+}
+
+body.dark .notif-header,
+body.dark .notif-footer,
+body.dark .notification-item {
+  border-color: var(--border);
+}
+
+body.dark .notif-header h3,
+body.dark .notif-title,
+body.dark .notif-footer a {
+  color: var(--dark);
+}
+
+body.dark .notification-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark .notification-item.unread {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  border: 3px solid var(--grey);
+  border-top: 3px solid var(--gold);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* User Menu */

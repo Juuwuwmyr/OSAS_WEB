@@ -86,10 +86,27 @@ if (isset($student) && $student) {
 
     <!-- Notifications -->
     <div class="nav-notifications">
-      <button class="notification-btn">
+      <button class="notification-btn" id="notificationBtn">
         <i class='bx bx-bell'></i>
-        <span class="notification-badge"><?= isset($notificationCount) ? $notificationCount : '1' ?></span>
+        <span class="notification-badge">0</span>
       </button>
+      
+      <!-- Notification Dropdown -->
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notif-header">
+          <h3>Notifications</h3>
+          <a href="#" id="markAllRead">Mark all as read</a>
+        </div>
+        <div class="notif-list" id="notificationList">
+          <div class="no-notifications">
+            <i class='bx bx-bell-off'></i>
+            <p>No new notifications</p>
+          </div>
+        </div>
+        <div class="notif-footer">
+          <a href="#" class="view-all" data-page="user-page/my_violations">View all violations</a>
+        </div>
+      </div>
     </div>
 
     <!-- User Menu -->
