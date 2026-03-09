@@ -150,7 +150,7 @@ class UserDashboardData {
 
     async loadAnnouncements() {
         try {
-            const url = `${USER_API_BASE}announcements.php?action=active&limit=10`;
+            const url = `${USER_API_BASE}announcements.php?action=active&limit=5`;
             console.log('🔄 Loading announcements from:', url);
             
             const response = await fetch(url);
@@ -392,7 +392,11 @@ class UserDashboardData {
         }
 
         // Display announcements (similar to admin side - using forEach and appendChild)
-        this.announcements.forEach(announcement => {
+        const latestAnnouncements = [...this.announcements]
+            .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
+            .slice(0, 5);
+
+        latestAnnouncements.forEach(announcement => {
             const type = announcement.type || 'info';
             const typeClass = type === 'urgent' ? 'urgent' : type === 'warning' ? 'warning' : 'general';
             

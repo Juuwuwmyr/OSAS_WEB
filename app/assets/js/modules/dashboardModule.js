@@ -141,22 +141,20 @@ function updateAnnouncementCount() {
 }
 
 function openAnnouncement(id) {
-  // Here you can implement opening full announcement details
-  console.log(`📢 Opening announcement ${id}`);
-  showNotification('Opening announcement details...', 'info');
-  
-  // Example: Show modal with announcement details
-  // showAnnouncementModal(id);
+  // Navigate to announcements page and possibly filter (optional)
+  if (typeof loadContent === 'function') {
+    loadContent('admin_page/Announcements');
+  } else {
+    window.location.href = 'Announcements.php';
+  }
 }
 
-function viewAllAnnouncements() {
-  // Here you can implement viewing all announcements
-  console.log('📋 Viewing all announcements');
-  showNotification('Opening all announcements...', 'info');
-  
-  // Example: Navigate to announcements page
-  // loadContent('announcements');
-}
+// Export functions to global scope
+window.initDashboardModule = initDashboardModule;
+window.toggleAnnouncements = toggleAnnouncements;
+window.openAnnouncement = openAnnouncement;
+window.viewAllAnnouncements = viewAllAnnouncements;
+window.markAsRead = markAsRead;
 
 // Enhanced chart initialization function
 function initializeCharts() {

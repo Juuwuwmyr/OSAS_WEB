@@ -69,45 +69,80 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </div>
 
-  <!-- Add/Edit Announcement Modal -->
-  <div id="announcementModal" class="modal" style="display: none;">
-    <div class="modal-backdrop" onclick="closeAnnouncementModal()"></div>
-    <div class="modal-panel">
-      <header class="modal-header">
-        <h3 id="modalTitle"><i class='bx bxs-megaphone'></i> Add New Announcement</h3>
-        <button class="modal-close" onclick="closeAnnouncementModal()">
+  <!-- Announcement Modal -->
+  <div id="announcementModal" class="announcement-modal">
+    <div class="announcement-modal-backdrop" onclick="closeAnnouncementModal()"></div>
+    <div class="announcement-modal-panel">
+      <header class="announcement-modal-header">
+        <div class="header-icon">
+          <i class='bx bxs-megaphone'></i>
+        </div>
+        <div class="header-text">
+          <h3 id="modalTitle">Add New Announcement</h3>
+          <p id="modalSubtitle">Fill in the details below to publish a new announcement.</p>
+        </div>
+        <button class="announcement-modal-close" onclick="closeAnnouncementModal()">
           <i class='bx bx-x'></i>
         </button>
       </header>
 
-      <form id="announcementForm" onsubmit="event.preventDefault(); saveAnnouncement();">
+      <form id="announcementForm" class="modern-form" onsubmit="event.preventDefault(); saveAnnouncement();">
         <input type="hidden" id="announcementId" value="">
 
-        <label>
-          Title <span class="required">*</span>
-          <input type="text" id="announcementTitle" placeholder="Enter announcement title" required>
-        </label>
+        <div class="form-group">
+          <label for="announcementTitle">
+            Title <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <i class='bx bx-heading'></i>
+            <input type="text" id="announcementTitle" placeholder="e.g. Enrollment for Next Semester" required>
+          </div>
+        </div>
 
-        <label>
-          Message <span class="required">*</span>
-          <textarea id="announcementMessage" placeholder="Enter announcement message" rows="5" required></textarea>
-        </label>
+        <div class="form-group">
+          <label for="announcementType">
+            Announcement Type
+          </label>
+          <div class="input-wrapper">
+            <i class='bx bx-category'></i>
+            <select id="announcementType">
+              <option value="info">General Information</option>
+              <option value="urgent">Urgent / Critical</option>
+              <option value="warning">Important Warning</option>
+            </select>
+          </div>
+        </div>
 
-        <label>
-          Type
-          <select id="announcementType">
-            <option value="info">Info</option>
-            <option value="urgent">Urgent</option>
-            <option value="warning">Warning</option>
-          </select>
-        </label>
+        <div class="form-group">
+          <label for="announcementMessage">
+            Message <span class="required">*</span>
+          </label>
+          <div class="textarea-wrapper">
+            <textarea id="announcementMessage" placeholder="Type your announcement message here..." rows="6" required></textarea>
+          </div>
+        </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="closeAnnouncementModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Save Announcement</button>
+        <div class="announcement-modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeAnnouncementModal()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-submit">
+            <span class="btn-text">Save Announcement</span>
+            <i class='bx bx-send'></i>
+          </button>
         </div>
       </form>
     </div>
   </div>
+
+  <script>
+    // Self-initialize the module if it's already loaded in the parent dashboard
+    if (typeof window.initAnnouncementModule === 'function') {
+      console.log('📢 [Announcements View] Triggering initAnnouncementModule');
+      window.initAnnouncementModule();
+    } else {
+      console.warn('⚠️ [Announcements View] initAnnouncementModule not found. Ensure announcement.js is loaded.');
+    }
+  </script>
 </main>
 

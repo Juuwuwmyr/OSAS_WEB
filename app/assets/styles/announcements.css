@@ -484,92 +484,228 @@ body.dark {
 }
 
 /* ========================================= */
-/*                MODAL STYLES               */
+/*          SPECIFIC MODAL STYLES            */
 /* ========================================= */
-#announcementModal.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 3000;
+.announcement-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 999999 !important;
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-}
-
-#announcementModal .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  z-index: 3000;
-  animation: fadeIn 0.3s ease;
-}
-
-#announcementModal .modal-panel {
-  position: relative;
-  background: var(--light);
-  border-radius: 24px;
-  width: 100%;
-  max-width: 550px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  z-index: 3001;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  background: transparent !important;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px) scale(0.95); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
+.announcement-modal.show {
+  display: flex !important;
 }
 
-#announcementModal .modal-header {
-  padding: 24px 32px;
-  background: var(--light);
-  border-bottom: 1px solid var(--border);
+.announcement-modal-backdrop {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 1 !important;
+}
+
+.announcement-modal-panel {
+  position: relative !important;
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  width: 90% !important;
+  max-width: 550px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+  z-index: 2 !important;
+  animation: modalSlideUp 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.announcement-modal-header {
+  padding: 32px 40px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f1f1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 20px;
+  position: relative;
 }
 
-#announcementModal .modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--dark);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-#announcementModal .modal-header h3 i {
-  color: var(--gold);
+.header-icon {
+  width: 56px;
+  height: 56px;
   background: rgba(255, 215, 0, 0.1);
-  padding: 8px;
-  border-radius: 10px;
-}
-
-#announcementModal .modal-close {
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  color: var(--dark-grey);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: var(--transition);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #FFD700;
+  font-size: 28px;
 }
 
-#announcementModal .modal-close:hover {
-  background: var(--grey);
-  color: var(--dark);
+.header-text h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.5px;
+}
+
+.header-text p {
+  margin: 4px 0 0 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.announcement-modal-close {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  background: #f8f8f8;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 24px;
+}
+
+.announcement-modal-close:hover {
+  background: #f1f1f1;
+  color: #1a1a1a;
   transform: rotate(90deg);
 }
 
-#announcementModal .modal-panel form {
-  padding: 32px;
+/* Modern Form Styling */
+.modern-form {
+  padding: 40px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+}
+
+.form-group label .required {
+  color: #ef4444;
+}
+
+.input-wrapper, .textarea-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper i {
+  position: absolute;
+  left: 18px;
+  font-size: 20px;
+  color: #888;
+}
+
+.input-wrapper input,
+.input-wrapper select,
+.textarea-wrapper textarea {
+  width: 100%;
+  background: #f9f9f9;
+  border: 2px solid #f1f1f1;
+  border-radius: 16px;
+  padding: 14px 18px 14px 50px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.textarea-wrapper textarea {
+  padding: 18px;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus,
+.textarea-wrapper textarea:focus {
+  background: #fff;
+  border-color: #FFD700;
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+}
+
+.announcement-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.btn-cancel {
+  padding: 14px 28px;
+  border-radius: 16px;
+  border: 2px solid #f1f1f1;
+  background: #fff;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f9f9f9;
+  color: #1a1a1a;
+  border-color: #e1e1e1;
+}
+
+.btn-submit {
+  padding: 14px 32px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #FFD700 0%, #FFB800 100%);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2);
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(255, 215, 0, 0.3);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.btn-submit i {
+  font-size: 18px;
 }
 
 #announcementModal .modal-panel label {

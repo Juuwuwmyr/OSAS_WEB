@@ -992,12 +992,16 @@ class DashboardData {
             return;
         }
 
-        // Display actual announcements
-        this.announcements.forEach(announcement => {
+        // Display actual announcements - Sort newest first and limit to 5
+        const latestAnnouncements = [...this.announcements]
+            .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
+            .slice(0, 5);
+        
+        latestAnnouncements.forEach(announcement => {
             const typeClass = announcement.type || 'info';
             const iconClass = typeClass === 'urgent' ? 'bxs-error-circle' : 
                              typeClass === 'warning' ? 'bxs-error' : 'bxs-info-circle';
-            const timeAgo = this.getTimeAgo(announcement.created_at);
+            const timeAgo = this.getTimeAgo(announcement.created_at || announcement.createdAt);
 
             const item = document.createElement('div');
             item.className = `announcement-item ${typeClass}`;
@@ -1011,7 +1015,7 @@ class DashboardData {
                     <span class="announcement-time">${timeAgo}</span>
                 </div>
                 <div class="announcement-actions">
-                    <button class="btn-read-more" onclick="viewAnnouncement(${announcement.id})">Read More</button>
+                    <button class="btn-read-more" onclick="openAnnouncement(${announcement.id})">Read More</button>
                 </div>
             `;
             announcementsContent.appendChild(item);

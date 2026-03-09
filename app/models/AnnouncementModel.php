@@ -87,15 +87,15 @@ class AnnouncementModel extends Model {
             return [];
         }
 
+        // Sort primarily by date to ensure the LATEST is always at the top
         $query = "SELECT * FROM {$this->table} 
                   WHERE status = 'active' AND deleted_at IS NULL 
-                  ORDER BY 
+                  ORDER BY created_at DESC, 
                     CASE type 
                         WHEN 'urgent' THEN 1 
                         WHEN 'warning' THEN 2 
                         ELSE 3 
-                    END,
-                    created_at DESC";
+                    END";
         
         if ($limit) {
             $query .= " LIMIT " . intval($limit);

@@ -79,7 +79,7 @@ try {
       <div class="announcements-header">
         <h3><i class='bx bxs-megaphone'></i> Latest Announcements</h3>
         <div class="header-actions">
-          <button id="addAnnouncementBtn" class="btn-add" onclick="openAddModal()">
+          <button id="addAnnouncementBtn" class="btn-add" onclick="loadContent('admin_page/Announcements')">
             <i class='bx bx-plus'></i> Add Announcement
           </button>
           <button class="announcement-toggle" onclick="toggleAnnouncements()">
@@ -96,41 +96,9 @@ try {
       </div>
     </div>
 
-    <!-- Add Announcement Modal -->
-    <div id="addAnnouncementModal" class="modal" aria-hidden="true">
-      <div class="modal-backdrop" onclick="closeAddModal()"></div>
-      <div class="modal-panel" role="dialog" aria-modal="true">
-        <header class="modal-header">
-          <h3><i class='bx bxs-megaphone'></i> Add New Announcement</h3>
-          <button class="modal-close" onclick="closeAddModal()">
-            <i class='bx bx-x'></i>
-          </button>
-        </header>
-
-        <form id="addAnnForm" onsubmit="event.preventDefault(); addAnnouncement();">
-          <label>Title
-            <input type="text" id="annTitle" placeholder="Announcement title" required />
-          </label>
-
-          <label>Message
-            <textarea id="annMessage" placeholder="Write your announcement..." rows="3" required></textarea>
-          </label>
-
-          <label>Type
-            <select id="annType">
-              <option value="info">Info</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </label>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-            <button type="submit" class="btn-submit">Publish</button>
-          </div>
-        </form>
-      </div>
+    <div class="section-title">
+      <h3><i class='bx bx-stats'></i> Statistics Overview</h3>
     </div>
-
 
     <ul class="box-info">
       <li>
