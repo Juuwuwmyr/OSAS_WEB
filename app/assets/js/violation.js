@@ -109,7 +109,13 @@ function initViolationsModule() {
         const statusFilter = document.getElementById('ViolationsStatusFilter');
         const dateFromFilter = document.getElementById('ViolationDateFrom');
         const dateToFilter = document.getElementById('ViolationDateTo');
-        const printBtn = document.getElementById('btnPrintViolations');
+        const exportBtn = document.getElementById('btnExportViolations');
+        const exportModal = document.getElementById('ExportViolationsModal');
+        const closeExportBtn = document.getElementById('closeExportModal');
+        const exportModalOverlay = document.getElementById('ExportModalOverlay');
+        const exportPDFBtn = document.getElementById('exportPDF');
+        const exportExcelBtn = document.getElementById('exportExcel');
+        const exportWordBtn = document.getElementById('exportWord');
         const studentSearchInput = document.getElementById('studentSearch');
         const searchStudentBtn = document.getElementById('searchStudentBtn');
         const selectedStudentCard = document.getElementById('selectedStudentCard');
@@ -1287,6 +1293,286 @@ function initViolationsModule() {
                 return parts.length > 1 ? parseInt(parts.pop()) : 0;
             })) : 0;
             return `VIOL-${year}-${String(lastId + 1).padStart(3, '0')}`;
+        }
+
+        // --- Export Functions ---
+        function csvEscape(value) {
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (/[",\n]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        async function loadImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => {
+                    console.warn('Could not load image:', url);
+                    resolve(null);
+                }
+                img.src = url;
+            });
+        }
+
+        async function downloadViolationsPDF() {
+            if (!window.jspdf) {
+                alert('PDF library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            
+            // --- Header Design ---
+            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
+            const logoData = await loadImage(logoPath);
+
+            // Left Side: Logo & Institution Name
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+                
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80); 
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 40, 18);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141); 
+                doc.text("Office of Student Affairs and Services", 40, 24);
+            } else {
+                doc.setFontSize(22);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141);
+                doc.text("Office of Student Affairs and Services", 14, 28);
+            }
+
+            // Right Side: Report Title & Date
+            doc.setFontSize(14);
+            doc.setTextColor(41, 128, 185); 
+            doc.setFont("helvetica", "bold");
+            doc.text("VIOLATION LIST REPORT", 196, 18, { align: 'right' });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+            // Divider Line
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.5);
+            doc.line(14, 35, 196, 35);
+            
+            // Summary Stats
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Total Records: ${filteredViolations.length}`, 14, 45);
+            
+            let startY = 50;
+
+            // Table
+            const tableColumn = ["Case ID", "Student ID", "Student Name", "Type", "Level", "Dept", "Date", "Status"];
+            const tableRows = [];
+
+            filteredViolations.forEach(v => {
+                const rowData = [
+                    v.caseId,
+                    v.studentId,
+                    v.studentName,
+                    v.violationTypeLabel,
+                    v.violationLevelLabel,
+                    v.department,
+                    formatDate(v.dateReported),
+                    v.statusLabel
+                ];
+                tableRows.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: startY,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                headStyles: { 
+                    fillColor: [245, 245, 245], 
+                    textColor: [44, 62, 80], 
+                    fontStyle: 'bold',
+                    lineWidth: 0.1,
+                    lineColor: [200, 200, 200]
+                },
+                alternateRowStyles: { fillColor: [255, 255, 255] },
+                margin: { top: 60 }
+            });
+
+            doc.save(`Violation_List_${now.toISOString().slice(0, 10)}.pdf`);
+        }
+
+        function downloadViolationsExcel() {
+            const lines = [];
+            const now = new Date();
+            lines.push('Violation List Report');
+            lines.push('Generated,' + csvEscape(now.toLocaleString()));
+            lines.push('');
+            lines.push([
+                'Case ID',
+                'Student ID',
+                'Student Name',
+                'Violation Type',
+                'Violation Level',
+                'Department',
+                'Section',
+                'Year Level',
+                'Date Reported',
+                'Time',
+                'Location',
+                'Reported By',
+                'Status',
+                'Notes'
+            ].map(csvEscape).join(','));
+
+            filteredViolations.forEach(v => {
+                lines.push([
+                    v.caseId,
+                    v.studentId,
+                    v.studentName,
+                    v.violationTypeLabel,
+                    v.violationLevelLabel,
+                    v.department,
+                    v.section,
+                    v.studentYearlevel,
+                    v.dateReported,
+                    v.violationTime,
+                    v.locationLabel,
+                    v.reportedBy,
+                    v.statusLabel,
+                    v.notes
+                ].map(csvEscape).join(','));
+            });
+
+            const csvContent = lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const fileName = 'violations_export_' + now.toISOString().slice(0, 10) + '.csv';
+            
+            if (typeof saveAs === 'function') {
+                saveAs(blob, fileName);
+            } else {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        async function downloadViolationsWord() {
+            if (!window.docx) {
+                alert('DOCX library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
+            const now = new Date();
+            
+            // Table Header
+            const tableHeader = new TableRow({
+                children: [
+                    "Case ID", "Student", "Type", "Level", "Dept", "Date", "Status"
+                ].map(text => new TableCell({
+                    children: [new Paragraph({ text, bold: true, size: 20 })], 
+                    width: { size: 100 / 7, type: WidthType.PERCENTAGE },
+                    shading: { fill: "E0E0E0" }
+                }))
+            });
+            
+            // Table Rows
+            const tableRows = filteredViolations.map(v => {
+                return new TableRow({
+                    children: [
+                        v.caseId,
+                        v.studentName,
+                        v.violationTypeLabel,
+                        v.violationLevelLabel,
+                        v.department,
+                        formatDate(v.dateReported),
+                        v.statusLabel
+                    ].map(text => new TableCell({
+                        children: [new Paragraph({ text: text || "", size: 16 })],
+                        width: { size: 100 / 7, type: WidthType.PERCENTAGE }
+                    }))
+                });
+            });
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            text: "VIOLATION LIST REPORT",
+                            heading: HeadingLevel.HEADING_1,
+                            alignment: AlignmentType.CENTER
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `Office of Student Affairs and Services`,
+                                    italics: true,
+                                    color: "666666"
+                                })
+                            ],
+                            alignment: AlignmentType.CENTER
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `Generated: ${now.toLocaleString()}`,
+                                    italics: true,
+                                    color: "999999"
+                                })
+                            ],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 400 }
+                        }),
+                        new Paragraph({
+                            text: `Total Records: ${filteredViolations.length}`,
+                            spacing: { after: 200 }
+                        }),
+                        new Table({
+                            rows: [tableHeader, ...tableRows],
+                            width: { size: 100, type: WidthType.PERCENTAGE }
+                        })
+                    ]
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => {
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, `Violation_List_${now.toISOString().slice(0, 10)}.docx`);
+                } else {
+                    console.error('FileSaver.js not loaded');
+                    alert('Error: FileSaver.js not loaded');
+                }
+            });
         }
 
         // SYNC OFFLINE ACTIONS
@@ -2589,6 +2875,59 @@ function initViolationsModule() {
             console.log('✅ Added click event to btnAddViolations');
         }
 
+        // 1.1 OPEN EXPORT MODAL
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                if (exportModal) {
+                    exportModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+
+        if (closeExportBtn) {
+            closeExportBtn.addEventListener('click', () => {
+                if (exportModal) {
+                    exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        if (exportModalOverlay) {
+            exportModalOverlay.addEventListener('click', () => {
+                if (exportModal) {
+                    exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // Export format buttons
+        if (exportPDFBtn) {
+            exportPDFBtn.addEventListener('click', async () => {
+                await downloadViolationsPDF();
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => {
+                downloadViolationsExcel();
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        if (exportWordBtn) {
+            exportWordBtn.addEventListener('click', async () => {
+                await downloadViolationsWord();
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        }
+
         // 2. OPEN MODAL WHEN "RECORD FIRST VIOLATION" BUTTON IS CLICKED
         if (btnRecordFirst) {
             btnRecordFirst.addEventListener('click', () => openRecordModal());
@@ -3729,112 +4068,6 @@ function initViolationsModule() {
                         hideLoadingOverlay();
                     }
                 }
-            });
-        }
-
-        // 15. PRINT FUNCTIONALITY
-        if (printBtn) {
-            printBtn.addEventListener('click', function() {
-                const tableTitle = document.querySelector('.Violations-table-title')?.textContent || 'Violations List';
-                const tableSubtitle = document.querySelector('.Violations-table-subtitle')?.textContent || 'All student violation records';
-
-                let printTableHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Case ID</th>
-                                <th>Student ID</th>
-                                <th>Student Name</th>
-                                <th>Violation Type</th>
-                                <th>Level</th>
-                                <th>Section</th>
-                                <th>Year Level</th>
-                                <th>Date Reported</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                filteredViolations.forEach(violation => {
-                    const typeClass = getViolationTypeClass(violation.violationType);
-                    const levelClass = getViolationLevelClass(violation.violationLevel);
-                    const deptClass = getDepartmentClass(violation.department);
-                    const statusClass = getStatusClass(violation.status);
-                    
-                    printTableHTML += `
-                        <tr>
-                            <td>${violation.caseId}</td>
-                            <td>${violation.studentId}</td>
-                            <td>${violation.studentName}</td>
-                            <td><span class="type-badge ${typeClass}">${violation.violationTypeLabel}</span></td>
-                            <td><span class="level-badge ${levelClass}">${violation.violationLevelLabel}</span></td>
-                            <td>${violation.section}</td>
-                            <td>${violation.studentYearlevel || 'N/A'}</td>
-                            <td>${formatDate(violation.dateReported)}</td>
-                            <td><span class="status-badge ${statusClass}">${violation.statusLabel}</span></td>
-                        </tr>
-                    `;
-                });
-
-                printTableHTML += `
-                        </tbody>
-                    </table>
-                `;
-
-                const printContent = `
-                    <html>
-                        <head>
-                            <title>Violations Report - OSAS System</title>
-                            <style>
-                                body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                                th { background-color: #f8f9fa; font-weight: 600; }
-                                h1 { color: #333; margin-bottom: 10px; }
-                                .report-header { margin-bottom: 30px; }
-                                .report-date { color: #666; margin-bottom: 20px; }
-                                .status-badge, .type-badge, .level-badge, .dept-badge { 
-                                    padding: 4px 8px; 
-                                    border-radius: 4px; 
-                                    font-size: 11px; 
-                                    font-weight: 600; 
-                                    display: inline-block;
-                                }
-                                .permitted { background: #e8f5e9; color: #2e7d32; }
-                                .warning { background: #fff3e0; color: #ef6c00; }
-                                .disciplinary { background: #ffebee; color: #c62828; }
-                                .resolved { background: #e3f2fd; color: #1565c0; }
-                                .uniform { background: #f3e5f5; color: #7b1fa2; }
-                                .footwear { background: #e8f5e9; color: #2e7d32; }
-                                .id { background: #e3f2fd; color: #1565c0; }
-                                .bsis { background: #e8f5e9; color: #2e7d32; }
-                                .wft { background: #e3f2fd; color: #1565c0; }
-                                .btvted { background: #fff3e0; color: #ef6c00; }
-                                .chs { background: #f3e5f5; color: #7b1fa2; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="report-header">
-                                <h1>${tableTitle}</h1>
-                                <p style="color: #666;">${tableSubtitle}</p>
-                                <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', { 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}</div>
-                            </div>
-                            ${printTableHTML}
-                        </body>
-                    </html>
-                `;
-
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printContent);
-                printWindow.document.close();
-                printWindow.print();
             });
         }
 

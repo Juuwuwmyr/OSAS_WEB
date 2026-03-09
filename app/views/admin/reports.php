@@ -35,10 +35,6 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
-        <button id="btnPrintReports" class="Reports-btn outline small">
-          <i class='bx bx-printer'></i>
-          <span>Print</span>
-        </button>
         <button id="btnRefreshReports" class="Reports-btn outline small">
           <i class='bx bx-refresh'></i>
           <span>Refresh</span>
@@ -501,9 +497,6 @@ require_once __DIR__ . '/../../core/View.php';
           <button class="Reports-action-btn export">
             <i class='bx bx-download'></i> Export
           </button>
-          <button class="Reports-action-btn print">
-            <i class='bx bx-printer'></i> Print
-          </button>
           <button class="Reports-close-btn" id="closeDetailsModal">
             <i class='bx bx-x'></i>
           </button>
@@ -672,6 +665,39 @@ require_once __DIR__ . '/../../core/View.php';
     <button class="Reports-btn-primary" id="btnGenerateFirstReport">
       <i class='bx bx-plus'></i> Generate First Report
     </button>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="ExportReportsModal" class="Reports-modal">
+    <div class="Reports-modal-overlay" id="ExportModalOverlay"></div>
+    <div class="Reports-modal-container" style="max-width: 400px;">
+      <div class="Reports-modal-header">
+        <h2>
+          <i class='bx bx-download'></i>
+          <span>Export Reports Data</span>
+        </h2>
+        <button class="Reports-close-btn" id="closeExportModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="Reports-modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the report records.</p>
+        <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="exportPDF" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as PDF</span>
+          </button>
+          <button id="exportExcel" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+          </button>
+          <button id="exportWord" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </main>

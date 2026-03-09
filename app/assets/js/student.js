@@ -14,7 +14,13 @@ function initStudentsModule() {
         const studentsForm = document.getElementById('StudentsForm');
         const searchInput = document.getElementById('searchStudent');
         const filterSelect = document.getElementById('StudentsFilterSelect');
-        const printBtn = document.getElementById('btnPrintStudents');
+        const exportBtn = document.getElementById('btnExportStudents');
+        const exportModal = document.getElementById('ExportStudentsModal');
+        const closeExportBtn = document.getElementById('closeExportModal');
+        const exportModalOverlay = document.getElementById('ExportModalOverlay');
+        const exportPDFBtn = document.getElementById('exportPDF');
+        const exportExcelBtn = document.getElementById('exportExcel');
+        const exportWordBtn = document.getElementById('exportWord');
         const studentDeptSelect = document.getElementById('studentDept');
         const studentSectionSelect = document.getElementById('studentSection');
 
@@ -596,6 +602,285 @@ function initStudentsModule() {
             return statusMap[status] || status;
         }
 
+        // --- Export Functions ---
+        function csvEscape(value) {
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (/[",\n]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        async function loadImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => {
+                    console.warn('Could not load image:', url);
+                    resolve(null);
+                }
+                img.src = url;
+            });
+        }
+
+        async function downloadStudentsPDF() {
+            if (!window.jspdf) {
+                alert('PDF library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            
+            // --- Header Design ---
+            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
+            const logoData = await loadImage(logoPath);
+
+            // Left Side: Logo & Institution Name
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+                
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80); 
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 40, 18);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141); 
+                doc.text("Office of Student Affairs and Services", 40, 24);
+            } else {
+                doc.setFontSize(22);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141);
+                doc.text("Office of Student Affairs and Services", 14, 28);
+            }
+
+            // Right Side: Report Title & Date
+            doc.setFontSize(14);
+            doc.setTextColor(41, 128, 185); 
+            doc.setFont("helvetica", "bold");
+            doc.text("STUDENT LIST REPORT", 196, 18, { align: 'right' });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+            // Divider Line
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.5);
+            doc.line(14, 35, 196, 35);
+            
+            // Summary Stats
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Total Records: ${allStudents.length}`, 14, 45);
+            
+            let startY = 50;
+
+            // Table
+            const tableColumn = ["ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"];
+            const tableRows = [];
+
+            // Use allStudents for export, or you could use current filtered list if preferred
+            // Let's use current view students
+            allStudents.forEach(s => {
+                const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                const rowData = [
+                    s.id,
+                    s.studentId,
+                    fullName,
+                    s.department || 'N/A',
+                    s.section || 'N/A',
+                    s.yearlevel || 'N/A',
+                    s.contact || 'N/A',
+                    formatStatus(s.status || 'active')
+                ];
+                tableRows.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: startY,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                headStyles: { 
+                    fillColor: [245, 245, 245], 
+                    textColor: [44, 62, 80], 
+                    fontStyle: 'bold',
+                    lineWidth: 0.1,
+                    lineColor: [200, 200, 200]
+                },
+                alternateRowStyles: { fillColor: [255, 255, 255] },
+                margin: { top: 60 }
+            });
+
+            doc.save(`Student_List_${now.toISOString().slice(0, 10)}.pdf`);
+        }
+
+        function downloadStudentsExcel() {
+            const lines = [];
+            const now = new Date();
+            lines.push('Student List Report');
+            lines.push('Generated,' + csvEscape(now.toLocaleString()));
+            lines.push('');
+            lines.push([
+                'ID',
+                'Student ID',
+                'First Name',
+                'Middle Name',
+                'Last Name',
+                'Email',
+                'Department',
+                'Section',
+                'Year Level',
+                'Contact No',
+                'Status'
+            ].map(csvEscape).join(','));
+
+            allStudents.forEach(s => {
+                lines.push([
+                    s.id,
+                    s.studentId,
+                    s.firstName,
+                    s.middleName,
+                    s.lastName,
+                    s.email,
+                    s.department,
+                    s.section,
+                    s.yearlevel,
+                    s.contact,
+                    formatStatus(s.status)
+                ].map(csvEscape).join(','));
+            });
+
+            const csvContent = lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const fileName = 'students_export_' + now.toISOString().slice(0, 10) + '.csv';
+            
+            if (typeof saveAs === 'function') {
+                saveAs(blob, fileName);
+            } else {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        async function downloadStudentsWord() {
+            if (!window.docx) {
+                alert('DOCX library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
+            const now = new Date();
+            
+            // Table Header
+            const tableHeader = new TableRow({
+                children: [
+                    "ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"
+                ].map(text => new TableCell({
+                    children: [new Paragraph({ text, bold: true, size: 20 })], 
+                    width: { size: 100 / 8, type: WidthType.PERCENTAGE },
+                    shading: { fill: "E0E0E0" }
+                }))
+            });
+            
+            // Table Rows
+            const tableRows = allStudents.map(s => {
+                const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                return new TableRow({
+                    children: [
+                        String(s.id),
+                        s.studentId || "",
+                        fullName,
+                        s.department || "N/A",
+                        s.section || "N/A",
+                        s.yearlevel || "N/A",
+                        s.contact || "N/A",
+                        formatStatus(s.status || "active")
+                    ].map(text => new TableCell({
+                        children: [new Paragraph({ text: text || "", size: 16 })],
+                        width: { size: 100 / 8, type: WidthType.PERCENTAGE }
+                    }))
+                });
+            });
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            text: "STUDENT LIST REPORT",
+                            heading: HeadingLevel.HEADING_1,
+                            alignment: AlignmentType.CENTER
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `Office of Student Affairs and Services`,
+                                    italics: true,
+                                    color: "666666"
+                                })
+                            ],
+                            alignment: AlignmentType.CENTER
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `Generated: ${now.toLocaleString()}`,
+                                    italics: true,
+                                    color: "999999"
+                                })
+                            ],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 400 }
+                        }),
+                        new Paragraph({
+                            text: `Total Records: ${allStudents.length}`,
+                            spacing: { after: 200 }
+                        }),
+                        new Table({
+                            rows: [tableHeader, ...tableRows],
+                            width: { size: 100, type: WidthType.PERCENTAGE }
+                        })
+                    ]
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => {
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, `Student_List_${now.toISOString().slice(0, 10)}.docx`);
+                } else {
+                    console.error('FileSaver.js not loaded');
+                    alert('Error: FileSaver.js not loaded');
+                }
+            });
+        }
+
         function updateCounts(filteredStudents) {
             const showingEl = document.getElementById('showingStudentsCount');
             const totalCountEl = document.getElementById('totalStudentsCount');
@@ -803,6 +1088,59 @@ function initStudentsModule() {
                 btnAddStudent.addEventListener('click', () => openModal());
             }
 
+            // Export Students button
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+            }
+
+            if (closeExportBtn) {
+                closeExportBtn.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+
+            if (exportModalOverlay) {
+                exportModalOverlay.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+
+            // Export format buttons
+            if (exportPDFBtn) {
+                exportPDFBtn.addEventListener('click', async () => {
+                    await downloadStudentsPDF();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (exportExcelBtn) {
+                exportExcelBtn.addEventListener('click', () => {
+                    downloadStudentsExcel();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (exportWordBtn) {
+                exportWordBtn.addEventListener('click', async () => {
+                    await downloadStudentsWord();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
             // Add First Student button
             if (btnAddFirstStudent) {
                 btnAddFirstStudent.addEventListener('click', () => openModal());
@@ -858,94 +1196,6 @@ function initStudentsModule() {
                             studentSectionSelect.innerHTML = '<option value="">Select Department First</option>';
                         }
                     }
-                });
-            }
-
-            // Print functionality
-            if (printBtn) {
-                printBtn.addEventListener('click', function() {
-                    // Generate HTML table for printing
-                    let printTableHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Student ID</th>
-                                    <th>Name</th>
-                                    <th>Department</th>
-                                    <th>Section</th>
-                                    <th>Contact No</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-                    students.forEach(student => {
-                        const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
-
-                        printTableHTML += `
-                            <tr>
-                                <td>${student.id}</td>
-                                <td>${student.studentId}</td>
-                                <td>${fullName}<br><small>${student.email}</small></td>
-                                <td>${student.department}</td>
-                                <td>${student.section}</td>
-                                <td>${student.contact}</td>
-                                <td><span class="status-badge ${student.status}">${formatStatus(student.status)}</span></td>
-                            </tr>
-                        `;
-                    });
-
-                    printTableHTML += `
-                            </tbody>
-                        </table>
-                    `;
-
-                    const printContent = `
-                        <html>
-                            <head>
-                                <title>Students Report - OSAS System</title>
-                                <style>
-                                    body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                                    th { background-color: #f8f9fa; font-weight: 600; }
-                                    h1 { color: #333; margin-bottom: 10px; }
-                                    .report-header { margin-bottom: 30px; }
-                                    .report-date { color: #666; margin-bottom: 20px; }
-                                    .status-badge {
-                                        padding: 4px 12px;
-                                        border-radius: 20px;
-                                        font-size: 12px;
-                                        font-weight: 600;
-                                    }
-                                    .active { background: #e8f5e9; color: #2e7d32; }
-                                    .inactive { background: #ffebee; color: #c62828; }
-                                    .graduating { background: #e3f2fd; color: #1565c0; }
-                                </style>
-                            </head>
-                            <body>
-                                <div class="report-header">
-                                    <h1>Students Report</h1>
-                                    <p style="color: #666;">Generated from OSAS System</p>
-                                    <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}</div>
-                                </div>
-                                ${printTableHTML}
-                            </body>
-                        </html>
-                    `;
-
-                    const printWindow = window.open('', '_blank');
-                    printWindow.document.write(printContent);
-                    printWindow.document.close();
-                    printWindow.print();
                 });
             }
 

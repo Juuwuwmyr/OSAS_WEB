@@ -41,10 +41,6 @@ require_once '../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
-        <button id="btnPrintStudents" class="Students-btn outline small">
-          <i class='bx bx-printer'></i>
-          <span>Print</span>
-        </button>
         <button id="btnArchivedStudents" class="Students-btn outline small">
           <i class='bx bx-archive'></i>
           <span>Archived</span>
@@ -350,7 +346,46 @@ require_once '../../config/db_connect.php';
     </button>
   </div>
 
+  <!-- Export Modal -->
+  <div id="ExportStudentsModal" class="Students-modal">
+    <div class="Students-modal-overlay" id="ExportModalOverlay"></div>
+    <div class="Students-modal-container" style="max-width: 400px;">
+      <div class="Students-modal-header">
+        <h2>
+          <i class='bx bx-download'></i>
+          <span>Export Students Data</span>
+        </h2>
+        <button class="Students-close-btn" id="closeExportModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="Students-modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the student records.</p>
+        <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="exportPDF" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as PDF</span>
+          </button>
+          <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+          </button>
+          <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
+
+<!-- Load Libraries for Export -->
+<script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
+<script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
 <!-- Load Student JavaScript -->
 <script src="<?= View::asset('js/student.js') ?>?v=<?= time() ?>"></script>

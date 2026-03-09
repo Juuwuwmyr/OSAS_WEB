@@ -8,7 +8,12 @@ function initReportsModule() {
         const btnGenerateReport = document.getElementById('btnGenerateReports');
         const btnGenerateFirst = document.getElementById('btnGenerateFirstReport');
         const btnExportReports = document.getElementById('btnExportReports');
-        const btnPrintReports = document.getElementById('btnPrintReports');
+        const exportModal = document.getElementById('ExportReportsModal');
+        const closeExportBtn = document.getElementById('closeExportModal');
+        const exportModalOverlay = document.getElementById('ExportModalOverlay');
+        const exportPDFBtn = document.getElementById('exportPDF');
+        const exportExcelBtn = document.getElementById('exportExcel');
+        const exportWordBtn = document.getElementById('exportWord');
         const btnRefreshReports = document.getElementById('btnRefreshReports');
         const generateModal = document.getElementById('ReportsGenerateModal');
         const detailsModal = document.getElementById('ReportDetailsModal');
@@ -429,9 +434,6 @@ function initReportsModule() {
                             <button class="Reports-action-btn export" data-id="${report.id}" title="Export Report">
                                 <i class='bx bx-download'></i>
                             </button>
-                            <button class="Reports-action-btn print" data-id="${report.id}" title="Print Report">
-                                <i class='bx bx-printer'></i>
-                            </button>
                         </div>
                     </td>
                 </tr>
@@ -685,7 +687,6 @@ function initReportsModule() {
         function handleTableClick(e) {
             const viewBtn = e.target.closest('.Reports-action-btn.view');
             const exportBtn = e.target.closest('.Reports-action-btn.export');
-            const printBtn = e.target.closest('.Reports-action-btn.print');
 
             if (viewBtn) {
                 const id = parseInt(viewBtn.dataset.id);
@@ -697,14 +698,6 @@ function initReportsModule() {
                 const report = reports.find(r => r.id === id);
                 if (report) {
                     downloadSingleReport(report);
-                }
-            }
-
-            if (printBtn) {
-                const id = parseInt(printBtn.dataset.id);
-                const report = reports.find(r => r.id === id);
-                if (report) {
-                    printReport(report);
                 }
             }
         }
@@ -731,18 +724,69 @@ function initReportsModule() {
         // 3. EXPORT REPORTS
         if (btnExportReports) {
             btnExportReports.addEventListener('click', function() {
+                if (exportModal) {
+                    exportModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+
+        if (closeExportBtn) {
+            closeExportBtn.addEventListener('click', () => {
+                if (exportModal) {
+                    exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        if (exportModalOverlay) {
+            exportModalOverlay.addEventListener('click', () => {
+                if (exportModal) {
+                    exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // Export format buttons
+        if (exportPDFBtn) {
+            exportPDFBtn.addEventListener('click', async () => {
+                if (reports.length === 0) {
+                    alert('No reports to export.');
+                    return;
+                }
+                await downloadPDF(reports, 'Reports_Export');
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => {
+                if (reports.length === 0) {
+                    alert('No reports to export.');
+                    return;
+                }
                 downloadAllReports();
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
             });
         }
 
-        // 4. PRINT REPORTS
-        if (btnPrintReports) {
-            btnPrintReports.addEventListener('click', function() {
-                printAllReports();
+        if (exportWordBtn) {
+            exportWordBtn.addEventListener('click', async () => {
+                if (reports.length === 0) {
+                    alert('No reports to export.');
+                    return;
+                }
+                await downloadDOCX(reports, 'Reports_Export');
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
             });
         }
 
-        // 5. REFRESH REPORTS
+        // 4. REFRESH REPORTS
         if (btnRefreshReports) {
             btnRefreshReports.addEventListener('click', function() {
                 loadReports(true);
@@ -1305,8 +1349,18 @@ function initReportsModule() {
                     properties: {},
                     children: [
                         new Paragraph({
-                            text: "Student Violation Report",
+                            text: "VIOLATION ANALYSIS REPORT",
                             heading: HeadingLevel.HEADING_1,
+                            alignment: "center"
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Office of Student Affairs and Services",
+                                    italics: true,
+                                    color: "666666"
+                                })
+                            ],
                             alignment: "center"
                         }),
                         new Paragraph({
@@ -1314,7 +1368,7 @@ function initReportsModule() {
                                 new TextRun({
                                     text: `Generated: ${now.toLocaleString()}`,
                                     italics: true,
-                                    color: "666666"
+                                    color: "999999"
                                 })
                             ],
                             alignment: "center",
@@ -1453,180 +1507,6 @@ function initReportsModule() {
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
             }
-        }
-
-        function printReport(report) {
-            const printContent = `
-                <html>
-                    <head>
-                        <title>Violation Report - ${report.studentName}</title>
-                        <style>
-                            body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                            h1 { color: #333; margin-bottom: 10px; }
-                            h2 { color: #555; margin-bottom: 20px; }
-                            .report-header { margin-bottom: 30px; }
-                            .report-info { margin-bottom: 20px; }
-                            .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-                            .info-item { margin-bottom: 8px; }
-                            .info-label { font-weight: 600; color: #666; }
-                            .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
-                            .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
-                            .stat-title { font-size: 14px; color: #666; margin-bottom: 5px; }
-                            .stat-value { font-size: 24px; font-weight: 700; color: #333; }
-                            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                            th { background-color: #f8f9fa; font-weight: 600; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="report-header">
-                            <h1>Student Violation Report</h1>
-                            <p>Report ID: ${report.reportId}</p>
-                            <p>Generated: ${new Date().toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric'
-                            })}</p>
-                        </div>
-                        
-                        <div class="report-info">
-                            <h2>Student Information</h2>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <span class="info-label">Name:</span> ${report.studentName}
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Student ID:</span> ${report.studentId}
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Department:</span> ${report.department}
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Section:</span> ${report.section}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <h2>Violation Statistics</h2>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-title">Uniform Violations</div>
-                                <div class="stat-value">${report.uniformCount}</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-title">Footwear Violations</div>
-                                <div class="stat-value">${report.footwearCount}</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-title">No ID Violations</div>
-                                <div class="stat-value">${report.noIdCount}</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-title">Total Violations</div>
-                                <div class="stat-value">${report.totalViolations}</div>
-                            </div>
-                        </div>
-                        
-                        <h2>Violation History</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Violation</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${report.history.map(item => `
-                                    <tr>
-                                        <td>${item.date}</td>
-                                        <td>${item.title}</td>
-                                        <td>${item.desc}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </body>
-                </html>
-            `;
-
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
-        }
-
-        function printAllReports() {
-            const printContent = `
-                <html>
-                    <head>
-                        <title>All Violation Reports - OSAS System</title>
-                        <style>
-                            body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                            th { background-color: #f8f9fa; font-weight: 600; }
-                            h1 { color: #333; margin-bottom: 10px; }
-                            .report-header { margin-bottom: 30px; }
-                            .report-date { color: #666; margin-bottom: 20px; }
-                            .summary { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="report-header">
-                            <h1>All Student Violation Reports</h1>
-                            <p style="color: #666;">Comprehensive violation analysis report</p>
-                            <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })}</div>
-                        </div>
-                        
-                        <div class="summary">
-                            <strong>Summary:</strong> ${reports.length} students, ${reports.reduce((sum, r) => sum + r.totalViolations, 0)} total violations
-                        </div>
-                        
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Report ID</th>
-                                    <th>Student Name</th>
-                                    <th>Department</th>
-                                    <th>Section</th>
-                                    <th>Uniform</th>
-                                    <th>Footwear</th>
-                                    <th>No ID</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reports.map(report => `
-                                    <tr>
-                                        <td>${report.reportId}</td>
-                                        <td>${report.studentName}</td>
-                                        <td>${report.department}</td>
-                                        <td>${report.section}</td>
-                                        <td>${report.uniformCount}</td>
-                                        <td>${report.footwearCount}</td>
-                                        <td>${report.noIdCount}</td>
-                                        <td>${report.totalViolations}</td>
-                                        <td>${report.statusLabel}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </body>
-                </html>
-            `;
-
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
         }
 
         // ========== LOAD DEPARTMENTS AND SECTIONS ==========

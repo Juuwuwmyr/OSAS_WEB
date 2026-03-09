@@ -37,10 +37,6 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
-        <button id="btnPrintViolations" class="Violations-btn outline small">
-          <i class='bx bx-printer'></i>
-          <span>Print</span>
-        </button>
       </div>
       <div class="Violations-button-group">
         <button id="btnAddViolations" class="Violations-btn primary">
@@ -556,6 +552,39 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </div>
 
+  <!-- Export Modal -->
+  <div id="ExportViolationsModal" class="Violations-modal">
+    <div class="Violations-modal-overlay" id="ExportModalOverlay"></div>
+    <div class="Violations-modal-container" style="max-width: 400px;">
+      <div class="Violations-modal-header">
+        <h2>
+          <i class='bx bx-download'></i>
+          <span>Export Violations Data</span>
+        </h2>
+        <button class="Violations-close-btn" id="closeExportModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="Violations-modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the violation records.</p>
+        <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="exportPDF" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as PDF</span>
+          </button>
+          <button id="exportExcel" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+          </button>
+          <button id="exportWord" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Load Docx Generation Libraries -->
@@ -563,6 +592,12 @@ require_once __DIR__ . '/../../core/View.php';
 <script src="<?= View::asset('js/lib/pizzip.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 <script src="<?= View::asset('js/lib/pizzip-utils.js') ?>"></script>
+
+<!-- Load Libraries for Export -->
+<script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
+<script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
 <!-- Load Violation JavaScript -->
 <script src="<?= View::asset('js/violation.js') ?>?v=<?= time() ?>"></script>
