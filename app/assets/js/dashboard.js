@@ -1999,16 +1999,43 @@ function initializeEventListeners() {
             if (results.departments && results.departments.length > 0) {
                 html += `
                     <div class="suggestion-group">
-                        <div class="suggestion-group-title">Academic Units</div>
-                        ${results.departments.map(d => `
-                            <div class="suggestion-item" onclick="navigateToModule('admin_page/Department', '${d.department_code || d.code}')">
+                        <div class="suggestion-group-title">Departments</div>
+                        ${results.departments.map(d => {
+                            const name = d.department_name || d.name || '';
+                            const code = d.department_code || d.code || '';
+                            const count = d.student_count || d.studentCount || 0;
+                            return `
+                            <div class="suggestion-item" onclick="navigateToModule('admin_page/Department', '${code}')">
                                 <div class="suggestion-icon"><i class='bx bxs-building'></i></div>
                                 <div class="suggestion-info">
-                                    <span class="suggestion-name">${d.department_name || d.name}</span>
-                                    <span class="suggestion-meta">${d.department_code || d.code} • ${d.studentCount || 0} Students</span>
+                                    <span class="suggestion-name">${name}</span>
+                                    <span class="suggestion-meta">${code} • ${count} Students</span>
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
+                    </div>
+                `;
+            }
+
+            // Sections Section
+            if (results.sections && results.sections.length > 0) {
+                html += `
+                    <div class="suggestion-group">
+                        <div class="suggestion-group-title">Sections</div>
+                        ${results.sections.map(s => {
+                            const name = s.section_name || s.name || '';
+                            const code = s.section_code || s.code || '';
+                            const dept = s.department_name || s.department || '';
+                            const count = s.student_count || s.studentCount || 0;
+                            return `
+                            <div class="suggestion-item" onclick="navigateToModule('admin_page/Sections', '${code || name}')">
+                                <div class="suggestion-icon"><i class='bx bxs-layer'></i></div>
+                                <div class="suggestion-info">
+                                    <span class="suggestion-name">${name}</span>
+                                    <span class="suggestion-meta">${dept} • ${count} Students</span>
+                                </div>
+                            </div>
+                        `}).join('')}
                     </div>
                 `;
             }
