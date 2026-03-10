@@ -60,6 +60,24 @@ function syncThemeToggles() {
     }
 }
 
+/**
+ * Update active navigation item based on the current page
+ */
+function updateActiveNavItem(page) {
+    if (!allSideMenu) return;
+    
+    allSideMenu.forEach(item => {
+        const itemPage = item.getAttribute('data-page');
+        const li = item.parentElement;
+        
+        if (itemPage === page) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+}
+
 // Core Functions ==========================================================
 
 // Privilege Check Helper
@@ -275,6 +293,9 @@ function logout() {
 
 // Enhanced content loading with error handling and loading states
 function loadContent(page) {
+    // Update active navigation item
+    updateActiveNavItem(page);
+
     // Show loading state
     mainContent.innerHTML = `
     <div class="loading-state">
@@ -1717,13 +1738,8 @@ function initializeEventListeners() {
             // Only process items with data-page attribute
             if (!page) return;
 
-            // Update active menu item (works for both sidebar and top nav)
-            allSideMenu.forEach(i => {
-                if (!i.classList.contains('chatbot-sidebar-btn')) {
-                    i.parentElement.classList.remove('active');
-                }
-            });
-            li.classList.add('active');
+            // Update active menu item
+            updateActiveNavItem(page);
 
             // Close sidebar on mobile after selection (only if sidebar exists)
             if (window.innerWidth < 768 && sidebar) {
@@ -1735,15 +1751,314 @@ function initializeEventListeners() {
         });
     });
 
-    // Top navigation search functionality
+    // Universal Search Functionality
     const topNavSearch = document.querySelector('.nav-search .search-input');
-    if (topNavSearch) {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (topNavSearch && searchSuggestions) {
+        let searchTimeout;
+        
+        // Google-style focus behavior
+        topNavSearch.addEventListener('focus', function() {
+            const val = this.value.trim().toLowerCase();
+            if (val === '') {
+                renderRecentSearches();
+            } else if (val.length >= 2) {
+                searchSuggestions.classList.add('active');
+            }
+        });
+
         topNavSearch.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            console.log('Top nav search:', searchTerm);
-            // Implement search functionality here
+            const searchTerm = e.target.value.trim().toLowerCase();
+            
+            clearTimeout(searchTimeout);
+            
+            if (searchTerm.length === 0) {
+                renderRecentSearches();
+                return;
+            }
+
+            if (searchTerm.length < 2) {
+                searchSuggestions.classList.remove('active');
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                const results = await performUniversalSearch(searchTerm);
+                renderSearchSuggestions(results, searchTerm);
+            }, 300);
+        });
+        
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!topNavSearch.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                searchSuggestions.classList.remove('active');
+            }
         });
     }
+
+    /**
+     * Google-style: Render Recent Searches from LocalStorage
+     */
+    function renderRecentSearches() {
+        const lastSearches = JSON.parse(localStorage.getItem('lastSearches') || '[]');
+        if (lastSearches.length === 0) {
+            searchSuggestions.classList.remove('active');
+            return;
+        }
+
+        let html = `
+            <div class="suggestion-group">
+                <div class="suggestion-group-title">Recent Searches</div>
+                ${lastSearches.map(term => `
+                    <div class="suggestion-item recent-search" onclick="applyRecentSearch('${term}')">
+                        <div class="suggestion-icon"><i class='bx bx-history'></i></div>
+                        <div class="suggestion-info">
+                            <span class="suggestion-name">${term}</span>
+                        </div>
+                        <div class="suggestion-remove" onclick="removeRecentSearch(event, '${term}')">
+                            <i class='bx bx-x'></i>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        searchSuggestions.innerHTML = html;
+        searchSuggestions.classList.add('active');
+    }
+
+    window.applyRecentSearch = function(term) {
+        topNavSearch.value = term;
+        topNavSearch.dispatchEvent(new Event('input'));
+        topNavSearch.focus();
+    };
+
+    window.removeRecentSearch = function(e, term) {
+        e.stopPropagation();
+        let lastSearches = JSON.parse(localStorage.getItem('lastSearches') || '[]');
+        lastSearches = lastSearches.filter(t => t !== term);
+        localStorage.setItem('lastSearches', JSON.stringify(lastSearches));
+        renderRecentSearches();
+    };
+
+    function saveToRecentSearches(term) {
+        if (!term || term.length < 2) return;
+        let lastSearches = JSON.parse(localStorage.getItem('lastSearches') || '[]');
+        // Remove if already exists to move to top
+        lastSearches = lastSearches.filter(t => t.toLowerCase() !== term.toLowerCase());
+        lastSearches.unshift(term);
+        lastSearches = lastSearches.slice(0, 5); // Keep top 5
+        localStorage.setItem('lastSearches', JSON.stringify(lastSearches));
+    }
+
+    /**
+     * Perform Universal Search across different modules
+     */
+    async function performUniversalSearch(query) {
+        const results = {
+            students: [],
+            violations: [],
+            departments: [],
+            sections: []
+        };
+        
+        try {
+            const apiBase = typeof getAPIBasePath === 'function' ? getAPIBasePath() : '../api/';
+            
+            // Parallel fetching for performance
+            // Fix: Pass action=get explicitly to ensure correct routing
+            const [studentsRes, violationsRes, deptsRes, sectionsRes] = await Promise.all([
+                fetch(`${apiBase}students.php?action=get&search=${encodeURIComponent(query)}&limit=5`),
+                fetch(`${apiBase}violations.php?action=get&search=${encodeURIComponent(query)}&limit=5`),
+                fetch(`${apiBase}departments.php?action=get&search=${encodeURIComponent(query)}&limit=3`),
+                fetch(`${apiBase}sections.php?action=get&search=${encodeURIComponent(query)}&limit=3`)
+            ]);
+
+            if (studentsRes.ok) {
+                const data = await studentsRes.json();
+                // Correctly extract nested student array from data.data.students
+                if (data.data && Array.isArray(data.data.students)) {
+                    results.students = data.data.students;
+                } else if (Array.isArray(data.data)) {
+                    results.students = data.data;
+                } else {
+                    results.students = [];
+                }
+            }
+            
+            if (violationsRes.ok) {
+                const data = await violationsRes.json();
+                // Violations API returns data array directly or in data.violations
+                if (Array.isArray(data.data)) {
+                    results.violations = data.data;
+                } else if (Array.isArray(data.violations)) {
+                    results.violations = data.violations;
+                } else {
+                    results.violations = [];
+                }
+            }
+            
+            if (deptsRes.ok) {
+                const data = await deptsRes.json();
+                // Extract from data.data.departments or data.data
+                if (data.data && Array.isArray(data.data.departments)) {
+                    results.departments = data.data.departments;
+                } else if (Array.isArray(data.data)) {
+                    results.departments = data.data;
+                } else {
+                    results.departments = [];
+                }
+            }
+            
+            if (sectionsRes.ok) {
+                const data = await sectionsRes.json();
+                // Extract from data.data.sections or data.data
+                if (data.data && Array.isArray(data.data.sections)) {
+                    results.sections = data.data.sections;
+                } else if (Array.isArray(data.data)) {
+                    results.sections = data.data;
+                } else {
+                    results.sections = [];
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ Universal search failed:', error);
+        }
+        
+        return results;
+    }
+
+    /**
+     * Render Search Suggestions Dropdown
+     */
+    function renderSearchSuggestions(results, query) {
+        const totalResults = (results.students || []).length + (results.violations || []).length + 
+                            (results.departments || []).length + (results.sections || []).length;
+                            
+        if (totalResults === 0) {
+            searchSuggestions.innerHTML = `<div class="no-suggestions">No results found for "${query}"</div>`;
+        } else {
+            let html = '';
+            
+            // Students Section - Modern approach with specific action
+            if (results.students && results.students.length > 0) {
+                html += `
+                    <div class="suggestion-group">
+                        <div class="suggestion-group-title">Students</div>
+                        ${results.students.map(s => {
+                            // Robust name detection (handles snake_case and camelCase)
+                            const firstName = s.first_name || s.firstName || '';
+                            const lastName = s.last_name || s.lastName || '';
+                            const fullName = `${firstName} ${lastName}`.trim();
+                            const studentId = s.student_id || s.studentId || '';
+                            const deptName = s.department_name || s.departmentName || s.department || '';
+                            
+                            return `
+                            <div class="suggestion-item" onclick="navigateToStudent('${studentId}', '${fullName}')">
+                                <div class="suggestion-icon"><i class='bx bxs-user-detail'></i></div>
+                                <div class="suggestion-info">
+                                    <span class="suggestion-name">${fullName || 'Unknown Student'}</span>
+                                    <span class="suggestion-meta">${studentId} • ${deptName} • View Records</span>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                `;
+            }
+            
+            // Violations Section - Only show if it matches specifically (not just general student search)
+            if (results.violations && results.violations.length > 0) {
+                // Filter violations to avoid showing generic results if the query is a name
+                const filteredViolations = results.violations.filter(v => 
+                    (v.case_id && v.case_id.toLowerCase().includes(query)) || 
+                    (v.violation_type_name && v.violation_type_name.toLowerCase().includes(query))
+                );
+
+                if (filteredViolations.length > 0) {
+                    html += `
+                        <div class="suggestion-group">
+                            <div class="suggestion-group-title">Violations & Cases</div>
+                            ${filteredViolations.map(v => {
+                                const studentName = `${v.first_name || ''} ${v.last_name || ''}`.trim();
+                                return `
+                                <div class="suggestion-item" onclick="navigateToModule('admin_page/Violations', '${v.case_id || v.id}')">
+                                    <div class="suggestion-icon"><i class='bx bxs-shield-x'></i></div>
+                                    <div class="suggestion-info">
+                                        <span class="suggestion-name">${v.violation_type_name || v.violation_type || 'Violation'}</span>
+                                        <span class="suggestion-meta">${studentName || 'Student'} • Case: ${v.case_id || v.id}</span>
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    `;
+                }
+            }
+            
+            // Departments Section
+            if (results.departments && results.departments.length > 0) {
+                html += `
+                    <div class="suggestion-group">
+                        <div class="suggestion-group-title">Academic Units</div>
+                        ${results.departments.map(d => `
+                            <div class="suggestion-item" onclick="navigateToModule('admin_page/Department', '${d.department_code || d.code}')">
+                                <div class="suggestion-icon"><i class='bx bxs-building'></i></div>
+                                <div class="suggestion-info">
+                                    <span class="suggestion-name">${d.department_name || d.name}</span>
+                                    <span class="suggestion-meta">${d.department_code || d.code} • ${d.studentCount || 0} Students</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            searchSuggestions.innerHTML = html || `<div class="no-suggestions">No specific results found for "${query}"</div>`;
+        }
+        
+        searchSuggestions.classList.add('active');
+    }
+
+    /**
+     * Modernized Student Navigation: Direct to Violations
+     */
+    window.navigateToStudent = function(studentId, fullName) {
+        saveToRecentSearches(fullName);
+        // Direct jump to violations page with the student ID
+        navigateToModule('admin_page/Violations', studentId);
+    };
+
+    /**
+     * Global navigation helper for search results
+     */
+    window.navigateToModule = function(page, searchTerm) {
+        console.log(`🚀 Routing: ${page} with query: "${searchTerm}"`);
+        saveToRecentSearches(searchTerm);
+        
+        searchSuggestions.classList.remove('active');
+        
+        // Update top nav search input to reflect the current search
+        if (topNavSearch) {
+            topNavSearch.value = searchTerm;
+        }
+        
+        // Update active navigation item
+        updateActiveNavItem(page);
+        
+        if (typeof loadContent === 'function') {
+            loadContent(page);
+            
+            // Precise target search injection across all page types
+            setTimeout(() => {
+                const moduleSearch = document.querySelector('#studentSearch, #violationSearch, #departmentSearch, #sectionSearch, #userSearch, #announcementSearch, .Violations-search-box input');
+                if (moduleSearch) {
+                    moduleSearch.value = searchTerm;
+                    moduleSearch.dispatchEvent(new Event('input'));
+                    moduleSearch.focus();
+                }
+            }, 600);
+        }
+    };
 
     // Dark mode toggle functionality (top navigation)
     const topNavThemeToggle = document.getElementById('switch-mode-top');

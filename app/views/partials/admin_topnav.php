@@ -70,7 +70,11 @@ $role = $_SESSION['role'] ?? 'admin';
       <form action="#" class="search-form">
         <div class="search-input-wrapper">
           <i class='bx bx-search'></i>
-          <input type="search" placeholder="Search..." class="search-input">
+          <input type="search" placeholder="Search..." class="search-input" autocomplete="off">
+        </div>
+        <!-- Search Suggestions Dropdown -->
+        <div id="searchSuggestions" class="search-suggestions">
+          <!-- Suggestions will be injected here via JS -->
         </div>
       </form>
     </div>

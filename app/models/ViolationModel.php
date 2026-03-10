@@ -144,11 +144,11 @@ class ViolationModel extends Model {
         }
 
         if (!empty($search)) {
-            $query .= " AND (v.case_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR v.student_id LIKE ? OR vt.name LIKE ?)";
+            $query .= " AND (v.case_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR v.student_id LIKE ? OR vt.name LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
             $searchTerm = "%$search%";
-            $searchParams = array_fill(0, 5, $searchTerm);
+            $searchParams = array_fill(0, 7, $searchTerm);
             $params = array_merge($params, $searchParams);
-            $types .= "sssss";
+            $types .= "sssssss";
         }
 
         if (!empty($dateFrom)) {

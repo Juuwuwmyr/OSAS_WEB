@@ -737,6 +737,156 @@ input:not(:checked) + .slider .moon-icon {
   opacity: 0.3;
 }
 
+/* Search Suggestions Dropdown */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  margin-top: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+  z-index: 2000;
+  border: 1px solid var(--grey);
+  animation: slideDown 0.2s ease-out;
+  font-family: var(--poppins); /* Modernized font */
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-suggestions.active {
+  display: block;
+}
+
+.suggestion-group {
+  padding: 8px 0;
+}
+
+.suggestion-group-title {
+  padding: 8px 16px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--dark-grey);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: var(--grey);
+  font-family: var(--poppins);
+}
+
+.suggestion-item {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--poppins);
+}
+
+.suggestion-item:hover {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.suggestion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--grey);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dark);
+  font-size: 1.1rem;
+}
+
+.suggestion-info {
+  flex: 1;
+}
+
+.suggestion-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem; /* Slightly larger */
+  color: var(--dark);
+  font-family: var(--poppins);
+}
+
+.suggestion-meta {
+  display: block;
+  font-size: 0.75rem; /* Slightly larger */
+  color: var(--dark-grey);
+  font-family: var(--poppins);
+}
+
+.no-suggestions {
+  padding: 20px;
+  text-align: center;
+  color: var(--dark-grey);
+  font-size: 0.85rem;
+  font-family: var(--poppins);
+}
+
+.suggestion-item.recent-search .suggestion-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--dark-grey);
+}
+
+.suggestion-item.recent-search .suggestion-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 0.9rem;
+}
+
+.suggestion-item.recent-search:hover .suggestion-name {
+  color: var(--dark);
+}
+
+.suggestion-remove {
+  padding: 8px;
+  color: var(--dark-grey);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.suggestion-remove:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+body.dark .suggestion-remove:hover {
+  background: rgba(231, 76, 60, 0.2);
+}
+
+body.dark .search-suggestions {
+  background: var(--dark);
+  border-color: var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .suggestion-group-title {
+  background: #2d3748;
+  color: #a0aec0;
+}
+
+body.dark .suggestion-item:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+body.dark .suggestion-name {
+  color: white;
+}
+
 /* Dark Mode Styles for Top Navigation */
 body.dark .top-nav {
   background: var(--light); /* Use same dark background as main content */
