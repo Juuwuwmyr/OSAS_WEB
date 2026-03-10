@@ -644,7 +644,7 @@ function initViolationsModule() {
         }
 
         // Check and highlight student's violation history
-        function checkStudentViolationHistory() {
+        async function checkStudentViolationHistory() {
             // 1. Get selected student ID
             const studentIdElement = document.getElementById('modalStudentId');
             if (!studentIdElement || !studentIdElement.textContent) return;
@@ -664,12 +664,34 @@ function initViolationsModule() {
 
             // 3. Filter violations for this student and type
             // Note: violations array contains history
-            const studentHistory = violations.filter(v => 
+            let studentHistory = violations.filter(v => 
                 v.studentId === studentId && 
                 (v.violationType == violationTypeId)
             );
             
             console.log(`Found ${studentHistory.length} previous violations for student ${studentId} of type ${violationTypeId}`);
+
+            try {
+                const resp = await fetch(API_BASE + `add_student_violation.php?action=check&student_id=${encodeURIComponent(studentId)}&violation_type=${violationTypeId}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.status === 'success' && data.data) {
+                        if (studentHistory.length === 0 && data.data.last) {
+                            studentHistory = [{
+                                violationLevel: data.data.last.violation_level_id,
+                                violationLevelLabel: data.data.last.level_name,
+                                dateReported: data.data.last.violation_date,
+                                violationTime: data.data.last.violation_time
+                            }];
+                        }
+                        if (data.data.status === 'disciplinary' || data.data.current_level === 'disciplinary') {
+                            showNotification('Maximum Violation Level Reached. Status is now Disciplinary.', 'warning', 6000);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Server history check failed:', e);
+            }
 
             // 4. Update UI
             updateLevelSelectionBasedOnHistory(studentHistory);
@@ -1077,6 +1099,24 @@ function initViolationsModule() {
                     console.log('🔄 Force updating badges for student:', sId);
                     updateViolationTypeBadges(sId);
                 }
+
+                try {
+                    const syncPayload = {
+                        studentId: formData.get('studentId'),
+                        violationTypeId: parseInt(formData.get('violationType')),
+                        violationLevelId: parseInt(formData.get('violationLevel')),
+                        status: formData.get('status') || ''
+                    };
+                    await fetch(API_BASE + 'add_student_violation.php?action=sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(syncPayload)
+                    }).then(r => r.json()).then(data => {
+                        if (data && data.status === 'success' && data.data && data.data.shouldDeactivate) {
+                            showNotification('Student set to inactive due to disciplinary status.', 'warning', 6000);
+                        }
+                    }).catch(() => {});
+                } catch (_) {}
 
                 showNotification('Violation recorded successfully!', 'success');
                 return result;
