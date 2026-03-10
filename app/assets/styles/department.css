@@ -723,7 +723,7 @@ body.dark #departmentModal .close-btn:hover {
 /* ========================================= */
 /*           MODAL STYLES                   */
 /* ========================================= */
-#departmentModal {
+.modal {
   display: flex !important;
   position: fixed !important;
   inset: 0 !important;
@@ -740,24 +740,24 @@ body.dark #departmentModal .close-btn:hover {
   pointer-events: none;
 }
 
-#departmentModal::before {
+.modal::before {
   content: none;
 }
 
-#departmentModal.active {
+.modal.active {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
 
-#departmentModal .modal-overlay {
+.modal .modal-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
 }
 
-#departmentModal .modal-container {
+.modal .modal-container {
   position: relative;
   background: var(--light);
   width: 90%;
@@ -771,7 +771,7 @@ body.dark #departmentModal .close-btn:hover {
   flex-direction: column;
 }
 
-#departmentModal.active .modal-container {
+.modal.active .modal-container {
   animation: modalSlideIn 0.4s ease-out;
 }
 
@@ -786,7 +786,7 @@ body.dark #departmentModal .close-btn:hover {
   }
 }
 
-#departmentModal .modal-header {
+.modal .modal-header {
   padding: 16px 20px;
   border-bottom: none;
   display: flex;
@@ -799,7 +799,7 @@ body.dark #departmentModal .close-btn:hover {
   position: relative;
 }
 
-#departmentModal .modal-header h2 {
+.modal .modal-header h2 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
@@ -812,16 +812,16 @@ body.dark #departmentModal .close-btn:hover {
   z-index: 1;
 }
 
-#departmentModal .modal-header h2 i {
+.modal .modal-header h2 i {
   font-size: 20px;
   color: #1A1A1A !important;
 }
 
-#departmentModal .modal-header h2 span {
+.modal .modal-header h2 span {
   color: #1A1A1A !important;
 }
 
-#departmentModal .close-btn {
+.modal .close-btn {
   background: rgba(255, 255, 255, 0.2) !important;
   border: none;
   color: #1A1A1A !important;
@@ -837,7 +837,7 @@ body.dark #departmentModal .close-btn:hover {
   height: 32px;
 }
 
-#departmentModal .close-btn:hover {
+.modal .close-btn:hover {
   background: rgba(255, 255, 255, 0.3) !important;
   transform: rotate(90deg);
   color: #1A1A1A !important;

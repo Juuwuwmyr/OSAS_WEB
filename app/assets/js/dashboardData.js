@@ -1106,6 +1106,148 @@ class DashboardData {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    /**
+     * Download Dashboard PDF Report
+     */
+    async downloadDashboardPDF() {
+        console.log('📄 Preparing Dashboard PDF...');
+        
+        if (!window.jspdf) {
+            alert('PDF library not loaded. Please refresh the page.');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const now = new Date();
+
+        // --- Helper: Load Image ---
+        const loadImage = (url) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
+        };
+
+        // --- Header Section ---
+        const logoData = await loadImage('/OSAS_WEB/app/assets/img/default.png');
+        if (logoData) {
+            doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+            doc.setFontSize(18);
+            doc.setTextColor(44, 62, 80);
+            doc.setFont("helvetica", "bold");
+            doc.text("E-OSAS SYSTEM", 40, 18);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(127, 140, 141);
+            doc.text("Office of Student Affairs and Services", 40, 24);
+        } else {
+            doc.setFontSize(22);
+            doc.setTextColor(44, 62, 80);
+            doc.setFont("helvetica", "bold");
+            doc.text("E-OSAS SYSTEM", 14, 20);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(127, 140, 141);
+            doc.text("Office of Student Affairs and Services", 14, 28);
+        }
+
+        doc.setFontSize(14);
+        doc.setTextColor(41, 128, 185);
+        doc.setFont("helvetica", "bold");
+        doc.text("DASHBOARD SUMMARY REPORT", 196, 18, { align: 'right' });
+
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.5);
+        doc.line(14, 35, 196, 35);
+
+        // --- Statistics Overview ---
+        doc.setFontSize(12);
+        doc.setTextColor(44, 62, 80);
+        doc.setFont("helvetica", "bold");
+        doc.text("Statistics Overview", 14, 45);
+
+        const statsData = [
+            ["Violators", String(this.stats.violators || 0)],
+            ["Students", String(this.stats.students || 0)],
+            ["Departments", String(this.stats.departments || 0)],
+            ["Disciplinary", String(this.stats.penalties || 0)]
+        ];
+
+        doc.autoTable({
+            body: statsData,
+            startY: 50,
+            theme: 'grid',
+            styles: { fontSize: 10, cellPadding: 5 },
+            columnStyles: {
+                0: { fontStyle: 'bold', fillColor: [245, 245, 245], width: 40 },
+                1: { halign: 'center' }
+            },
+            margin: { left: 14, right: 14 }
+        });
+
+        // --- Charts Section ---
+        let currentY = doc.lastAutoTable.finalY + 15;
+        doc.setFontSize(12);
+        doc.text("Visual Analytics", 14, currentY);
+        currentY += 5;
+
+        const captureCanvas = (id) => {
+            const canvas = document.getElementById(id);
+            return canvas ? canvas.toDataURL('image/png') : null;
+        };
+
+        const typeChartData = captureCanvas('violationTypesChart');
+        const deptChartData = captureCanvas('departmentViolationsChart');
+
+        if (typeChartData) {
+            doc.addImage(typeChartData, 'PNG', 14, currentY, 85, 50);
+        }
+        if (deptChartData) {
+            doc.addImage(deptChartData, 'PNG', 110, currentY, 85, 50);
+        }
+
+        currentY += 60;
+
+        // --- Recent Violators Table ---
+        doc.setFontSize(12);
+        doc.text("Recent Violation Activities", 14, currentY);
+        
+        const recentRows = this.violations.slice(0, 10).map(v => [
+            v.studentName || `${v.firstName || ''} ${v.lastName || ''}`.trim() || 'Unknown',
+            this.formatDate(v.violationDate || v.violation_date || v.dateReported || ''),
+            v.violationType || v.violation_type || 'Other',
+            v.status || 'Pending'
+        ]);
+
+        doc.autoTable({
+            head: [["Student Name", "Date", "Violation", "Status"]],
+            body: recentRows,
+            startY: currentY + 5,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255] }
+        });
+
+        doc.save(`Dashboard_Summary_${now.toISOString().slice(0, 10)}.pdf`);
+        console.log('✅ Dashboard PDF Generated');
+    }
 }
 
 // Initialize dashboard data when page loads
@@ -1221,6 +1363,22 @@ function watchForDashboardContent() {
         observer.observe(mainContent, {
             childList: true,
             subtree: true
+        });
+
+        // Add event delegation for the dashboard export button
+        mainContent.addEventListener('click', (e) => {
+            const exportBtn = e.target.closest('#btnExportDashboardPDF');
+            if (exportBtn) {
+                e.preventDefault();
+                console.log('🚀 Dashboard Export Button Clicked');
+                if (window.dashboardDataInstance) {
+                    window.dashboardDataInstance.downloadDashboardPDF();
+                } else if (dashboardDataInstance) {
+                    dashboardDataInstance.downloadDashboardPDF();
+                } else {
+                    console.error('❌ Dashboard data instance not found');
+                }
+            }
         });
     }
 }

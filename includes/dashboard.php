@@ -61,6 +61,12 @@ if ($_SESSION['role'] !== 'admin') {
   <!-- CONTENT -->
 
   <script src="../app/assets/js/dashboard.js?v=<?= time() ?>"></script>
+  <!-- Load PDF/Word Libraries for Export -->
+  <script src="../app/assets/js/lib/jspdf.umd.min.js"></script>
+  <script src="../app/assets/js/lib/jspdf.plugin.autotable.min.js"></script>
+  <script src="../app/assets/js/lib/docx.js"></script>
+  <script src="../app/assets/js/lib/FileSaver.js"></script>
+  
   <script src="../app/assets/js/utils/notification.js?v=<?= time() ?>"></script>
   <script src="../app/assets/js/utils/admin_notifications.js?v=<?= time() ?>"></script>
   <script src="../app/assets/js/dashboardData.js"></script>

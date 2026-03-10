@@ -657,27 +657,27 @@ body.dark {
 /* ========================================= */
 /*           MODAL STYLES                   */
 /* ========================================= */
-#sectionsModal.sections-modal {
+.sections-modal {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 11000;
 }
 
-#sectionsModal.sections-modal.active {
+.sections-modal.active {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-#sectionsModal .sections-modal-overlay {
+.sections-modal .sections-modal-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
 }
 
-#sectionsModal .sections-modal-container {
+.sections-modal .sections-modal-container {
   position: relative;
   background: var(--light);
   width: 500px !important;
@@ -702,7 +702,7 @@ body.dark {
   }
 }
 
-#sectionsModal .sections-modal-header {
+.sections-modal .sections-modal-header {
   padding: 16px 20px;
   border-bottom: none;
   display: flex;
@@ -714,7 +714,7 @@ body.dark {
   z-index: 1;
 }
 
-#sectionsModal .sections-modal-header h2 {
+.sections-modal .sections-modal-header h2 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
@@ -725,11 +725,11 @@ body.dark {
   font-family: var(--poppins);
 }
 
-#sectionsModal .sections-modal-header h2 i {
+.sections-modal .sections-modal-header h2 i {
   font-size: 20px;
 }
 
-#sectionsModal .sections-close-btn {
+.sections-modal .sections-close-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: var(--dark);
@@ -745,7 +745,7 @@ body.dark {
   height: 32px;
 }
 
-#sectionsModal .sections-close-btn:hover {
+.sections-modal .sections-close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }

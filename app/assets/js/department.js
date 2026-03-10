@@ -884,56 +884,6 @@ function initDepartmentModule() {
     renderDepartments();
   }
 
-  // --- Print functionality ---
-  if (printBtn) {
-    printBtn.addEventListener('click', function() {
-      const printArea = document.querySelector('.content-card');
-
-      const printContent = `
-        <html>
-          <head>
-            <title>Departments Report - OSAS System</title>
-            <style>
-              body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #f8f9fa; font-weight: 600; }
-              h1 { color: #333; margin-bottom: 10px; }
-              .report-header { margin-bottom: 30px; }
-              .report-date { color: #666; margin-bottom: 20px; }
-              .status-badge { 
-                padding: 4px 12px; 
-                border-radius: 20px; 
-                font-size: 12px; 
-                font-weight: 600; 
-              }
-              .active { background: #e8f5e9; color: #2e7d32; }
-              .archived { background: #ffebee; color: #c62828; }
-            </style>
-          </head>
-          <body>
-            <div class="report-header">
-              <h1>Departments Report</h1>
-              <div class="report-date">Generated on: ${new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}</div>
-            </div>
-            ${printArea.innerHTML}
-          </body>
-        </html>
-      `;
-
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.print();
-    });
-  }
-
   console.log('✅ Department module ready!');
 }
 

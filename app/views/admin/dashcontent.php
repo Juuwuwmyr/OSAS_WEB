@@ -67,7 +67,7 @@ try {
         </div>
       </div>
       <div class="header-actions">
-        <a href="#" class="btn-download">
+        <a href="#" class="btn-download" id="btnExportDashboardPDF">
           <i class='bx bxs-cloud-download'></i>
           <span class="text">Export PDF</span>
         </a>
