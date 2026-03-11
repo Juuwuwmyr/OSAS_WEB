@@ -78,13 +78,17 @@
         .logo-icon {
             width: 40px;
             height: 40px;
-            background: var(--primary);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.2rem;
+            overflow: hidden;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .nav-buttons {
@@ -152,6 +156,7 @@
             opacity: 0.15;
             animation: slideBackground 20s ease-in-out infinite;
             z-index: 0;
+            pointer-events: none;
         }
 
         @keyframes slideBackground {
@@ -179,6 +184,7 @@
             background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
             animation: float 20s ease-in-out infinite;
             z-index: 1;
+            pointer-events: none;
         }
 
         @keyframes float {
@@ -194,7 +200,7 @@
             gap: 4rem;
             align-items: center;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
 
         .hero-content h1 {
@@ -806,7 +812,7 @@
         <div class="nav-container">
             <a href="#" class="logo">
                 <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
+                    <img src="./app/assets/img/default.png" alt="OSAS Logo" width="40" height="40">
                 </div>
                 <span>OSAS</span>
             </a>
@@ -818,7 +824,7 @@
                 <button class="btn btn-outline" id="theme-toggle" title="Toggle dark mode">
                     <i class="fas fa-moon" id="theme-icon"></i>
                 </button>
-                <a href="login_page.php?direct=true" class="btn btn-outline login-btn">
+                <a href="login_page.php?force_login=true" class="btn btn-outline login-btn">
                     <i class="fas fa-sign-in-alt"></i>
                     <span>Login</span>
                 </a>
@@ -836,7 +842,7 @@
                 <h1>Office of <span class="highlight">Student Affairs</span> and Services</h1>
                 <p>Comprehensive student management system designed to streamline administrative processes and enhance student experience through innovative technology solutions.</p>
                 <div class="hero-buttons">
-                    <a href="login_page.php?direct=true" class="btn btn-hero btn-hero-primary">
+                    <a href="login_page.php?force_login=true" class="btn btn-hero btn-hero-primary">
                         <i class="fas fa-rocket"></i>
                         Get Started
                     </a>
@@ -861,7 +867,7 @@
     <!-- Features Section -->
     <section class="features" id="features">
         <div class="section-header">
-            <h2>Powerful Features</h2>
+            <h2>Features</h2>
             <p>Everything you need to manage student services efficiently</p>
         </div>
         <div class="features-grid">
@@ -920,30 +926,22 @@
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <ul>
-                    <li><a href="login_page.php?direct=true">Login</a></li>
+                    <li><a href="login_page.php?force_login=true">Login</a></li>
                     <li><a href="#features">Features</a></li>
                 </ul>
             </div>
-            <div class="footer-section">
-                <h4>Support</h4>
-                <ul>
-                    <li><a href="#">Documentation</a></li>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">Contact Support</a></li>
-                    <li><a href="#">System Status</a></li>
-                </ul>
-            </div>
+
             <div class="footer-section">
                 <h4>Contact</h4>
                 <ul>
                     <li><i class="fas fa-envelope"></i>osas@colegiodenaujan.edu.ph</li>
-                    <li><i class="fas fa-phone"></i> +123 456 7890</li>
-                    <li><i class="fas fa-map-marker-alt"></i> University Campus</li>
+                    <li><i class="fas fa-phone"></i> +639989134594</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Santiago Naujan Oriental Mindoro</li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2024 OSAS - Office of Student Affairs and Services. All rights reserved.</p>
+            <p>&copy; 2026 OSAS - Office of Student Affairs and Services. All rights reserved.</p>
         </div>
     </footer>
 
