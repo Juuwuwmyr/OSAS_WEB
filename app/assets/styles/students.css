@@ -177,6 +177,13 @@ body.dark {
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
 }
 
+.Students-btn.outline.active {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+
 .Students-btn.primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(255, 215, 0, 0.35);

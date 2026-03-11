@@ -123,6 +123,7 @@ require_once '../../config/db_connect.php';
             <option value="active">Active Only</option>
             <option value="inactive">Inactive</option>
             <option value="graduating">Graduating</option>
+            <option value="archived">Archived</option>
           </select>
 
           <button class="Students-filter-btn" title="More filters">

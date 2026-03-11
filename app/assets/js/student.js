@@ -6,6 +6,7 @@ function initStudentsModule() {
         // Elements
         const tableBody = document.getElementById('StudentsTableBody');
         const btnAddStudent = document.getElementById('btnAddStudents');
+        const btnArchivedStudents = document.getElementById('btnArchivedStudents');
         const btnAddFirstStudent = document.getElementById('btnAddFirstStudent');
         const modal = document.getElementById('StudentsModal');
         const modalOverlay = document.getElementById('StudentsModalOverlay');
@@ -264,7 +265,9 @@ function initStudentsModule() {
                     if (Array.isArray(payload)) {
                         // Legacy array response - client-side pagination
                         allStudents = payload;
-                        const viewFiltered = currentView === 'archived' ? allStudents.filter(s => s.status === 'archived') : allStudents.filter(s => s.status !== 'archived');
+                        const viewFiltered = currentView === 'archived' 
+                            ? allStudents.filter(s => s.status && s.status.toLowerCase() === 'archived') 
+                            : allStudents.filter(s => s.status && s.status.toLowerCase() !== 'archived');
                         totalRecords = viewFiltered.length;
                         totalPages = Math.ceil(totalRecords / itemsPerPage);
                         const start = (currentPage - 1) * itemsPerPage;
@@ -276,7 +279,14 @@ function initStudentsModule() {
                         totalRecords = typeof payload.total === 'number' ? payload.total : allStudents.length;
                         totalPages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
                         currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
-                        const viewFiltered = currentView === 'archived' ? allStudents.filter(s => s.status === 'archived') : allStudents.filter(s => s.status !== 'archived');
+                        
+                        // Backend already filters by status when we pass the filter param, 
+                        // but we keep this for consistency and fallback
+                        const viewFiltered = currentView === 'archived' 
+                            ? allStudents.filter(s => s.status && s.status.toLowerCase() === 'archived') 
+                            : allStudents.filter(s => s.status && s.status.toLowerCase() !== 'archived');
+                        
+                        // If backend already filtered, viewFiltered should equal allStudents
                         students = viewFiltered;
                     } else {
                         console.error('Unexpected API data shape:', payload);
@@ -670,9 +680,15 @@ function initStudentsModule() {
                                 <button class="Students-action-btn edit" data-id="${s.id}" title="Edit">
                                     <i class='bx bx-edit'></i>
                                 </button>
-                                <button class="Students-action-btn delete" data-id="${s.id}" title="Archive">
-                                    <i class='bx bx-trash'></i>
-                                </button>
+                                ${(s.status && s.status.toLowerCase() === 'archived') ? `
+                                    <button class="Students-action-btn restore" data-id="${s.id}" title="Restore">
+                                        <i class='bx bx-undo'></i>
+                                    </button>
+                                ` : `
+                                    <button class="Students-action-btn delete" data-id="${s.id}" title="Archive">
+                                        <i class='bx bx-trash'></i>
+                                    </button>
+                                `}
                             </div>
                         </td>
                     </tr>
@@ -1133,6 +1149,7 @@ function initStudentsModule() {
             const viewBtn = e.target.closest('.Students-action-btn.view');
             const editBtn = e.target.closest('.Students-action-btn.edit');
             const deleteBtn = e.target.closest('.Students-action-btn.delete');
+            const restoreBtn = e.target.closest('.Students-action-btn.restore');
 
             if (viewBtn) {
                 const id = parseInt(viewBtn.dataset.id);
@@ -1163,6 +1180,21 @@ function initStudentsModule() {
                         confirmText: 'Yes, Archive'
                     }).then(confirmed => {
                         if (confirmed) deleteStudent(id);
+                    });
+                }
+            }
+
+            if (restoreBtn) {
+                const id = parseInt(restoreBtn.dataset.id);
+                const student = allStudents.find(s => s.id === id);
+                if (student) {
+                    showModernAlert({
+                        title: 'Restore Student',
+                        message: `Restore student "${student.firstName} ${student.lastName}" to active status?`,
+                        icon: 'info',
+                        confirmText: 'Yes, Restore'
+                    }).then(confirmed => {
+                        if (confirmed) restoreStudent(id);
                     });
                 }
             }
@@ -1215,6 +1247,22 @@ function initStudentsModule() {
             // Filter change resets page and fetches
             if (filterSelect) {
                 filterSelect.addEventListener('change', () => {
+                    // Sync currentView with filter selection
+                     if (filterSelect.value === 'archived') {
+                         currentView = 'archived';
+                         if (btnArchivedStudents) {
+                             btnArchivedStudents.classList.add('active');
+                             btnArchivedStudents.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
+                         }
+                         if (btnAddStudent) btnAddStudent.style.display = 'none';
+                     } else {
+                         currentView = 'active';
+                         if (btnArchivedStudents) {
+                             btnArchivedStudents.classList.remove('active');
+                             btnArchivedStudents.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
+                         }
+                         if (btnAddStudent) btnAddStudent.style.display = 'inline-flex';
+                     }
                     currentPage = 1;
                     fetchStudents();
                 });
@@ -1226,6 +1274,32 @@ function initStudentsModule() {
             // Add Student button
             if (btnAddStudent) {
                 btnAddStudent.addEventListener('click', () => openModal());
+            }
+
+            // Archived Students button (Control Bar)
+            if (btnArchivedStudents) {
+                btnArchivedStudents.addEventListener('click', function() {
+                    const isArchived = currentView === 'archived';
+                    
+                    if (isArchived) {
+                        // Switch back to active
+                        currentView = 'active';
+                        this.classList.remove('active');
+                        this.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
+                        if (filterSelect) filterSelect.value = 'active';
+                        if (btnAddStudent) btnAddStudent.style.display = 'inline-flex';
+                    } else {
+                        // Switch to archived
+                        currentView = 'archived';
+                        this.classList.add('active');
+                        this.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
+                        if (filterSelect) filterSelect.value = 'archived';
+                        if (btnAddStudent) btnAddStudent.style.display = 'none';
+                    }
+                    
+                    currentPage = 1;
+                    fetchStudents();
+                });
             }
 
             // Export Students button
