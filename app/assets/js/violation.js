@@ -163,44 +163,41 @@ function initViolationsModule() {
         async function loadDepartments() {
             try {
                 console.log('🔄 Loading departments for filters...');
-                const response = await fetch(API_BASE + 'departments.php?action=get&filter=active');
+                const response = await fetch(API_BASE + 'departments.php');
                 if (!response.ok) throw new Error('Failed to load departments');
                 
                 const data = await response.json();
                 if (data.status === 'success' && Array.isArray(data.data)) {
-                    console.log('✅ Loaded departments:', data.data.length);
-                    populateDepartmentFilters(data.data);
+                    const depts = data.data;
+                    console.log('✅ Loaded departments:', depts.length);
+                    
+                    const filters = [
+                        document.getElementById('ViolationsFilter'),
+                        document.getElementById('ArchiveDeptFilter')
+                    ];
+
+                    filters.forEach(select => {
+                        if (!select) return;
+
+                        const currentVal = select.value;
+                        // Keep only the "All Departments" option
+                        select.innerHTML = '<option value="all">All Departments</option>';
+
+                        // Add departments from database
+                        depts.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.code || dept.department_code;
+                            option.textContent = dept.name || dept.department_name || dept.code || dept.department_code;
+                            select.appendChild(option);
+                        });
+                        
+                        // Restore previous value if possible
+                        if (currentVal) select.value = currentVal;
+                    });
                 }
             } catch (error) {
                 console.error('❌ Error loading departments:', error);
             }
-        }
-
-        /**
-         * Populate the department filter dropdowns in the UI
-         */
-        function populateDepartmentFilters(depts) {
-            const filters = [
-                document.getElementById('ViolationsFilter'),
-                document.getElementById('ArchiveDeptFilter')
-            ];
-
-            filters.forEach(select => {
-                if (!select) return;
-
-                // Keep only the "All Departments" option
-                const allOption = select.querySelector('option[value="all"]');
-                select.innerHTML = '';
-                if (allOption) select.appendChild(allOption);
-
-                // Add departments from database
-                depts.forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.code;
-                    option.textContent = dept.code; // Or dept.name if you prefer
-                    select.appendChild(option);
-                });
-            });
         }
 
         // Check API connectivity - using GET instead of HEAD for better compatibility

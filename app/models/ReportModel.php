@@ -478,8 +478,7 @@ class ReportModel extends Model {
             $violationTypeLabels = [
                 'improper_uniform' => 'Improper Uniform',
                 'no_id' => 'No ID',
-                'improper_footwear' => 'Improper Footwear',
-                'misconduct' => 'Misconduct'
+                'improper_footwear' => 'Improper Footwear'
             ];
             
             $violationLevelLabels = [

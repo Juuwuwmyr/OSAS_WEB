@@ -124,10 +124,7 @@ require_once __DIR__ . '/../../core/View.php';
 
           <select id="ViolationsFilter" class="Violations-filter-select">
             <option value="all">All Departments</option>
-            <option value="BSIS">BSIS</option>
-            <option value="WFT">WFT</option>
-            <option value="BTVTED">BTVTED</option>
-            <option value="CHS">CHS</option>
+            <!-- Departments will be loaded via JS -->
           </select>
 
           <select id="ViolationsStatusFilter" class="Violations-filter-select">
@@ -154,10 +151,7 @@ require_once __DIR__ . '/../../core/View.php';
 
           <select id="ArchiveDeptFilter" class="Violations-filter-select">
             <option value="all">All Departments</option>
-            <option value="BSIS">BSIS</option>
-            <option value="WFT">WFT</option>
-            <option value="BTVTED">BTVTED</option>
-            <option value="CHS">CHS</option>
+            <!-- Departments will be loaded via JS -->
           </select>
           
           <select id="ArchiveMonthFilter" class="Violations-filter-select">

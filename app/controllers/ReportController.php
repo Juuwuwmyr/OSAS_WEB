@@ -42,11 +42,15 @@ class ReportController extends Controller {
                 $format = $this->getGet('reportFormat', 'json'); // Check reportFormat from form
                 
                 // If format is CSV or Excel, provide download link
-                if ($format === 'csv' || $format === 'excel') {
+                if ($format === 'csv' || $format === 'excel' || $format === 'xlsx') {
                     $exportParams = $_GET;
                     $exportParams['export'] = 'true';
                     $exportParams['format'] = $format;
                     unset($exportParams['generate']);
+                    // Use plural 'departments' consistently
+                    if (isset($exportParams['department'])) {
+                        $exportParams['departments'] = $exportParams['department'];
+                    }
                     $downloadUrl = 'reports.php?' . http_build_query($exportParams);
                 }
                 
@@ -109,7 +113,7 @@ class ReportController extends Controller {
                 
                 $reports = $this->model->getStudentReports($filters);
                 
-                if ($format === 'csv' || $format === 'excel') {
+                if ($format === 'csv' || $format === 'excel' || $format === 'xlsx') {
                     $this->exportToCsv($reports);
                     return;
                 }

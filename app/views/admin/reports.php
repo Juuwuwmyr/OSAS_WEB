@@ -401,49 +401,16 @@ require_once __DIR__ . '/../../core/View.php';
 
         <div class="Reports-form-group">
           <label>Include Departments</label>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BSIS" checked>
-              <span>BS Information System</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BSBA" checked>
-              <span>BS Business Administration</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BEED" checked>
-              <span>Bachelor of Elementary Education</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BSIT" checked>
-              <span>BS Information Technology</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BSIS-1" checked>
-              <span>BSIT (BSIS-1)</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BSCS" checked>
-              <span>BS Computer Science</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="WFT">
-              <span>Welding & Fabrication Tech</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="BTVTED">
-              <span>BTVTED</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="departments" value="CHS">
-              <span>Computer Hardware Servicing</span>
-            </label>
+          <div class="checkbox-group" id="generateDeptCheckboxes">
+            <!-- Departments will be loaded via JS from the database -->
+            <p class="loading-text">Loading departments...</p>
           </div>
         </div>
 
         <div class="Reports-form-group">
           <label>Include Violation Types</label>
-          <div class="checkbox-group">
+          <div class="checkbox-group" id="generateViolationTypeCheckboxes">
+            <!-- Violation types will be loaded via JS -->
             <label class="checkbox-label">
               <input type="checkbox" name="violationTypes" value="uniform" checked>
               <span>Improper Uniform</span>
@@ -462,7 +429,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="Reports-form-group">
           <label for="includeCharts">Include Charts & Graphs</label>
           <div class="toggle-switch">
-            <input type="checkbox" id="includeCharts" name="includeCharts" checked>
+            <input type="checkbox" id="includeCharts" name="includeCharts">
             <label for="includeCharts" class="toggle-label">
               <span class="toggle-handle"></span>
             </label>

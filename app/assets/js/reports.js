@@ -502,6 +502,17 @@ function initReportsModule() {
             console.log('🎯 Opening generate report modal...');
             generateModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+
+            // Ensure departments and violation types are loaded in the modal
+            const generateDeptCheckboxes = document.getElementById('generateDeptCheckboxes');
+            if (generateDeptCheckboxes && (generateDeptCheckboxes.innerHTML.trim() === '' || generateDeptCheckboxes.innerHTML.includes('Loading departments'))) {
+                loadDepartments();
+            }
+
+            const generateViolationTypeCheckboxes = document.getElementById('generateViolationTypeCheckboxes');
+            if (generateViolationTypeCheckboxes && (generateViolationTypeCheckboxes.innerHTML.trim() === '' || generateViolationTypeCheckboxes.innerHTML.includes('Loading violation types'))) {
+                loadViolationTypes();
+            }
             
             // Set default dates
             const today = new Date();
@@ -948,36 +959,46 @@ function initReportsModule() {
                     const response = await fetch(API_BASE + 'reports.php?' + params.toString());
                     const data = await response.json();
                     
-                    if (data.status === 'success') {
-                        // Use message from server
-                        alert(data.message || `Reports generated successfully!\nGenerated: ${data.generated}\nUpdated: ${data.updated}\nTotal: ${data.total}`);
-                        
-                        // Check for download URL (CSV/Excel)
-                        if (data.downloadUrl) {
-                            window.location.href = API_BASE + data.downloadUrl;
-                        }
+                if (data.status === 'success') {
+                    // Use message from server
+                    showSuccess(data.message || `Reports generated successfully!`);
+                    
+                    // Check for download URL (CSV/Excel)
+                    if (data.downloadUrl) {
+                        const downloadUrl = API_BASE + data.downloadUrl;
+                        console.log('🔗 Redirecting to download:', downloadUrl);
+                        window.location.href = downloadUrl;
+                    }
 
-                        // Check for client-side download (PDF/DOCX)
+                    // Check for client-side download (PDF/DOCX)
                     if (reportFormat === 'pdf' || reportFormat === 'docx') {
-                         if (data.reports && data.reports.length > 0) {
-                             const includeCharts = document.getElementById('includeCharts') ? document.getElementById('includeCharts').checked : false;
-                             
-                             if (reportFormat === 'pdf') {
-                                 downloadPDF(data.reports, reportName || 'Violation Report', includeCharts);
-                             } else if (reportFormat === 'docx') {
-                                 downloadDOCX(data.reports, reportName || 'Violation Report', includeCharts);
-                             }
-                         } else {
-                             alert('No reports found to export for the selected criteria.');
-                         }
+                        if (data.reports && data.reports.length > 0) {
+                            // Get the checkbox directly from the document to be absolutely sure
+                            const includeChartsCheckbox = document.getElementById('includeCharts');
+                            const isChecked = includeChartsCheckbox ? includeChartsCheckbox.checked : false;
+                            
+                            console.log('📊 Exporting report...', {
+                                format: reportFormat,
+                                totalReports: data.reports.length,
+                                isChecked: isChecked
+                            });
+                            
+                            if (reportFormat === 'pdf') {
+                                await downloadPDF(data.reports, reportName || 'Violation Report', isChecked);
+                            } else if (reportFormat === 'docx') {
+                                await downloadDOCX(data.reports, reportName || 'Violation Report', isChecked);
+                            }
+                        } else {
+                            showError('No reports found to export for the selected criteria.');
+                        }
                     }
-                        
-                        closeGenerateModal();
-                        // Reload reports
-                        loadReports(true);
-                    } else {
-                        alert('Error generating reports: ' + (data.message || 'Unknown error'));
-                    }
+                    
+                    closeGenerateModal();
+                    // Reload reports
+                    loadReports(true);
+                } else {
+                    showError('Error generating reports: ' + (data.message || 'Unknown error'));
+                }
                 } catch (error) {
                     console.error('Error generating reports:', error);
                     alert('Error generating reports: ' + error.message);
@@ -1118,12 +1139,13 @@ function initReportsModule() {
             });
         }
 
-        async function downloadPDF(reportsData, filenamePrefix, includeCharts = false) {
+        async function downloadPDF(reportsData, filenamePrefix, isChecked = false) {
             if (!window.jspdf) {
-                alert('PDF library not loaded. Please refresh the page.');
+                showError('PDF library not loaded. Please refresh the page.');
                 return;
             }
             
+            console.log('📄 PDF Request:', { isChecked });
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const now = new Date();
@@ -1224,8 +1246,9 @@ function initReportsModule() {
             });
 
             // Charts Section (Bottom)
-            if (includeCharts) {
+            if (isChecked === true) {
                 try {
+                    console.log('📈 CHARTS ARE ENABLED - Rendering...');
                     let finalY = doc.lastAutoTable.finalY + 20;
                     
                     // Check if we need a new page for charts
@@ -1306,21 +1329,132 @@ function initReportsModule() {
             doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
-        async function downloadDOCX(reportsData, filenamePrefix, includeCharts = false) {
+        async function downloadDOCX(reportsData, filenamePrefix, isChecked = false) {
             if (!window.docx) {
-                alert('DOCX library not loaded. Please refresh the page.');
+                showError('DOCX library not loaded. Please refresh the page.');
                 return;
             }
             
-            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun } = window.docx;
+            console.log('📝 DOCX Request:', { isChecked });
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, ImageRun } = window.docx;
             const now = new Date();
+            
+            // Children for the document
+            const children = [
+                new Paragraph({
+                    text: "VIOLATION ANALYSIS REPORT",
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: "center"
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Office of Student Affairs and Services",
+                            italics: true,
+                            color: "666666"
+                        })
+                    ],
+                    alignment: "center"
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Generated: ${now.toLocaleString()}`,
+                            italics: true,
+                            color: "999999"
+                        })
+                    ],
+                    alignment: "center",
+                    spacing: { after: 400 }
+                }),
+                new Paragraph({
+                    text: `Total Students: ${reportsData.length}`,
+                    spacing: { after: 200 }
+                })
+            ];
+
+            // Add Charts if requested
+            if (isChecked === true) {
+                try {
+                    console.log('📈 CHARTS ARE ENABLED (DOCX) - Rendering...');
+                    // Create charts data (similar to PDF logic)
+                    const deptCounts = {};
+                    reportsData.forEach(r => {
+                        const dept = r.department || 'Unknown';
+                        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+                    });
+                    const deptChartData = {
+                        labels: Object.keys(deptCounts),
+                        datasets: [{
+                            data: Object.values(deptCounts),
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#76A346']
+                        }]
+                    };
+
+                    const typeCounts = { uniform: 0, footwear: 0, noId: 0 };
+                    reportsData.forEach(r => {
+                        typeCounts.uniform += parseInt(r.uniformCount) || 0;
+                        typeCounts.footwear += parseInt(r.footwearCount) || 0;
+                        typeCounts.noId += parseInt(r.noIdCount) || 0;
+                    });
+                    const typeChartData = {
+                        labels: ['Uniform', 'Footwear', 'No ID'],
+                        datasets: [{
+                            label: 'Violations',
+                            data: [typeCounts.uniform, typeCounts.footwear, typeCounts.noId],
+                            backgroundColor: ['#4e73df', '#f6c23e', '#e74a3b']
+                        }]
+                    };
+
+                    const deptImg = await createChartImage('doughnut', deptChartData, { 
+                        plugins: { title: { display: true, text: 'Department Distribution' } } 
+                    });
+                    const typeImg = await createChartImage('bar', typeChartData, { 
+                        plugins: { title: { display: true, text: 'Violation Types' } } 
+                    });
+
+                    // Helper to convert base64 to Uint8Array for docx
+                    const b64toBlob = (b64Data) => {
+                        const byteString = atob(b64Data.split(',')[1]);
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+                        return ab;
+                    };
+
+                    children.push(new Paragraph({
+                        text: "Visual Analysis",
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 400, after: 200 }
+                    }));
+
+                    children.push(new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: b64toBlob(deptImg),
+                                transformation: { width: 300, height: 200 }
+                            }),
+                            new TextRun({ text: "    " }), // spacing
+                            new ImageRun({
+                                data: b64toBlob(typeImg),
+                                transformation: { width: 300, height: 200 }
+                            })
+                        ],
+                        alignment: "center"
+                    }));
+                } catch (e) {
+                    console.error('Error adding charts to DOCX:', e);
+                }
+            }
             
             // Table Header
             const tableHeader = new TableRow({
                 children: [
                     "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"
                 ].map(text => new TableCell({
-                    children: [new Paragraph({ text, bold: true, size: 20 })], // size is in half-points
+                    children: [new Paragraph({ text, bold: true, size: 20 })],
                     width: { size: 100 / 9, type: WidthType.PERCENTAGE },
                     shading: { fill: "E0E0E0" }
                 }))
@@ -1344,45 +1478,21 @@ function initReportsModule() {
                 }))
             }));
 
+            children.push(new Paragraph({
+                text: "Summary Data",
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 400, after: 200 }
+            }));
+
+            children.push(new Table({
+                rows: [tableHeader, ...tableRows],
+                width: { size: 100, type: WidthType.PERCENTAGE }
+            }));
+
             const doc = new Document({
                 sections: [{
                     properties: {},
-                    children: [
-                        new Paragraph({
-                            text: "VIOLATION ANALYSIS REPORT",
-                            heading: HeadingLevel.HEADING_1,
-                            alignment: "center"
-                        }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "Office of Student Affairs and Services",
-                                    italics: true,
-                                    color: "666666"
-                                })
-                            ],
-                            alignment: "center"
-                        }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: `Generated: ${now.toLocaleString()}`,
-                                    italics: true,
-                                    color: "999999"
-                                })
-                            ],
-                            alignment: "center",
-                            spacing: { after: 400 }
-                        }),
-                        new Paragraph({
-                            text: `Total Students: ${reportsData.length}`,
-                            spacing: { after: 200 }
-                        }),
-                        new Table({
-                            rows: [tableHeader, ...tableRows],
-                            width: { size: 100, type: WidthType.PERCENTAGE }
-                        })
-                    ]
+                    children: children
                 }]
             });
 
@@ -1391,7 +1501,7 @@ function initReportsModule() {
                     saveAs(blob, `${filenamePrefix}_${now.toISOString().slice(0, 10)}.docx`);
                 } else {
                     console.error('FileSaver.js not loaded');
-                    alert('Error: FileSaver.js not loaded');
+                    showError('Error: FileSaver.js not loaded');
                 }
             });
         }
@@ -1516,28 +1626,100 @@ function initReportsModule() {
                 const response = await fetch(API_BASE + 'departments.php');
                 const data = await response.json();
                 
-                if (data.status === 'success' && deptFilter) {
-                    // Clear existing options except "All"
-                    const allOption = deptFilter.querySelector('option[value="all"]');
-                    deptFilter.innerHTML = '';
-                    if (allOption) {
-                        deptFilter.appendChild(allOption);
-                    }
+                if (data.status === 'success') {
+                    const depts = data.data;
                     
-                    // Add departments
-                    data.data.forEach(dept => {
-                        const option = document.createElement('option');
-                        option.value = dept.department_code || dept.code || dept.id;
-                        option.textContent = dept.department_name || dept.name || dept.department_code || dept.code;
-                        deptFilter.appendChild(option);
-                    });
-                    console.log(`✅ Loaded ${data.data.length} departments`);
+                    // 1. Populate the filter dropdown (deptFilter)
+                    if (deptFilter) {
+                        const allOption = deptFilter.querySelector('option[value="all"]');
+                        deptFilter.innerHTML = '';
+                        if (allOption) {
+                            deptFilter.appendChild(allOption);
+                        }
+                        
+                        depts.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.department_code || dept.code || dept.id;
+                            option.textContent = dept.department_name || dept.name || dept.department_code || dept.code;
+                            deptFilter.appendChild(option);
+                        });
+                        console.log(`✅ Loaded ${depts.length} departments to dropdown`);
+                    }
+
+                    // 2. Populate the generation modal checkboxes (generateDeptCheckboxes)
+                    const generateDeptCheckboxes = document.getElementById('generateDeptCheckboxes');
+                    if (generateDeptCheckboxes) {
+                        generateDeptCheckboxes.innerHTML = '';
+                        depts.forEach(dept => {
+                            const deptCode = dept.department_code || dept.code || dept.id;
+                            const deptName = dept.department_name || dept.name || dept.department_code || dept.code;
+                            
+                            const label = document.createElement('label');
+                            label.className = 'checkbox-label';
+                            label.innerHTML = `
+                                <input type="checkbox" name="departments" value="${deptCode}" checked>
+                                <span>${deptName}</span>
+                            `;
+                            generateDeptCheckboxes.appendChild(label);
+                        });
+                        console.log(`✅ Loaded ${depts.length} departments to checkboxes`);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error loading departments:', error);
             }
         }
         
+        async function loadViolationTypes() {
+            try {
+                // Try to fetch from API
+                const response = await fetch(API_BASE + 'violations.php?action=types');
+                const data = await response.json();
+                
+                const generateViolationTypeCheckboxes = document.getElementById('generateViolationTypeCheckboxes');
+                if (!generateViolationTypeCheckboxes) return;
+
+                if (data.status === 'success' && data.data) {
+                    // Filter out Misconduct as requested by user
+                    const types = data.data.filter(type => {
+                        const name = (type.type_name || type.name || '').toLowerCase();
+                        return !name.includes('misconduct');
+                    });
+                    
+                    generateViolationTypeCheckboxes.innerHTML = '';
+                    types.forEach(type => {
+                        const label = document.createElement('label');
+                        label.className = 'checkbox-label';
+                        label.innerHTML = `
+                            <input type="checkbox" name="violationTypes" value="${type.id}" checked>
+                            <span>${type.type_name || type.name}</span>
+                        `;
+                        generateViolationTypeCheckboxes.appendChild(label);
+                    });
+                    console.log(`✅ Loaded ${types.length} violation types from API (Misconduct filtered out)`);
+                } else {
+                    throw new Error('Invalid API response');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error loading violation types, using defaults:', error);
+                // Fallback to defaults
+                const fallbackTypes = [
+                    { value: 'uniform', label: 'Improper Uniform' },
+                    { value: 'footwear', label: 'Improper Footwear' },
+                    { value: 'no_id', label: 'No ID' }
+                ];
+                const container = document.getElementById('generateViolationTypeCheckboxes');
+                if (container) {
+                    container.innerHTML = fallbackTypes.map(type => `
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="violationTypes" value="${type.value}" checked>
+                            <span>${type.label}</span>
+                        </label>
+                    `).join('');
+                }
+            }
+        }
+
         async function loadSections() {
             try {
                 const response = await fetch(API_BASE + 'sections.php');
@@ -1574,6 +1756,7 @@ function initReportsModule() {
 
         initCharts(); // Initialize charts
         loadDepartments();
+        loadViolationTypes();
         loadSections();
         loadReports(true);
         console.log('✅ Reports module initialized successfully!');
