@@ -556,10 +556,20 @@ function initSectionsModule() {
             const totalEl = document.getElementById('totalSections');
             const activeEl = document.getElementById('activeSections');
             const archivedEl = document.getElementById('archivedSections');
+            const activePctEl = document.getElementById('activeSectionsPct');
+            const archivedPctEl = document.getElementById('archivedSectionsPct');
             
             if (totalEl) totalEl.textContent = stats.total || 0;
             if (activeEl) activeEl.textContent = stats.active || 0;
             if (archivedEl) archivedEl.textContent = stats.archived || 0;
+
+            const total = Number(stats.total) || 0;
+            const active = Number(stats.active) || 0;
+            const archived = Number(stats.archived) || 0;
+            const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+            const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
+            if (activePctEl) activePctEl.textContent = `${activePct}%`;
+            if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
         }
 
         function updateCounts(filteredSections) {

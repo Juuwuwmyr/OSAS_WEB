@@ -2075,11 +2075,21 @@ function initViolationsModule() {
             const resolvedEl = document.getElementById('resolvedViolations');
             const pendingEl = document.getElementById('pendingViolations');
             const disciplinaryEl = document.getElementById('disciplinaryViolations');
+            const resolvedPctEl = document.getElementById('resolvedViolationsPct');
+            const pendingPctEl = document.getElementById('pendingViolationsPct');
+            const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
             
             if (totalEl) totalEl.textContent = total;
             if (resolvedEl) resolvedEl.textContent = resolved;
             if (pendingEl) pendingEl.textContent = pending;
             if (disciplinaryEl) disciplinaryEl.textContent = disciplinary;
+
+            const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+            const pendingPct = total > 0 ? Math.round((pending / total) * 100) : 0;
+            const disciplinaryPct = total > 0 ? Math.round((disciplinary / total) * 100) : 0;
+            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}%`;
+            if (pendingPctEl) pendingPctEl.textContent = `${pendingPct}%`;
+            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}%`;
         }
 
         function updateCounts(filteredViolations) {

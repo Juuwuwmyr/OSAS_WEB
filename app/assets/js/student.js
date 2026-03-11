@@ -331,11 +331,25 @@ function initStudentsModule() {
                     const activeEl = document.getElementById('activeStudents');
                     const inactiveEl = document.getElementById('inactiveStudents');
                     const graduatingEl = document.getElementById('graduatingStudents');
+                    const activePctEl = document.getElementById('activeStudentsPct');
+                    const inactivePctEl = document.getElementById('inactiveStudentsPct');
+                    const graduatingPctEl = document.getElementById('graduatingStudentsPct');
                     
                     if (totalEl) totalEl.textContent = stats.total || 0;
                     if (activeEl) activeEl.textContent = stats.active || 0;
                     if (inactiveEl) inactiveEl.textContent = stats.inactive || 0;
                     if (graduatingEl) graduatingEl.textContent = stats.graduating || 0;
+
+                    const total = Number(stats.total) || 0;
+                    const active = Number(stats.active) || 0;
+                    const inactive = Number(stats.inactive) || 0;
+                    const graduating = Number(stats.graduating) || 0;
+                    const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+                    const inactivePct = total > 0 ? Math.round((inactive / total) * 100) : 0;
+                    const graduatingPct = total > 0 ? Math.round((graduating / total) * 100) : 0;
+                    if (activePctEl) activePctEl.textContent = `${activePct}%`;
+                    if (inactivePctEl) inactivePctEl.textContent = `${inactivePct}%`;
+                    if (graduatingPctEl) graduatingPctEl.textContent = `${graduatingPct}%`;
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);

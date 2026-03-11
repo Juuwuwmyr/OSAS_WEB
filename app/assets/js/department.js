@@ -300,10 +300,20 @@ function initDepartmentModule() {
         const totalEl = document.getElementById('totalDepartments');
         const activeEl = document.getElementById('activeDepartments');
         const archivedEl = document.getElementById('archivedDepartments');
+        const activePctEl = document.getElementById('activeDepartmentsPct');
+        const archivedPctEl = document.getElementById('archivedDepartmentsPct');
         
         if (totalEl) totalEl.textContent = stats.total;
         if (activeEl) activeEl.textContent = stats.active;
         if (archivedEl) archivedEl.textContent = stats.archived;
+
+        const total = Number(stats.total) || 0;
+        const active = Number(stats.active) || 0;
+        const archived = Number(stats.archived) || 0;
+        const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+        const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
+        if (activePctEl) activePctEl.textContent = `${activePct}%`;
+        if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
       }
     } catch (error) {
       console.error('Error loading stats:', error);

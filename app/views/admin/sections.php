@@ -81,7 +81,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
         <div class="sections-stat-content">
           <h3 class="sections-stat-title">Active</h3>
           <div class="sections-stat-value" id="activeSections">0</div>
-          <div class="sections-stat-percentage">92%</div>
+          <div class="sections-stat-percentage" id="activeSectionsPct">0%</div>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
         <div class="sections-stat-content">
           <h3 class="sections-stat-title">Archived</h3>
           <div class="sections-stat-value" id="archivedSections">0</div>
-          <div class="sections-stat-percentage">8%</div>
+          <div class="sections-stat-percentage" id="archivedSectionsPct">0%</div>
         </div>
       </div>
     </div>

@@ -1,7 +1,4 @@
 <?php
-// Check if user wants to see login page (bypass auto-redirect)
-$forceLogin = isset($_GET['force_login']) && $_GET['force_login'] === 'true';
-
 // Session is already started in index.php, no need to start again
 if (!$forceLogin && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     // Restore session from cookies

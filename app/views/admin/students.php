@@ -75,7 +75,7 @@ require_once '../../config/db_connect.php';
       <div class="Students-stat-content">
         <h3 class="Students-stat-title">Active</h3>
         <div class="Students-stat-value" id="activeStudents">0</div>
-        <div class="Students-stat-percentage">96%</div>
+        <div class="Students-stat-percentage" id="activeStudentsPct">0%</div>
       </div>
     </div>
 
@@ -86,7 +86,7 @@ require_once '../../config/db_connect.php';
       <div class="Students-stat-content">
         <h3 class="Students-stat-title">Inactive</h3>
         <div class="Students-stat-value" id="inactiveStudents">0</div>
-        <div class="Students-stat-percentage">4%</div>
+        <div class="Students-stat-percentage" id="inactiveStudentsPct">0%</div>
       </div>
     </div>
 
@@ -97,7 +97,7 @@ require_once '../../config/db_connect.php';
       <div class="Students-stat-content">
         <h3 class="Students-stat-title">Graduating</h3>
         <div class="Students-stat-value" id="graduatingStudents">0</div>
-        <div class="Students-stat-percentage">15%</div>
+        <div class="Students-stat-percentage" id="graduatingStudentsPct">0%</div>
       </div>
     </div>
   </div>

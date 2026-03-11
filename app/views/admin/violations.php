@@ -69,7 +69,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Violations-stat-content">
         <h3 class="Violations-stat-title">Resolved</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
-        <div class="Violations-stat-percentage">68%</div>
+        <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
       </div>
     </div>
 
@@ -80,7 +80,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Violations-stat-content">
         <h3 class="Violations-stat-title">Pending</h3>
         <div class="Violations-stat-value" id="pendingViolations">0</div>
-        <div class="Violations-stat-percentage">24%</div>
+        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
     </div>
 
@@ -91,7 +91,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Violations-stat-content">
         <h3 class="Violations-stat-title">Disciplinary</h3>
         <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
-        <div class="Violations-stat-percentage">8%</div>
+        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
       </div>
     </div>
   </div>

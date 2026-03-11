@@ -77,7 +77,7 @@ include '../../config/db_connect.php';
         <div class="stat-content">
           <h3 class="stat-title">Active</h3>
           <div class="stat-value" id="activeDepartments">0</div>
-          <div class="stat-percentage">95%</div>
+          <div class="stat-percentage" id="activeDepartmentsPct">0%</div>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ include '../../config/db_connect.php';
         <div class="stat-content">
           <h3 class="stat-title">Archived</h3>
           <div class="stat-value" id="archivedDepartments">0</div>
-          <div class="stat-percentage">5%</div>
+          <div class="stat-percentage" id="archivedDepartmentsPct">0%</div>
         </div>
       </div>
     </div>
