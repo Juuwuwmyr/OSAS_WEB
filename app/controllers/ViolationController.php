@@ -156,6 +156,13 @@ class ViolationController extends Controller
             $this->error('Invalid request method');
         }
 
+        if (!isset($_SESSION['user_id'])) {
+            $this->error('Authentication required', 'Please login first', 401);
+        }
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Admin privileges required', 403);
+        }
+
         // Handle both JSON and FormData
         $input = $_POST;
         if (empty($input)) {
@@ -169,7 +176,7 @@ class ViolationController extends Controller
         $violationDate  = $this->sanitize($input['violationDate'] ?? '');
         $violationTime  = $this->sanitize($input['violationTime'] ?? '');
         $location       = $this->sanitize($input['location'] ?? '');
-        $reportedBy     = $this->sanitize($input['reportedBy'] ?? '');
+        $reportedBy     = $this->sanitize(($_SESSION['full_name'] ?? $_SESSION['username'] ?? '') ?: ($input['reportedBy'] ?? ''));
         $status         = $this->sanitize($input['status'] ?? 'warning');
         $notes          = $this->sanitize($input['notes'] ?? '');
 
@@ -309,6 +316,13 @@ class ViolationController extends Controller
             $this->error('Violation ID required');
         }
 
+        if (!isset($_SESSION['user_id'])) {
+            $this->error('Authentication required', 'Please login first', 401);
+        }
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Admin privileges required', 403);
+        }
+
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $current = $this->model->getById($id);
 
@@ -322,7 +336,7 @@ class ViolationController extends Controller
             'violation_date'  => $this->sanitize($input['violationDate'] ?? $current['violation_date']),
             'violation_time'  => $this->sanitize($input['violationTime'] ?? $current['violation_time']),
             'location'        => $this->sanitize($input['location'] ?? $current['location']),
-            'reported_by'     => $this->sanitize($input['reportedBy'] ?? $current['reported_by']),
+            'reported_by'     => $current['reported_by'],
             'status'          => $this->sanitize($input['status'] ?? $current['status']),
             'notes'           => $this->sanitize($input['notes'] ?? $current['notes']),
             'attachments'     => isset($input['attachments']) ? json_encode($input['attachments']) : $current['attachments'],
@@ -353,6 +367,13 @@ class ViolationController extends Controller
         $id = intval($this->getGet('id', 0));
         if ($id === 0) {
             $this->error('Violation ID required');
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            $this->error('Authentication required', 'Please login first', 401);
+        }
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Admin privileges required', 403);
         }
 
         try {

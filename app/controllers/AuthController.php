@@ -85,6 +85,7 @@ class AuthController extends Controller {
                 setcookie("user_id", $user['id'], $expiryTime, "/", "", false, false);
                 setcookie("username", $user['username'], $expiryTime, "/", "", false, false);
                 setcookie("role", $user['role'], $expiryTime, "/", "", false, false);
+                setcookie("full_name", $user['full_name'] ?: $user['username'], $expiryTime, "/", "", false, false);
                 if ($studentIdCode) {
                     setcookie("student_id_code", $studentIdCode, $expiryTime, "/", "", false, false);
                     if ($studentId) {
@@ -131,6 +132,7 @@ class AuthController extends Controller {
         setcookie("user_id", "", time() - 3600, "/");
         setcookie("username", "", time() - 3600, "/");
         setcookie("role", "", time() - 3600, "/");
+        setcookie("full_name", "", time() - 3600, "/");
         
         $this->success('Logged out successfully');
     }

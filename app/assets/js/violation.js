@@ -2292,6 +2292,7 @@ function initViolationsModule() {
                 }
                 if (form) {
                     form.reset();
+                    populateAdminName();
                     
                     // Clear any previous levels and type selection
                     const levelsContainer = document.getElementById('violationLevelsContainer');

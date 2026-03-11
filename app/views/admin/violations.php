@@ -362,7 +362,7 @@ require_once __DIR__ . '/../../core/View.php';
 
           <div class="Violations-form-group">
             <label for="reportedBy">Reported By</label>
-            <input type="text" id="reportedBy" name="reportedBy" placeholder="Admin Full Name" maxlength="100" readonly style="background-color: #f8f9fa; cursor: not-allowed; border: 1px solid #ddd;">
+            <input type="text" id="reportedBy" name="reportedBy" placeholder="Admin Full Name" maxlength="100" value="<?= htmlspecialchars(($_SESSION['full_name'] ?? $_SESSION['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" readonly style="background-color: #f8f9fa; cursor: not-allowed; border: 1px solid #ddd;">
           </div>
 
           <div class="Violations-form-group" style="position: relative;">

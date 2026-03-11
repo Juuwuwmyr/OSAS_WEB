@@ -10,6 +10,7 @@ if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
         $_SESSION['user_id'] = $_COOKIE['user_id'];
         $_SESSION['username'] = $_COOKIE['username'] ?? '';
         $_SESSION['role'] = $_COOKIE['role'];
+        $_SESSION['full_name'] = $_COOKIE['full_name'] ?? ($_COOKIE['username'] ?? '');
     }
 } elseif (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     // No session or cookies, redirect to login
