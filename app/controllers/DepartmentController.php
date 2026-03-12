@@ -66,10 +66,6 @@ class DepartmentController extends Controller {
             $this->error('Department name and code are required.');
         }
 
-        if ($this->model->codeExists($code)) {
-            $this->error('Department code already exists.');
-        }
-
         try {
             $data = [
                 'department_name' => $name,
@@ -105,10 +101,6 @@ class DepartmentController extends Controller {
 
         if (empty($name) || empty($code)) {
             $this->error('Department name and code are required.');
-        }
-
-        if ($this->model->codeExists($code, $id)) {
-            $this->error('Department code already exists.');
         }
 
         try {
@@ -167,4 +159,3 @@ class DepartmentController extends Controller {
         }
     }
 }
-

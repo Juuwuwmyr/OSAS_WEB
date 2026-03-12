@@ -120,14 +120,6 @@ class StudentController extends Controller {
             $this->error('Student ID, First Name, Last Name, and Email are required.');
         }
 
-        if ($this->model->studentIdExists($studentId)) {
-            $this->error('Student ID already exists.');
-        }
-
-        if ($this->model->emailExists($email)) {
-            $this->error('Email already exists.');
-        }
-
         try {
             $data = [
                 'student_id' => $studentId,
@@ -204,14 +196,6 @@ class StudentController extends Controller {
 
         if (empty($studentId) || empty($firstName) || empty($lastName) || empty($email)) {
             $this->error('Student ID, First Name, Last Name, and Email are required.');
-        }
-
-        if ($this->model->studentIdExists($studentId, $id)) {
-            $this->error('Student ID already exists.');
-        }
-
-        if ($this->model->emailExists($email, $id)) {
-            $this->error('Email already exists.');
         }
 
         try {
@@ -330,4 +314,3 @@ class StudentController extends Controller {
         }
     }
 }
-
