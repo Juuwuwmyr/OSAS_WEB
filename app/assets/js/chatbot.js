@@ -80,16 +80,23 @@ class Chatbot {
         }
 
         try {
+            // Determine user role from the URL or session storage
+            const currentPath = window.location.pathname;
+            const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
+            
             // Fetch data from all existing APIs in parallel
-            const [studentsRes, departmentsRes, sectionsRes, violationsRes, studentsStatsRes, announcementsRes, reportsRes] = await Promise.allSettled([
-                fetch(this.apiBase + 'students.php').catch(() => null), // Get students list
+            // If user is a student, restrict access to sensitive APIs
+            const fetchPromises = [
+                userRole === 'admin' ? fetch(this.apiBase + 'students.php').catch(() => null) : Promise.resolve(null),
                 fetch(this.apiBase + 'departments.php').catch(() => null),
                 fetch(this.apiBase + 'sections.php').catch(() => null),
-                fetch(this.apiBase + 'violations.php').catch(() => null),
-                fetch(this.apiBase + 'students.php?action=stats').catch(() => null), // Get students stats
-                fetch(this.apiBase + 'announcements.php').catch(() => null), // Get announcements
-                fetch(this.apiBase + 'reports.php').catch(() => null) // Get reports
-            ]);
+                userRole === 'admin' ? fetch(this.apiBase + 'violations.php').catch(() => null) : Promise.resolve(null),
+                userRole === 'admin' ? fetch(this.apiBase + 'students.php?action=stats').catch(() => null) : Promise.resolve(null),
+                fetch(this.apiBase + 'announcements.php').catch(() => null),
+                userRole === 'admin' ? fetch(this.apiBase + 'reports.php').catch(() => null) : Promise.resolve(null)
+            ];
+
+            const [studentsRes, departmentsRes, sectionsRes, violationsRes, studentsStatsRes, announcementsRes, reportsRes] = await Promise.allSettled(fetchPromises);
 
             const context = {
                 stats: {},
@@ -752,17 +759,40 @@ class Chatbot {
             // Fetch or use cached database context
             const dbContext = await this.fetchDatabaseContext();
 
+            // Determine user role
+            const currentPath = window.location.pathname;
+            const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
+
             // Build conversation context for Puter.js
             let conversationContext = "You are a helpful assistant for the OSAS (Office of Student Affairs System). ";
-            conversationContext += "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
+            
+            if (userRole === 'user') {
+                conversationContext += "You are currently assisting a STUDENT. Your access is RESTRICTED. ";
+                conversationContext += "Do NOT provide specific details about other students, their violations, or detailed administrative reports. ";
+                conversationContext += "Focus on general system information, public announcements, and helping the student with their own needs. ";
+                conversationContext += "If asked for sensitive data you don't have, politely explain that you don't have access to that information for privacy and security reasons.\n";
+            } else {
+                conversationContext += "You are currently assisting an ADMIN. You have full access to the system information provided below. ";
+                conversationContext += "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
+            }
+            
             conversationContext += "Be friendly, professional, and concise in your responses.\n";
             conversationContext += "You have access to the system's database information to answer questions accurately.\n";
-            conversationContext += "You can answer questions about:\n";
-            conversationContext += "- Student information, statistics, and management\n";
-            conversationContext += "- Department and section details\n";
-            conversationContext += "- Violation records and statistics\n";
-            conversationContext += "- Announcements (titles, content, audience, status, dates)\n";
-            conversationContext += "- Reports (types, descriptions, status, generation dates)\n";
+            
+            if (userRole === 'admin') {
+                conversationContext += "You can answer questions about:\n";
+                conversationContext += "- Student information, statistics, and management\n";
+                conversationContext += "- Department and section details\n";
+                conversationContext += "- Violation records and statistics\n";
+                conversationContext += "- Announcements (titles, content, audience, status, dates)\n";
+                conversationContext += "- Reports (types, descriptions, status, generation dates)\n";
+            } else {
+                conversationContext += "You can answer questions about:\n";
+                conversationContext += "- General system navigation and features\n";
+                conversationContext += "- Department and section details\n";
+                conversationContext += "- Public announcements and events\n";
+            }
+            
             conversationContext += "- System navigation and features\n\n";
             conversationContext += "IMPORTANT SYSTEM INFORMATION:\n";
             conversationContext += "- System Owner/Administrator/Head: Cedrick H. Almarez\n";
