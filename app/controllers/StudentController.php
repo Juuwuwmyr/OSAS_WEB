@@ -52,18 +52,22 @@ class StudentController extends Controller {
         $search = $this->getGet('search', '');
         $department = $this->getGet('department', 'all');
         $section = $this->getGet('section', 'all');
-        $page = intval($this->getGet('page', 1));
-        $limit = intval($this->getGet('limit', 10));
+        $page = $this->getGet('page', '1');
+        $limit = $this->getGet('limit', '10');
+        
+        // Handle 'all' limit for exports
+        $pageParam = ($limit === 'all') ? null : intval($page);
+        $limitParam = ($limit === 'all') ? null : intval($limit);
 
         try {
-            $students = $this->model->getAllWithDetails($filter, $search, $page, $limit, $department, $section);
+            $students = $this->model->getAllWithDetails($filter, $search, $pageParam, $limitParam, $department, $section);
             $totalCount = $this->model->getCountWithFilters($filter, $search, $department, $section);
             $this->success('Students retrieved successfully', [
                 'students' => $students,
                 'total' => $totalCount,
-                'page' => $page,
-                'limit' => $limit,
-                'total_pages' => ceil($totalCount / max(1, $limit))
+                'page' => $pageParam,
+                'limit' => $limitParam,
+                'total_pages' => $limitParam ? ceil($totalCount / max(1, $limitParam)) : 1
             ]);
         } catch (Exception $e) {
             $this->error('Failed to retrieve students: ' . $e->getMessage());
