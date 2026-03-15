@@ -493,19 +493,6 @@ require_once '../../config/db_connect.php';
 <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
-<!-- Load Student JavaScript -->
-<script src="<?= View::asset('js/student.js') ?>?v=<?= time() ?>"></script>
-<script>
-    // Initialize the students module when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof initStudentsModule === 'function') {
-            initStudentsModule();
-        } else {
-            console.error('initStudentsModule function not found');
-        }
-    });
-</script>
-
 </body>
 </html>
 

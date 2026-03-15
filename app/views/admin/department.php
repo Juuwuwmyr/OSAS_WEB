@@ -269,7 +269,6 @@ include '../../config/db_connect.php';
   <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
   <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
   <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
-  <script src="<?= View::asset('js/department.js') ?>?v=<?= time() ?>"></script>
 </body>
 
 </html>

@@ -1729,9 +1729,12 @@ function initStudentsModule() {
         }
 
         // Start initialization
-        initialize();
+        initialize(); 
         
     } catch (error) {
         console.error('❌ Error initializing Students module:', error);
     }
 }
+
+// Make function globally available
+window.initStudentsModule = initStudentsModule;

@@ -1063,7 +1063,5 @@ function initDepartmentModule() {
   console.log('✅ Department module ready!');
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  initDepartmentModule();
-});
+// Make function globally available
+window.initDepartmentModule = initDepartmentModule;

@@ -288,7 +288,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
   <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
   <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
   <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
-  <script src="<?= View::asset('js/section.js') ?>?v=<?= time() ?>"></script>
 </body>
 
 </html>

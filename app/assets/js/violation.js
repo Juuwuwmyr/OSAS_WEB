@@ -4445,15 +4445,3 @@ function initViolationsModule() {
 
 // Make function globally available
 window.initViolationsModule = initViolationsModule;
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing violations module...');
-        initViolationsModule();
-    });
-} else {
-    // DOM already loaded
-    console.log('DOM already loaded, initializing violations module...');
-    setTimeout(initViolationsModule, 100); // Small delay to ensure all elements are ready
-}

@@ -156,6 +156,9 @@ function initSectionsModule() {
         }
 
         async function addSection(formData) {
+            const submitBtn = document.querySelector('#sectionsForm button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+            
             try {
                 const response = await fetch(`${apiBase}?action=add`, {
                     method: 'POST',
@@ -174,6 +177,8 @@ function initSectionsModule() {
             } catch (error) {
                 console.error('Error adding section:', error);
                 showError('Failed to add section. Please try again.');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         }
 
@@ -929,11 +934,4 @@ function initSectionsModule() {
 
 // Make function globally available
 window.initSectionsModule = initSectionsModule;
-
-// Auto-initialize if loaded directly
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSectionsModule);
-} else {
-    setTimeout(initSectionsModule, 100);
-}
 

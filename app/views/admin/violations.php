@@ -593,9 +593,6 @@ require_once __DIR__ . '/../../core/View.php';
 <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
-<!-- Load Violation JavaScript -->
-<script src="<?= View::asset('js/violation.js') ?>?v=<?= time() ?>"></script>
-
 </body>
 </html>
 
