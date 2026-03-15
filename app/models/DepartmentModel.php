@@ -141,6 +141,43 @@ class DepartmentModel extends Model {
     }
 
     /**
+     * Update department and its references
+     */
+    public function update($id, $data) {
+        $this->conn->begin_transaction();
+        try {
+            // Get current department code to check if it changed
+            $stmt = $this->conn->prepare("SELECT department_code FROM departments WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $oldCode = $result->fetch_assoc()['department_code'] ?? null;
+            $stmt->close();
+
+            // Update the department
+            $success = parent::update($id, $data);
+            if (!$success) {
+                throw new Exception("Failed to update department record.");
+            }
+
+            // If code changed, update students table
+            if ($oldCode && isset($data['department_code']) && $oldCode !== $data['department_code']) {
+                $newCode = $data['department_code'];
+                $stmt = $this->conn->prepare("UPDATE students SET department = ? WHERE department = ?");
+                $stmt->bind_param("ss", $newCode, $oldCode);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
+    /**
      * Archive department
      */
     public function archive($id) {
