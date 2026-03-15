@@ -1,11 +1,19 @@
 
+import sys
 import pandas as pd
 import json
 import re
 import os
 
+# Default values
 file_path = r'c:\wamp64\www\OSAS_WEB\app\assets\Students\LIST-OF-ENROLLED-FOR-2ND-SEM-2025-26.xlsx'
 output_path = r'c:\wamp64\www\OSAS_WEB\scripts\students_data.json'
+
+# Accept command line arguments for input and output paths
+if len(sys.argv) > 1:
+    file_path = sys.argv[1]
+if len(sys.argv) > 2:
+    output_path = sys.argv[2]
 
 def extract_department_code(sheet_name):
     # Remove numbers
@@ -127,11 +135,17 @@ def parse_excel():
 
 data = parse_excel()
 if data:
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
-    print(f"Successfully saved data to {output_path}")
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        print(f"Successfully saved data to {output_path}")
+    except Exception as e:
+        print(f"Error saving output file: {e}")
+        sys.exit(1)
+    
     print(f"Total Departments: {len(data['departments'])}")
     print(f"Total Sections: {len(data['sections'])}")
     print(f"Total Students: {len(data['students'])}")
 else:
     print("Failed to parse data.")
+    sys.exit(1)

@@ -34,6 +34,15 @@ switch ($action) {
     case 'import':
         $controller->import();
         break;
+    case 'listAssets':
+        $controller->listAssets();
+        break;
+    case 'importFromAsset':
+        $controller->importFromAsset();
+        break;
+    case 'deleteAll':
+        $controller->deleteAll();
+        break;
     default:
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $controller->index();

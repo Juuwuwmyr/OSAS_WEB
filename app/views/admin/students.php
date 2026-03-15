@@ -45,6 +45,10 @@ require_once '../../config/db_connect.php';
           <i class='bx bx-archive'></i>
           <span>Archived</span>
         </button>
+        <button id="btnDeleteAllStudents" class="Students-btn danger small">
+          <i class='bx bx-trash'></i>
+          <span>Delete All</span>
+        </button>
       </div>
       <button id="btnAddStudents" class="Students-btn primary">
         <i class='bx bx-plus'></i> Add Student
@@ -451,6 +455,64 @@ require_once '../../config/db_connect.php';
       </div>
       <div class="Students-modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end;">
         <button type="button" class="Students-btn outline" id="closeProfileBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="ImportStudentsModal" class="Students-modal">
+    <div class="Students-modal-overlay" id="ImportModalOverlay"></div>
+    <div class="Students-modal-container" style="max-width: 500px;">
+      <div class="Students-modal-header">
+        <h2>
+          <i class='bx bx-upload'></i>
+          <span>Import Students Data</span>
+        </h2>
+        <button class="Students-close-btn" id="closeImportModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="Students-modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 20px; color: #666;">Upload an Excel (.xlsx, .xls) or CSV file containing student records to sync with the database.</p>
+        
+        <div class="import-instructions" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--gold);">
+          <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: var(--dark);">Required Columns (CSV):</h4>
+          <p style="font-size: 0.8rem; color: #666; line-height: 1.4;">
+            <code>student_id</code>, <code>first_name</code>, <code>last_name</code>, <code>section_code</code>, <code>department_code</code>
+          </p>
+        </div>
+
+        <form id="ImportStudentsForm" enctype="multipart/form-data">
+          <div class="Students-form-group">
+            <label for="enrollmentList">Select File</label>
+            <div class="Students-file-upload-wrapper" style="border: 2px dashed #ddd; padding: 30px; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.3s ease;" id="dropZone">
+              <i class='bx bx-cloud-upload' style="font-size: 48px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+              <span style="color: #888; display: block; margin-bottom: 10px;">Drag and drop or click to browse</span>
+              <span id="selectedFileName" style="color: var(--gold); font-weight: 600; display: none;"></span>
+              <input type="file" id="enrollmentList" name="enrollmentList" accept=".csv, .xlsx, .xls" style="display: none;">
+            </div>
+          </div>
+          
+          <div class="Students-form-actions" style="margin-top: 25px;">
+            <button type="button" class="Students-btn outline" id="cancelImportBtn">Cancel</button>
+            <button type="submit" class="Students-btn primary" id="submitImportBtn" disabled>
+              <i class='bx bx-check-circle'></i> Start Import
+            </button>
+          </div>
+        </form>
+
+        <!-- New: Choose from Assets -->
+        <div class="assets-divider" style="margin: 25px 0; text-align: center; position: relative;">
+          <hr style="border: 0; border-top: 1px solid #eee;">
+          <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 0 15px; color: #999; font-size: 0.8rem; font-weight: 600;">OR CHOOSE FROM ASSETS</span>
+        </div>
+
+        <div id="AssetFilesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+          <!-- Asset files will be loaded here -->
+          <div style="padding: 15px; text-align: center; color: #999;">
+            <i class='bx bx-loader-alt bx-spin'></i> Loading asset files...
+          </div>
+        </div>
       </div>
     </div>
   </div>

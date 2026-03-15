@@ -27,6 +27,7 @@ function initStudentsModule() {
         const exportWordBtn = document.getElementById('exportWord');
         const studentDeptSelect = document.getElementById('studentDept');
         const studentSectionSelect = document.getElementById('studentSection');
+        const btnDeleteAllStudents = document.getElementById('btnDeleteAllStudents');
 
         // Modern Alert Elements
         const modernAlertModal = document.getElementById('ModernAlertModal');
@@ -1481,48 +1482,282 @@ function initStudentsModule() {
                 });
             }
 
-            // Import Students button
-            if (importBtn) {
-                importBtn.addEventListener('click', async () => {
+            // Delete All Students button
+            if (btnDeleteAllStudents) {
+                btnDeleteAllStudents.addEventListener('click', async () => {
                     const confirmed = await showModernAlert({
-                        title: 'Import Enrollment List',
-                        message: 'Sync student records with the latest list? This will update departments and auto-generate student emails/accounts.',
-                        confirmText: 'Yes, Sync Data',
+                        title: 'Delete All Students',
+                        message: 'Are you sure you want to delete ALL students and their associated user accounts? This action CANNOT be undone.',
+                        icon: 'error',
+                        confirmText: 'Yes, Delete Everything',
+                        cancelText: 'Cancel'
+                    });
+
+                    if (confirmed) {
+                        try {
+                            const response = await fetch(`${apiBase}?action=deleteAll`, {
+                                method: 'POST'
+                            });
+                            const result = await response.json();
+                            
+                            if (result.status === 'success') {
+                                showSuccess('All student records have been cleared.');
+                                currentPage = 1;
+                                fetchStudents();
+                            } else {
+                                showError(result.message || 'Failed to delete all students.');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting all students:', error);
+                            showError('A connection error occurred. Please try again.');
+                        }
+                    }
+                });
+            }
+
+            // --- Import Logic ---
+            const importModal = document.getElementById('ImportStudentsModal');
+            const importForm = document.getElementById('ImportStudentsForm');
+            const fileInput = document.getElementById('enrollmentList');
+            const dropZone = document.getElementById('dropZone');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const submitImportBtn = document.getElementById('submitImportBtn');
+            const closeImportBtn = document.getElementById('closeImportModal');
+            const cancelImportBtn = document.getElementById('cancelImportBtn');
+            const importModalOverlay = document.getElementById('ImportModalOverlay');
+            const assetFilesList = document.getElementById('AssetFilesList');
+            let droppedFile = null;
+
+            async function fetchAssets() {
+                if (!assetFilesList) return;
+                
+                assetFilesList.innerHTML = '<div style="padding: 15px; text-align: center; color: #999;"><i class="bx bx-loader-alt bx-spin"></i> Loading assets...</div>';
+                
+                try {
+                    const response = await fetch(`${apiBase}?action=listAssets`);
+                    const result = await response.json();
+                    
+                    if (result.status === 'success' && result.data.length > 0) {
+                        assetFilesList.innerHTML = result.data.map(file => `
+                            <div class="asset-file-item" style="padding: 12px 15px; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.2s;" onclick="syncFromAsset('${file.name}')">
+                                <div style="display: flex; align-items: center;">
+                                    <i class='bx bxs-file-${file.name.endsWith('csv') ? 'blank' : 'export'}' style="font-size: 24px; color: ${file.name.endsWith('csv') ? '#3498db' : '#27ae60'}; margin-right: 12px;"></i>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: #333;">${file.name}</div>
+                                        <div style="font-size: 0.75rem; color: #999;">${file.size} • Modified: ${file.modified}</div>
+                                    </div>
+                                </div>
+                                <i class='bx bx-sync' style="font-size: 18px; color: var(--gold);"></i>
+                            </div>
+                        `).join('');
+                        
+                        // Hover effect
+                        const items = assetFilesList.querySelectorAll('.asset-file-item');
+                        items.forEach(item => {
+                            item.onmouseover = () => item.style.background = '#fff9e6';
+                            item.onmouseout = () => item.style.background = 'transparent';
+                        });
+                    } else {
+                        assetFilesList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No compatible files found in assets.</div>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching assets:', error);
+                    assetFilesList.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Failed to load assets.</div>';
+                }
+            }
+
+            // Global function for asset sync
+            window.syncFromAsset = async function(filename) {
+                const confirmed = await showModernAlert({
+                    title: 'Sync from Asset',
+                    message: `Sync student data using "${filename}"?`,
+                    confirmText: 'Yes, Sync Now',
+                    cancelText: 'Cancel'
+                });
+
+                if (!confirmed) return;
+
+                closeImportModal();
+                
+                showModernAlert({
+                    title: 'Synchronizing...',
+                    message: `Processing "${filename}"...`,
+                    icon: 'loading',
+                    showCancel: false,
+                    confirmText: 'Processing...'
+                });
+
+                try {
+                    const response = await fetch(`${apiBase}?action=importFromAsset&filename=${encodeURIComponent(filename)}`);
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        const { created, updated, skipped } = result.data;
+                        await showModernAlert({
+                            title: 'Sync Successful',
+                            message: 'Student database updated.',
+                            icon: 'success',
+                            showCancel: false,
+                            confirmText: 'Done',
+                            stats: { created, updated, skipped }
+                        });
+                        fetchStudents();
+                    } else {
+                        await showModernAlert({
+                            title: 'Sync Failed',
+                            message: result.message || 'Error occurred during sync.',
+                            icon: 'error',
+                            showCancel: false,
+                            confirmText: 'Dismiss'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    showError('Connection error during sync.');
+                }
+            };
+
+            function openImportModal() {
+                if (importModal) {
+                    importModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                    fetchAssets(); // Refresh assets
+                }
+            }
+
+            function closeImportModal() {
+                if (importModal) {
+                    importModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                    if (importForm) importForm.reset();
+                    droppedFile = null; // Clear dropped file
+                    if (selectedFileName) {
+                        selectedFileName.textContent = '';
+                        selectedFileName.style.display = 'none';
+                    }
+                    if (submitImportBtn) submitImportBtn.disabled = true;
+                    // Reset drop zone
+                    if (dropZone) {
+                        dropZone.style.borderColor = '#ddd';
+                        dropZone.querySelector('i').style.color = '#aaa';
+                    }
+                }
+            }
+
+            if (importBtn) {
+                importBtn.addEventListener('click', openImportModal);
+            }
+
+            if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
+            if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeImportModal);
+            if (importModalOverlay) importModalOverlay.addEventListener('click', closeImportModal);
+
+            if (dropZone) {
+                dropZone.addEventListener('click', () => fileInput && fileInput.click());
+                
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = 'var(--gold)';
+                    dropZone.querySelector('i').style.color = 'var(--gold)';
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.style.borderColor = '#ddd';
+                    dropZone.querySelector('i').style.color = '#aaa';
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        droppedFile = files[0]; // Store in variable
+                        handleFileSelection(droppedFile);
+                    }
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files.length > 0) {
+                        droppedFile = null; // Reset dropped file if manual choice
+                        handleFileSelection(fileInput.files[0]);
+                    }
+                });
+            }
+
+            function handleFileSelection(file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (['csv', 'xlsx', 'xls'].includes(ext)) {
+                    selectedFileName.textContent = `Selected: ${file.name}`;
+                    selectedFileName.style.display = 'block';
+                    submitImportBtn.disabled = false;
+                    dropZone.style.borderColor = '#27ae60';
+                    dropZone.querySelector('i').style.color = '#27ae60';
+                } else {
+                    showError('Please select a valid CSV or Excel file.');
+                    submitImportBtn.disabled = true;
+                    selectedFileName.style.display = 'none';
+                }
+            }
+
+            if (importForm) {
+                importForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    // 1. Get the file BEFORE closing the modal
+                    const fileToUpload = droppedFile || (fileInput.files.length > 0 ? fileInput.files[0] : null);
+                    
+                    if (!fileToUpload) {
+                        showError('No file selected. Please select a file first.');
+                        return;
+                    }
+
+                    const confirmed = await showModernAlert({
+                        title: 'Confirm Import',
+                        message: 'Sync students with the selected file?',
+                        confirmText: 'Yes, Start Import',
                         cancelText: 'Cancel'
                     });
 
                     if (!confirmed) return;
 
-                    // Show Loading
+                    // 2. Now we can safely close the modal and reset it
+                    closeImportModal();
+                    
                     showModernAlert({
-                        title: 'Processing Import',
-                        message: 'Parsing enrollment list and updating database. Please wait...',
+                        title: 'Importing...',
+                        message: 'Processing file...',
                         icon: 'loading',
                         showCancel: false,
                         confirmText: 'Processing...'
                     });
 
                     try {
+                        const formData = new FormData();
+                        formData.append('enrollmentList', fileToUpload);
+                        
                         const response = await fetch(`${apiBase}?action=import`, {
-                            method: 'POST'
+                            method: 'POST',
+                            body: formData
                         });
+                        
                         const result = await response.json();
 
-                        if (result.success) {
+                        if (result.status === 'success') {
                             const { created, updated, skipped } = result.data;
                             await showModernAlert({
                                 title: 'Import Successful',
-                                message: 'The student database has been synchronized with the latest enrollment records.',
+                                message: 'Synchronization complete.',
                                 icon: 'success',
                                 showCancel: false,
                                 confirmText: 'Great!',
                                 stats: { created, updated, skipped }
                             });
-                            loadStudents(); // Refresh the list
+                            fetchStudents();
                         } else {
                             await showModernAlert({
                                 title: 'Import Failed',
-                                message: result.message || 'An error occurred while processing the enrollment list.',
+                                message: result.message || 'Error processing file.',
                                 icon: 'error',
                                 showCancel: false,
                                 confirmText: 'Try Again'
@@ -1531,8 +1766,8 @@ function initStudentsModule() {
                     } catch (error) {
                         console.error('Import error:', error);
                         await showModernAlert({
-                            title: 'Connection Error',
-                            message: 'Could not connect to the server. Please check your network.',
+                            title: 'Error',
+                            message: error.message || 'Connection error.',
                             icon: 'error',
                             showCancel: false,
                             confirmText: 'Dismiss'
