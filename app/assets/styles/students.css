@@ -1316,12 +1316,6 @@ body.dark {
     justify-content: center;
   }
 
-  #btnAddStudents {
-    width: 100%;
-    padding: 10px;
-    font-size: 12px;
-  }
-
   .Students-header-right {
     width: 100%;
     flex-direction: column;

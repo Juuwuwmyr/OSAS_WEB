@@ -5,9 +5,8 @@ function initStudentsModule() {
     try {
         // Elements
         const tableBody = document.getElementById('StudentsTableBody');
-        const btnAddStudent = document.getElementById('btnAddStudents');
         const btnArchivedStudents = document.getElementById('btnArchivedStudents');
-        const btnAddFirstStudent = document.getElementById('btnAddFirstStudent');
+        const btnImportFirstStudents = document.getElementById('btnImportFirstStudents');
         const modal = document.getElementById('StudentsModal');
         const modalOverlay = document.getElementById('StudentsModalOverlay');
         const closeBtn = document.getElementById('closeStudentsModal');
@@ -1284,6 +1283,10 @@ function initStudentsModule() {
         // --- Modal functions ---
         async function openModal(editId = null) {
             if (!modal) return;
+            if (editId === null) {
+                showError('Adding students manually is disabled. Please use Import.');
+                return;
+            }
             
             const modalTitle = document.getElementById('StudentsModalTitle');
             const form = document.getElementById('StudentsForm');
@@ -1293,86 +1296,53 @@ function initStudentsModule() {
             // Load departments every time modal opens
             await loadDepartments();
             
-            if (editId) {
-                const span = modalTitle.querySelector('span');
-                if (span) {
-                    span.textContent = 'Edit Student';
-                } else {
-                    modalTitle.innerHTML = '<i class=\'bx bxs-group\'></i><span>Edit Student</span>';
-                }
-                const student = allStudents.find(s => s.id === editId);
-                if (student) {
-                    document.getElementById('studentId').value = student.studentId || '';
-                    document.getElementById('studentStatus').value = student.status || 'active';
-                    document.getElementById('firstName').value = student.firstName || '';
-                    document.getElementById('middleName').value = student.middleName || '';
-                    document.getElementById('lastName').value = student.lastName || '';
-                    document.getElementById('studentEmail').value = student.email || '';
-                    document.getElementById('studentContact').value = student.contact || '';
-                    document.getElementById('studentDept').value = student.department || '';
-                    document.getElementById('studentAddress').value = student.address || '';
-                    document.getElementById('studentYearlevel').value = student.yearlevel || '';
-                    
-                    // Load sections for the department
-                    if (student.department) {
-                        await loadSectionsByDepartment(student.department);
-                        if (student.section_id) {
-                            document.getElementById('studentSection').value = student.section_id;
-                        }
-                    }
-                    
-                    // Set image preview if avatar exists
-                    if (student.avatar && student.avatar !== '') {
-                        const previewImg = document.querySelector('.Students-preview-img');
-                        const previewPlaceholder = document.querySelector('.Students-preview-placeholder');
-                        if (previewImg && previewPlaceholder) {
-                            // Build the correct avatar URL
-                            let avatarUrl = student.avatar;
-                            // If it's a relative path, make it absolute
-                            if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:') && !avatarUrl.startsWith('/')) {
-                                // It's a relative path like 'assets/img/students/filename.jpg' or 'app/assets/img/students/filename.jpg'
-                                // Normalize to app/assets/ if needed
-                                if (avatarUrl.startsWith('assets/') && !avatarUrl.startsWith('app/assets/')) {
-                                    avatarUrl = avatarUrl.replace('assets/', 'app/assets/');
-                                }
-                                // Convert to absolute path from project root
-                                const pathMatch = window.location.pathname.match(/^(\/[^\/]+)\//);
-                                const projectBase = pathMatch ? pathMatch[1] : '';
-                                avatarUrl = projectBase + '/' + avatarUrl;
-                            }
-                            previewImg.src = avatarUrl;
-                            previewImg.setAttribute('data-existing-avatar', student.avatar); // Store original path
-                            previewImg.style.display = 'block';
-                            previewPlaceholder.style.display = 'none';
-                        }
-                    }
-                }
+            const span = modalTitle.querySelector('span');
+            if (span) {
+                span.textContent = 'Edit Student';
             } else {
-                const span = modalTitle.querySelector('span');
-                if (span) {
-                    span.textContent = 'Add New Student';
-                } else {
-                    modalTitle.innerHTML = '<i class=\'bx bxs-group\'></i><span>Add New Student</span>';
+                modalTitle.innerHTML = '<i class=\'bx bxs-group\'></i><span>Edit Student</span>';
+            }
+            const student = allStudents.find(s => s.id === editId);
+            if (student) {
+                document.getElementById('studentId').value = student.studentId || '';
+                document.getElementById('studentStatus').value = student.status || 'active';
+                document.getElementById('firstName').value = student.firstName || '';
+                document.getElementById('middleName').value = student.middleName || '';
+                document.getElementById('lastName').value = student.lastName || '';
+                document.getElementById('studentEmail').value = student.email || '';
+                document.getElementById('studentContact').value = student.contact || '';
+                document.getElementById('studentDept').value = student.department || '';
+                document.getElementById('studentAddress').value = student.address || '';
+                document.getElementById('studentYearlevel').value = student.yearlevel || '';
+                
+                if (student.department) {
+                    await loadSectionsByDepartment(student.department);
+                    if (student.section_id) {
+                        document.getElementById('studentSection').value = student.section_id;
+                    }
                 }
-                if (form) form.reset();
-                // Reset image preview
-                const previewImg = document.querySelector('.Students-preview-img');
-                const previewPlaceholder = document.querySelector('.Students-preview-placeholder');
-                if (previewImg && previewPlaceholder) {
-                    previewImg.style.display = 'none';
-                    previewImg.src = '';
-                    previewImg.removeAttribute('data-existing-avatar');
-                    previewPlaceholder.style.display = 'flex';
+                
+                if (student.avatar && student.avatar !== '') {
+                    const previewImg = document.querySelector('.Students-preview-img');
+                    const previewPlaceholder = document.querySelector('.Students-preview-placeholder');
+                    if (previewImg && previewPlaceholder) {
+                        let avatarUrl = student.avatar;
+                        if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:') && !avatarUrl.startsWith('/')) {
+                            if (avatarUrl.startsWith('assets/') && !avatarUrl.startsWith('app/assets/')) {
+                                avatarUrl = avatarUrl.replace('assets/', 'app/assets/');
+                            }
+                            const pathMatch = window.location.pathname.match(/^(\/[^\/]+)\//);
+                            const projectBase = pathMatch ? pathMatch[1] : '';
+                            avatarUrl = projectBase + '/' + avatarUrl;
+                        }
+                        previewImg.src = avatarUrl;
+                        previewImg.setAttribute('data-existing-avatar', student.avatar);
+                        previewImg.style.display = 'block';
+                        previewPlaceholder.style.display = 'none';
+                    }
                 }
-                // Reset image input
-                const studentImageInput = document.getElementById('studentImage');
-                if (studentImageInput) {
-                    studentImageInput.value = '';
-                }
-                // Reset section dropdown
-                if (studentSectionSelect) {
-                    studentSectionSelect.innerHTML = '<option value="">Select Department First</option>';
-                }
+            } else if (form) {
+                form.reset();
             }
             
             modal.classList.add('active');
@@ -1564,14 +1534,12 @@ function initStudentsModule() {
                              btnArchivedStudents.classList.add('active');
                              btnArchivedStudents.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
                          }
-                         if (btnAddStudent) btnAddStudent.style.display = 'none';
                      } else {
                          currentView = 'active';
                          if (btnArchivedStudents) {
                              btnArchivedStudents.classList.remove('active');
                              btnArchivedStudents.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
                          }
-                         if (btnAddStudent) btnAddStudent.style.display = 'inline-flex';
                      }
                     currentPage = 1;
                     fetchStudents();
@@ -1609,11 +1577,6 @@ function initStudentsModule() {
             // Event listeners for table
             tableBody.addEventListener('click', handleTableClick);
 
-            // Add Student button
-            if (btnAddStudent) {
-                btnAddStudent.addEventListener('click', () => openModal());
-            }
-
             // Archived Students button (Control Bar)
             if (btnArchivedStudents) {
                 btnArchivedStudents.addEventListener('click', function() {
@@ -1625,14 +1588,12 @@ function initStudentsModule() {
                         this.classList.remove('active');
                         this.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
                         if (filterSelect) filterSelect.value = 'active';
-                        if (btnAddStudent) btnAddStudent.style.display = 'inline-flex';
                     } else {
                         // Switch to archived
                         currentView = 'archived';
                         this.classList.add('active');
                         this.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
                         if (filterSelect) filterSelect.value = 'archived';
-                        if (btnAddStudent) btnAddStudent.style.display = 'none';
                     }
                     
                     currentPage = 1;
@@ -1890,9 +1851,8 @@ function initStudentsModule() {
                 });
             }
 
-            // Add First Student button
-            if (btnAddFirstStudent) {
-                btnAddFirstStudent.addEventListener('click', () => openModal());
+            if (btnImportFirstStudents) {
+                btnImportFirstStudents.addEventListener('click', openImportModal);
             }
 
             // Close modal
@@ -1995,7 +1955,7 @@ function initStudentsModule() {
                         formData.set('id', editingStudentId);
                         await updateStudent(editingStudentId, formData);
                     } else {
-                        await addStudent(formData);
+                        showError('Adding students manually is disabled. Please use Import.');
                     }
                 });
             }

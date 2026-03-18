@@ -50,9 +50,6 @@ require_once '../../config/db_connect.php';
           <span>Delete All</span>
         </button>
       </div>
-      <button id="btnAddStudents" class="Students-btn primary">
-        <i class='bx bx-plus'></i> Add Student
-      </button>
     </div>
   </div>
 
@@ -234,7 +231,7 @@ require_once '../../config/db_connect.php';
       <div class="Students-modal-header">
         <h2 id="StudentsModalTitle">
           <i class='bx bxs-group'></i>
-          <span>Add New Student</span>
+          <span>Student</span>
         </h2>
         <button class="Students-close-btn" id="closeStudentsModal">
           <i class='bx bx-x'></i>
@@ -355,9 +352,9 @@ require_once '../../config/db_connect.php';
       <i class='bx bx-user'></i>
     </div>
     <h3>No Students Found</h3>
-    <p>Get started by adding your first student</p>
-    <button class="Students-btn-primary" id="btnAddFirstStudent">
-      <i class='bx bx-plus'></i> Add Student
+    <p>Get started by importing students data</p>
+    <button class="Students-btn-primary" id="btnImportFirstStudents">
+      <i class='bx bx-upload'></i> Import Students
     </button>
   </div>
 

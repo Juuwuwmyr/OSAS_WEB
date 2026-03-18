@@ -574,7 +574,7 @@ class Chatbot {
                 icon: 'bx-group',
                 prompts: [
                     { title: 'Student Count', desc: 'How many students are registered?', text: 'How many students are in the system?' },
-                    { title: 'Add Student', desc: 'How to add a new student', text: 'How do I add a new student to the system?' },
+                    { title: 'Import Students', desc: 'How to import students data', text: 'How do I import students to the system?' },
                     { title: 'Student Info', desc: 'Get student information', text: 'Tell me about student management' }
                 ]
             },
