@@ -3348,22 +3348,36 @@ function initViolationsModule() {
 
                 // 5. Perform Replacements (XML Injection)
                 
-                // Helper for Underline XML injection
-                const createUnderlineXML = (text) => 
-                    `</w:t></w:r><w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>${text}</w:t></w:r><w:r><w:t>`;
+                // 5. Replace Headers (Simplified & Fixed)
+                // We target ONLY the underscores after the labels to avoid ruining the template
+                const headerFields = [
+                    { label: 'ID Number', value: studentId },
+                    { label: 'Course and Year', value: courseYear },
+                    { label: 'Name', value: studentName },
+                    { label: 'ID Number', value: studentId },
+                    { label: 'Course and Year', value: courseYear },
+                    { label: 'Name', value: studentName },
+                ];
 
-                // Name
-                xml = xml.replace(/Name: _+/g, `Name: ${createUnderlineXML(studentName)}`);
-                xml = xml.replace(/(Name:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(studentName)}`);
+                // Font size: sz=18 is 9pt (Standard small)
+                // Black color, Century Gothic
+                const baseProps = '<w:rPr><w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/><w:color w:val="000000"/><w:b w:val="0"/><w:bCs w:val="0"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:u w:val="single"/><w:vertAlign w:val="baseline"/></w:rPr>';
 
-                // ID
-                xml = xml.replace(/ID Number: _+/g, `ID Number: ${createUnderlineXML(studentId)}`);
-                xml = xml.replace(/(ID Number:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(studentId)}`);
+                headerFields.forEach(rep => {
+                    // This regex finds the label + colon + optional tags, then captures the underscores in a group
+                    const labelRegex = rep.label.split('').map(c => escapeRegex(c) + '(?:<[^>]+>)*').join('');
+                    const pattern = new RegExp('(' + labelRegex + '(?:\\s|<[^>]+>)*:(?:\\s|<[^>]+>)*)(_+)', 's');
+                    
+                    const replacementXml = `</w:t></w:r><w:r>${baseProps}<w:t>${rep.value} </w:t></w:r><w:r><w:t>`;
+                    
+                    // Replace only the captured underscores (group 2), keeping the label (group 1) intact
+                    xml = xml.replace(pattern, (match, g1, g2) => g1 + replacementXml);
+                });
 
-                // Course
-                xml = xml.replace(/Course and Year: _+/g, `Course and Year: ${createUnderlineXML(courseYear)}`);
-                xml = xml.replace(/Course and Year:_+/g, `Course and Year: ${createUnderlineXML(courseYear)}`);
-                xml = xml.replace(/(Course and Year:\s*<\/w:t>.*?<w:t[^>]*>)_+/g, `$1${createUnderlineXML(courseYear)}`);
+                // Helper for escaping regex
+                function escapeRegex(string) {
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                }
 
                 // Checkmarks - ADDED TO LABELS
                 xml = xml.replace(/Improper Uniform/g, `Improper Uniform ${checkUniform}`);

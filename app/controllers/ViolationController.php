@@ -560,22 +560,42 @@ class ViolationController extends Controller
             $xml = $this->injectViolationsIntoTable($xml, 'Improper Foot Wear', $monthlyViolations['Improper Foot Wear']);
             $xml = $this->injectViolationsIntoTable($xml, 'No ID', $monthlyViolations['No ID']);
 
-            // 4.2 Standard Replacements
-            
-            // Name
-            $nameUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentName</w:t></w:r><w:r><w:t>";
-            $xml = preg_replace('/Name: _+/', "Name: $nameUnderline", $xml);
-            $xml = preg_replace('/(Name:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$nameUnderline", $xml);
+            // 4.2 Standard Replacements (Sequential)
+            // Process the document for both tables
+            // Sequence: ID (Left), Course (Left), Name (Left), ID (Right), Course (Right), Name (Right)
+            $replacements = [
+                ['label' => 'ID Number', 'value' => $studentId],
+                ['label' => 'Course and Year', 'value' => $courseYear],
+                ['label' => 'Name', 'value' => $studentName],
+                ['label' => 'ID Number', 'value' => $studentId],
+                ['label' => 'Course and Year', 'value' => $courseYear],
+                ['label' => 'Name', 'value' => $studentName],
+            ];
 
-            // ID Number
-            $idUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$studentId</w:t></w:r><w:r><w:t>";
-            $xml = preg_replace('/ID Number: _+/', "ID Number: $idUnderline", $xml);
-            $xml = preg_replace('/(ID Number:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$idUnderline", $xml);
+            // Ultra-small font size: sz=2 is 1pt (TINY)
+            // Color: Blue (0000FF) for verification
+            $baseProps = '<w:rPr><w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/><w:color w:val="0000FF"/><w:b w:val="0"/><w:bCs w:val="0"/><w:sz w:val="2"/><w:szCs w:val="2"/><w:u w:val="single"/><w:vertAlign w:val="baseline"/></w:rPr>';
 
-            // Course and Year
-            $courseUnderline = "</w:t></w:r><w:r><w:rPr><w:u w:val=\"single\"/></w:rPr><w:t>$courseYear</w:t></w:r><w:r><w:t>";
-            $xml = preg_replace('/Course and Year:_+/', "Course and Year: $courseUnderline", $xml);
-            $xml = preg_replace('/(Course and Year:\s*<\/w:t>.*?<w:t[^>]*>)_+/', "$1$courseUnderline", $xml);
+            foreach ($replacements as $rep) {
+                $label = $rep['label'];
+                $value = $rep['value'];
+                
+                // Build a regex for the label that allows XML tags between characters
+                $labelRegex = '';
+                for ($i = 0; $i < strlen($label); $i++) {
+                    $char = $label[$i];
+                    $labelRegex .= preg_quote($char) . '(?:<[^>]+>)*';
+                }
+
+                $replacementXml = "</w:t></w:r><w:r>$baseProps<w:t>$value </w:t></w:r><w:r><w:t>";
+                
+                // Aggressive regex to match label and underscores across potential tag splits
+                // Match Label + (optional tags/whitespace) + colon + (optional tags/whitespace) + underscores
+                // Limit: 1 replacement per loop to ensure sequential order
+                $pattern = '/' . $labelRegex . '(?:\s|<[^>]+>)*:(?:\s|<[^>]+>)*(_(?:(?:\s|<[^>]+>)|_)*)/s';
+                
+                $xml = preg_replace($pattern, "$label: $replacementXml", $xml, 1);
+            }
 
             // Violations (Text replacement - appends checkmark to label)
             $xml = str_replace('Improper Uniform', "Improper Uniform $checkUniform", $xml);
@@ -590,12 +610,13 @@ class ViolationController extends Controller
             $zip->addFromString('word/document.xml', $xml);
             $zip->close();
 
-            // 5. Download
+            // 5. Download with unique filename to prevent caching
             if (ob_get_level()) ob_end_clean();
             
+            $downloadName = 'Entrance_Slip_' . $studentId . '_' . date('His') . '.docx';
             header('Content-Description: File Transfer');
             header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-            header('Content-Disposition: attachment; filename="Entrance_Slip_' . $studentId . '.docx"');
+            header('Content-Disposition: attachment; filename="' . $downloadName . '"');
             header('Content-Transfer-Encoding: binary');
             header('Expires: 0');
             header('Cache-Control: must-revalidate');
@@ -611,74 +632,58 @@ class ViolationController extends Controller
         }
     }
 
-    /**
-     * Helper to inject violation dates into the slip table
-     */
     private function injectViolationsIntoTable($xml, $anchor, $violations) {
-        $pos = strpos($xml, $anchor);
-        if ($pos === false) return $xml;
-
-        // Find the end of the cell containing the anchor
-        $endAnchorCell = strpos($xml, '</w:tc>', $pos);
-        if ($endAnchorCell === false) return $xml;
-        $endAnchorCell += 7; // Length of </w:tc>
-
-        $newXml = substr($xml, 0, $endAnchorCell);
-        $offset = $endAnchorCell;
-
-        // We expect 5 columns after the violation name: Permitted 1, Permitted 2, 1st, 2nd, 3rd
-        // Note: The 'Month' header spans the Permitted columns, so we don't skip any column.
-        for ($i = 0; $i < 5; $i++) {
-            // Find start of next cell
-            $startTc = strpos($xml, '<w:tc', $offset);
-            if ($startTc === false) break;
-
-            // CRITICAL: Preserve content between previous cell end and this cell start (e.g. row tags)
-            $betweenContent = substr($xml, $offset, $startTc - $offset);
-            $newXml .= $betweenContent;
-
-            // Find end of this cell
-            $endTc = strpos($xml, '</w:tc>', $startTc);
-            if ($endTc === false) break;
-            $endTc += 7;
-
-            // Get cell content
-            $cellContent = substr($xml, $startTc, $endTc - $startTc);
-
-            // Map violations: index 0 -> Col 1, index 1 -> Col 2, etc.
-            if (isset($violations[$i])) {
-                $v = $violations[$i];
-                // Format: 02/14/2026- 8:30 AM
-                // Use keys from ViolationModel output (dateReported, violationTime)
-                $dateStrRaw = $v['dateReported'];
-                $timeStrRaw = $v['violationTime'];
-                
-                // Parse date carefully
-                $ts = strtotime(str_replace('/', '-', $dateStrRaw) . ' ' . $timeStrRaw);
-                if (!$ts) $ts = strtotime($dateStrRaw . ' ' . $timeStrRaw);
-                
-                $dateStr = date('m/d/Y- g:i A', $ts);
-                
-                // Inject into <w:p>
-                // We create a new run with slightly smaller font (sz=16 is 8pt, sz=18 is 9pt)
-                $runXml = '<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
-                
-                if (strpos($cellContent, '</w:p>') !== false) {
-                    $cellContent = str_replace('</w:p>', $runXml . '</w:p>', $cellContent);
-                } else {
-                    // Fallback
-                    $cellContent = substr($cellContent, 0, -7) . '<w:p>' . $runXml . '</w:p></w:tc>';
-                }
-            }
-
-            $newXml .= $cellContent;
-            $offset = $endTc;
-        }
-
-        // Append rest of XML
-        $newXml .= substr($xml, $offset);
+        // Pattern: Find any table row (<w:tr>) that contains the anchor text
+        // This is much more robust than explode() because it handles multiple tables automatically
+        $pattern = '/<w:tr(?:(?!<w:tr).)*?' . preg_quote($anchor) . '.*?<\/w:tr>/s';
         
-        return $newXml;
+        return preg_replace_callback($pattern, function($match) use ($violations) {
+            $rowXml = $match[0];
+            
+            // Now we have the XML of ONE row. We need to fill its cells.
+            // Split by cell start tag to find columns
+            $cells = preg_split('/(?=<w:tc[ >])/', $rowXml);
+            if (count($cells) < 2) return $rowXml;
+
+            $newRowXml = $cells[0]; // Content before first cell
+            
+            // Iterate through cells starting from index 1 (the first <w:tc>)
+            for ($i = 1; $i < count($cells); $i++) {
+                $cellContent = $cells[$i];
+
+                // Map violations: index 0 -> Cell 1, index 1 -> Cell 2, etc.
+                // We offset by 1 because the first cell is the label
+                $vIndex = $i - 2; 
+                
+                if ($vIndex >= 0 && $vIndex < 5 && isset($violations[$vIndex])) {
+                    $v = $violations[$vIndex];
+                    $dateStrRaw = $v['dateReported'];
+                    $timeStrRaw = $v['violationTime'];
+                    
+                    // Parse date carefully
+                    $ts = strtotime(str_replace('/', '-', $dateStrRaw) . ' ' . $timeStrRaw);
+                    if (!$ts) $ts = strtotime($dateStrRaw . ' ' . $timeStrRaw);
+                    
+                    $dateStr = date('m/d/Y- g:i A', $ts);
+                    
+                    // Inject into <w:p> with tiny font size for debug verification
+                    $runXml = '<w:r><w:rPr><w:sz w:val="4"/><w:szCs w:val="4"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
+                    
+                    if (strpos($cellContent, '</w:p>') !== false) {
+                        // Find the last </w:p> in this cell and insert before it
+                        $lastPPos = strrpos($cellContent, '</w:p>');
+                        $cellContent = substr($cellContent, 0, $lastPPos) . $runXml . substr($cellContent, $lastPPos);
+                    } else {
+                        // Fallback: wrap in a paragraph
+                        $cellContent = preg_replace('/(<\/w:tc>)/', '<w:p>' . $runXml . '</w:p>$1', $cellContent);
+                    }
+                }
+                
+                $newRowXml .= $cellContent;
+            }
+            
+            return $newRowXml;
+        }, $xml);
     }
 
 }
