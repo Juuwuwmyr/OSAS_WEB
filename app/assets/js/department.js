@@ -81,7 +81,6 @@ function initDepartmentModule() {
 
     tableBody.innerHTML = deptArray.map(d => `
       <tr data-id="${d.id}">
-        <td class="department-id" data-label="ID">${d.id}</td>
         <td class="department-name" data-label="Department Name">
           <div class="name-wrapper">
             <div class="department-icon">

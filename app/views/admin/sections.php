@@ -131,12 +131,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
         <table class="sections-table">
           <thead>
             <tr>
-              <th class="sections-sortable" data-sort="id">
-                <div class="sections-table-header-content">
-                  <span>Section ID</span>
-                  <i class='bx bx-sort'></i>
-                </div>
-              </th>
               <th class="sections-sortable" data-sort="name">
                 <div class="sections-table-header-content">
                   <span>Section Name</span>

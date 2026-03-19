@@ -175,7 +175,7 @@ function renderViolationTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center; padding:40px; color: #666;">
+                <td colspan="5" style="text-align:center; padding:40px; color: #666;">
                     No violations found matching your filters
                 </td>
             </tr>
@@ -209,7 +209,6 @@ function renderViolationTable() {
 
         return `
             <tr class="violation-row">
-                <td data-label="Case ID"><span class="violation-case-id">#${v.case_id || v.id}</span></td>
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
                 <td data-label="Offense Level"><span class="Violations-badge warning">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
@@ -350,6 +349,9 @@ function viewViolationDetails(id) {
     setElementClass('detailStudentDept', `student-dept badge ${getDepartmentClass(v.department || v.department_name)}`);
     setElementText('detailStudentSection', v.section || 'N/A');
     setElementText('detailStudentContact', v.student_contact || v.studentContact || 'N/A');
+
+    // Update Slip Status UI (Request/Download buttons)
+    updateSlipStatusUI(id);
 
     // --- Violation Details Grid (Match Admin style) ---
     // In user view, "userViolations" is already filtered for this student
@@ -806,6 +808,78 @@ function printViolationSlip() {
 /*********************************************************
  * UTILS
  *********************************************************/
+async function updateSlipStatusUI(violationId) {
+    const requestBtn = document.getElementById('requestSlipBtn');
+    const downloadBtn = document.getElementById('downloadSlipBtn');
+    
+    if (!requestBtn || !downloadBtn) return;
+
+    // Default: hide both
+    requestBtn.style.display = 'none';
+    downloadBtn.style.display = 'none';
+
+    try {
+        const response = await fetch(`${API_BASE}violations.php?action=slip_status&violation_id=${violationId}`);
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            const status = result.data.request_status;
+            
+            if (!status) {
+                // No request yet
+                requestBtn.style.display = 'inline-flex';
+                requestBtn.innerHTML = "<i class='bx bx-paper-plane'></i> Request Receipt";
+                requestBtn.disabled = false;
+            } else if (status === 'pending') {
+                // Request sent, waiting for admin
+                requestBtn.style.display = 'inline-flex';
+                requestBtn.innerHTML = "<i class='bx bx-time'></i> Pending Approval";
+                requestBtn.disabled = true;
+            } else if (status === 'approved') {
+                // Approved, can download
+                downloadBtn.style.display = 'inline-flex';
+            } else if (status === 'denied') {
+                // Denied, can request again
+                requestBtn.style.display = 'inline-flex';
+                requestBtn.innerHTML = "<i class='bx bx-redo'></i> Request Again (Denied)";
+                requestBtn.disabled = false;
+            }
+        }
+    } catch (error) {
+        console.error('Error checking slip status:', error);
+    }
+}
+
+async function handleStudentSlipRequest() {
+    if (!currentViolationId) return;
+    
+    const requestBtn = document.getElementById('requestSlipBtn');
+    if (requestBtn) {
+        requestBtn.disabled = true;
+        requestBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Sending...";
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}violations.php?action=request_slip&violation_id=${currentViolationId}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showNotification(result.message, 'success');
+            updateSlipStatusUI(currentViolationId);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        showNotification('Request failed: ' + error.message, 'error');
+        if (requestBtn) {
+            requestBtn.disabled = false;
+            requestBtn.innerHTML = "<i class='bx bx-paper-plane'></i> Request Receipt";
+        }
+    }
+}
+
 function formatDate(d) {
     if (!d) return '-';
     return new Date(d).toLocaleDateString('en-US', {

@@ -2070,7 +2070,6 @@ function initViolationsModule() {
 
                 return `
                 <tr data-id="${v.id}">
-                    <td class="violation-case-id" data-label="Case ID">#${v.caseId}</td>
                     <td class="violation-student-cell" data-label="Student">
                         <div class="violation-student-info">
                             <div class="violation-student-image">
@@ -3230,6 +3229,21 @@ function initViolationsModule() {
             });
         }
 
+        if (detailEntranceBtn) {
+            detailEntranceBtn.addEventListener('click', function() {
+                const violationId = detailsModal.dataset.viewingId;
+                if (!violationId) {
+                    showNotification('No violation selected', 'error');
+                    return;
+                }
+
+                const violation = violations.find(v => v.id == violationId);
+                if (violation) {
+                    printEntranceSlip(violation);
+                }
+            });
+        }
+
         if (modalEntranceBtn) {
             modalEntranceBtn.addEventListener('click', function() {
                 const editId = recordModal.dataset.editingId;
@@ -3289,15 +3303,14 @@ function initViolationsModule() {
             console.log('🖨️ Requesting Entrance Slip for:', violation.studentName);
             
             // Check if violation has ID
-            if (!violation.caseId || violation.caseId.includes('PENDING')) {
+            if (!violation.id || violation.id === 'undefined') {
                 showNotification('Cannot print slip for unsaved violation. Please save first.', 'warning');
                 return;
             }
 
-            // FORCE SERVER-SIDE GENERATION (To avoid JS cache and use the PHP fixes)
-            const studentId = violation.studentId || '';
-            const violationId = violation.id || '';
-            window.location.href = API_BASE + 'violations.php?action=generate_slip&violation_id=' + violationId;
+            // Use the same docx generation logic as the student view
+            const url = `${API_BASE}violations.php?action=generate_slip&violation_id=${violation.id}`;
+            window.open(url, '_blank');
         }
 
         async function generateEntranceSlipClientSide(violation) {
@@ -4154,34 +4167,147 @@ function initViolationsModule() {
         tabBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const view = this.dataset.view;
-                if (currentView === view) return;
-
-                // Update state
-                currentView = view;
-
+                
                 // Update UI
                 tabBtns.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
 
-                // Show/Hide filter groups
-                if (view === 'current') {
-                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'flex';
-                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
-                    if (btnAddViolation) btnAddViolation.style.display = 'flex';
-                } else {
-                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
-                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'flex';
-                    if (btnAddViolation) btnAddViolation.style.display = 'none';
-                }
+                const currentFiltersGroup = document.getElementById('currentFilters');
+                const archiveFiltersGroup = document.getElementById('archiveFilters');
+                const mainTableContainer = document.querySelector('.Violations-table-container:not(#slipRequestsContainer)');
+                const slipRequestsContainer = document.getElementById('slipRequestsContainer');
+                const btnAddViolationLocal = document.getElementById('btnAddViolations');
+                const footerInfo = document.querySelector('.Violations-footer-info');
+                const pagination = document.querySelector('.Violations-pagination');
 
-                // Reset page and reload data for the selected view
-                currentPage = 1;
-                loadViolations(true).then(() => {
-                    renderViolations();
-                    updateStats();
-                });
+                // Hide everything first
+                if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
+                if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
+                if (mainTableContainer) mainTableContainer.style.display = 'none';
+                if (slipRequestsContainer) slipRequestsContainer.style.display = 'none';
+                if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'none';
+                if (footerInfo) footerInfo.style.display = 'none';
+                if (pagination) pagination.style.display = 'none';
+
+                if (view === 'requests') {
+                    currentView = 'requests';
+                    if (slipRequestsContainer) slipRequestsContainer.style.display = 'block';
+                    loadSlipRequests();
+                } else if (view === 'archive') {
+                    currentView = 'archive';
+                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'flex';
+                    if (mainTableContainer) mainTableContainer.style.display = 'block';
+                    if (footerInfo) footerInfo.style.display = 'flex';
+                    if (pagination) pagination.style.display = 'flex';
+                    loadViolations(true).then(() => renderViolations());
+                } else {
+                    currentView = 'current';
+                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'flex';
+                    if (mainTableContainer) mainTableContainer.style.display = 'block';
+                    if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'flex';
+                    if (footerInfo) footerInfo.style.display = 'flex';
+                    if (pagination) pagination.style.display = 'flex';
+                    loadViolations(true).then(() => renderViolations());
+                }
             });
         });
+
+        async function loadSlipRequests() {
+            try {
+                showLoadingOverlay('Loading slip requests...');
+                const response = await fetch(API_BASE + 'violations.php?action=get_pending_slip_requests');
+                const result = await response.json();
+                if (result.status === 'success') {
+                    renderSlipRequestsTable(result.data);
+                } else {
+                    throw new Error(result.message || 'Failed to load requests');
+                }
+            } catch (error) {
+                console.error('Error loading slip requests:', error);
+                showNotification('Error loading slip requests: ' + error.message, 'error');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
+        function renderSlipRequestsTable(requests) {
+            const tbody = document.getElementById('slipRequestsTableBody');
+            if (!tbody) return;
+
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No requests found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = requests.map(req => {
+                const status = req.status || 'pending';
+                const statusClass = status === 'approved' ? 'permitted' : (status === 'denied' ? 'disciplinary' : 'warning');
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                
+                let actionsHtml = '';
+                if (status === 'pending') {
+                    actionsHtml = `
+                        <div class="Violations-action-buttons" style="display: flex; gap: 5px; justify-content: center;">
+                            <button class="Violations-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve">
+                                <i class='bx bx-check'></i>
+                            </button>
+                            <button class="Violations-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny">
+                                <i class='bx bx-x'></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionsHtml = '<span style="color: #7f8c8d; font-size: 0.85rem;">None</span>';
+                }
+
+                return `
+                    <tr>
+                        <td>${req.first_name} ${req.last_name}</td>
+                        <td>${req.student_id}</td>
+                        <td>${new Date(req.request_date).toLocaleString()}</td>
+                        <td>${req.requested_by_name || 'System'}</td>
+                        <td>
+                            <span class="Violations-status-badge ${statusClass}">${statusLabel}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            ${actionsHtml}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.approveSlipRequest = async function(requestId) {
+            if (!confirm('Approve this slip request?')) return;
+            try {
+                const response = await fetch(API_BASE + 'violations.php?action=approve_slip&request_id=' + requestId, { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showNotification('Request approved successfully', 'success');
+                    loadSlipRequests();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        };
+
+        window.denySlipRequest = async function(requestId) {
+            if (!confirm('Deny this slip request?')) return;
+            try {
+                const response = await fetch(API_BASE + 'violations.php?action=deny_slip&request_id=' + requestId, { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showNotification('Request denied', 'warning');
+                    loadSlipRequests();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        };
 
         // 14. MONTHLY RESET FUNCTIONALITY
         const btnMonthlyReset = document.getElementById('btnMonthlyReset');

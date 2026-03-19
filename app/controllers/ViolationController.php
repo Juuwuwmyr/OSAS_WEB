@@ -20,6 +20,23 @@ class ViolationController extends Controller
         $this->studentModel = new StudentModel();
         $this->reportModel = new ReportModel();
 
+        // Recovery Logic: If session is lost but cookies exist, restore student_id_code
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !isset($_SESSION['student_id_code'])) {
+            $studentIdFromCookie = $_COOKIE['student_id_code'] ?? null;
+            if ($studentIdFromCookie) {
+                $_SESSION['student_id_code'] = $studentIdFromCookie;
+            } else {
+                // Fallback: lookup by user_id if we have it
+                $userId = $_SESSION['user_id'] ?? null;
+                if ($userId) {
+                    $userRes = $this->model->query("SELECT student_id FROM users WHERE id = ?", [$userId]);
+                    if (!empty($userRes)) {
+                        $_SESSION['student_id_code'] = $userRes[0]['student_id'];
+                    }
+                }
+            }
+        }
+
         // Automatically check and trigger monthly reset if needed
         $this->model->checkAndTriggerAutoArchive();
     }
@@ -39,6 +56,11 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'get_slip_data') {
+            $this->get_slip_data();
+            return;
+        }
+
         if ($action === 'generate_slip') {
             $this->generate_slip();
             return;
@@ -46,6 +68,31 @@ class ViolationController extends Controller
 
         if ($action === 'get_slip_template') {
             $this->get_slip_template();
+            return;
+        }
+
+        if ($action === 'request_slip') {
+            $this->request_slip();
+            return;
+        }
+
+        if ($action === 'approve_slip') {
+            $this->approve_slip();
+            return;
+        }
+
+        if ($action === 'deny_slip') {
+            $this->deny_slip();
+            return;
+        }
+
+        if ($action === 'slip_status') {
+            $this->slip_status();
+            return;
+        }
+
+        if ($action === 'get_pending_slip_requests') {
+            $this->get_pending_slip_requests();
             return;
         }
 
@@ -58,11 +105,15 @@ class ViolationController extends Controller
 
         if ($action === 'archive') {
             try {
-                $count = $this->model->archiveOldViolations();
-                $this->json([
-                    'status' => 'success',
-                    'message' => "Successfully archived $count violations and reset all student violation levels."
-                ]);
+                $res = $this->model->archivePreviousMonthViolations();
+                if ($res) {
+                    $this->json([
+                        'status' => 'success',
+                        'message' => "Successfully archived previous month's violations and reset all student violation levels."
+                    ]);
+                } else {
+                    $this->error('Failed to perform archive reset.');
+                }
                 return;
             } catch (Exception $e) {
                 $this->error('Failed to archive violations: ' . $e->getMessage());
@@ -441,6 +492,173 @@ class ViolationController extends Controller
             http_response_code(404);
             echo "Template not found.";
             exit;
+        }
+    }
+
+    /**
+     * Get Violation Data for PDF Slip generation
+     */
+    private function get_slip_data()
+    {
+        $violationId = $this->getGet('violation_id', '');
+        if (empty($violationId)) {
+            $this->error('Violation ID is required');
+        }
+
+        // Pass specificId as the 7th argument
+        $violations = $this->model->getAllWithStudentInfo('all', '', '', '', '', 0, $violationId);
+        
+        if (empty($violations)) {
+            $this->error('Violation not found');
+        }
+
+        // Security check
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+            $currentStudentId = $_SESSION['student_id_code'] ?? '';
+            if (trim($violations[0]['studentId']) !== trim($currentStudentId)) {
+                $this->error('Unauthorized access to this violation slip');
+            }
+
+            // Check if there's an approved request
+            $approvedRequest = $this->model->getApprovedSlipRequest($violationId, $currentStudentId);
+            if (!$approvedRequest) {
+                $this->error('Slip generation requires admin approval.', '', 403);
+            }
+        }
+
+        $violation = $violations[0];
+        $currentDate = $violation['dateReported'];
+        $month = date('m', strtotime($currentDate));
+        $year = date('Y', strtotime($currentDate));
+        $studentId = $violation['studentId'] ?? '';
+
+        $history = $this->model->getAllWithStudentInfo('all', '', $studentId);
+        $monthlyViolations = [
+            'Improper Uniform' => [],
+            'Improper Foot Wear' => [],
+            'No ID' => []
+        ];
+
+        foreach ($history as $v) {
+            $vDate = $v['dateReported'];
+            $ts = strtotime(str_replace('/', '-', $vDate));
+            if (!$ts) $ts = strtotime($vDate);
+            
+            if ($ts && date('m', $ts) == $month && date('Y', $ts) == $year) {
+                $type = strtolower($v['violationTypeLabel'] ?? '');
+                if (strpos($type, 'uniform') !== false) {
+                    $monthlyViolations['Improper Uniform'][] = $v;
+                } elseif (strpos($type, 'foot') !== false || strpos($type, 'shoe') !== false) {
+                    $monthlyViolations['Improper Foot Wear'][] = $v;
+                } elseif (strpos($type, 'id') !== false) {
+                    $monthlyViolations['No ID'][] = $v;
+                }
+            }
+        }
+
+        foreach ($monthlyViolations as $k => &$vList) {
+            usort($vList, function($a, $b) {
+                $tsA = strtotime(str_replace('/', '-', $a['dateReported']) . ' ' . $a['violationTime']);
+                $tsB = strtotime(str_replace('/', '-', $b['dateReported']) . ' ' . $b['violationTime']);
+                return $tsA - $tsB;
+            });
+        }
+        unset($vList);
+
+        $this->json([
+            'status' => 'success',
+            'data' => [
+                'violation' => $violation,
+                'monthlyViolations' => $monthlyViolations,
+                'generatedAt' => date('Y-m-d H:i:s'),
+                'adminName' => $_SESSION['full_name'] ?? 'OSAS Admin'
+            ]
+        ]);
+    }
+
+    /**
+     * Request a slip (Student)
+     */
+    private function request_slip() {
+        $violationId = $this->getPost('violation_id', $this->getGet('violation_id', ''));
+        $studentIdCode = $_SESSION['student_id_code'] ?? '';
+        $userId = $_SESSION['user_id'] ?? 0;
+
+        if (empty($violationId) || empty($studentIdCode)) {
+            $this->error('Violation ID and Student session required');
+        }
+
+        try {
+            $res = $this->model->createSlipRequest($violationId, $studentIdCode, $userId);
+            if ($res) {
+                $this->success('Slip request sent to admin for approval');
+            } else {
+                $this->error('Failed to create slip request');
+            }
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get slip status (Student)
+     */
+    private function slip_status() {
+        $violationId = $this->getGet('violation_id', '');
+        $studentIdCode = $_SESSION['student_id_code'] ?? '';
+
+        if (empty($violationId) || empty($studentIdCode)) {
+            $this->error('Missing parameters');
+        }
+
+        $status = $this->model->getSlipRequestStatus($violationId, $studentIdCode);
+        $this->json(['status' => 'success', 'data' => ['request_status' => $status]]);
+    }
+
+    /**
+     * Get all slip requests (Admin)
+     */
+    private function get_pending_slip_requests() {
+        $this->requireAdmin();
+        try {
+            $requests = $this->model->getSlipRequests();
+            $this->json(['status' => 'success', 'data' => $requests]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve slip (Admin)
+     */
+    private function approve_slip() {
+        $this->requireAdmin();
+        $requestId = $this->getPost('request_id', $this->getGet('request_id', ''));
+        if (empty($requestId)) $this->error('Request ID required');
+
+        try {
+            $res = $this->model->updateSlipRequestStatus($requestId, 'approved');
+            if ($res) $this->success('Slip request approved');
+            else $this->error('Failed to approve request');
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Deny slip (Admin)
+     */
+    private function deny_slip() {
+        $this->requireAdmin();
+        $requestId = $this->getPost('request_id', $this->getGet('request_id', ''));
+        if (empty($requestId)) $this->error('Request ID required');
+
+        try {
+            $res = $this->model->updateSlipRequestStatus($requestId, 'denied');
+            if ($res) $this->success('Slip request denied');
+            else $this->error('Failed to deny request');
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
         }
     }
 

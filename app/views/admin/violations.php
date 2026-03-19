@@ -105,6 +105,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="Violations-tabs">
           <button class="Violations-tab-btn active" data-view="current">Current Month</button>
           <button class="Violations-tab-btn" data-view="archive">Archive</button>
+          <button class="Violations-tab-btn" data-view="requests">Slip Requests</button>
         </div>
       </div>
 
@@ -176,12 +177,6 @@ require_once __DIR__ . '/../../core/View.php';
       <table class="Violations-table">
         <thead>
           <tr>
-            <th class="Violations-sortable" data-sort="id">
-              <div class="Violations-table-header-content">
-                <span>Case ID</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
             <th>Student</th>
             <th class="Violations-sortable" data-sort="studentId">
               <div class="Violations-table-header-content">
@@ -239,6 +234,25 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-chevron-right'></i>
         </button>
       </div>
+    </div>
+
+    <!-- Slip Requests Table (Initially Hidden) -->
+    <div class="Violations-table-container" id="slipRequestsContainer" style="display: none;">
+      <table class="Violations-table" id="slipRequestsTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Student ID</th>
+            <th>Request Date</th>
+            <th>Requested By</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="slipRequestsTableBody">
+          <!-- Data will be loaded dynamically -->
+        </tbody>
+      </table>
     </div>
   </div>
 

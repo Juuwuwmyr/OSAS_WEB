@@ -270,7 +270,7 @@ function initReportsModule() {
                     
                     // Show helpful message in table
                     if (tableBody) {
-                        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 40px;">
+                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px;">
                             <div style="font-size: 1.2em; color: #666; margin-bottom: 10px;">
                                 <i class='bx bx-info-circle' style="font-size: 2em; color: #4a90e2;"></i>
                             </div>
@@ -307,7 +307,7 @@ function initReportsModule() {
                 console.error('❌ Error loading reports:', error);
                 console.error('Error details:', error.stack);
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px; color: #e74c3c;">
+                    tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #e74c3c;">
                         <div style="margin-bottom: 10px;">❌ Error loading reports: ${error.message}</div>
                         <div style="font-size: 0.9em; color: #666;">Check browser console for details</div>
                     </td></tr>`;
@@ -401,7 +401,6 @@ function initReportsModule() {
                 
                 return `
                 <tr data-id="${report.id}">
-                    <td class="report-id" data-label="Report ID">${report.reportId}</td>
                     <td class="report-student-info" data-label="Student">
                         <div class="student-info-wrapper">
                             <div class="student-avatar">

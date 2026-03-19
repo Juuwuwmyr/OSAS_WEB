@@ -43,6 +43,8 @@ $notificationCount = 7; // Can be dynamic later
   <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
   <script src="https://js.puter.com/v2/"></script>
 </head>
 
@@ -62,6 +64,7 @@ $notificationCount = 7; // Can be dynamic later
 
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
   <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/slipGenerator.js') ?>"></script>
   <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/initModules.js') ?>"></script>
   <script src="<?= View::asset('js/user_dashboard.js') ?>"></script>

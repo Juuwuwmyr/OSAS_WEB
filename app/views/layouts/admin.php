@@ -44,6 +44,8 @@ $notificationCount = 1; // Can be dynamic later
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.40.2/docxtemplater.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.4/pizzip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -71,6 +73,7 @@ $notificationCount = 1; // Can be dynamic later
   <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
   <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/slipGenerator.js') ?>"></script>
   <script src="<?= View::asset('js/department.js') ?>"></script>
   <script src="<?= View::asset('js/section.js') ?>"></script>
   <script src="<?= View::asset('js/student.js') ?>"></script>

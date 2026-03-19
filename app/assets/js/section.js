@@ -450,7 +450,6 @@ function initSectionsModule() {
 
             tableBody.innerHTML = list.map(s => `
                 <tr data-id="${s.id}">
-                    <td class="section-id" data-label="ID">${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
                     <td class="section-name" data-label="Section Name">
                         <div class="section-name-wrapper">
                             <div class="section-icon">

@@ -325,98 +325,49 @@ class ViolationModel extends Model {
     }
 
     /**
-     * Check if a monthly reset is needed and trigger it automatically
+     * Check if a new month has started and trigger auto-archive
      */
     public function checkAndTriggerAutoArchive() {
-        // Check if settings table exists
-        $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'settings'");
-        if ($tableCheck === false || $tableCheck->num_rows === 0) {
-            return false;
-        }
-
-        // Get last reset month from settings
-        $query = "SELECT setting_value FROM settings WHERE setting_key = 'last_monthly_reset' LIMIT 1";
-        $result = $this->conn->query($query);
-        
-        $lastResetMonth = '';
-        if ($result && $row = $result->fetch_assoc()) {
-            $lastResetMonth = $row['setting_value'];
-        } else {
-            // Setting doesn't exist, create it
-            // Default to current month so we don't archive everything on the very first run 
-            // unless the admin explicitly clicks the reset button
-            $lastResetMonth = date('Y-m');
-            $insertQuery = "INSERT INTO settings (setting_key, setting_value, setting_type, category, description) 
-                           VALUES ('last_monthly_reset', ?, 'string', 'system', 'Last month when the violations were archived')";
-            $stmt = $this->conn->prepare($insertQuery);
-            $stmt->bind_param("s", $lastResetMonth);
-            $stmt->execute();
-            $stmt->close();
-        }
-
+        $lastResetFile = __DIR__ . '/../../storage/last_reset.txt';
         $currentMonth = date('Y-m');
-        if ($lastResetMonth !== $currentMonth) {
-            error_log("ViolationModel: Triggering automatic monthly reset for $currentMonth (last reset was $lastResetMonth)");
-            
-            try {
-                // Trigger archive
-                $this->archiveOldViolations();
-                
-                // Update last reset date
-                $updateQuery = "UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = 'last_monthly_reset'";
-                $stmt = $this->conn->prepare($updateQuery);
-                $stmt->bind_param("s", $currentMonth);
-                $stmt->execute();
-                $stmt->close();
-                
-                return true;
-            } catch (Exception $e) {
-                error_log("ViolationModel: Automatic reset failed: " . $e->getMessage());
-                return false;
-            }
+        
+        if (!file_exists(dirname($lastResetFile))) {
+            mkdir(dirname($lastResetFile), 0777, true);
         }
         
-        return false;
+        $lastReset = file_exists($lastResetFile) ? file_get_contents($lastResetFile) : '';
+        
+        if ($lastReset !== $currentMonth) {
+            error_log("📅 New month detected ($currentMonth). Triggering auto-archive...");
+            $this->archivePreviousMonthViolations();
+            file_put_contents($lastResetFile, $currentMonth);
+        }
     }
 
     /**
-     * Archive violations from previous months and reset student violation levels
+     * Archive violations from previous months and reset levels
      */
-    public function archiveOldViolations() {
-        // Start transaction
+    public function archivePreviousMonthViolations() {
         $this->conn->begin_transaction();
-
         try {
-            // 1. Mark violations from previous months as archived
-            // A violation is "old" if its violation_date is before the first day of the current month
-            $currentMonthStart = date('Y-m-01');
-            
-            $archiveQuery = "UPDATE violations SET is_archived = 1 WHERE violation_date < ? AND is_archived = 0";
-            $stmt = $this->conn->prepare($archiveQuery);
+            // 1. Mark previous month violations as archived
+            $currentMonthStart = date('Y-m-01 00:00:00');
+            $archiveSql = "UPDATE violations SET is_archived = 1 WHERE created_at < ? AND is_archived = 0";
+            $stmt = $this->conn->prepare($archiveSql);
             $stmt->bind_param("s", $currentMonthStart);
             $stmt->execute();
-            $archivedCount = $stmt->affected_rows;
             $stmt->close();
 
-            // 2. Reset student_violation_levels
-            // We reset counts and levels for all students who had violations that were just archived
-            // Or simply reset everyone if "reset every month" means a fresh start for all.
-            // Usually, it means everyone starts fresh.
-            $resetQuery = "UPDATE student_violation_levels SET 
-                            current_level = 'permitted1',
-                            permitted_count = 0,
-                            warning_count = 0,
-                            total_violations = 0,
-                            status = 'active',
-                            updated_at = CURRENT_TIMESTAMP";
-            $this->conn->query($resetQuery);
+            // 2. Reset student levels for the new month
+            $resetSql = "UPDATE students SET violation_level_id = (SELECT id FROM violation_levels WHERE name LIKE '%1st%' LIMIT 1)";
+            $this->conn->query($resetSql);
 
             $this->conn->commit();
-            return $archivedCount;
+            return true;
         } catch (Exception $e) {
             $this->conn->rollback();
-            error_log("Error archiving violations: " . $e->getMessage());
-            throw $e;
+            error_log("❌ Error during auto-archive: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -744,6 +695,77 @@ class ViolationModel extends Model {
         }
         $stmt->close();
         return $data;
+    }
+
+    /**
+     * Create a slip request
+     */
+    public function createSlipRequest($violationId, $studentIdCode, $userId) {
+        $sql = "INSERT INTO slip_requests (violation_id, student_id_code, requested_by_user_id, status, request_date) 
+                VALUES (?, ?, ?, 'pending', NOW())";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("isi", $violationId, $studentIdCode, $userId);
+        $res = $stmt->execute();
+        $stmt->close();
+        return $res;
+    }
+
+    /**
+     * Get slip request status
+     */
+    public function getSlipRequestStatus($violationId, $studentIdCode) {
+        $sql = "SELECT status FROM slip_requests WHERE violation_id = ? AND BINARY TRIM(student_id_code) = BINARY TRIM(?) ORDER BY request_date DESC LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("is", $violationId, $studentIdCode);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res->fetch_assoc();
+        $stmt->close();
+        return $row ? $row['status'] : null;
+    }
+
+    /**
+     * Get all slip requests (Admin)
+     */
+    public function getSlipRequests() {
+        $query = "SELECT sr.*, s.first_name, s.last_name, s.student_id, u.full_name as requested_by_name FROM slip_requests sr 
+                  LEFT JOIN students s ON BINARY TRIM(sr.student_id_code) = BINARY TRIM(s.student_id)
+                  LEFT JOIN users u ON sr.requested_by_user_id = u.id
+                  ORDER BY sr.request_date DESC";
+        $result = $this->conn->query($query);
+        $requests = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $requests[] = $row;
+            }
+        }
+        return $requests;
+    }
+
+    /**
+     * Update slip request status
+     */
+    public function updateSlipRequestStatus($requestId, $status) {
+        $sql = "UPDATE slip_requests SET status = ?, processed_date = NOW() WHERE id = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("si", $status, $requestId);
+        $res = $stmt->execute();
+        $stmt->close();
+        return $res;
+    }
+
+    /**
+     * Get approved slip request
+     */
+    public function getApprovedSlipRequest($violationId, $studentIdCode) {
+        $sql = "SELECT id FROM slip_requests WHERE violation_id = ? AND BINARY TRIM(student_id_code) = BINARY TRIM(?) AND status = 'approved'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("is", $violationId, $studentIdCode);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res->fetch_assoc();
+        $stmt->close();
+        return $row;
     }
 }
 

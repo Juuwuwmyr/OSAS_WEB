@@ -494,132 +494,99 @@ class StudentModel extends Model {
         $updated = 0;
         $skipped = 0;
         
-        error_log("StudentModel::importAll - Data structure: " . json_encode(array_keys($data)));
-        error_log("StudentModel::importAll - Student count: " . count($data['students'] ?? []));
-        
-        // Use a transaction for the entire import
-        $this->conn->begin_transaction();
-        
-        try {
-            // --- Process Departments First ---
-            if (isset($data['departments'])) {
-                foreach ($data['departments'] as $code => $dept) {
-                    $this->upsertDepartment($code, $dept['name']);
-                }
-            }
-            
-            // --- Process Sections ---
-            if (isset($data['sections'])) {
-                foreach ($data['sections'] as $sec) {
-                    $this->upsertSection($sec['code'], $sec['name'], $sec['department_code']);
-                }
-            }
-            
-            // --- Process Students ---
-            if (isset($data['students'])) {
-                foreach ($data['students'] as $s) {
-                    $studentId = trim($s['student_id']);
-                    if (empty($studentId)) { 
-                        $skipped++; 
-                        continue; 
-                    }
-                    
-                    // Check if student exists
-                    $existing = $this->query("SELECT id, email FROM students WHERE student_id = ?", [$studentId]);
-                    
-                    // Get section ID from code
-                    $sectionId = $this->getSectionIdByCode($s['section_code']);
-                    
-                    // Year level from section code
-                    $yearLevelStr = 'N/A';
-                    if (preg_match('/-(\d)/', $s['section_code'], $matches)) {
-                        $yearLevelStr = $matches[1];
-                        if ($yearLevelStr == '1') $yearLevelStr .= 'st Year';
-                        elseif ($yearLevelStr == '2') $yearLevelStr .= 'nd Year';
-                        elseif ($yearLevelStr == '3') $yearLevelStr .= 'rd Year';
-                        else $yearLevelStr .= 'th Year';
-                    }
+        $studentsData = $data['students'] ?? [];
+        if (empty($studentsData)) return ['created' => 0, 'updated' => 0, 'skipped' => 0];
 
-                    if (!empty($existing)) {
-                        $id = $existing[0]['id'];
-                        $email = $existing[0]['email'] ?: $this->generateEmail($s['first_name'], $s['last_name']);
-                        
-                        // Update existing student
-                        $sql = "UPDATE students SET 
-                                first_name = ?, middle_name = ?, last_name = ?, 
-                                gender = ?, department = ?, section_id = ?, 
-                                yearlevel = ?, year_level = ?, email = ?, 
-                                status = 'active', updated_at = NOW() WHERE id = ?";
-                        
-                        $stmt = $this->conn->prepare($sql);
-                        $bindSectionId = !empty($sectionId) ? (int)$sectionId : null;
-                        
-                        $stmt->bind_param("sssssisssi", 
-                            $s['first_name'], 
-                            $s['middle_name'], 
-                            $s['last_name'],
-                            $s['sex'], 
-                            $s['department_code'], 
-                            $bindSectionId,
-                            $yearLevelStr, 
-                            $yearLevelStr, 
-                            $email, 
-                            $id
-                        );
-                        
-                        if ($stmt->execute()) {
-                            $updated++;
-                            $this->syncUser($studentId, $email, $s['first_name'] . ' ' . $s['last_name']);
-                        } else {
-                            error_log("Failed to update student $studentId: " . $stmt->error);
-                            $skipped++;
-                        }
-                        $stmt->close();
-                    } else {
-                        // Create new student
-                        $email = $this->generateEmail($s['first_name'], $s['last_name']);
-                        $sql = "INSERT INTO students (
-                                    student_id, first_name, middle_name, last_name, 
-                                    gender, email, department, section_id, 
-                                    yearlevel, year_level, status, created_at
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
-                        
-                        $stmt = $this->conn->prepare($sql);
-                        // Check if sectionId is null or empty, default to NULL in SQL
-                        $bindSectionId = !empty($sectionId) ? (int)$sectionId : null;
-                        
-                        $stmt->bind_param("sssssssiss", 
-                            $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
-                            $s['sex'], $email, $s['department_code'], $bindSectionId, 
-                            $yearLevelStr, $yearLevelStr
-                        );
-                        
-                        if ($stmt->execute()) {
-                            $created++;
-                            $this->syncUser($studentId, $email, $s['first_name'] . ' ' . $s['last_name']);
-                        } else {
-                            error_log("Failed to insert student $studentId: " . $stmt->error);
-                            $skipped++;
-                        }
-                        $stmt->close();
-                    }
+        // 1. Pre-fetch Lookups to avoid N+1 queries
+        $deptMap = [];
+        $res = $this->conn->query("SELECT id, department_code FROM departments");
+        while($row = $res->fetch_assoc()) $deptMap[$row['department_code']] = $row['id'];
+
+        $sectionMap = [];
+        $res = $this->conn->query("SELECT id, section_code FROM sections");
+        while($row = $res->fetch_assoc()) $sectionMap[$row['section_code']] = $row['id'];
+
+        $existingStudents = [];
+        $res = $this->conn->query("SELECT id, student_id, email FROM students");
+        while($row = $res->fetch_assoc()) $existingStudents[$row['student_id']] = $row;
+
+        $existingUsers = [];
+        $res = $this->conn->query("SELECT id, student_id, email FROM users WHERE role = 'user'");
+        while($row = $res->fetch_assoc()) {
+            if ($row['student_id']) $existingUsers[$row['student_id']] = $row['id'];
+            if ($row['email']) $existingUsers[$row['email']] = $row['id'];
+        }
+
+        // 2. Prepare Statements
+        $updateStmt = $this->conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, gender=?, department=?, section_id=?, yearlevel=?, year_level=?, email=?, status='active', updated_at=NOW() WHERE id=?");
+        $insertStmt = $this->conn->prepare("INSERT INTO students (student_id, first_name, middle_name, last_name, gender, email, department, section_id, yearlevel, year_level, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())");
+        $userInsertStmt = $this->conn->prepare("INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())");
+        $userUpdateStmt = $this->conn->prepare("UPDATE users SET is_active=1, role='user' WHERE id=?");
+
+        $defaultPassword = password_hash('password123', PASSWORD_DEFAULT);
+
+        $this->conn->begin_transaction();
+        try {
+            foreach ($studentsData as $s) {
+                $studentId = trim($s['student_id']);
+                if (empty($studentId)) { $skipped++; continue; }
+
+                $sectionId = $sectionMap[$s['section_code']] ?? null;
+                
+                // Extract Year Level (e.g. BSIS-1A -> 1)
+                $yearNum = 0;
+                if (preg_match('/(\d)/', $s['section_code'], $m)) {
+                    $yearNum = (int)$m[1];
+                }
+                $suffixes = [1=>'st', 2=>'nd', 3=>'rd'];
+                $yearLevelStr = $yearNum ? $yearNum . ($suffixes[$yearNum] ?? 'th') . ' Year' : 'N/A';
+
+                $fullName = trim($s['first_name'] . ' ' . $s['last_name']);
+                
+                if (isset($existingStudents[$studentId])) {
+                    $id = $existingStudents[$studentId]['id'];
+                    $email = $existingStudents[$studentId]['email'] ?: $this->generateEmail($s['first_name'], $s['last_name']);
+                    
+                    $updateStmt->bind_param("sssssisssi", 
+                        $s['first_name'], $s['middle_name'], $s['last_name'],
+                        $s['sex'], $s['department_code'], $sectionId,
+                        $yearNum, $yearLevelStr, $email, $id
+                    );
+                    $updateStmt->execute();
+                    $updated++;
+                } else {
+                    $email = $this->generateEmail($s['first_name'], $s['last_name']);
+                    $insertStmt->bind_param("sssssssiss", 
+                        $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
+                        $s['sex'], $email, $s['department_code'], $sectionId,
+                        $yearNum, $yearLevelStr
+                    );
+                    $insertStmt->execute();
+                    $created++;
+                }
+
+                // Sync User
+                $userId = $existingUsers[$studentId] ?? $existingUsers[$email] ?? null;
+                if ($userId) {
+                    $userUpdateStmt->bind_param("i", $userId);
+                    $userUpdateStmt->execute();
+                } else {
+                    $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
+                    $userInsertStmt->execute();
                 }
             }
-            
             $this->conn->commit();
-            error_log("StudentModel::importAll - Transaction committed. Created: $created, Updated: $updated");
-            
         } catch (Exception $e) {
             $this->conn->rollback();
-            error_log("StudentModel::importAll - Transaction rolled back: " . $e->getMessage());
             throw $e;
         }
-        
-        return [
-            'created' => $created,
-            'updated' => $updated,
-            'skipped' => $skipped
-        ];
+
+        $updateStmt->close();
+        $insertStmt->close();
+        $userInsertStmt->close();
+        $userUpdateStmt->close();
+
+        return ['created' => $created, 'updated' => $updated, 'skipped' => $skipped];
     }
 
     private function generateEmail($firstName, $lastName) {

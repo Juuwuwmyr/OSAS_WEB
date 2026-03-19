@@ -141,12 +141,6 @@ require_once '../../config/db_connect.php';
       <table class="Students-table">
         <thead>
           <tr>
-            <th class="Students-sortable" data-sort="id">
-              <div class="Students-table-header-content">
-                <span>ID</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
             <th>Image</th>
             <th class="Students-sortable" data-sort="studentId">
               <div class="Students-table-header-content">

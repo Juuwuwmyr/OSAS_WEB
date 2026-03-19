@@ -231,12 +231,6 @@ require_once __DIR__ . '/../../core/View.php';
       <table class="Reports-table">
         <thead>
           <tr>
-            <th class="Reports-sortable" data-sort="id">
-              <div class="Reports-table-header-content">
-                <span>Report ID</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
             <th>
               <div class="Reports-table-header-content">
                 <span>Student Info</span>
@@ -298,7 +292,7 @@ require_once __DIR__ . '/../../core/View.php';
 
         <tbody id="ReportsTableBody">
           <tr>
-            <td colspan="11" style="text-align: center; padding: 40px; color: #666;">
+            <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
               <div style="font-size: 1.1em;">Loading reports...</div>
             </td>
           </tr>

@@ -732,7 +732,6 @@ function initStudentsModule() {
                     
                     return `
                     <tr data-id="${s.id}">
-                        <td class="student-row-id" data-label="ID">${s.id}</td>
                         <td class="student-image-cell" data-label="Image">
                             <div class="student-image-wrapper">
                                 <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=40'">

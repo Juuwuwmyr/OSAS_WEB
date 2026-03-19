@@ -131,12 +131,6 @@ include '../../config/db_connect.php';
         <table class="department-table">
           <thead>
             <tr>
-              <th class="sortable" data-sort="id">
-                <div class="table-header-content">
-                  <span>ID</span>
-                  <i class='bx bx-sort'></i>
-                </div>
-              </th>
               <th class="sortable" data-sort="name">
                 <div class="table-header-content">
                   <span>Department Name</span>
