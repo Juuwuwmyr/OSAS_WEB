@@ -810,7 +810,7 @@ class DashboardData {
      * Update Recent Violators Table
      */
     updateRecentViolators() {
-        const tbody = document.querySelector('.table-data .order table tbody');
+        const tbody = document.getElementById('recent-violators-body');
         if (!tbody) return;
 
         // Get recent violations (last 5)
