@@ -1198,6 +1198,13 @@ body.dark {
   color: var(--dark-grey);
 }
 
+.Reports-pagination {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
 .Reports-pagination-btn {
   width: 28px;
   height: 28px;
@@ -1220,8 +1227,8 @@ body.dark {
 }
 
 .Reports-pagination-btn.active {
-  background: linear-gradient(135deg, var(--gold), #ffcc33);
-  color: var(--dark);
+  background: #f5a623;
+  color: #000;
   border-color: transparent;
 }
 

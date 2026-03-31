@@ -96,8 +96,8 @@
     height: 36px;
     padding: 0 16px;
     border-radius: 36px;
-    background: var(--gold);
-    color: var(--dark);
+    background: #f5a623;
+    color: #f0f0f0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -159,8 +159,8 @@
     height: 36px;
     padding: 0 16px;
     border-radius: 36px;
-    background: var(--gold);
-    color: var(--dark);
+    background: #f5a623;
+    color: #f0f0f0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -561,8 +561,8 @@
 
 /* Add Announcement Button */
 .btn-add {
-    background: linear-gradient(135deg, #ffb347, #ffcc33);
-    color: #272626;
+    background: #f5a623;
+    color: #f0f0f0;
     border: none;
     padding: 8px 14px;
     border-radius: 10px;
