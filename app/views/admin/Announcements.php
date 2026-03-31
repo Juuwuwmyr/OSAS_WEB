@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../core/View.php';
   <div class="announcements-head-title">
     <div class="announcements-left">
       <h1>Announcements Management</h1>
+      <p class="announcement-subtitle">Manage and publish announcements for students and staff.</p>
       <ul class="announcements-breadcrumb">
         <li>
           <a href="#">Dashboard</a>

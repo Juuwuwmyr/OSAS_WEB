@@ -21,7 +21,7 @@ require_once __DIR__ . '/../../core/View.php';
   <div class="Reports-head-title">
     <div class="Reports-left">
       <h1>Reports</h1>
-      <p class="Reports-subtitle">Analytics and insights on student violations</p>
+      <p class="Reports-subtitle">Statistics and insights on student violations</p>
       <ul class="Reports-breadcrumb">
         <li><a href="#">Dashboard</a></li>
         <li><i class='bx bx-chevron-right'></i></li>

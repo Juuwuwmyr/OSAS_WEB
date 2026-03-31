@@ -955,3 +955,9 @@ body.dark {
     display: none;
   }
 }
+
+.announcement-subtitle {
+  font-size: 0.8rem;
+  color: var(--dark-grey);
+  margin-bottom: 6px;
+}
