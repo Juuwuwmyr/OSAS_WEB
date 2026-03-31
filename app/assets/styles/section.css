@@ -1196,3 +1196,6 @@ body.dark {
 
 /* Hide delete button */
 .sections-action-btn.delete { display: none !important; }
+
+/* Hide add section buttons */
+#btnAddSection, #btnAddFirstSection { display: none !important; }

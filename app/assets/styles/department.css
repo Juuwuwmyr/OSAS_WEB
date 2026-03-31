@@ -1281,3 +1281,9 @@ body.dark #departmentModal .close-btn:hover {
 
 /* Hide delete button */
 .action-btn.delete { display: none !important; }
+
+/* Hide import button */
+#btnImport { display: none !important; }
+
+/* Hide add department buttons */
+#btnAddDepartment, #btnAddFirstDepartment { display: none !important; }
