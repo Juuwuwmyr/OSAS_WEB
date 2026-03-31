@@ -1193,3 +1193,6 @@ body.dark {
     justify-content: center;
   }
 }
+
+/* Hide delete button */
+.sections-action-btn.delete { display: none !important; }
