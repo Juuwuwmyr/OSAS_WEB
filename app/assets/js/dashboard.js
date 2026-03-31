@@ -25,15 +25,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Sync theme toggle states
     syncThemeToggles();
 
-    // Load default dashboard content
-    loadContent('admin_page/dashcontent');
+    // Load default dashboard content or restore last visited page
+    const lastPage = sessionStorage.getItem('lastPage') || 'admin_page/dashcontent';
+    loadContent(lastPage);
 
 
 
-    // Set dashboard as active by default
-    const dashboardLink = document.querySelector('[data-page="admin_page/dashcontent"]');
-    if (dashboardLink) {
-        dashboardLink.parentElement.classList.add('active');
+    // Set dashboard as active by default only if no saved page
+    if (!sessionStorage.getItem('lastPage')) {
+        const dashboardLink = document.querySelector('[data-page="admin_page/dashcontent"]');
+        if (dashboardLink) {
+            dashboardLink.parentElement.classList.add('active');
+        }
     }
 
     // Initialize service worker for PWA
@@ -293,6 +296,9 @@ window.executeLogout = function() {
 
 // Enhanced content loading with error handling and loading states
 function loadContent(page) {
+    // Save current page to sessionStorage for refresh persistence
+    sessionStorage.setItem('lastPage', page);
+
     // Update active navigation item
     updateActiveNavItem(page);
 
