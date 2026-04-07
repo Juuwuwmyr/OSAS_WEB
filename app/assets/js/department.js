@@ -100,8 +100,8 @@ function initDepartmentModule() {
         </td>
         <td data-label="Actions">
           <div class="action-buttons">
-            <button class="action-btn edit" data-id="${d.id}" title="Edit">
-              <i class='bx bx-edit'></i>
+            <button class="action-btn view" data-id="${d.id}" title="View">
+              <i class='bx bx-show'></i>
             </button>
             ${d.status === 'archived' ? 
               `<button class="action-btn restore" data-id="${d.id}" title="Restore">
@@ -729,37 +729,42 @@ function initDepartmentModule() {
   loadDepartments('active');
 
   // --- Modal functions ---
-  function openModal(editId = null) {
+  function openModal(viewId = null) {
     if (!modal) return;
     
     const modalTitle = document.getElementById('modalTitle');
     const form = document.getElementById('departmentForm');
+    const saveBtn = form ? form.querySelector('button[type="submit"]') : null;
     
-    if (editId) {
-      // Edit mode
+    if (viewId) {
+      // View mode — read-only
       const span = modalTitle.querySelector('span');
       if (span) {
-        span.textContent = 'Edit Department';
+        span.textContent = 'View Department';
       } else {
-        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Edit Department</span>';
+        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>View Department</span>';
       }
       
-      // Ensure IDs are compared as strings or numbers correctly
-      const dept = departments.find(d => String(d.id) === String(editId));
+      const dept = departments.find(d => String(d.id) === String(viewId));
       
       if (dept) {
-        console.log('📝 Filling modal with dept data:', dept);
         document.getElementById('deptName').value = dept.name || '';
         document.getElementById('deptCode').value = dept.code || '';
         document.getElementById('hodName').value = (dept.hod === 'N/A' || !dept.hod) ? '' : dept.hod;
         document.getElementById('deptDescription').value = dept.description || '';
         document.getElementById('deptStatus').value = dept.status || 'active';
-        
-        modal.dataset.editingId = editId;
-        modal.dataset.editingDbId = dept.dbId;
       } else {
-        console.error('❌ Could not find department with ID:', editId);
+        console.error('❌ Could not find department with ID:', viewId);
       }
+
+      // Make all fields read-only
+      if (form) {
+        form.querySelectorAll('input, textarea, select').forEach(el => el.setAttribute('disabled', true));
+      }
+      if (saveBtn) saveBtn.style.display = 'none';
+
+      delete modal.dataset.editingId;
+      delete modal.dataset.editingDbId;
     } else {
       // Add mode
       const span = modalTitle.querySelector('span');
@@ -768,7 +773,11 @@ function initDepartmentModule() {
       } else {
         modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Add New Department</span>';
       }
-      if (form) form.reset();
+      if (form) {
+        form.reset();
+        form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
+      }
+      if (saveBtn) saveBtn.style.display = '';
       delete modal.dataset.editingId;
       delete modal.dataset.editingDbId;
     }
@@ -783,18 +792,23 @@ function initDepartmentModule() {
     modal.classList.remove('active');
     document.body.style.overflow = 'auto';
     const form = document.getElementById('departmentForm');
-    if (form) form.reset();
+    if (form) {
+      form.reset();
+      form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
+      const saveBtn = form.querySelector('button[type="submit"]');
+      if (saveBtn) saveBtn.style.display = '';
+    }
     delete modal.dataset.editingId;
   }
 
   // --- Actions (event delegation) ---
   tableBody.addEventListener('click', (e) => {
-    const editBtn = e.target.closest('.action-btn.edit');
+    const viewBtn = e.target.closest('.action-btn.view');
     const restoreBtn = e.target.closest('.action-btn.restore');
     const deleteBtn = e.target.closest('.action-btn.delete');
 
-    if (editBtn) {
-      const id = editBtn.dataset.id;
+    if (viewBtn) {
+      const id = viewBtn.dataset.id;
       openModal(id);
     }
 

@@ -752,8 +752,8 @@ function initSectionsModule() {
                     </td>
                     <td data-label="Actions">
                         <div class="sections-action-buttons">
-                            <button class="sections-action-btn edit" data-id="${s.id}" title="Edit">
-                                <i class='bx bx-edit'></i>
+                            <button class="sections-action-btn view" data-id="${s.id}" title="View">
+                                <i class='bx bx-show'></i>
                             </button>
                             ${s.status === 'archived' ? 
                                 `<button class="sections-action-btn restore" data-id="${s.id}" title="Restore">
@@ -806,43 +806,54 @@ function initSectionsModule() {
         }
 
         // --- Modal functions ---
-        function openModal(editId = null) {
+        function openModal(viewId = null) {
             if (!modal) return;
             
             const modalTitle = document.getElementById('sectionsModalTitle');
             const form = document.getElementById('sectionsForm');
+            const saveBtn = form ? form.querySelector('button[type="submit"]') : null;
             
-            if (editId) {
+            if (viewId) {
+                // View mode — read-only
                 const span = modalTitle.querySelector('span');
                 if (span) {
-                    span.textContent = 'Edit Section';
+                    span.textContent = 'View Section';
                 } else {
-                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Edit Section</span>';
+                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>View Section</span>';
                 }
                 
-                // Robust matching for ID (compare as strings)
-                const section = sections.find(s => String(s.id) === String(editId));
+                const section = sections.find(s => String(s.id) === String(viewId));
                 
                 if (section) {
-                    console.log('📝 Filling section modal with data:', section);
                     document.getElementById('sectionName').value = section.name || '';
                     document.getElementById('sectionCode').value = section.code || '';
                     document.getElementById('sectionDepartment').value = section.department_id || '';
                     document.getElementById('academicYear').value = section.academic_year || '';
                     document.getElementById('sectionStatus').value = section.status || 'active';
-                    
-                    modal.dataset.editingId = editId;
                 } else {
-                    console.error('❌ Could not find section with ID:', editId);
+                    console.error('❌ Could not find section with ID:', viewId);
                 }
+
+                // Make all fields read-only
+                if (form) {
+                    form.querySelectorAll('input, textarea, select').forEach(el => el.setAttribute('disabled', true));
+                }
+                if (saveBtn) saveBtn.style.display = 'none';
+
+                delete modal.dataset.editingId;
             } else {
+                // Add mode
                 const span = modalTitle.querySelector('span');
                 if (span) {
                     span.textContent = 'Add New Section';
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Add New Section</span>';
                 }
-                if (form) form.reset();
+                if (form) {
+                    form.reset();
+                    form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
+                }
+                if (saveBtn) saveBtn.style.display = '';
                 delete modal.dataset.editingId;
             }
             
@@ -856,18 +867,23 @@ function initSectionsModule() {
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
             const form = document.getElementById('sectionsForm');
-            if (form) form.reset();
+            if (form) {
+                form.reset();
+                form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
+                const saveBtn = form.querySelector('button[type="submit"]');
+                if (saveBtn) saveBtn.style.display = '';
+            }
             delete modal.dataset.editingId;
         }
 
         // --- Event handlers ---
         function handleTableClick(e) {
-            const editBtn = e.target.closest('.sections-action-btn.edit');
+            const viewBtn = e.target.closest('.sections-action-btn.view');
             const restoreBtn = e.target.closest('.sections-action-btn.restore');
             const deleteBtn = e.target.closest('.sections-action-btn.delete');
 
-            if (editBtn) {
-                const id = editBtn.dataset.id;
+            if (viewBtn) {
+                const id = viewBtn.dataset.id;
                 openModal(id);
             }
 
