@@ -785,6 +785,10 @@
             padding: 4rem 3rem 2rem;
         }
 
+        body.light .footer {
+            background: #f8f9fa;
+        }
+
         .footer-grid {
             max-width: 1400px;
             margin: 0 auto;
@@ -825,6 +829,10 @@
             color: var(--text-muted);
             text-decoration: none;
             transition: all 0.2s;
+        }
+
+        body.light .social-link {
+            background: rgba(0, 0, 0, 0.03);
         }
 
         .social-link:hover {
