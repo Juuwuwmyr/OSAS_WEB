@@ -1259,207 +1259,276 @@ body.dark .sidebar-search-input::placeholder {
 }
 
 /* ========================================= */
-/*       SMALL FONTS OVERRIDE                */
+/*    MODERN STUDENT DASHBOARD STYLES       */
 /* ========================================= */
 
+/* Compact font scale - matches admin dash feel */
 #main-content,
 #content main {
-  font-size: 12px !important;
+  font-size: 13px;
 }
 
-#main-content *,
-#content main * {
-  font-size: inherit !important;
-}
-
+/* Modern Typography Hierarchy */
 #main-content .page-title,
 #content main .page-title {
-  font-size: 17px !important;
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--dark) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
 }
 
 #main-content h1,
 #content main h1 {
-  font-size: 17px !important;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 #main-content h2,
 #content main h2 {
-  font-size: 15px !important;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 #main-content h3,
 #content main h3 {
-  font-size: 14px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 #main-content h4,
 #content main h4 {
-  font-size: 13px !important;
-}
-
-#main-content p,
-#content main p,
-#main-content span,
-#content main span,
-#main-content li,
-#content main li,
-#main-content td,
-#content main td,
-#main-content th,
-#content main th,
-#main-content label,
-#content main label,
-#main-content input,
-#content main input,
-#main-content select,
-#content main select,
-#main-content textarea,
-#content main textarea,
-#main-content button,
-#content main button,
-#main-content a,
-#content main a,
-.Violations-modal *,
-.modal * {
-  font-size: 12px !important;
-}
-
-.Violations-modal h2,
-.modal h3 {
-  font-size: 15px !important;
-}
-
-.Violations-modal h3,
-.modal h4 {
-  font-size: 14px !important;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 #main-content .page-subtitle,
 #content main .page-subtitle {
-  font-size: 12px !important;
+  font-size: 0.78rem;
+  color: var(--dark-grey);
 }
 
 #content main .breadcrumb {
-  font-size: 11px !important;
+  font-size: 0.72rem;
+}
+
+/* Modern Stat Cards with Gradients */
+#content main .box-info li {
+  padding: 24px;
+  background: linear-gradient(135deg, var(--light) 0%, var(--grey) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,215,0,0.1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+#content main .box-info li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(30%, -30%);
+}
+
+#content main .box-info li:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  border-color: var(--gold);
+}
+
+#content main .box-info li .bx {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 #content main .box-info li .text h3 {
-  font-size: 14px !important;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 #content main .box-info li .text p {
-  font-size: 12px !important;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.8;
 }
 
+/* Enhanced Table Styles */
 #content main .table-data .head h3 {
-  font-size: 14px !important;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dark);
 }
 
 #content main .table-data .violation-history table th {
-  font-size: 11px !important;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dark-grey);
+  padding: 10px 12px;
 }
 
 #content main .table-data .violation-history table td {
-  font-size: 11px !important;
+  font-size: 0.8rem;
+  padding: 12px;
+  border-bottom: 1px solid var(--grey);
 }
 
+/* Modern Tips Section */
 #content main .tips-header h3 {
-  font-size: 14px !important;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 #content main .tip-details h4 {
-  font-size: 13px !important;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 #content main .tip-details p {
-  font-size: 12px !important;
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
+#content main .tip-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+}
+
+/* Modern Announcements */
 #content main .announcements-header h3 {
-  font-size: 14px !important;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 #content main .announcement-details h4 {
-  font-size: 13px !important;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 #content main .announcement-details p {
-  font-size: 12px !important;
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 #content main .announcement-time,
 #content main .announcement-category {
-  font-size: 11px !important;
-}
-
-#content main .status,
-#content main .badge,
-#content main .btn-view-details,
-#content main .btn-read-more,
-#content main .Violations-btn {
-  font-size: 11px !important;
-}
-
-#content main .violation-details h4 {
-  font-size: 13px !important;
-}
-
-#content main .violation-details p {
-  font-size: 12px !important;
-}
-
-#content main .box-info li .bx {
-  width: 43px !important;
-  height: 43px !important;
-  font-size: 21px !important;
-}
-
-#content main .violation-icon {
-  width: 33px !important;
-  height: 33px !important;
-  font-size: 17px !important;
-}
-
-#content main .tip-icon {
-  width: 28px !important;
-  height: 28px !important;
-  font-size: 15px !important;
+  font-size: 0.7rem;
 }
 
 #content main .announcement-icon {
-  width: 28px !important;
-  height: 28px !important;
-  font-size: 15px !important;
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
 }
 
+/* Modern Buttons & Badges */
+#content main .status,
+#content main .badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+}
+
+#content main .btn-view-details,
+#content main .btn-read-more,
+#content main .Violations-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+#content main .btn-view-details:hover,
+#content main .Violations-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,215,0,0.3);
+}
+
+/* Modern Violation Summary Cards */
+#content main .violation-icon {
+  width: 42px;
+  height: 42px;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#content main .violation-details h4 {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+#content main .violation-details p {
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Enhanced Page Header */
 #content main .page-header {
-  padding: 18px 23px !important;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, var(--light) 0%, rgba(255,215,0,0.05) 100%);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,215,0,0.15);
 }
 
-#content main .box-info li {
-  padding: 15px !important;
-  grid-gap: 15px !important;
-}
-
-#content main .table-data .head {
-  margin-bottom: 15px !important;
-}
-
-#content main .table-data>div {
-  padding: 18px !important;
-}
-
+/* Enhanced Containers */
 #content main .tips-container,
 #content main .announcements-container {
-  padding: 18px !important;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 #content main .announcements-header {
-  padding: 13px 18px !important;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.08) 0%, transparent 100%);
+  border-radius: 16px 16px 0 0;
 }
 
 #content main .announcement-item {
-  padding: 13px 18px !important;
+  padding: 12px 18px;
+  transition: all 0.3s ease;
+}
+
+#content main .announcement-item:hover {
+  background: rgba(255,215,0,0.05);
+  transform: translateX(4px);
+}
+
+/* Modal Typography */
+.Violations-modal h2,
+.modal h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.Violations-modal h3,
+.modal h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.Violations-modal p,
+.Violations-modal span,
+.modal p,
+.modal span {
+  font-size: 0.78rem;
 }
 
 #eye-care-overlay.active {
@@ -1773,48 +1842,54 @@ body.dark #eye-care-overlay.active {
 .violation-summary {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   margin-top: 12px;
 }
 
 .violation-type {
   display: flex;
   align-items: center;
-  padding: 20px;
-  background: var(--light);
-  border-radius: 15px;
-  border-left: 5px solid var(--grey);
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--light) 0%, var(--grey) 100%);
+  border-radius: 16px;
+  border-left: 5px solid var(--gold);
+  border: 1px solid rgba(255,215,0,0.12);
+  border-left: 5px solid var(--gold);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .violation-type:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transform: translateX(6px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-color: var(--gold);
 }
 
 .violation-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-right: 20px;
+  font-size: 26px;
+  margin-right: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .violation-icon.improper-uniform {
-  background: var(--light-orange);
+  background: linear-gradient(135deg, var(--light-orange), rgba(253,114,56,0.2));
   color: var(--orange);
 }
 
 .violation-icon.improper-footwear {
-  background: var(--light-yellow);
-  color: var(--yellow);
+  background: linear-gradient(135deg, var(--light-yellow), rgba(255,206,38,0.2));
+  color: #e6a817;
 }
 
 .violation-icon.no-id {
-  background: var(--light-blue);
+  background: linear-gradient(135deg, var(--light-blue), rgba(33,150,243,0.2));
   color: var(--blue);
 }
 
@@ -1823,29 +1898,31 @@ body.dark #eye-care-overlay.active {
 }
 
 .violation-details h4 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--dark);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .violation-details p {
   color: var(--dark-grey);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
 }
 
 .violation-details .count {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--orange);
+  font-size: 1rem;
 }
 
 .violation-details .last-violation {
-  font-size: 12px;
+  font-size: 0.8rem;
   color: var(--dark-grey);
 }
 
 .violation-status {
-  margin-left: 20px;
+  margin-left: 16px;
 }
 
 .status {
@@ -1902,8 +1979,10 @@ body.dark #eye-care-overlay.active {
 #content main .table-data>div {
   border-radius: 20px;
   background: var(--light);
-  padding: 24px;
+  padding: 28px;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 #content main .table-data .head {
@@ -1911,16 +1990,28 @@ body.dark #eye-care-overlay.active {
   align-items: center;
   grid-gap: 16px;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--grey);
 }
 
 #content main .table-data .head h3 {
   margin-right: auto;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 #content main .table-data .head .bx {
   cursor: pointer;
+  font-size: 1.4rem;
+  color: var(--dark-grey);
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+#content main .table-data .head .bx:hover {
+  background: var(--grey);
+  color: var(--gold);
 }
 
 #content main .table-data .my-violations {
@@ -1939,14 +2030,38 @@ body.dark #eye-care-overlay.active {
 }
 
 #content main .table-data .violation-history table th {
-  padding-bottom: 12px;
-  font-size: 13px;
+  padding: 14px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
   text-align: left;
-  border-bottom: 1px solid var(--grey);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dark-grey);
+  border-bottom: 2px solid var(--grey);
+  background: var(--grey);
+}
+
+#content main .table-data .violation-history table th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+#content main .table-data .violation-history table th:last-child {
+  border-radius: 0 10px 10px 0;
 }
 
 #content main .table-data .violation-history table td {
-  padding: 16px 0;
+  padding: 16px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--grey);
+  transition: background 0.2s;
+}
+
+#content main .table-data .violation-history table tr:hover td {
+  background: rgba(255,215,0,0.04);
+}
+
+#content main .table-data .violation-history table tr:last-child td {
+  border-bottom: none;
 }
 
 /* ========================================= */
@@ -2142,62 +2257,74 @@ body.dark #eye-care-overlay.active {
   margin-top: 24px;
   background: var(--light);
   border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 .tips-header {
   margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--grey);
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--grey);
 }
 
 .tips-header h3 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--dark);
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+.tips-header h3 i {
+  color: var(--gold);
+}
+
 .tips-content {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
 }
 
 .tip-item {
   display: flex;
-  align-items: center;
-  padding: 15px;
-  background: var(--grey);
-  border-radius: 10px;
-  transition: background-color 0.3s ease;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--grey) 0%, rgba(255,215,0,0.05) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255,215,0,0.1);
+  transition: all 0.3s ease;
 }
 
 .tip-item:hover {
-  background: var(--light-gold);
+  background: linear-gradient(135deg, var(--light-gold) 0%, rgba(255,215,0,0.1) 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255,215,0,0.15);
+  border-color: var(--gold);
 }
 
 .tip-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--light-gold);
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gold);
-  font-size: 18px;
-  margin-right: 15px;
+  color: #fff;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(255,215,0,0.3);
 }
 
 .tip-details h4 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--dark);
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+}
 }
 
 .tip-details p {
@@ -2211,47 +2338,60 @@ body.dark #eye-care-overlay.active {
   margin-top: 24px;
   background: var(--light);
   border-radius: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255,215,0,0.12);
 }
 
 .announcements-container:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .announcements-header {
-  background: var(--light-gold);
+  background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.04) 100%);
   padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  border-bottom: 1px solid rgba(255,215,0,0.15);
 }
 
 .announcements-header h3 {
   color: var(--dark);
-  font-size: 18px;
-  font-weight: 450;
+  font-size: 1.2rem;
+  font-weight: 700;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+.announcements-header h3 i {
+  color: var(--gold);
+}
+
 .announcement-toggle {
-  background: none;
-  border: none;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.3);
   color: var(--dark);
   font-size: 20px;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .announcement-toggle:hover {
-  transform: scale(1.1);
+  background: var(--gold);
+  color: #000;
+  transform: scale(1.05);
 }
 
 .announcement-toggle.rotated {
@@ -2270,12 +2410,12 @@ body.dark #eye-care-overlay.active {
 }
 
 .announcement-item {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--grey);
   display: flex;
   align-items: flex-start;
-  gap: 15px;
-  transition: background-color 0.3s ease;
+  gap: 16px;
+  transition: all 0.25s ease;
   cursor: pointer;
 }
 
@@ -2284,13 +2424,13 @@ body.dark #eye-care-overlay.active {
 }
 
 .announcement-item:hover {
-  background: var(--grey);
-  transform: translateX(4px);
+  background: rgba(255,215,0,0.05);
+  transform: translateX(6px);
 }
 
 .announcement-item.urgent {
   border-left: 4px solid var(--red);
-  background: rgba(219, 80, 74, 0.05);
+  background: rgba(219, 80, 74, 0.04);
 }
 
 .announcement-item.warning {
@@ -2550,7 +2690,7 @@ body.dark .announcement-item:hover {
 }
 
 .modal-body {
-  padding: 32px;
+  padding: 18px 22px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;

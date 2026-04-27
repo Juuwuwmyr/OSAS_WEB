@@ -45,25 +45,18 @@ class Chatbot {
 
     waitForBoxicons() {
         return new Promise((resolve) => {
-            // Check if Boxicons is already loaded
-            const existingLink = document.querySelector('link[href*="boxicons"]');
-            if (existingLink) {
-                // Wait a bit for the font to load
-                setTimeout(() => resolve(), 200);
-            } else {
-                // Boxicons not found, load it
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css';
-                link.onload = () => {
-                    setTimeout(() => resolve(), 100);
-                };
-                link.onerror = () => {
-                    console.warn('⚠️ Failed to load Boxicons, icons may not display correctly');
-                    resolve(); // Continue even if it fails
-                };
-                document.head.appendChild(link);
+            // Always ensure 2.1.4 is loaded (has all icons used by chatbot)
+            const alreadyLoaded = document.querySelector('link[href*="boxicons@2.1.4"]');
+            if (alreadyLoaded) {
+                setTimeout(() => resolve(), 100);
+                return;
             }
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css';
+            link.onload = () => setTimeout(() => resolve(), 100);
+            link.onerror = () => resolve();
+            document.head.appendChild(link);
         });
     }
 

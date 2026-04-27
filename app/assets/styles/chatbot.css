@@ -1011,3 +1011,96 @@ body.dark .prompt-card-desc {
         text-align: center;
     }
 }
+
+
+/* ========================================= */
+/*   COMPACT FONT SCALE - CHATBOT           */
+/* ========================================= */
+
+#chatbot-container,
+#chatbot-container * {
+    font-size: 11px !important;
+}
+
+/* Header title */
+.chatbot-title {
+    font-size: 12px !important;
+    gap: 8px !important;
+}
+
+.chatbot-title i {
+    font-size: 16px !important;
+}
+
+/* Close / action buttons */
+.chatbot-close,
+.chatbot-close i {
+    font-size: 16px !important;
+}
+
+/* Message text */
+.message-content p,
+.message-content span,
+.message-content li,
+.message-content div {
+    font-size: 11px !important;
+    line-height: 1.6 !important;
+}
+
+.message-content i {
+    font-size: 16px !important;
+}
+
+/* Input */
+#chatbot-input {
+    font-size: 11px !important;
+}
+
+/* Send button */
+#chatbot-send i {
+    font-size: 16px !important;
+}
+
+/* Prompt suggestions */
+.prompts-top-title {
+    font-size: 10px !important;
+}
+
+.prompts-top-title i {
+    font-size: 13px !important;
+}
+
+.prompts-top-toggle i {
+    font-size: 13px !important;
+}
+
+.prompt-top-item {
+    font-size: 10px !important;
+    padding: 8px 12px !important;
+}
+
+/* Prompt selector */
+.prompt-selector-title {
+    font-size: 12px !important;
+}
+
+.prompt-selector-title i {
+    font-size: 14px !important;
+}
+
+.prompt-category-title {
+    font-size: 11px !important;
+}
+
+.prompt-card-icon,
+.prompt-card-icon i {
+    font-size: 16px !important;
+}
+
+.prompt-card-title {
+    font-size: 11px !important;
+}
+
+.prompt-card-desc {
+    font-size: 10px !important;
+}

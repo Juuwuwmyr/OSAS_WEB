@@ -3464,3 +3464,94 @@ body.dark {
   background: var(--grey);
 }
 
+
+
+/* ========================================= */
+/*   FORCE SMALL FONTS - USER VIOLATIONS    */
+/* ========================================= */
+
+#Violations-page,
+#Violations-page * {
+  font-size: 11px !important;
+}
+
+#Violations-page h1,
+#Violations-page .Violations-head-title h1 {
+  font-size: 14px !important;
+}
+
+#Violations-page h2,
+#Violations-page .Violations-table-title {
+  font-size: 12px !important;
+}
+
+#Violations-page .Violations-stat-title {
+  font-size: 10px !important;
+}
+
+#Violations-page .Violations-stat-value {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+#Violations-page .Violations-table th {
+  font-size: 9px !important;
+  padding: 10px 14px !important;
+}
+
+#Violations-page .Violations-table td {
+  font-size: 11px !important;
+  padding: 10px 14px !important;
+}
+
+#Violations-page .Violations-status-badge {
+  font-size: 9px !important;
+  padding: 3px 8px !important;
+}
+
+#Violations-page .btn-view-details {
+  font-size: 9px !important;
+  padding: 4px 10px !important;
+}
+
+#Violations-page .Violations-search-box input,
+#Violations-page .Violations-filter-select {
+  font-size: 10px !important;
+  padding: 6px 10px 6px 32px !important;
+}
+
+#Violations-page .Violations-filter-select {
+  padding: 6px 10px !important;
+}
+
+#Violations-page .Violations-footer-info {
+  font-size: 10px !important;
+}
+
+#Violations-page .Violations-breadcrumb,
+#Violations-page .Violations-breadcrumb * {
+  font-size: 9px !important;
+}
+
+#Violations-page .Violations-btn {
+  font-size: 10px !important;
+  padding: 6px 12px !important;
+}
+
+#Violations-page .Violations-stat-card {
+  padding: 12px 14px !important;
+}
+
+#Violations-page .Violations-stat-icon {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 18px !important;
+}
+
+#Violations-page .Violations-table-header {
+  padding: 12px 16px !important;
+}
+
+#Violations-page .Violations-table-footer {
+  padding: 8px 16px !important;
+}

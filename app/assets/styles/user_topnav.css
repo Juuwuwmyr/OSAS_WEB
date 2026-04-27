@@ -1105,3 +1105,150 @@ body.dark .dropdown-item {
     display: none;
   }
 }
+
+/* ========================================= */
+/*   COMPACT FONT SCALE - MATCHES ADMIN      */
+/* ========================================= */
+
+#main-content,
+#content main {
+  font-size: 12px !important;
+}
+
+#main-content *,
+#content main * {
+  font-size: inherit !important;
+}
+
+/* Headings */
+#main-content .page-title,
+#content main .page-title,
+#main-content h1,
+#content main h1 {
+  font-size: 16px !important;
+}
+
+#main-content h2,
+#content main h2 {
+  font-size: 14px !important;
+}
+
+#main-content h3,
+#content main h3 {
+  font-size: 13px !important;
+}
+
+#main-content h4,
+#content main h4 {
+  font-size: 12px !important;
+}
+
+/* Body text */
+#main-content p,
+#content main p,
+#main-content span,
+#content main span,
+#main-content td,
+#content main td,
+#main-content th,
+#content main th,
+#main-content li,
+#content main li,
+#main-content label,
+#content main label,
+#main-content input,
+#content main input,
+#main-content select,
+#content main select,
+#main-content button,
+#content main button,
+#main-content a,
+#content main a {
+  font-size: 12px !important;
+}
+
+/* Smaller elements */
+#main-content .page-subtitle,
+#content main .page-subtitle,
+#content main .breadcrumb,
+#content main .breadcrumb * {
+  font-size: 11px !important;
+}
+
+#content main .status,
+#content main .badge,
+#content main .announcement-time,
+#content main .announcement-category,
+#content main .table-data .violation-history table th {
+  font-size: 10px !important;
+}
+
+/* Stat card numbers stay readable */
+#content main .box-info li .text h3 {
+  font-size: 20px !important;
+}
+
+#content main .box-info li .text p {
+  font-size: 11px !important;
+}
+
+/* Compact icons */
+#content main .box-info li .bx {
+  width: 44px !important;
+  height: 44px !important;
+  font-size: 22px !important;
+}
+
+#content main .violation-icon {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 18px !important;
+}
+
+#content main .tip-icon,
+#content main .announcement-icon {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 16px !important;
+}
+
+/* Compact padding */
+#content main .page-header {
+  padding: 16px 20px !important;
+}
+
+#content main .box-info li {
+  padding: 14px 16px !important;
+  gap: 14px !important;
+}
+
+#content main .table-data > div {
+  padding: 16px !important;
+}
+
+#content main .table-data .head {
+  margin-bottom: 12px !important;
+  padding-bottom: 10px !important;
+}
+
+#content main .table-data .violation-history table td {
+  padding: 10px 12px !important;
+}
+
+#content main .tips-container,
+#content main .announcements-container {
+  padding: 16px !important;
+}
+
+#content main .announcements-header {
+  padding: 12px 16px !important;
+}
+
+#content main .announcement-item {
+  padding: 10px 16px !important;
+}
+
+/* Modal */
+.Violations-modal h2 { font-size: 14px !important; }
+.Violations-modal h3 { font-size: 13px !important; }
+.Violations-modal *  { font-size: 12px !important; }
