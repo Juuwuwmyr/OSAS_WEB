@@ -43,10 +43,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
 
       <div class="sections-header-actions">
         <div class="sections-button-group">
-          <button id="btnArchivedSections" class="sections-btn outline small" title="View Archived Sections">
-            <i class='bx bx-archive'></i>
-            <span>Archived</span>
-          </button>
           <button id="btnExportSections" class="sections-btn outline small">
             <i class='bx bx-download'></i>
             <span>Export</span>
@@ -85,16 +81,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
         </div>
       </div>
 
-      <div class="sections-stat-card">
-        <div class="sections-stat-icon">
-          <i class='bx bx-archive'></i>
-        </div>
-        <div class="sections-stat-content">
-          <h3 class="sections-stat-title">Archived</h3>
-          <div class="sections-stat-value" id="archivedSections">0</div>
-          <div class="sections-stat-percentage" id="archivedSectionsPct">0%</div>
-        </div>
-      </div>
     </div>
 
     <!-- Main Content Card -->
@@ -116,7 +102,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
             <select id="sectionFilterSelect" class="sections-filter-select">
               <option value="all">All Sections</option>
               <option value="active">Active Only</option>
-              <option value="archived">Archived</option>
             </select>
 
             <button class="sections-filter-btn" title="More filters">
@@ -220,7 +205,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
             <label for="sectionStatus">Status</label>
             <select id="sectionStatus" name="sectionStatus" required>
               <option value="active">Active</option>
-              <option value="archived">Archived</option>
             </select>
           </div>
 

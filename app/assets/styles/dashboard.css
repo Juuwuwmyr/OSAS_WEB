@@ -866,7 +866,8 @@ body.dark #eye-care-overlay.active {
 #main-content {
   margin-top: 56px;
   height: calc(100vh - 56px);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px 24px 24px 24px;
   flex: 1;
   min-height: 0;

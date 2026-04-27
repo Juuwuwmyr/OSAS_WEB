@@ -46,10 +46,6 @@ include '../../config/db_connect.php';
             <i class='bx bx-download'></i>
             <span>Export</span>
           </button>
-          <button class="action-btn outline small" id="btnArchived" title="View Archived Departments">
-            <i class='bx bx-archive'></i>
-            <span>Archived</span>
-          </button>
         </div>
         <button class="action-btn primary" id="btnAddDepartment">
           <i class='bx bx-plus'></i>
@@ -85,16 +81,6 @@ include '../../config/db_connect.php';
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class='bx bx-archive'></i>
-        </div>
-        <div class="stat-content">
-          <h3 class="stat-title">Archived</h3>
-          <div class="stat-value" id="archivedDepartments">0</div>
-          <div class="stat-percentage" id="archivedDepartmentsPct">0%</div>
-        </div>
-      </div>
     </div>
 
     <!-- Main Content Card -->
@@ -116,7 +102,6 @@ include '../../config/db_connect.php';
             <select id="departmentFilter" class="filter-select">
               <option value="all">All Departments</option>
               <option value="active">Active Only</option>
-              <option value="archived">Archived</option>
             </select>
 
             <button class="filter-btn" title="More filters">
@@ -205,7 +190,6 @@ include '../../config/db_connect.php';
             <label for="deptStatus">Status</label>
             <select id="deptStatus" name="deptStatus" required>
               <option value="active">Active</option>
-              <option value="archived">Archived</option>
             </select>
           </div>
 
