@@ -98,8 +98,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
-            color: var(--gold);
+            overflow: hidden;
+        }
+
+        .nav-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .nav-brand-text {
@@ -204,7 +209,7 @@
             position: absolute;
             inset: 0;
             background: url('app/assets/img/background.jpg') center/cover;
-            opacity: 0.03;
+            opacity: 0.15;
             pointer-events: none;
         }
 
@@ -215,19 +220,16 @@
         }
 
         .hero-container {
-            max-width: 1400px;
+            max-width: 900px;
             margin: 0 auto;
             width: 100%;
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 4rem;
-            align-items: center;
             position: relative;
             z-index: 1;
+            text-align: center;
         }
 
         .hero-content {
-            max-width: 680px;
+            max-width: 100%;
         }
 
         .hero-badge {
@@ -268,12 +270,15 @@
             line-height: 1.7;
             color: var(--text-muted);
             margin-bottom: 2.5rem;
-            max-width: 540px;
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .hero-buttons {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
@@ -323,6 +328,7 @@
         .hero-trust {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 1.5rem;
             flex-wrap: wrap;
         }
@@ -339,119 +345,6 @@
             width: 1px;
             height: 16px;
             background: var(--border);
-        }
-
-        /* ===== DASHBOARD PREVIEW CARD ===== */
-        .hero-preview {
-            position: relative;
-        }
-
-        .preview-card {
-            background: var(--card);
-            border: 1px solid var(--gold);
-            border-radius: 16px;
-            padding: 1.75rem;
-            box-shadow: 0 0 60px rgba(212, 175, 55, 0.15);
-            animation: float 6s ease-in-out infinite;
-            position: relative;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        .preview-card::before {
-            content: '';
-            position: absolute;
-            inset: -60px;
-            background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15), transparent 70%);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .preview-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .preview-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .preview-status {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.75rem;
-            color: var(--green);
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--green);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .preview-stats {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-        }
-
-        .stat-value {
-            font-weight: 700;
-            color: var(--gold);
-        }
-
-        .preview-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 0.5rem;
-            height: 60px;
-            margin-bottom: 1rem;
-        }
-
-        .chart-bar {
-            flex: 1;
-            background: linear-gradient(to top, var(--gold), var(--gold-light));
-            border-radius: 4px 4px 0 0;
-            transition: all 0.3s;
-        }
-
-        .chart-bar:hover {
-            opacity: 0.7;
-        }
-
-        .preview-footer {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-align: center;
         }
 
         /* ===== MARQUEE ===== */
@@ -589,38 +482,30 @@
         .violation-item {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 0.75rem;
             padding: 0.75rem;
             background: var(--surface);
             border-radius: 8px;
             font-size: 0.85rem;
         }
 
+        .violation-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+
         .violation-name {
             color: var(--text);
             font-weight: 500;
-        }
-
-        .violation-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .badge-pending {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--red);
-        }
-
-        .badge-resolved {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--green);
-        }
-
-        .badge-review {
-            background: rgba(240, 192, 64, 0.15);
-            color: var(--gold-light);
         }
 
         .mini-chart {
@@ -914,16 +799,6 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
-            .hero-container {
-                grid-template-columns: 1fr;
-                gap: 3rem;
-            }
-
-            .hero-preview {
-                max-width: 500px;
-                margin: 0 auto;
-            }
-
             .bento-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -998,7 +873,7 @@
 <nav class="navbar" id="navbar">
     <a href="#" class="nav-brand">
         <div class="nav-logo">
-            <i class="fas fa-shield-halved"></i>
+            <img src="./app/assets/img/default.png" alt="E-OSAS Logo">
         </div>
         <div class="nav-brand-text">
             <div class="nav-brand-name">E-OSAS</div>
@@ -1067,47 +942,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="hero-preview fade-up">
-            <div class="preview-card">
-                <div class="preview-header">
-                    <div class="preview-title">OSAS Dashboard</div>
-                    <div class="preview-status">
-                        <span class="status-dot"></span>
-                        Live
-                    </div>
-                </div>
-
-                <div class="preview-stats">
-                    <div class="stat-row">
-                        <span class="stat-label">Active Students</span>
-                        <span class="stat-value">512</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Violations Today</span>
-                        <span class="stat-value">3</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Announcements</span>
-                        <span class="stat-value">7</span>
-                    </div>
-                </div>
-
-                <div class="preview-chart">
-                    <div class="chart-bar" style="height: 45%;"></div>
-                    <div class="chart-bar" style="height: 65%;"></div>
-                    <div class="chart-bar" style="height: 35%;"></div>
-                    <div class="chart-bar" style="height: 80%;"></div>
-                    <div class="chart-bar" style="height: 55%;"></div>
-                    <div class="chart-bar" style="height: 70%;"></div>
-                    <div class="chart-bar" style="height: 40%;"></div>
-                </div>
-
-                <div class="preview-footer">
-                    Last updated: just now
-                </div>
-            </div>
-        </div>
     </div>
 </section>
 
@@ -1154,16 +988,22 @@
             </p>
             <div class="violation-list">
                 <div class="violation-item">
-                    <span class="violation-name">Late Attendance</span>
-                    <span class="violation-badge badge-pending">Pending</span>
+                    <div class="violation-icon">
+                        <i class="fas fa-shoe-prints"></i>
+                    </div>
+                    <span class="violation-name">Improper Footwear</span>
                 </div>
                 <div class="violation-item">
+                    <div class="violation-icon">
+                        <i class="fas fa-shirt"></i>
+                    </div>
                     <span class="violation-name">Uniform Violation</span>
-                    <span class="violation-badge badge-review">Under Review</span>
                 </div>
                 <div class="violation-item">
+                    <div class="violation-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
                     <span class="violation-name">ID Not Worn</span>
-                    <span class="violation-badge badge-resolved">Resolved</span>
                 </div>
             </div>
         </div>
@@ -1349,9 +1189,6 @@
     <div class="footer-bottom">
         <p class="footer-copy">
             &copy; <?php echo date('Y'); ?> E-OSAS. All rights reserved.
-        </p>
-        <p class="footer-love">
-            Made with <span class="heart">❤️</span> for <span class="school">Colegio de Naujan</span>
         </p>
     </div>
 </footer>
