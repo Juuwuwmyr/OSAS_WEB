@@ -278,20 +278,30 @@ window.logout = function(e) {
 window.executeLogout = function() {
     console.log('👋 User logging out...');
 
+    // Show goodbye toast before redirecting
+    if (typeof showNotification === 'function') {
+        showNotification('You have been logged out successfully.', 'success', 'Goodbye!', 2500);
+    }
+
     // Clear all client-side storage
     localStorage.removeItem('userSession');
     sessionStorage.removeItem('userSession');
 
-        // Delete all authentication cookies on client side
-        document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'student_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'student_id_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Delete all authentication cookies on client side
+    document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'student_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'student_id_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 
-        // Call server-side logout to clear session/cookies, then redirect to login
-        fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
-            .finally(() => { window.location.href = '/OSAS_WEB/index.php'; });
+    // Close the logout modal
+    if (typeof closeLogoutModal === 'function') closeLogoutModal();
+
+    // Call server-side logout then redirect after toast shows
+    fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
+        .finally(() => {
+            setTimeout(() => { window.location.href = '/OSAS_WEB/index.php'; }, 1500);
+        });
 }
 
 // Enhanced content loading with error handling and loading states

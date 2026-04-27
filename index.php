@@ -1250,6 +1250,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         </div>
 
         <form id="loginForm" class="login-modal-form">
+            <!-- Inline alert banner -->
+            <div id="loginAlert" class="login-alert" style="display:none;"></div>
+
             <div class="form-group">
                 <label for="username">Username or Email</label>
                 <input id="username" name="username" type="text" placeholder="Enter your username or email" required>
@@ -1549,6 +1552,36 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         line-height: 1.5;
     }
 
+    /* Inline login alert banner */
+    .login-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 18px;
+        animation: fadeInDown 0.25s ease;
+    }
+
+    .login-alert.alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #ef4444;
+    }
+
+    .login-alert.alert-success {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        color: #22c55e;
+    }
+
+    .login-alert i {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
     /* Forgot Password Modal Styles */
     .forgot-modal-overlay {
         position: fixed;
@@ -1678,68 +1711,129 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     /* Toast Notification */
     .toast {
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--card);
-        border: 1px solid var(--border);
-        color: var(--text);
-        padding: 16px 20px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        top: 24px;
+        right: 24px;
+        background: #ffffff;
+        color: #1a1a1a;
+        padding: 0;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0,0,0,0.08);
         display: flex;
-        align-items: center;
-        gap: 12px;
+        align-items: stretch;
         opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.4s ease;
-        z-index: 10002;
+        transform: translateX(120%) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 99999;
         min-width: 300px;
         max-width: 400px;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
     }
 
     .toast.show {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateX(0) scale(1);
     }
 
-    .toast i {
-        font-size: 1.2rem;
+    /* Colored left accent bar */
+    .toast-accent {
+        width: 5px;
         flex-shrink: 0;
+        border-radius: 14px 0 0 14px;
     }
 
-    .toast.success {
-        border-left: 4px solid var(--green);
-    }
+    .toast.success .toast-accent { background: #22c55e; }
+    .toast.error   .toast-accent { background: #ef4444; }
+    .toast.warning .toast-accent { background: #f59e0b; }
+    .toast.info    .toast-accent { background: #3b82f6; }
 
-    .toast.success i {
-        color: var(--green);
-    }
-
-    .toast.error {
-        border-left: 4px solid var(--red);
-    }
-
-    .toast.error i {
-        color: var(--red);
-    }
-
-    .toast-content {
+    .toast-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px 14px 14px;
         flex: 1;
+    }
+
+    /* Icon circle */
+    .toast-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+
+    .toast.success .toast-icon-wrap { background: rgba(34,197,94,0.12);  color: #22c55e; }
+    .toast.error   .toast-icon-wrap { background: rgba(239,68,68,0.12);  color: #ef4444; }
+    .toast.warning .toast-icon-wrap { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .toast.info    .toast-icon-wrap { background: rgba(59,130,246,0.12); color: #3b82f6; }
+
+    .toast-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .toast-title-text {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 2px;
+        letter-spacing: -0.01em;
+    }
+
+    .toast-msg-text {
+        display: block;
+        font-size: 0.78rem;
+        color: #666;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .toast-close {
         background: none;
         border: none;
-        color: var(--text-muted);
+        color: #bbb;
         cursor: pointer;
-        font-size: 1.1rem;
+        font-size: 0.75rem;
         padding: 4px;
         transition: color 0.2s;
+        align-self: flex-start;
+        margin-top: 2px;
+        flex-shrink: 0;
     }
 
-    .toast-close:hover {
-        color: var(--text);
+    .toast-close:hover { color: #555; }
+
+    /* Progress bar at bottom */
+    .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 5px;
+        right: 0;
+        height: 3px;
+        background: rgba(0,0,0,0.06);
+        border-radius: 0 0 14px 0;
+        overflow: hidden;
     }
+
+    .toast-progress-bar {
+        height: 100%;
+        width: 100%;
+        transform-origin: left;
+        border-radius: inherit;
+    }
+
+    .toast.success .toast-progress-bar { background: #22c55e; }
+    .toast.error   .toast-progress-bar { background: #ef4444; }
+    .toast.warning .toast-progress-bar { background: #f59e0b; }
+    .toast.info    .toast-progress-bar { background: #3b82f6; }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -2003,4 +2097,4 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 </script>
 
 </body>
-</html>z
+</html>

@@ -133,70 +133,68 @@ function showModernAlert({
     });
 }
 
-// Modern Toast Notification System (Synced with Dashboard)
+// Modern Toast Notification System
 function showToast(message, type = 'info', title = null) {
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
+    document.querySelectorAll('.toast').forEach(t => t.remove());
 
     const toast = document.createElement('div');
-    toast.className = `toast-notification toast-${type}`;
-    
-    const icon = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    }[type] || 'fa-info-circle';
+    toast.className = `toast ${type}`;
 
-    const defaultTitle = {
+    const iconMap = {
+        success: 'fa-check-circle',
+        error:   'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info:    'fa-info-circle'
+    };
+    const titleMap = {
         success: 'Success',
-        error: 'Error',
+        error:   'Error',
         warning: 'Warning',
-        info: 'Information'
-    }[type] || 'Notice';
+        info:    'Info'
+    };
+
+    const icon      = iconMap[type]  || 'fa-info-circle';
+    const titleText = title          || titleMap[type] || 'Notice';
 
     toast.innerHTML = `
-        <div class="toast-icon">
-            <i class="fas ${icon}"></i>
-        </div>
-        <div class="toast-content">
-            <span class="toast-title">${title || defaultTitle}</span>
-            <span class="toast-message">${message}</span>
-        </div>
-        <div class="toast-close">
-            <i class="fas fa-times"></i>
+        <div class="toast-accent"></div>
+        <div class="toast-inner">
+            <div class="toast-icon-wrap">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="toast-body">
+                <span class="toast-title-text">${titleText}</span>
+                <span class="toast-msg-text">${message}</span>
+            </div>
+            <button class="toast-close"><i class="fas fa-times"></i></button>
         </div>
         <div class="toast-progress">
             <div class="toast-progress-bar"></div>
         </div>
     `;
 
-    container.appendChild(toast);
+    document.body.appendChild(toast);
 
-    // Animate progress bar
-    const progressBar = toast.querySelector('.toast-progress-bar');
-    progressBar.style.transition = 'transform 5s linear';
-    
-    // Show toast
-    setTimeout(() => {
-        toast.classList.add('show');
-        progressBar.style.transform = 'scaleX(0)';
-    }, 100);
+    // Animate in
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
 
-    // Auto remove
+    // Shrink progress bar over 5s
+    const bar = toast.querySelector('.toast-progress-bar');
+    bar.style.transition = 'transform 5s linear';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.style.transform = 'scaleX(0)';
+    }));
+
     const timeout = setTimeout(() => {
-        removeToast(toast);
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
     }, 5000);
 
-    // Close button
-    toast.querySelector('.toast-close').onclick = () => {
+    toast.querySelector('.toast-close').addEventListener('click', () => {
         clearTimeout(timeout);
-        removeToast(toast);
-    };
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    });
 }
 
 // Global Form Validation Interceptor (Synced with Dashboard)
@@ -239,6 +237,20 @@ function validateForm(username, password) {
     return true;
 }
 
+function showLoginAlert(message, type = 'error') {
+    const alert = document.getElementById('loginAlert');
+    if (!alert) return;
+    const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+    alert.className = `login-alert alert-${type}`;
+    alert.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+    alert.style.display = 'flex';
+}
+
+function hideLoginAlert() {
+    const alert = document.getElementById('loginAlert');
+    if (alert) alert.style.display = 'none';
+}
+
 // AJAX Login Handler
 function handleLoginFormSubmit(e) {
     e.preventDefault();
@@ -248,42 +260,37 @@ function handleLoginFormSubmit(e) {
     const loginButton = document.getElementById('loginButton');
     const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
+    hideLoginAlert();
+
     if (!validateForm(username, password)) {
         return;
     }
 
-    // Loading Animation
+    // Loading state
     loginButton.disabled = true;
     loginButton.innerHTML = `<div class="spinner"></div><span>Logging in...</span>`;
 
     fetch('./app/views/auth/login.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&rememberMe=${rememberMe}`
     })
         .then(async res => {
             const data = await res.json();
-            if (!res.ok) {
-                // If the response is not ok, we still want to show the message from JSON if available
-                throw new Error(data.message || 'Login failed');
-            }
             return data;
         })
         .then(data => {
-            loginButton.disabled = false;
-            loginButton.innerHTML = `<span>Login</span>`;
-
             if (data.status === 'success') {
-                showToast('Login successful! Redirecting...', 'success');
+                loginButton.innerHTML = `<i class="fas fa-check-circle"></i><span>Login Successful!</span>`;
+                loginButton.classList.add('btn-success');
+                showLoginAlert('Login successful! Redirecting you now...', 'success');
+                showToast('Welcome back! Redirecting...', 'success', 'Login Successful');
 
                 const payload = data.data || data;
-
                 const sessionData = {
                     username: payload.username || username,
                     name: payload.name,
-                    full_name: payload.name, // Added full_name for compatibility
+                    full_name: payload.name,
                     role: payload.role,
                     user_id: payload.user_id || payload.studentId,
                     studentId: payload.studentId,
@@ -291,32 +298,35 @@ function handleLoginFormSubmit(e) {
                     expires: payload.expires * 1000,
                     theme: darkMode ? 'dark' : 'light'
                 };
-
                 localStorage.setItem('userSession', JSON.stringify(sessionData));
-                
                 if (payload.studentId) {
                     localStorage.setItem('student_id', payload.studentId);
-                    if (payload.studentIdCode) {
-                        localStorage.setItem('student_id_code', payload.studentIdCode);
-                    }
+                    if (payload.studentIdCode) localStorage.setItem('student_id_code', payload.studentIdCode);
                 }
 
                 setTimeout(() => {
-                    if (payload.role === 'admin') {
-                        window.location.href = './includes/dashboard.php';
-                    } else {
-                        window.location.href = './includes/user_dashboard.php';
-                    }
-                }, 1000);
+                    window.location.href = payload.role === 'admin'
+                        ? './includes/dashboard.php'
+                        : './includes/user_dashboard.php';
+                }, 1200);
             } else {
-                showToast(data.message || 'Invalid credentials.', 'error');
+                loginButton.disabled = false;
+                loginButton.innerHTML = `<span>Login</span>`;
+                loginButton.classList.remove('btn-success');
+                const msg = data.message || 'Invalid credentials. Please try again.';
+                showLoginAlert(msg, 'error');
+                showToast(msg, 'error', 'Login Failed');
             }
         })
         .catch(err => {
             console.error('Login error:', err);
             loginButton.disabled = false;
             loginButton.innerHTML = `<span>Login</span>`;
-            showToast(err.message || 'Server error. Please try again later.', 'error');
+            loginButton.classList.remove('btn-success');
+            // Only show connection error for actual network failures
+            const msg = 'Unable to connect. Please check your internet connection.';
+            showLoginAlert(msg, 'error');
+            showToast(msg, 'error', 'Connection Error');
         });
 }
 
@@ -341,6 +351,12 @@ function initApp() {
     if (loginForm) {
         loginForm.addEventListener('submit', handleLoginFormSubmit);
         console.log('Login form event listener added');
+
+        // Clear alert when user starts typing
+        ['username', 'password'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => hideLoginAlert());
+        });
     }
 
     if (themeToggle) {

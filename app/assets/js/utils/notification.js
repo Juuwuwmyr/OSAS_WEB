@@ -3,156 +3,213 @@ let notificationRemoveTimer = null;
 
 function showNotification(message, type = 'info', titleOrDuration = null, durationMaybe = null) {
   let title = null;
-  let duration = 7000;
+  let duration = 5000;
 
   if (typeof titleOrDuration === 'number') duration = titleOrDuration;
   if (typeof titleOrDuration === 'string') title = titleOrDuration;
   if (typeof durationMaybe === 'number') duration = durationMaybe;
   if (typeof durationMaybe === 'string' && title === null) title = durationMaybe;
 
-  let notification = document.getElementById('notification-toast');
-  if (!notification) {
-    notification = document.createElement('div');
-    notification.id = 'notification-toast';
-    notification.className = 'notification-toast';
+  // Default titles per type
+  const defaultTitles = {
+    success: 'Success',
+    error:   'Error',
+    warning: 'Warning',
+    info:    'Info'
+  };
+  const resolvedTitle = title || defaultTitles[type] || 'Notice';
 
-    const icon = document.createElement('i');
-    icon.className = 'bx';
-    icon.dataset.role = 'notification-icon';
+  // Icon map (Boxicons - used in dashboard)
+  const iconMap = {
+    success: 'bx-check-circle',
+    error:   'bx-error-circle',
+    warning: 'bx-error',
+    info:    'bx-info-circle'
+  };
+  const icon = iconMap[type] || 'bx-info-circle';
 
-    const textWrap = document.createElement('div');
-    textWrap.className = 'notification-text';
-
-    const titleEl = document.createElement('div');
-    titleEl.className = 'notification-title';
-    titleEl.dataset.role = 'notification-title';
-
-    const messageEl = document.createElement('div');
-    messageEl.className = 'notification-message';
-    messageEl.dataset.role = 'notification-message';
-
-    textWrap.appendChild(titleEl);
-    textWrap.appendChild(messageEl);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'notification-close';
-    closeBtn.type = 'button';
-    closeBtn.innerHTML = "<i class='bx bx-x'></i>";
-    closeBtn.addEventListener('click', () => {
-      if (notificationHideTimer) clearTimeout(notificationHideTimer);
-      if (notificationRemoveTimer) clearTimeout(notificationRemoveTimer);
-      notification.remove();
-    });
-
-    notification.appendChild(icon);
-    notification.appendChild(textWrap);
-    notification.appendChild(closeBtn);
-
-    document.body.appendChild(notification);
-  }
-
-  const iconEl = notification.querySelector('[data-role="notification-icon"]');
-  const titleEl = notification.querySelector('[data-role="notification-title"]');
-  const messageEl = notification.querySelector('[data-role="notification-message"]');
-
-  if (iconEl) iconEl.className = `bx ${getNotificationIcon(type)}`;
-  if (titleEl) {
-    titleEl.textContent = title ? title : '';
-    titleEl.style.display = title ? 'block' : 'none';
-  }
-  if (messageEl) messageEl.textContent = String(message ?? '');
-
-  notification.classList.remove('notification-success', 'notification-error', 'notification-warning', 'notification-info', 'dark', 'hide');
-  notification.classList.add(`notification-${type}`);
-  
-  // Add styles if not exists
+  // Inject styles once
   if (!document.querySelector('#notification-styles')) {
     const styles = document.createElement('style');
     styles.id = 'notification-styles';
     styles.textContent = `
       .notification-toast {
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: white;
-        color: #333;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 20000;
+        top: 24px;
+        right: 24px;
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        max-width: 420px;
+        align-items: stretch;
         opacity: 0;
-        transform: translateX(24px);
-        transition: opacity 0.8s ease, transform 0.8s ease;
+        transform: translateX(120%) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 99999;
+        min-width: 300px;
+        max-width: 400px;
+        overflow: hidden;
+        font-family: 'Poppins', 'Inter', sans-serif;
         pointer-events: auto;
       }
       .notification-toast.show {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateX(0) scale(1);
       }
       .notification-toast.hide {
         opacity: 0;
-        transform: translateX(24px);
+        transform: translateX(120%) scale(0.95);
+        transition: all 0.35s ease;
       }
-      .notification-toast.dark {
-        background: #333;
-        color: white;
+      .notif-accent {
+        width: 5px;
+        flex-shrink: 0;
+        border-radius: 14px 0 0 14px;
       }
-      .notification-text {
+      .notification-success .notif-accent { background: #22c55e; }
+      .notification-error   .notif-accent { background: #ef4444; }
+      .notification-warning .notif-accent { background: #f59e0b; }
+      .notification-info    .notif-accent { background: #3b82f6; }
+
+      .notif-inner {
         display: flex;
-        flex-direction: column;
-        gap: 2px;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px 14px 14px;
         flex: 1;
-        min-width: 0;
       }
+      .notif-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+      }
+      .notification-success .notif-icon-wrap { background: rgba(34,197,94,0.12);  color: #22c55e; }
+      .notification-error   .notif-icon-wrap { background: rgba(239,68,68,0.12);  color: #ef4444; }
+      .notification-warning .notif-icon-wrap { background: rgba(245,158,11,0.12); color: #f59e0b; }
+      .notification-info    .notif-icon-wrap { background: rgba(59,130,246,0.12); color: #3b82f6; }
+
+      .notif-body { flex: 1; min-width: 0; }
       .notification-title {
+        display: block;
+        font-size: 0.85rem;
         font-weight: 700;
-        font-size: 0.9rem;
-        line-height: 1.2;
+        color: #111;
+        margin-bottom: 2px;
+        letter-spacing: -0.01em;
       }
       .notification-message {
-        font-size: 0.85rem;
-        line-height: 1.3;
+        display: block;
+        font-size: 0.78rem;
+        color: #666;
+        line-height: 1.4;
         word-break: break-word;
       }
-      .notification-success { border-left: 4px solid #10B981; }
-      .notification-error { border-left: 4px solid #EF4444; }
-      .notification-warning { border-left: 4px solid #F59E0B; }
-      .notification-info { border-left: 4px solid #3B82F6; }
-      .notification-close { background: none; border: none; cursor: pointer; padding: 0; }
+      .notification-close {
+        background: none;
+        border: none;
+        color: #bbb;
+        cursor: pointer;
+        font-size: 0.75rem;
+        padding: 4px;
+        transition: color 0.2s;
+        align-self: flex-start;
+        margin-top: 2px;
+        flex-shrink: 0;
+      }
+      .notification-close:hover { color: #555; }
+
+      .notif-progress {
+        position: absolute;
+        bottom: 0;
+        left: 5px;
+        right: 0;
+        height: 3px;
+        background: rgba(0,0,0,0.06);
+        border-radius: 0 0 14px 0;
+        overflow: hidden;
+      }
+      .notif-progress-bar {
+        height: 100%;
+        width: 100%;
+        transform-origin: left;
+        border-radius: inherit;
+      }
+      .notification-success .notif-progress-bar { background: #22c55e; }
+      .notification-error   .notif-progress-bar { background: #ef4444; }
+      .notification-warning .notif-progress-bar { background: #f59e0b; }
+      .notification-info    .notif-progress-bar { background: #3b82f6; }
     `;
     document.head.appendChild(styles);
   }
 
-  // Apply dark mode if active
-  if (window.darkMode) {
-    notification.classList.add('dark');
-  }
-
-  if (notificationHideTimer) clearTimeout(notificationHideTimer);
+  // Remove existing toast
+  const existing = document.getElementById('notification-toast');
+  if (existing) existing.remove();
+  if (notificationHideTimer)   clearTimeout(notificationHideTimer);
   if (notificationRemoveTimer) clearTimeout(notificationRemoveTimer);
 
-  requestAnimationFrame(() => {
-    notification.classList.add('show');
+  // Build toast
+  const notification = document.createElement('div');
+  notification.id = 'notification-toast';
+  notification.className = `notification-toast notification-${type}`;
+  notification.innerHTML = `
+    <div class="notif-accent"></div>
+    <div class="notif-inner">
+      <div class="notif-icon-wrap">
+        <i class="bx ${icon}"></i>
+      </div>
+      <div class="notif-body">
+        <span class="notification-title">${resolvedTitle}</span>
+        <span class="notification-message">${String(message ?? '')}</span>
+      </div>
+      <button class="notification-close" type="button"><i class="bx bx-x"></i></button>
+    </div>
+    <div class="notif-progress">
+      <div class="notif-progress-bar"></div>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Animate in
+  requestAnimationFrame(() => requestAnimationFrame(() => notification.classList.add('show')));
+
+  // Shrink progress bar
+  const bar = notification.querySelector('.notif-progress-bar');
+  bar.style.transition = `transform ${duration}ms linear`;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bar.style.transform = 'scaleX(0)';
+  }));
+
+  // Close button
+  notification.querySelector('.notification-close').addEventListener('click', () => {
+    clearTimeout(notificationHideTimer);
+    clearTimeout(notificationRemoveTimer);
+    notification.classList.remove('show');
+    notification.classList.add('hide');
+    setTimeout(() => notification.remove(), 400);
   });
-  
+
+  // Auto dismiss
   notificationHideTimer = setTimeout(() => {
     if (!notification.parentElement) return;
     notification.classList.remove('show');
     notification.classList.add('hide');
-    notificationRemoveTimer = setTimeout(() => notification.remove(), 850);
+    notificationRemoveTimer = setTimeout(() => notification.remove(), 400);
   }, duration);
 }
 
 function getNotificationIcon(type) {
   const icons = {
     success: 'bx-check-circle',
-    error: 'bx-error-circle',
+    error:   'bx-error-circle',
     warning: 'bx-error',
-    info: 'bx-info-circle'
+    info:    'bx-info-circle'
   };
   return icons[type] || icons.info;
 }
