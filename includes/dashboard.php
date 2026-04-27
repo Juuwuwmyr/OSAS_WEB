@@ -10,7 +10,7 @@ if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     $_SESSION['role'] = $_COOKIE['role'];
 } elseif (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     // No session or cookies, redirect to login
-    header('Location: ../login_page.php');
+    header('Location: ../index.php');
     exit;
 }
 
@@ -20,7 +20,7 @@ if ($_SESSION['role'] !== 'admin') {
     if ($_SESSION['role'] === 'user') {
         header('Location: user_dashboard.php');
     } else {
-        header('Location: ../login_page.php');
+        header('Location: ../index.php');
     }
     exit;
 }

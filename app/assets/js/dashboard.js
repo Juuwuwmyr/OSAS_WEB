@@ -291,7 +291,7 @@ window.executeLogout = function() {
 
         // Call server-side logout to clear session/cookies, then redirect to login
         fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
-            .finally(() => { window.location.href = '/OSAS_WEB/login_page.php'; });
+            .finally(() => { window.location.href = '/OSAS_WEB/index.php'; });
 }
 
 // Enhanced content loading with error handling and loading states

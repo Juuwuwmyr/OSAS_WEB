@@ -1,6 +1,34 @@
 ﻿<?php
-// Landing page - no session logic here to avoid logout redirect loops.
-// Auto-login redirect is handled by login_page.php only.
+session_start();
+
+// Check if user wants to see landing page (bypass auto-redirect)
+$forceLanding = isset($_GET['force_landing']) && $_GET['force_landing'] === 'true';
+
+// Restore session from cookies if not forcing landing
+if (!$forceLanding && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+    $_SESSION['user_id'] = $_COOKIE['user_id'];
+    $_SESSION['username'] = $_COOKIE['username'] ?? '';
+    $_SESSION['role'] = $_COOKIE['role'];
+    
+    if ($_SESSION['role'] === 'admin') {
+        header('Location: includes/dashboard.php');
+        exit;
+    } elseif ($_SESSION['role'] === 'user') {
+        header('Location: includes/user_dashboard.php');
+        exit;
+    }
+}
+
+// Also check session (fallback)
+if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+    if ($_SESSION['role'] === 'admin') {
+        header('Location: includes/dashboard.php');
+        exit;
+    } elseif ($_SESSION['role'] === 'user') {
+        header('Location: includes/user_dashboard.php');
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -187,11 +215,34 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            cursor: pointer;
         }
 
         .btn-signin:hover {
             background: var(--gold);
             color: #000;
+        }
+
+        .btn-primary {
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
         }
 
         /* ===== HERO ===== */
@@ -282,27 +333,6 @@
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
-        }
-
-        .btn-primary {
-            padding: 0.9rem 2rem;
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
         }
 
         .btn-ghost {
@@ -891,9 +921,15 @@
         <button class="btn-theme" id="themeToggle" aria-label="Toggle theme">
             <i class="fas fa-sun" id="themeIcon"></i>
         </button>
-        <a href="login_page.php?force_login=true" class="btn-signin">
-            Sign In <i class="fas fa-arrow-right"></i>
-        </a>
+        <?php if (isset($_SESSION['user_id'])): ?>
+            <a href="<?php echo $_SESSION['role'] === 'admin' ? 'includes/dashboard.php' : 'includes/user_dashboard.php'; ?>" class="btn-signin">
+                Dashboard <i class="fas fa-arrow-right"></i>
+            </a>
+        <?php else: ?>
+            <button class="btn-signin" id="openLoginModal">
+                Sign In <i class="fas fa-arrow-right"></i>
+            </button>
+        <?php endif; ?>
     </div>
 </nav>
 
@@ -920,9 +956,15 @@
             </p>
 
             <div class="hero-buttons">
-                <a href="login_page.php?force_login=true" class="btn-primary">
-                    Access Portal <i class="fas fa-arrow-right"></i>
-                </a>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="<?php echo $_SESSION['role'] === 'admin' ? 'includes/dashboard.php' : 'includes/user_dashboard.php'; ?>" class="btn-primary">
+                        Go to Dashboard <i class="fas fa-arrow-right"></i>
+                    </a>
+                <?php else: ?>
+                    <button class="btn-primary" id="openLoginModalHero">
+                        Access Portal <i class="fas fa-arrow-right"></i>
+                    </button>
+                <?php endif; ?>
                 <a href="#features" class="btn-ghost">
                     See Features <i class="fas fa-chevron-down"></i>
                 </a>
@@ -1131,9 +1173,15 @@
         <p class="cta-subtitle">
             Sign in to access the student affairs portal and manage everything in one place.
         </p>
-        <a href="login_page.php?force_login=true" class="btn-primary">
-            Sign In to E-OSAS <i class="fas fa-arrow-right"></i>
-        </a>
+        <?php if (isset($_SESSION['user_id'])): ?>
+            <a href="<?php echo $_SESSION['role'] === 'admin' ? 'includes/dashboard.php' : 'includes/user_dashboard.php'; ?>" class="btn-primary">
+                Go to Dashboard <i class="fas fa-arrow-right"></i>
+            </a>
+        <?php else: ?>
+            <button class="btn-primary" id="openLoginModalCTA">
+                Sign In to E-OSAS <i class="fas fa-arrow-right"></i>
+            </button>
+        <?php endif; ?>
         <p class="cta-note">
             Authorized personnel and enrolled students only.
         </p>
@@ -1162,7 +1210,12 @@
         <div class="footer-col">
             <h4>System</h4>
             <ul>
-                <li><a href="login_page.php?force_login=true">Sign In</a></li>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <li><a href="<?php echo $_SESSION['role'] === 'admin' ? 'includes/dashboard.php' : 'includes/user_dashboard.php'; ?>">Dashboard</a></li>
+                    <li><a href="app/views/auth/logout.php">Logout</a></li>
+                <?php else: ?>
+                    <li><a href="#" id="openLoginModalFooter">Sign In</a></li>
+                <?php endif; ?>
                 <li><a href="#features">Features</a></li>
                 <li><a href="#about">About</a></li>
             </ul>
@@ -1192,6 +1245,644 @@
         </p>
     </div>
 </footer>
+
+<!-- Login Modal -->
+<div id="loginModal" class="login-modal-overlay">
+    <div class="login-modal-content">
+        <button class="close-login-modal" id="closeLoginModal">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="login-modal-header">
+            <div class="login-modal-logo">
+                <img src="./app/assets/img/default.png" alt="E-OSAS Logo">
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Please enter your credentials to login</p>
+        </div>
+
+        <form id="loginForm" class="login-modal-form">
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input id="username" name="username" type="text" placeholder="Enter your username or email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input id="password" name="password" type="password" placeholder="Enter your password" required>
+                    <button type="button" class="toggle-password" id="passwordToggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <span class="checkmark"></span>
+                    Remember me
+                </label>
+                <a href="#" class="forgot-password" id="forgotPasswordBtn">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="login-button" id="loginButton">
+                <span>Login</span>
+            </button>
+        </form>
+
+        <div class="login-modal-footer">
+            <p>Use the email provided by the admin and the default password to login.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="forgot-modal-overlay">
+    <div class="forgot-modal-content">
+        <div class="forgot-modal-header">
+            <div class="forgot-modal-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2>Reset Password</h2>
+            <button class="close-forgot-modal" id="closeForgotModal">&times;</button>
+        </div>
+        <div class="forgot-modal-body">
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <p>You need to go to <strong>admin</strong> and request to reset the password.</p>
+            </div>
+        </div>
+        <div class="forgot-modal-footer">
+            <button class="modal-btn-primary" id="gotItBtn">Got it</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Login Modal Styles */
+    .login-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        padding: 20px;
+    }
+
+    .login-modal-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .login-modal-content {
+        background: var(--card);
+        width: 100%;
+        max-width: 450px;
+        padding: 40px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+        position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .login-modal-overlay.show .login-modal-content {
+        transform: translateY(0);
+    }
+
+    .close-login-modal {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .close-login-modal:hover {
+        background: var(--surface);
+        color: var(--gold);
+        border-color: var(--gold);
+    }
+
+    .login-modal-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .login-modal-logo {
+        width: 70px;
+        height: 70px;
+        background: rgba(212, 175, 55, 0.1);
+        border: 2px solid var(--gold);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        overflow: hidden;
+    }
+
+    .login-modal-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .login-modal-header h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .login-modal-header p {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+    }
+
+    .login-modal-form .form-group {
+        margin-bottom: 20px;
+    }
+
+    .login-modal-form label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .login-modal-form input[type="text"],
+    .login-modal-form input[type="password"] {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: var(--text);
+        transition: all 0.2s;
+    }
+
+    .login-modal-form input:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    .password-input-wrapper {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 8px;
+        transition: color 0.2s;
+    }
+
+    .toggle-password:hover {
+        color: var(--gold);
+    }
+
+    .form-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        font-size: 0.875rem;
+    }
+
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: var(--text);
+    }
+
+    .remember-me input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--gold);
+    }
+
+    .forgot-password {
+        color: var(--gold);
+        text-decoration: none;
+        font-weight: 500;
+        transition: opacity 0.2s;
+    }
+
+    .forgot-password:hover {
+        opacity: 0.8;
+    }
+
+    .login-button {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .login-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
+    }
+
+    .login-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .login-button .spinner {
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-top: 3px solid #000;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .login-modal-footer {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .login-modal-footer p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+
+    /* Forgot Password Modal Styles */
+    .forgot-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        padding: 20px;
+    }
+
+    .forgot-modal-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .forgot-modal-content {
+        background: var(--card);
+        width: 100%;
+        max-width: 400px;
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+        text-align: center;
+        position: relative;
+    }
+
+    .forgot-modal-overlay.show .forgot-modal-content {
+        transform: translateY(0);
+    }
+
+    .forgot-modal-header {
+        margin-bottom: 20px;
+    }
+
+    .forgot-modal-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(212, 175, 55, 0.1);
+        color: var(--gold);
+        font-size: 24px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto 15px;
+    }
+
+    .forgot-modal-header h2 {
+        font-size: 1.5rem;
+        color: var(--text);
+        margin: 0;
+    }
+
+    .close-forgot-modal {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .close-forgot-modal:hover {
+        color: var(--text);
+    }
+
+    .forgot-modal-body {
+        margin-bottom: 25px;
+    }
+
+    .info-box {
+        background: rgba(212, 175, 55, 0.05);
+        border-left: 4px solid var(--gold);
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+    }
+
+    .info-box i {
+        color: var(--gold);
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .info-box p {
+        margin: 0;
+        color: var(--text);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .modal-btn-primary {
+        background: var(--gold);
+        color: #000;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    .modal-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.4s ease;
+        z-index: 10002;
+        min-width: 300px;
+        max-width: 400px;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .toast i {
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .toast.success {
+        border-left: 4px solid var(--green);
+    }
+
+    .toast.success i {
+        color: var(--green);
+    }
+
+    .toast.error {
+        border-left: 4px solid var(--red);
+    }
+
+    .toast.error i {
+        color: var(--red);
+    }
+
+    .toast-content {
+        flex: 1;
+    }
+
+    .toast-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.1rem;
+        padding: 4px;
+        transition: color 0.2s;
+    }
+
+    .toast-close:hover {
+        color: var(--text);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-modal-content {
+            padding: 30px 24px;
+        }
+
+        .toast {
+            right: 10px;
+            left: 10px;
+            min-width: auto;
+        }
+    }
+</style>
+
+<script src="service-worker.js"></script>
+<script src="app/assets/js/pwa.js"></script>
+<script src="app/assets/js/session.js"></script>
+<script src="app/assets/js/login.js"></script>
+<script>
+    // Login Modal Management (extends login.js functionality)
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginModal = document.getElementById('loginModal');
+        const forgotModal = document.getElementById('forgotPasswordModal');
+
+        // Open login modal buttons
+        const openLoginBtns = [
+            document.getElementById('openLoginModal'),
+            document.getElementById('openLoginModalHero'),
+            document.getElementById('openLoginModalCTA'),
+            document.getElementById('openLoginModalFooter')
+        ];
+
+        openLoginBtns.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+        });
+
+        // Close login modal
+        const closeLoginBtn = document.getElementById('closeLoginModal');
+        if (closeLoginBtn) {
+            closeLoginBtn.addEventListener('click', () => {
+                loginModal.classList.remove('show');
+                document.body.style.overflow = '';
+            });
+        }
+
+        // Close on overlay click
+        if (loginModal) {
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (loginModal && loginModal.classList.contains('show')) {
+                    loginModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+                if (forgotModal && forgotModal.classList.contains('show')) {
+                    forgotModal.classList.remove('show');
+                }
+            }
+        });
+    });
+</script>
+
+<!-- PWA Install Button -->
+<button id="installPWA" class="pwa-install-btn" style="display: none;">
+    <i class="fas fa-download"></i> Install App
+</button>
+
+<style>
+    .pwa-install-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        color: #000;
+        border: none;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        animation: pulse 2s infinite;
+    }
+
+    .pwa-install-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(212, 175, 55, 0.6);
+    }
+
+    .pwa-install-btn i {
+        font-size: 1.1rem;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+        }
+        50% {
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.7);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .pwa-install-btn {
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            font-size: 0.875rem;
+        }
+    }
+</style>
 
 <script>
     // Theme Toggle
@@ -1324,4 +2015,4 @@
 </script>
 
 </body>
-</html>
+</html>z
