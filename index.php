@@ -944,9 +944,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </div>
 
             <h1 class="hero-title">
-                <span class="line">One Platform.</span>
-                <span class="line">Every Student.</span>
-                <span class="line gold-gradient">Zero Paperwork.</span>
+                <span class="line">E-OSAS.</span>
+                <span class="line">Office of Student.</span>
+                <span class="line gold-gradient">Affairs and Services.</span>
             </h1>
 
             <p class="hero-subtitle">
@@ -970,19 +970,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                 </a>
             </div>
 
-            <div class="hero-trust">
-                <div class="trust-item">
-                    🔒 Secure Login
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item">
-                    📱 Mobile Ready
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item">
-                    ⚡ Real-time
-                </div>
-            </div>
+
         </div>
     </div>
 </section>
@@ -1079,7 +1067,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             <div class="bento-icon">
                 <i class="fas fa-chart-bar"></i>
             </div>
-            <h3 class="bento-title">Reports & Analytics</h3>
+            <h3 class="bento-title">Reports & Statistics</h3>
             <p class="bento-desc">
                 Generate detailed reports on violations, student behavior trends, 
                 and departmental statistics with export capabilities.
@@ -1100,7 +1088,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             <div class="bento-icon">
                 <i class="fas fa-robot"></i>
             </div>
-            <h3 class="bento-title">AI Chatbot</h3>
+            <h3 class="bento-title">Addons AI Chatbot</h3>
             <p class="bento-desc">
                 Intelligent assistant to help students and staff navigate 
                 the system instantly.
