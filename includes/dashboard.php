@@ -1,87 +1,73 @@
 <?php
-// Start session and check authentication
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_path', '/');
 session_start();
 
-// Check if user is logged in - check cookies first (more reliable)
-if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
-    // Restore session from cookies
+require_once __DIR__ . '/../app/core/View.php';
+
+// Restore session from cookies if session is empty
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     $_SESSION['user_id'] = $_COOKIE['user_id'];
     $_SESSION['username'] = $_COOKIE['username'] ?? '';
-    $_SESSION['role'] = $_COOKIE['role'];
-} elseif (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-    // No session or cookies, redirect to login
-    header('Location: ../index.php');
+    $_SESSION['role']    = $_COOKIE['role'];
+}
+
+// No session — redirect to login
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+    header('Location: ' . View::url('index.php'));
     exit;
 }
 
-// Check if user is admin (required for admin dashboard)
+// Wrong role
 if ($_SESSION['role'] !== 'admin') {
-    // If user is not admin, redirect to appropriate dashboard
-    if ($_SESSION['role'] === 'user') {
-        header('Location: user_dashboard.php');
-    } else {
-        header('Location: ../index.php');
-    }
+    $dest = $_SESSION['role'] === 'user' ? 'includes/user_dashboard.php' : 'index.php';
+    header('Location: ' . View::url($dest));
     exit;
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
-  <link rel="stylesheet" href="../app/assets/styles/dashboard.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="../app/assets/styles/topnav.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="../app/assets/styles/content-layout.css">
-  <link rel="stylesheet" href="../app/assets/styles/settings.css">
-  <link rel="stylesheet" href="../app/assets/styles/department.css">
-  <link rel="stylesheet" href="../app/assets/styles/section.css">
-  <link rel="stylesheet" href="../app/assets/styles/students.css">
-  <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
+  <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/topnav.css') ?>?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/content-layout.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/department.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/section.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/students.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
 </head>
-
 <body>
-  <?php
-  require_once __DIR__ . '/../app/core/View.php';
-  View::partial('admin_topnav');
-  ?>
+  <?php View::partial('admin_topnav'); ?>
 
-  <!-- CONTENT -->
   <section id="content">
-    <!-- MAIN CONTENT CONTAINER -->
-    <div id="main-content">
-      <!-- Content will be loaded here dynamically -->
-    </div>
+    <div id="main-content"></div>
   </section>
-  <!-- CONTENT -->
 
-  <script src="../app/assets/js/dashboard.js?v=<?= time() ?>"></script>
-  <!-- Load PDF/Word Libraries for Export -->
-  <script src="../app/assets/js/lib/jspdf.umd.min.js"></script>
-  <script src="../app/assets/js/lib/jspdf.plugin.autotable.min.js"></script>
-  <script src="../app/assets/js/lib/docx.js"></script>
-  <script src="../app/assets/js/lib/FileSaver.js"></script>
-  
-  <script src="../app/assets/js/utils/notification.js?v=<?= time() ?>"></script>
-  <script src="../app/assets/js/utils/admin_notifications.js?v=<?= time() ?>"></script>
-  <script src="../app/assets/js/dashboardData.js"></script>
-  <script src="../app/assets/js/modules/dashboardModule.js"></script>
-  <script src="../app/assets/js/utils/theme.js"></script>
-  <script src="../app/assets/js/utils/eyeCare.js"></script>
-  
-  <script src="../app/assets/js/department.js"></script>
-  <script src="../app/assets/js/section.js"></script>
-  <script src="../app/assets/js/student.js"></script>
-  <script src="../app/assets/js/violation.js"></script>
-  <script src="../app/assets/js/reports.js"></script>
-  <script src="../app/assets/js/announcement.js"></script>
-  <script src="../app/assets/js/chatbot.js"></script>
+  <script src="<?= View::asset('js/dashboard.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/utils/admin_notifications.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
+  <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
+  <script src="<?= View::asset('js/department.js') ?>"></script>
+  <script src="<?= View::asset('js/section.js') ?>"></script>
+  <script src="<?= View::asset('js/student.js') ?>"></script>
+  <script src="<?= View::asset('js/violation.js') ?>"></script>
+  <script src="<?= View::asset('js/reports.js') ?>"></script>
+  <script src="<?= View::asset('js/announcement.js') ?>"></script>
+  <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
 </body>
-
 </html>

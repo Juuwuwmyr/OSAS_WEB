@@ -5,24 +5,9 @@
 
 // API Base Path Detection
 function getAPIBasePath() {
-    const currentPath = window.location.pathname;
-    const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-    const projectBase = pathMatch ? pathMatch[1] : '';
-    
-    let apiBase = '';
-    
-    if (projectBase) {
-        apiBase = projectBase + '/api/';
-    } else if (currentPath.includes('/app/views/')) {
-        apiBase = '../../api/';
-    } else if (currentPath.includes('/includes/')) {
-        apiBase = '../api/';
-    } else {
-        apiBase = 'api/';
-    }
-    
-    console.log('🔗 API Base Path detected:', apiBase, 'from:', currentPath);
-    return apiBase;
+    const p = window.location.pathname.split('/').filter(Boolean);
+    const d = ['app','api','includes','assets','public'];
+    return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/';
 }
 
 const API_BASE = getAPIBasePath();

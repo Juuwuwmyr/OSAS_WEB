@@ -35,15 +35,10 @@ function initSectionsModule() {
         let sections = [];
         let allSections = [];
 
-        let apiBase;
-        (function resolveApiBase() {
-            const path = window.location.pathname;
-            if (path.includes('admin_page') || path.includes('/views/admin/')) {
-                apiBase = '../../api/sections.php';
-            } else {
-                apiBase = '../api/sections.php';
-            }
-        })();
+        // API path — works on AWS root AND local subfolder
+        const _p = window.location.pathname.split('/').filter(Boolean);
+        const _d = ['app','api','includes','assets','public'];
+        let apiBase = ((_p.length===0||_d.includes(_p[0]))?'':'/'+_p[0]) + '/api/sections.php';
 
         let currentView = 'active';
         let currentPage = 1;
@@ -278,13 +273,9 @@ function initSectionsModule() {
 
         async function loadDepartments() {
             try {
-                let deptApi;
-                const path = window.location.pathname;
-                if (path.includes('admin_page') || path.includes('/views/admin/')) {
-                    deptApi = '../../api/departments.php';
-                } else {
-                    deptApi = '../api/departments.php';
-                }
+                const _dp = window.location.pathname.split('/').filter(Boolean);
+                const _dd = ['app','api','includes','assets','public'];
+                const deptApi = ((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0]) + '/api/departments.php';
 
                 const response = await fetch(deptApi);
                 const data = await response.json();
@@ -362,7 +353,7 @@ function initSectionsModule() {
             const now = new Date();
             
             // --- Header Section ---
-            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
             const headerData = await loadImage(headerPath);
 
             if (headerData) {
@@ -439,7 +430,7 @@ function initSectionsModule() {
 
             try {
                 const now = new Date();
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 let html = `
@@ -551,7 +542,7 @@ function initSectionsModule() {
                 const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
                 const now = new Date();
                 
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 let headerImage = null;
                 try {
                     const response = await fetch(headerPath);

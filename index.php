@@ -1,31 +1,32 @@
 ﻿<?php
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_path', '/');
 session_start();
 
 // Check if user wants to see landing page (bypass auto-redirect)
 $forceLanding = isset($_GET['force_landing']) && $_GET['force_landing'] === 'true';
 
-// Restore session from cookies if not forcing landing
-if (!$forceLanding && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+// Helper: detect project prefix ('' on AWS root, '/OSAS_WEB' on local subfolder)
+function getAppPrefix(): string {
+    $appDirs = ['app','api','includes','assets','public','index.php'];
+    $parts   = explode('/', trim($_SERVER['SCRIPT_NAME'] ?? '', '/'));
+    return (!empty($parts[0]) && !in_array($parts[0], $appDirs)) ? '/' . $parts[0] : '';
+}
+$prefix = getAppPrefix();
+
+// Restore session from cookies if session is empty
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     $_SESSION['user_id'] = $_COOKIE['user_id'];
     $_SESSION['username'] = $_COOKIE['username'] ?? '';
-    $_SESSION['role'] = $_COOKIE['role'];
-    
-    if ($_SESSION['role'] === 'admin') {
-        header('Location: includes/dashboard.php');
-        exit;
-    } elseif ($_SESSION['role'] === 'user') {
-        header('Location: includes/user_dashboard.php');
-        exit;
-    }
+    $_SESSION['role']    = $_COOKIE['role'];
 }
 
-// Also check session (fallback)
 if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'admin') {
-        header('Location: includes/dashboard.php');
+        header('Location: ' . $prefix . '/includes/dashboard.php');
         exit;
     } elseif ($_SESSION['role'] === 'user') {
-        header('Location: includes/user_dashboard.php');
+        header('Location: ' . $prefix . '/includes/user_dashboard.php');
         exit;
     }
 }

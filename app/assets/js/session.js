@@ -8,10 +8,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const now = new Date().getTime();
 
             if (session.expires && session.expires > now) {
+                // Detect project root ('' on AWS root, '/OSAS_WEB' on local)
+                const parts = window.location.pathname.split('/').filter(Boolean);
+                const appDirs = ['app','api','includes','assets','public'];
+                const root = (parts.length === 0 || appDirs.includes(parts[0])) ? '' : '/' + parts[0];
+
                 if (session.role === 'admin') {
-                    window.location.href = './includes/dashboard.php';
+                    window.location.href = root + '/includes/dashboard.php';
                 } else if (session.role === 'user') {
-                    window.location.href = './includes/user_dashboard.php';
+                    window.location.href = root + '/includes/user_dashboard.php';
                 }
             } else {
                 localStorage.removeItem('userSession');

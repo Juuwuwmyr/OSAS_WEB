@@ -53,28 +53,7 @@ function initReportsModule() {
         // ========== API CONFIG ==========
         
         // Detect the correct API path based on current page location
-        function getAPIBasePath() {
-            const currentPath = window.location.pathname;
-            console.log('📍 Current path:', currentPath);
-            
-            // Try to extract the base project path from the URL
-            const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-            const projectBase = pathMatch ? pathMatch[1] : '';
-            console.log('📁 Project base:', projectBase);
-            
-            // Use absolute path from project root for reliability
-            if (projectBase) {
-                return projectBase + '/api/';
-            }
-            
-            // Fallback to relative paths
-            if (currentPath.includes('/app/views/')) {
-                return '../../api/';
-            } else if (currentPath.includes('/includes/')) {
-                return '../api/';
-            } else {
-                return 'api/';
-            }
+        function getAPIBasePath() { const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/'; }
         }
         
         const API_BASE = getAPIBasePath();
@@ -1158,7 +1137,7 @@ function initReportsModule() {
                 const now = new Date();
 
                 // --- Header Section ---
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 if (headerData) {
@@ -1285,7 +1264,7 @@ function initReportsModule() {
             const now = new Date();
             
             // --- Header Design ---
-            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
             const headerData = await loadImage(headerPath);
 
             if (headerData) {
@@ -1467,7 +1446,7 @@ function initReportsModule() {
             const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
             const now = new Date();
             
-            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
             const headerData = await loadImage(headerPath);
 
             // Children for the document
@@ -1730,7 +1709,7 @@ function initReportsModule() {
         async function generateExcel(reportsData, fileName) {
             try {
                 const now = new Date();
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 let html = `

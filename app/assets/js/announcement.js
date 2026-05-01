@@ -7,23 +7,9 @@
 (function(window) {
     // API Base Path Detection
     function getAnnouncementAPIPath() {
-        const currentPath = window.location.pathname;
-        const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-        const projectBase = pathMatch ? pathMatch[1] : '';
-        
-        console.log('🔗 [Announcements] Detecting API path for:', currentPath);
-        
-        if (projectBase) {
-            return projectBase + '/api/announcements.php';
-        }
-        
-        if (currentPath.includes('/app/views/')) {
-            return '../../api/announcements.php';
-        } else if (currentPath.includes('/includes/')) {
-            return '../api/announcements.php';
-        } else {
-            return 'api/announcements.php';
-        }
+        const p = window.location.pathname.split('/').filter(Boolean);
+        const d = ['app','api','includes','assets','public'];
+        return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/announcements.php';
     }
 
     const ANNOUNCEMENT_API = getAnnouncementAPIPath();

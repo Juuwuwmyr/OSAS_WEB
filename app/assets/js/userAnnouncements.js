@@ -4,27 +4,7 @@
  */
 
 // API Base Path
-function getUserAPIBasePath() {
-    const currentPath = window.location.pathname;
-    const pathParts = currentPath.split('/').filter(p => p);
-    
-    // Find project root (typically the first directory in the path)
-    // For paths like /OSAS_WEB/app/entry/user_dashboard.php
-    // Project root is OSAS_WEB, so API is at /OSAS_WEB/api/
-    if (pathParts.length > 0) {
-        const projectRoot = pathParts[0];
-        return '/' + projectRoot + '/api/';
-    }
-    
-    // Fallback to relative path
-    if (currentPath.includes('/includes/') || currentPath.includes('/app/entry/')) {
-        return '../api/';
-    } else if (currentPath.includes('/app/views/')) {
-        return '../../api/';
-    }
-    
-    return '/api/';
-}
+function getUserAPIBasePath() { const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/'; }
 
 const USER_API_BASE = getUserAPIBasePath();
 console.log('🔗 User Announcements API Base Path:', USER_API_BASE);

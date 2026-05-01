@@ -53,28 +53,25 @@ $filepath = $uploadDir . $filename;
 
 // Move uploaded file
 if (move_uploaded_file($file['tmp_name'], $filepath)) {
-    // Return relative path for database storage (using app/assets structure)
     $relativePath = 'app/assets/img/students/' . $filename;
-    
-    // Get project base path from SCRIPT_NAME
+
+    // Detect project prefix ('' on AWS root, '/OSAS_WEB' on local subfolder)
+    $appDirs = ['app', 'api', 'includes', 'assets', 'public'];
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
     $basePath = '';
     if ($scriptName) {
-        $basePath = dirname($scriptName);
-        $basePath = ltrim($basePath, '/');
-        if (!empty($basePath)) {
-            $basePath = '/' . $basePath;
+        $parts = explode('/', trim($scriptName, '/'));
+        if (!empty($parts[0]) && !in_array($parts[0], $appDirs)) {
+            $basePath = '/' . $parts[0];
         }
-    } else {
-        $basePath = '/OSAS_WEBSYS';
     }
-    
+
     echo json_encode([
         'status' => 'success',
         'message' => 'Image uploaded successfully.',
         'data' => [
             'path' => $relativePath,
-            'url' => $basePath . '/' . $relativePath
+            'url'  => $basePath . '/' . $relativePath
         ]
     ]);
 } else {

@@ -16,35 +16,7 @@ function initViolationsModule() {
     try {
         // ========== DYNAMIC API PATH DETECTION ==========
         // Detect the correct API path based on current page location
-        function getAPIBasePath() {
-            const currentPath = window.location.pathname;
-            console.log('📍 Current path:', currentPath);
-            
-            // Try to extract the base project path from the URL
-            // e.g., /OSAS_WEBSYS/app/views/loader.php -> /OSAS_WEBSYS/
-            const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-            const projectBase = pathMatch ? pathMatch[1] : '';
-            console.log('📁 Project base:', projectBase);
-            
-            // Use absolute path from project root for reliability
-            if (projectBase) {
-                // We have a project folder (e.g., /OSAS_WEBSYS)
-                return projectBase + '/api/';
-            }
-            
-            // Fallback to relative paths
-            // Check if we're in app/views/ directory
-            if (currentPath.includes('/app/views/')) {
-                return '../../api/';
-            }
-            // Check if we're in includes/ directory
-            else if (currentPath.includes('/includes/')) {
-                return '../api/';
-            }
-            // Default: we're in the root or another location
-            else {
-                return 'api/';
-            }
+        function getAPIBasePath() { const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/'; }
         }
         
         const API_BASE = getAPIBasePath();
@@ -1377,7 +1349,7 @@ function initViolationsModule() {
                 const now = new Date();
                 
                 // --- Header Design ---
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 if (headerData) {
@@ -1475,7 +1447,7 @@ function initViolationsModule() {
                 }
 
                 const now = new Date();
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 let html = `
@@ -1592,7 +1564,7 @@ function initViolationsModule() {
                 const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
                 const now = new Date();
                 
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
                 
                 const tableHeader = new TableRow({

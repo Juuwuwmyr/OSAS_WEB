@@ -16,21 +16,9 @@ class Chatbot {
     }
 
     getAPIBasePath() {
-        const currentPath = window.location.pathname;
-        const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-        const projectBase = pathMatch ? pathMatch[1] : '';
-        
-        if (projectBase) {
-            return projectBase + '/api/';
-        }
-        
-        if (currentPath.includes('/app/views/')) {
-            return '../../api/';
-        } else if (currentPath.includes('/includes/')) {
-            return '../api/';
-        } else {
-            return 'api/';
-        }
+        const p = window.location.pathname.split('/').filter(Boolean);
+        const d = ['app','api','includes','assets','public'];
+        return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/';
     }
 
     init() {

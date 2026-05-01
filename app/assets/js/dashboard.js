@@ -118,21 +118,14 @@ function isMainAdmin() {
     }
 }
 
-// Path Resolution Helper
+// Path Resolution Helper — works on AWS root AND local subfolder
 function getProjectRoot() {
-    const path = window.location.pathname;
-    // Fallback: assume first segment is project name
-    const parts = path.split('/');
-    if (parts.length > 1 && parts[1]) {
-        // Check if parts[1] is a common directory like 'app' or 'public'
-        // If so, we might be at root
-        if (parts[1] === 'app' || parts[1] === 'public' || parts[1] === 'api') {
-            return '';
-        }
-        return '/' + parts[1];
-    }
-    return '';
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const appDirs = ['app', 'api', 'includes', 'assets', 'public'];
+    if (parts.length === 0 || appDirs.includes(parts[0])) return '';
+    return '/' + parts[0];
 }
+function getAPIBase() { return getProjectRoot() + '/api/'; }
 
 function resolvePath(relativePath) {
     const root = getProjectRoot();
@@ -172,68 +165,14 @@ function initializeServiceWorker() {
     }
 }
 
-// Enhanced authentication check
+// Authentication check — PHP already validated the session before serving this page.
+// JS only updates the UI from localStorage; never redirects.
 function checkAuthentication() {
-    // Check if PHP session is valid (cookies exist)
-    const hasCookies = document.cookie.includes('user_id') && document.cookie.includes('role');
-    
-    if (hasCookies) {
-        console.log('✅ PHP session cookies found, authentication valid');
-        // Try to get localStorage session for UI updates
-        const userSession = localStorage.getItem('userSession');
-        if (userSession) {
-            try {
-                const session = JSON.parse(userSession);
-                updateUserInfo(session);
-                console.log('✅ Admin authenticated:', session.name, 'Role:', session.role);
-            } catch (error) {
-                console.warn('⚠️ Could not parse localStorage session, but cookies are valid');
-            }
-        }
-        return; // Don't redirect if cookies exist
+    const s = localStorage.getItem('userSession');
+    if (s) {
+        try { updateUserInfo(JSON.parse(s)); } catch(e) {}
     }
-
-    // Fallback to localStorage check
-    const userSession = localStorage.getItem('userSession');
-
-    if (!userSession) {
-        console.log('❌ No user session found, redirecting to login...');
-        window.location.href = '../index.php';
-        return;
-    }
-
-    try {
-        const session = JSON.parse(userSession);
-
-        // Check session expiration
-        if (session.expires && new Date() > new Date(session.expires)) {
-            console.log('❌ Session expired, redirecting to login...');
-            localStorage.removeItem('userSession');
-            window.location.href = '../index.php';
-            return;
-        }
-
-        // Check if user role is correct for this dashboard
-        if (session.role !== 'admin') {
-            console.log(`❌ Invalid role: ${session.role}, redirecting...`);
-            if (session.role === 'user') {
-                window.location.href = '../includes/user_dashboard.php';
-            } else {
-                window.location.href = '../index.php';
-            }
-            return;
-        }
-
-        // Update user info in the interface
-        updateUserInfo(session);
-
-        console.log('✅ Admin authenticated:', session.name, 'Role:', session.role);
-
-    } catch (error) {
-        console.error('❌ Error parsing user session:', error);
-        localStorage.removeItem('userSession');
-        window.location.href = '../index.php';
-    }
+    return true;
 }
 
 // Enhanced user info update
@@ -298,9 +237,9 @@ window.executeLogout = function() {
     if (typeof closeLogoutModal === 'function') closeLogoutModal();
 
     // Call server-side logout then redirect after toast shows
-    fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
+    fetch(getProjectRoot() + '/api/logout.php', { method: 'POST', credentials: 'include' })
         .finally(() => {
-            setTimeout(() => { window.location.href = '/OSAS_WEB/index.php'; }, 1500);
+            setTimeout(() => { window.location.href = getProjectRoot() + '/index.php'; }, 1500);
         });
 }
 
@@ -351,9 +290,9 @@ function loadContent(page) {
     }
 
     const xhr = new XMLHttpRequest();
-    // Load from app/views/loader.php instead of pages/
-    xhr.open('GET', `../app/views/loader.php?view=${page}`, true);
-    xhr.timeout = 10000; // 10 second timeout
+    // Load from app/views/loader.php — works at root or in a subfolder
+    xhr.open('GET', getProjectRoot() + '/app/views/loader.php?view=' + page, true);
+    xhr.timeout = 10000;
 
     xhr.onload = function () {
         if (this.status === 200) {
@@ -919,7 +858,7 @@ function createSettingsModal() {
                         Download a complete backup of the database structure and data.
                     </p>
                     <div class="settings-actions">
-                        <button type="button" class="settings-btn settings-btn-primary" onclick="window.location.href='../api/backup.php'">
+                        <button type="button" class="settings-btn settings-btn-primary" onclick="window.location.href=getProjectRoot()+'/api/backup.php'">
                             <i class='bx bx-download'></i>
                             <span>Download SQL Backup</span>
                         </button>
@@ -1228,7 +1167,7 @@ async function loadSettingsLogs() {
     tableBody.innerHTML = '<tr><td colspan="4"><div class="settings-empty-state"><i class="bx bx-loader-alt bx-spin"></i> Fetching logs...</div></td></tr>';
 
     try {
-        const response = await fetch('../api/system_logs.php?limit=20');
+        const response = await fetch(getAPIBase() + 'system_logs.php?limit=20');
         const payload = await response.json();
 
         if (payload.status === 'success') {
@@ -1294,7 +1233,7 @@ async function loadUserProfile() {
     }
     
     try {
-        const response = await fetch('../api/users.php?action=profile');
+        const response = await fetch(getAPIBase() + 'users.php?action=profile');
         const data = await response.json();
         
         if (data.status === 'success') {
@@ -1439,7 +1378,7 @@ async function loadAdminAccounts() {
         </tr>
     `;
 
-    const apiPath = '../api/users.php?action=admins&t=' + new Date().getTime();
+    const apiPath = getAPIBase() + 'users.php?action=admins&t=' + new Date().getTime();
 
     try {
         console.log('🔄 Loading admin accounts...');
@@ -1893,7 +1832,7 @@ function initializeEventListeners() {
         };
         
         try {
-            const apiBase = typeof getAPIBasePath === 'function' ? getAPIBasePath() : '../api/';
+            const apiBase = typeof getAPIBasePath === 'function' ? getAPIBasePath() : getAPIBase();
             
             // Parallel fetching for performance
             // Fix: Pass action=get explicitly to ensure correct routing
@@ -2360,7 +2299,7 @@ async function loadUserAccounts() {
         </tr>
     `;
 
-    const apiPath = '../api/users.php?action=users&t=' + new Date().getTime();
+    const apiPath = getAPIBase() + 'users.php?action=users&t=' + new Date().getTime();
 
     try {
         console.log('🔄 Loading user accounts...');
@@ -2530,7 +2469,7 @@ async function loadArchivedAccounts() {
     tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">Loading archived accounts...</div></td></tr>`;
 
     try {
-        const response = await fetch('../api/users.php?action=archived');
+        const response = await fetch(getAPIBase() + 'users.php?action=archived');
         const data = await response.json();
 
         if (data.status === 'success') {

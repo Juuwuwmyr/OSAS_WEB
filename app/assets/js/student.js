@@ -68,31 +68,10 @@ function initStudentsModule() {
         }
 
         // ========== DYNAMIC API PATH DETECTION ==========
-        // Detect the correct API path based on current page location
         function getAPIBasePath() {
-            const currentPath = window.location.pathname;
-            console.log('📍 Current path:', currentPath);
-            
-            // Try to extract the base project path from the URL
-            // e.g., /OSAS_WEBSYS/app/views/loader.php -> /OSAS_WEBSYS/
-            const pathMatch = currentPath.match(/^(\/[^\/]+)\//);
-            const projectBase = pathMatch ? pathMatch[1] : '';
-            console.log('📁 Project base:', projectBase);
-            
-            // Use absolute path from project root for reliability
-            if (projectBase) {
-                // We have a project folder (e.g., /OSAS_WEBSYS)
-                return projectBase + '/api/';
-            }
-            
-            // Fallback to relative paths
-            if (currentPath.includes('/app/views/')) {
-                return '../../api/';
-            } else if (currentPath.includes('/includes/')) {
-                return '../api/';
-            } else {
-                return 'api/';
-            }
+            const p = window.location.pathname.split('/').filter(Boolean);
+            const d = ['app','api','includes','assets','public'];
+            return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/';
         }
         
         const API_BASE = getAPIBasePath();
@@ -896,7 +875,7 @@ function initStudentsModule() {
                 const now = new Date();
                 
                 // --- Header Design ---
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerPath = (getProjectRoot() + '/app/assets/headers/header.png');
                 const headerData = await loadImage(headerPath);
 
                 if (headerData) {
@@ -1082,7 +1061,7 @@ function initStudentsModule() {
                 // Load header image
                 let headerImage = null;
                 try {
-                    const response = await fetch('/OSAS_WEB/app/assets/headers/header.png');
+                    const response = await fetch((getProjectRoot() + '/app/assets/headers/header.png'));
                     const blob = await response.blob();
                     const arrayBuffer = await blob.arrayBuffer();
                     

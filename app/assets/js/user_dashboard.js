@@ -2,6 +2,14 @@
 // USER DASHBOARD SCRIPT (FULL FIX)
 // ===============================
 
+// Path helpers — work on AWS root AND local subfolder
+function getProjectRoot() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  const appDirs = ['app', 'api', 'includes', 'assets', 'public'];
+  return (parts.length === 0 || appDirs.includes(parts[0])) ? '' : '/' + parts[0];
+}
+function getAPIBase() { return getProjectRoot() + '/api/'; }
+
 // DOM Elements
 const allSideMenu = document.querySelectorAll('#sidebar .side-menu.top li a');
 const menuBar = document.querySelector('.sidebar-toggle-logo') || document.querySelector('#sidebar .sidebar-close-icon') || document.querySelector('#sidebar .sidebar-menu-toggle') || document.querySelector('#content nav .bx.bx-menu');
@@ -117,11 +125,7 @@ function initializeNotifications() {
       if (window.userDashboardData && window.userDashboardData.violations && window.userDashboardData.violations.length > 0) {
         violations = window.userDashboardData.violations;
       } else {
-        const apiBase = (function() {
-          const pathParts = window.location.pathname.split('/').filter(p => p);
-          if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
-          return '/api/';
-        })();
+        const apiBase = getAPIBase();
         const res = await fetch(apiBase + 'violations.php');
         const data = await res.json();
         violations = data.data || data.violations || [];
@@ -223,11 +227,7 @@ function initializeNotifications() {
     
     // Persist to database
     try {
-      const apiBase = (function() {
-        const pathParts = window.location.pathname.split('/').filter(p => p);
-        if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
-        return '/api/';
-      })();
+      const apiBase = getAPIBase();
       await fetch(`${apiBase}violations.php?action=mark_as_read&id=${id}`);
     } catch (e) {
       console.error('Failed to persist read status:', e);
@@ -267,11 +267,7 @@ function initializeNotifications() {
     
     // Persist to database
     try {
-      const apiBase = (function() {
-        const pathParts = window.location.pathname.split('/').filter(p => p);
-        if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
-        return '/api/';
-      })();
+      const apiBase = getAPIBase();
       await fetch(`${apiBase}violations.php?action=mark_all_read`);
       showNotification('All notifications marked as read', 'success');
     } catch (e) {
@@ -321,18 +317,17 @@ function initializeNotifications() {
 // ===============================
 window.logout = function() {
   if (confirm('Are you sure you want to logout?')) {
-    // Clear session and cookies
-    fetch('/OSAS_WEB/api/logout.php', {
+    fetch(getProjectRoot() + '/api/logout.php', {
       method: 'POST',
       credentials: 'include'
     })
     .then(() => {
       localStorage.clear();
-      window.location.href = '/OSAS_WEB/index.php';
+      window.location.href = getProjectRoot() + '/index.php';
     })
     .catch(error => {
       console.error('Logout error:', error);
-      window.location.href = '/OSAS_WEB/index.php';
+      window.location.href = getProjectRoot() + '/index.php';
     });
   }
 };
@@ -393,75 +388,16 @@ document.addEventListener('DOMContentLoaded', function () {
 // AUTHENTICATION HANDLING
 // ===============================
 function checkAuthentication() {
-  console.log('🔍 Checking authentication...');
-
-  // Check if PHP session is valid (cookies exist) - this is the primary check
-  const hasCookies = document.cookie.includes('user_id') && document.cookie.includes('role');
-  
-  if (hasCookies) {
-    console.log('✅ PHP session cookies found, authentication valid');
-    // Try to get localStorage session for UI updates
-    const storedSession = localStorage.getItem('userSession');
-    if (storedSession) {
-      try {
-        const session = JSON.parse(storedSession);
-        updateUserInfo(session);
-        console.log('✅ Authenticated as:', session.name, '| Role:', session.role);
-        return session;
-      } catch (error) {
-        console.warn('⚠️ Could not parse localStorage session, but cookies are valid');
-      }
-    }
-    return { role: 'user' }; // Return minimal session object
+  // PHP already validated the session — no JS redirect needed.
+  const s = localStorage.getItem('userSession') || sessionStorage.getItem('userSession');
+  if (s) {
+    try { const session = JSON.parse(s); updateUserInfo(session); return session; } catch(e) {}
   }
-
-  // Fallback to localStorage check (only if cookies don't exist)
-  let storedSession = localStorage.getItem('userSession') || sessionStorage.getItem('userSession');
-
-  if (!storedSession) {
-    console.warn('❌ No session found. Redirecting to login.');
-    redirectToLogin();
-    return null;
-  }
-
-  let session;
-  try {
-    session = JSON.parse(storedSession);
-  } catch (err) {
-    console.error('❌ Invalid session format. Clearing...');
-    localStorage.removeItem('userSession');
-    sessionStorage.removeItem('userSession');
-    redirectToLogin();
-    return null;
-  }
-
-  const now = new Date().getTime();
-  if (session.expires && now > session.expires) {
-    console.warn('⚠️ Session expired. Clearing storage.');
-    localStorage.removeItem('userSession');
-    sessionStorage.removeItem('userSession');
-    redirectToLogin();
-    return null;
-  }
-
-  // Role check
-  if (session.role !== 'user') {
-    console.warn('⚠️ Unauthorized role detected:', session.role);
-    if (session.role === 'admin') {
-      window.location.href = '../includes/dashboard.php';
-    } else {
-      redirectToLogin();
-    }
-    return null;
-  }
-
-  updateUserInfo(session);
-  console.log('✅ Authenticated as:', session.name, '| Role:', session.role);
-  return session;
+  return { role: 'user' };
 }
 
 function redirectToLogin() {
-  window.location.href = '../index.php';
+  window.location.href = getProjectRoot() + '/index.php';
 }
 
 // ===============================
@@ -512,8 +448,8 @@ window.executeLogout = function() {
       console.log('Redirecting to logout script...');
       
       // Call server-side logout to clear session/cookies, then redirect to login
-      fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
-        .finally(() => { window.location.href = '/OSAS_WEB/index.php'; });
+      fetch(getProjectRoot() + '/api/logout.php', { method: 'POST', credentials: 'include' })
+        .finally(() => { window.location.href = getProjectRoot() + '/index.php'; });
       
     } catch (error) {
       console.error('Logout error:', error);
@@ -533,10 +469,11 @@ function getCookie(name) {
 }
 
 function deleteCookie(name) {
-  // Delete cookie with multiple path options to ensure it's removed
+  const root = getProjectRoot();
   document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/OSAS_WEB/;';
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/OSAS_WEB/app/entry/;';
+  if (root) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=' + root + '/;';
+  }
 }
 
 /**
@@ -766,7 +703,7 @@ function loadContent(page) {
 
   const xhr = new XMLHttpRequest();
   // Load from app/views/loader.php instead of pages/
-  xhr.open('GET', `../app/views/loader.php?view=${page}`, true);
+  xhr.open('GET', getProjectRoot() + '/app/views/loader.php?view=' + page, true);
 
   xhr.onload = function () {
     if (this.status === 200) {

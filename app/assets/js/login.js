@@ -272,6 +272,7 @@ function handleLoginFormSubmit(e) {
 
     fetch('./app/views/auth/login.php', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&rememberMe=${rememberMe}`
     })

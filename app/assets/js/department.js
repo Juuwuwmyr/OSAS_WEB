@@ -189,15 +189,7 @@ function initDepartmentModule() {
   async function loadDepartments(filter = 'active') {
     try {
       // Determine correct API path based on context
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
       
       const searchTerm = searchInput ? searchInput.value : '';
       const url = `${apiPath}?action=get&filter=${filter}&search=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${itemsPerPage}`;
@@ -292,15 +284,7 @@ function initDepartmentModule() {
   // --- Load statistics from database ---
   async function loadStats() {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
         
       const response = await fetch(`${apiPath}?action=stats`);
       const result = await response.json();
@@ -375,7 +359,7 @@ function initDepartmentModule() {
     const now = new Date();
     
     // --- Header Section ---
-    const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+    const headerPath = (function(){ const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/app/assets/headers/header.png'; })();
     const headerData = await loadImage(headerPath);
 
     if (headerData) {
@@ -452,7 +436,7 @@ function initDepartmentModule() {
 
     try {
       const now = new Date();
-      const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+      const headerPath = (function(){ const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/app/assets/headers/header.png'; })();
       const headerData = await loadImage(headerPath);
 
       let html = `
@@ -564,7 +548,7 @@ function initDepartmentModule() {
       const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
       const now = new Date();
       
-      const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+      const headerPath = (function(){ const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/app/assets/headers/header.png'; })();
       let headerImage = null;
       try {
         const response = await fetch(headerPath);
@@ -1042,15 +1026,7 @@ function initDepartmentModule() {
   // --- API Functions ---
   async function addDepartment(data) {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
 
       const formData = new FormData();
       Object.keys(data).forEach(key => formData.append(key, data[key]));
@@ -1090,15 +1066,7 @@ function initDepartmentModule() {
 
   async function updateDepartment(dbId, data) {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
 
       const formData = new FormData();
       formData.append('deptId', dbId);
@@ -1139,15 +1107,7 @@ function initDepartmentModule() {
 
   async function deleteDepartment(dbId) {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
 
       const response = await fetch(`${apiPath}?action=delete&id=${dbId}`, {
         method: 'GET'
@@ -1182,15 +1142,7 @@ function initDepartmentModule() {
 
   async function archiveDepartment(dbId) {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
 
       const response = await fetch(`${apiPath}?action=archive&id=${dbId}`, {
         method: 'GET'
@@ -1225,15 +1177,7 @@ function initDepartmentModule() {
 
   async function restoreDepartment(dbId) {
     try {
-      let apiPath;
-      const path = window.location.pathname;
-      if (path.includes('admin_page')) {
-        apiPath = '../../api/departments.php';
-      } else if (path.includes('/views/admin/')) {
-        apiPath = '../../api/departments.php';
-      } else {
-        apiPath = '../api/departments.php';
-      }
+      const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
 
       const response = await fetch(`${apiPath}?action=restore&id=${dbId}`, {
         method: 'GET'
