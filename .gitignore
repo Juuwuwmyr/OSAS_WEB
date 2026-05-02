@@ -1,0 +1,12 @@
+# Storage files that should not be overwritten by git pull
+storage/last_reset.txt
+storage/sessions/
+
+# Environment / secrets
+.env
+app/config/db_connect.local.php
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json

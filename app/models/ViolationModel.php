@@ -325,44 +325,79 @@ class ViolationModel extends Model {
     }
 
     /**
-     * Check if a new month has started and trigger auto-archive
+     * Check if a new month has started and trigger auto-archive.
+     * Uses the database instead of a file so it works correctly on AWS
+     * (git pull would overwrite a file-based tracker).
      */
     public function checkAndTriggerAutoArchive() {
-        $lastResetFile = __DIR__ . '/../../storage/last_reset.txt';
         $currentMonth = date('Y-m');
-        
-        if (!file_exists(dirname($lastResetFile))) {
-            mkdir(dirname($lastResetFile), 0777, true);
-        }
-        
-        $lastReset = file_exists($lastResetFile) ? file_get_contents($lastResetFile) : '';
-        
-        if ($lastReset !== $currentMonth) {
-            error_log("📅 New month detected ($currentMonth). Triggering auto-archive...");
-            $this->archivePreviousMonthViolations();
-            file_put_contents($lastResetFile, $currentMonth);
+
+        // Store last reset month in the database (settings table or a dedicated row)
+        // We use a simple query to check/update a settings-style record
+        try {
+            // Try to get last reset from DB
+            $result = $this->conn->query(
+                "SELECT setting_value FROM system_settings WHERE setting_key = 'last_monthly_reset' LIMIT 1"
+            );
+
+            if ($result && $result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $lastReset = $row['setting_value'];
+            } else {
+                // First time — create the record
+                $this->conn->query(
+                    "INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('last_monthly_reset', '')"
+                );
+                $lastReset = '';
+            }
+
+            if ($lastReset !== $currentMonth) {
+                error_log("📅 New month detected ($currentMonth). Triggering auto-archive...");
+                $archived = $this->archivePreviousMonthViolations();
+                if ($archived) {
+                    $this->conn->query(
+                        "INSERT INTO system_settings (setting_key, setting_value)
+                         VALUES ('last_monthly_reset', '$currentMonth')
+                         ON DUPLICATE KEY UPDATE setting_value = '$currentMonth'"
+                    );
+                }
+            }
+        } catch (Exception $e) {
+            error_log("⚠️ Auto-archive check failed: " . $e->getMessage());
+            // Fall back to file-based tracking so the app doesn't crash
+            $lastResetFile = __DIR__ . '/../../storage/last_reset.txt';
+            if (!file_exists(dirname($lastResetFile))) {
+                @mkdir(dirname($lastResetFile), 0777, true);
+            }
+            $lastReset = @file_get_contents($lastResetFile) ?: '';
+            if ($lastReset !== $currentMonth) {
+                $this->archivePreviousMonthViolations();
+                @file_put_contents($lastResetFile, $currentMonth);
+            }
         }
     }
 
     /**
-     * Archive violations from previous months and reset levels
+     * Archive violations from previous months and reset levels.
      */
     public function archivePreviousMonthViolations() {
         $this->conn->begin_transaction();
         try {
-            // 1. Mark previous month violations as archived
+            // Archive all violations from before the current month
             $currentMonthStart = date('Y-m-01 00:00:00');
-            $archiveSql = "UPDATE violations SET is_archived = 1 WHERE created_at < ? AND is_archived = 0";
-            $stmt = $this->conn->prepare($archiveSql);
+            $stmt = $this->conn->prepare(
+                "UPDATE violations SET is_archived = 1 WHERE created_at < ? AND is_archived = 0"
+            );
             $stmt->bind_param("s", $currentMonthStart);
             $stmt->execute();
             $stmt->close();
 
-            // 2. Reset student levels for the new month
-            $resetSql = "UPDATE students SET violation_level_id = (SELECT id FROM violation_levels WHERE name LIKE '%1st%' LIMIT 1)";
-            $this->conn->query($resetSql);
+            // Note: violation levels are derived from the violations table (not stored on students),
+            // so archiving old violations effectively resets each student's active level count.
+            // No students table update needed.
 
             $this->conn->commit();
+            error_log("✅ Monthly archive complete. Violations before $currentMonthStart archived.");
             return true;
         } catch (Exception $e) {
             $this->conn->rollback();
