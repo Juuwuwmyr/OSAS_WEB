@@ -48,6 +48,17 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
+  <!-- Offline Sync Banner -->
+  <div id="offlineSyncBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#f59e0b;color:#000;padding:8px 16px;font-size:12px;font-weight:600;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <i class='bx bx-cloud-upload' style="font-size:16px;"></i>
+      <span class="sync-banner-msg">Violations pending sync</span>
+    </div>
+    <button onclick="if(window.syncOfflineActions)window.syncOfflineActions()" style="background:#000;color:#f59e0b;border:none;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+      Sync Now
+    </button>
+  </div>
+
   <?php View::partial('admin_topnav'); ?>
 
   <section id="content">
@@ -61,6 +72,7 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
   <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= View::asset('js/utils/admin_notifications.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>

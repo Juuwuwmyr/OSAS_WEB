@@ -1,101 +1,136 @@
 /**
  * OSAS Offline Database Manager (IndexedDB)
+ * Handles caching violations for offline viewing and queuing
+ * new violations recorded while offline for later sync.
  */
-const DB_NAME = 'OSAS_OFFLINE_DB';
-const DB_VERSION = 1;
+const DB_NAME    = 'OSAS_OFFLINE_DB';
+const DB_VERSION = 2; // bumped to add pending_count store
+
 const STORE_VIOLATIONS = 'offline_violations';
 const STORE_SYNC_QUEUE = 'sync_queue';
 
 class OfflineDB {
-    constructor() {
-        this.db = null;
-    }
+    constructor() { this.db = null; }
 
     async init() {
         if (this.db) return this.db;
-
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
 
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                
-                // Store for caching violation data for offline viewing
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
                 if (!db.objectStoreNames.contains(STORE_VIOLATIONS)) {
                     db.createObjectStore(STORE_VIOLATIONS, { keyPath: 'id' });
                 }
-
-                // Queue for actions performed while offline
                 if (!db.objectStoreNames.contains(STORE_SYNC_QUEUE)) {
-                    db.createObjectStore(STORE_SYNC_QUEUE, { keyPath: 'tempId', autoIncrement: true });
+                    const store = db.createObjectStore(STORE_SYNC_QUEUE, {
+                        keyPath: 'tempId', autoIncrement: true
+                    });
+                    store.createIndex('timestamp', 'timestamp');
                 }
             };
 
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                resolve(this.db);
-            };
-
-            request.onerror = (event) => {
-                console.error('IndexedDB error:', event.target.error);
-                reject(event.target.error);
-            };
+            req.onsuccess  = (e) => { this.db = e.target.result; resolve(this.db); };
+            req.onerror    = (e) => reject(e.target.error);
         });
     }
 
+    // ── Violation cache (for offline viewing) ────────────────────────────────
     async saveViolations(violations) {
-        const db = await this.init();
-        const tx = db.transaction(STORE_VIOLATIONS, 'readwrite');
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_VIOLATIONS, 'readwrite');
         const store = tx.objectStore(STORE_VIOLATIONS);
-        
-        // Clear old data first
         store.clear();
-        
         violations.forEach(v => store.put(v));
-        return new Promise((resolve) => tx.oncomplete = resolve);
+        return new Promise(resolve => tx.oncomplete = resolve);
     }
 
     async getViolations() {
-        const db = await this.init();
-        const tx = db.transaction(STORE_VIOLATIONS, 'readonly');
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_VIOLATIONS, 'readonly');
         const store = tx.objectStore(STORE_VIOLATIONS);
-        return new Promise((resolve) => {
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
+        return new Promise(resolve => {
+            const r = store.getAll();
+            r.onsuccess = () => resolve(r.result);
         });
     }
 
+    // ── Sync queue (violations recorded while offline) ────────────────────────
     async queueAction(action, data) {
-        const db = await this.init();
-        const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite');
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_SYNC_QUEUE, 'readwrite');
         const store = tx.objectStore(STORE_SYNC_QUEUE);
-        const item = {
-            action,
-            data,
-            timestamp: Date.now()
-        };
-        store.add(item);
-        return new Promise((resolve) => tx.oncomplete = resolve);
+        const item  = { action, data, timestamp: Date.now(), status: 'pending' };
+        const req   = store.add(item);
+        return new Promise((resolve, reject) => {
+            req.onsuccess = () => {
+                item.tempId = req.result;
+                this._updateBadge();
+                resolve(item);
+            };
+            req.onerror = () => reject(req.error);
+        });
     }
 
     async getSyncQueue() {
-        const db = await this.init();
-        const tx = db.transaction(STORE_SYNC_QUEUE, 'readonly');
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_SYNC_QUEUE, 'readonly');
         const store = tx.objectStore(STORE_SYNC_QUEUE);
-        return new Promise((resolve) => {
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
+        return new Promise(resolve => {
+            const r = store.getAll();
+            r.onsuccess = () => resolve(r.result);
         });
     }
 
+    async getPendingCount() {
+        const queue = await this.getSyncQueue();
+        return queue.filter(i => i.status === 'pending').length;
+    }
+
     async removeFromQueue(tempId) {
-        const db = await this.init();
-        const tx = db.transaction(STORE_SYNC_QUEUE, 'readwrite');
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_SYNC_QUEUE, 'readwrite');
         const store = tx.objectStore(STORE_SYNC_QUEUE);
         store.delete(tempId);
-        return new Promise((resolve) => tx.oncomplete = resolve);
+        return new Promise(resolve => {
+            tx.oncomplete = () => { this._updateBadge(); resolve(); };
+        });
+    }
+
+    async clearQueue() {
+        const db    = await this.init();
+        const tx    = db.transaction(STORE_SYNC_QUEUE, 'readwrite');
+        tx.objectStore(STORE_SYNC_QUEUE).clear();
+        return new Promise(resolve => {
+            tx.oncomplete = () => { this._updateBadge(); resolve(); };
+        });
+    }
+
+    // ── Badge update ──────────────────────────────────────────────────────────
+    async _updateBadge() {
+        const count = await this.getPendingCount();
+        // Update the pending badge in the UI
+        const badge = document.getElementById('offlinePendingBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+        // Update the sync banner
+        const banner = document.getElementById('offlineSyncBanner');
+        if (banner) {
+            if (count > 0) {
+                banner.style.display = 'flex';
+                const msg = banner.querySelector('.sync-banner-msg');
+                if (msg) msg.textContent = `${count} violation${count > 1 ? 's' : ''} pending sync`;
+            } else {
+                banner.style.display = 'none';
+            }
+        }
     }
 }
 
 const offlineDB = new OfflineDB();
 window.offlineDB = offlineDB;
+
+// Expose badge refresh globally
+window.refreshOfflineBadge = () => offlineDB._updateBadge();

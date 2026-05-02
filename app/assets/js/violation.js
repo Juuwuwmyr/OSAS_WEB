@@ -1685,40 +1685,58 @@ function initViolationsModule() {
         // SYNC OFFLINE ACTIONS
         window.syncOfflineActions = async function() {
             if (!navigator.onLine || !window.offlineDB) return;
-            
+
             const queue = await window.offlineDB.getSyncQueue();
-            if (queue.length === 0) return;
-            
-            console.log(`🔄 Syncing ${queue.length} offline actions...`);
-            showNotification(`Syncing ${queue.length} offline records...`, 'info');
-            
-            for (const item of queue) {
+            const pending = queue.filter(i => i.status === 'pending');
+            if (pending.length === 0) return;
+
+            console.log(`🔄 Syncing ${pending.length} offline violations...`);
+            showNotification(`Syncing ${pending.length} offline violation${pending.length > 1 ? 's' : ''}...`, 'info', 3000);
+
+            let synced = 0;
+            let failed = 0;
+
+            for (const item of pending) {
                 try {
                     if (item.action === 'POST_VIOLATION') {
                         const formData = new FormData();
                         for (const key in item.data) {
                             formData.append(key, item.data[key]);
                         }
-                        
+
                         const response = await fetch(API_BASE + 'violations.php', {
                             method: 'POST',
                             body: formData
                         });
-                        
+
                         if (response.ok) {
                             await window.offlineDB.removeFromQueue(item.tempId);
-                            console.log('✅ Action synced successfully:', item.tempId);
+                            synced++;
+                        } else {
+                            failed++;
                         }
                     }
                 } catch (error) {
                     console.error('❌ Sync failed for item:', item.tempId, error);
+                    failed++;
                 }
             }
-            
-            // Reload after sync
+
+            // Reload violations after sync
             await loadViolations(false);
             renderViolations();
-            showNotification('Offline data synced successfully!', 'success');
+            updateStats();
+
+            if (synced > 0 && failed === 0) {
+                showNotification(`✅ ${synced} violation${synced > 1 ? 's' : ''} synced successfully!`, 'success', 4000);
+            } else if (synced > 0 && failed > 0) {
+                showNotification(`⚠️ ${synced} synced, ${failed} failed. Will retry when online.`, 'warning', 5000);
+            } else if (failed > 0) {
+                showNotification(`❌ Sync failed for ${failed} violation${failed > 1 ? 's' : ''}. Will retry.`, 'error', 5000);
+            }
+
+            // Update badge
+            if (window.refreshOfflineBadge) window.refreshOfflineBadge();
         };
 
         // ========== STUDENT DETAILS FUNCTIONS ==========

@@ -23,6 +23,7 @@ const PRECACHE_ASSETS = [
   "/app/assets/js/utils/theme.js",
   "/app/assets/js/utils/eyeCare.js",
   "/app/assets/js/utils/notification.js",
+  "/app/assets/js/utils/offlineDB.js",
   "/app/assets/js/department.js",
   "/app/assets/js/section.js",
   "/app/assets/js/student.js",
@@ -33,6 +34,97 @@ const PRECACHE_ASSETS = [
   "/app/assets/js/userViolations.js",
   "/app/assets/js/userAnnouncements.js"
 ];
+
+// ── INSTALL ───────────────────────────────────────────────────────────────────
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return Promise.allSettled(
+        PRECACHE_ASSETS.map(url =>
+          fetch(url).then(res => { if (res.ok) cache.put(url, res); }).catch(() => {})
+        )
+      );
+    })
+  );
+  self.skipWaiting();
+});
+
+// ── ACTIVATE ──────────────────────────────────────────────────────────────────
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
+    )
+  );
+  self.clients.claim();
+});
+
+// ── FETCH ─────────────────────────────────────────────────────────────────────
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== "GET") return;
+
+  // API / PHP — network first, cache fallback
+  if (url.pathname.includes("/api/") || url.pathname.endsWith(".php")) {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(event.request).then(cached => cached ||
+            new Response(
+              JSON.stringify({ status: "offline", message: "You are offline. Showing cached data." }),
+              { headers: { "Content-Type": "application/json" } }
+            )
+          )
+        )
+    );
+    return;
+  }
+
+  // Static assets — cache first
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+        }
+        return res;
+      }).catch(() => {
+        if (event.request.mode === "navigate") return caches.match("/index.php");
+      });
+    })
+  );
+});
+
+// ── BACKGROUND SYNC ───────────────────────────────────────────────────────────
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-violations") {
+    event.waitUntil(syncPendingViolations());
+  }
+});
+
+async function syncPendingViolations() {
+  // Notify all clients to run their sync function
+  const clients = await self.clients.matchAll({ type: "window" });
+  clients.forEach(client => {
+    client.postMessage({ type: "SYNC_VIOLATIONS" });
+  });
+}
+
+// ── MESSAGE HANDLER ───────────────────────────────────────────────────────────
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
 
 // ── INSTALL: pre-cache core assets ────────────────────────────────────────────
 self.addEventListener("install", (event) => {

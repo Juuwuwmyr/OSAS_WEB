@@ -1,8 +1,6 @@
 // ── Service Worker Registration ───────────────────────────────────────────────
-// Must register from root scope so SW can intercept all requests
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Detect project root ('' on AWS root, '/OSAS_WEB' on local subfolder)
         const parts = window.location.pathname.split('/').filter(Boolean);
         const appDirs = ['app', 'api', 'includes', 'assets', 'public'];
         const root = (parts.length === 0 || appDirs.includes(parts[0])) ? '' : '/' + parts[0];
@@ -10,11 +8,33 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register(root + '/service-worker.js', { scope: root + '/' })
             .then(reg => {
                 console.log('✅ SW registered, scope:', reg.scope);
-                // Check for updates on every load
                 reg.update();
+
+                // Listen for messages from SW (Background Sync trigger)
+                navigator.serviceWorker.addEventListener('message', async (event) => {
+                    if (event.data && event.data.type === 'SYNC_VIOLATIONS') {
+                        if (window.syncOfflineActions) {
+                            await window.syncOfflineActions();
+                        }
+                    }
+                });
             })
             .catch(err => console.warn('❌ SW registration failed:', err));
     });
+}
+
+// ── Register Background Sync when coming back online ─────────────────────────
+async function registerBackgroundSync() {
+    if (!('serviceWorker' in navigator) || !('SyncManager' in window)) return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.sync.register('sync-violations');
+        console.log('✅ Background sync registered');
+    } catch (e) {
+        console.warn('Background sync not available:', e);
+        // Fallback: run sync directly
+        if (window.syncOfflineActions) window.syncOfflineActions();
+    }
 }
 
 // ── PWA Install Prompt ────────────────────────────────────────────────────────
@@ -42,7 +62,7 @@ window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
 });
 
-// ── Online / Offline Status Toast ─────────────────────────────────────────────
+// ── Online / Offline Status ───────────────────────────────────────────────────
 function showNetworkToast(isOnline) {
     let toast = document.getElementById('network-status-toast');
     if (!toast) {
@@ -62,12 +82,13 @@ function showNetworkToast(isOnline) {
     if (isOnline) {
         toast.style.background = '#10b981';
         toast.style.color = '#fff';
-        toast.innerHTML = `<i class='bx bx-wifi'></i> Back Online`;
+        toast.innerHTML = `<i class='bx bx-wifi'></i> Back Online — syncing...`;
         toast.style.display = 'flex';
-        setTimeout(() => { toast.style.display = 'none'; }, 3000);
 
-        // Sync any queued offline actions
-        if (window.syncOfflineActions) window.syncOfflineActions();
+        // Trigger Background Sync
+        registerBackgroundSync();
+
+        setTimeout(() => { toast.style.display = 'none'; }, 4000);
     } else {
         toast.style.background = '#ef4444';
         toast.style.color = '#fff';
@@ -78,4 +99,8 @@ function showNetworkToast(isOnline) {
 
 window.addEventListener('online',  () => showNetworkToast(true));
 window.addEventListener('offline', () => showNetworkToast(false));
-// Only show on actual status change, not on every page load
+
+// Refresh badge on page load
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.refreshOfflineBadge) window.refreshOfflineBadge();
+});
