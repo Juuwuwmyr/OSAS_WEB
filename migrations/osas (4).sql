@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Apr 27, 2026 at 01:24 PM
+-- Generation Time: May 02, 2026 at 08:29 AM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.14
 
@@ -164,36 +164,6 @@ CREATE TABLE IF NOT EXISTS `announcements` (
   KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `announcements`
---
-
-INSERT INTO `announcements` (`id`, `title`, `message`, `type`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'System Maintenance', 'The system will undergo maintenance tonight at 10 PM.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-02 21:35:57', '2026-03-02 13:35:57'),
-(2, 'White t shirt', 'Enrollment for the next semester is now open.', 'info', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:12:27', '2026-03-09 17:12:27'),
-(3, 'Holiday Notice', 'Classes are suspended due to a public holiday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:43', '2026-03-09 17:12:43'),
-(4, 'Exam Schedule', 'The final exam schedule has been posted.', '', 'archived', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:39', '2026-03-09 17:12:39'),
-(5, 'Server Downtime', 'Temporary server downtime may occur this weekend.', 'warning', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(6, 'New Policy Update', 'Please review the updated student handbook.', 'info', 'active', 3, '2025-12-15 16:25:36', '2026-03-11 19:52:52', '2026-03-11 11:52:52'),
-(7, 'Payment Deadline', 'Tuition payment deadline is on Friday.', 'warning', 'active', 3, '2025-12-15 16:25:36', '2026-03-10 01:13:13', '2026-03-09 17:13:13'),
-(8, 'Library Closed', 'The library will be closed for renovation.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:47', '2026-03-09 17:12:47'),
-(9, 'Seminar Announcement', 'A leadership seminar will be held in the auditorium.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:12:37', '2026-03-09 17:12:37'),
-(10, 'System Upgrade', 'New system features have been deployed.', 'info', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(11, 'Network Issue', 'Some users may experience network interruptions.', 'warning', '', 1, '2025-12-15 16:25:36', '2026-03-11 19:52:58', '2026-03-11 11:52:58'),
-(12, 'Sports Fest', 'Annual sports fest starts next week.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:31', '2026-03-09 17:12:31'),
-(13, 'ID Registration', 'Student ID registration is ongoing.', 'info', 'active', 3, '2025-12-15 16:25:36', '2026-03-10 01:12:51', '2026-03-09 17:12:51'),
-(14, 'Class Resumption', 'Classes will resume on Monday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:57', '2026-03-09 17:12:57'),
-(15, 'Fire Drill', 'A campus-wide fire drill will be conducted.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:13:01', '2026-03-09 17:13:01'),
-(16, 'Parking Advisory', 'Limited parking slots available today.', 'warning', 'active', 3, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(17, 'System Bug Fix', 'Reported bugs have been fixed.', '', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(18, 'Workshop Invite', 'Join the career development workshop.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:13:07', '2026-03-09 17:13:07'),
-(19, 'Account Security', 'Enable two-factor authentication for security.', 'warning', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:13:19', '2026-03-09 17:13:19'),
-(20, 'Announcement Test', 'This is a test announcement record.', 'info', '', 1, '2025-12-15 16:25:36', '2026-03-11 19:53:05', '2026-03-11 11:53:05'),
-(21, 'Uniform', 'Alway were proper uniform', 'info', 'active', 2572, '2026-03-09 17:01:12', '2026-03-10 01:12:24', '2026-03-09 17:12:24'),
-(22, 'Uniform black', 'black month', 'info', 'active', 2572, '2026-03-09 17:08:02', '2026-03-10 01:12:23', '2026-03-09 17:12:23'),
-(23, 'Uniform black', 'tesy', 'info', 'active', 2572, '2026-03-10 01:13:32', '2026-03-11 19:53:11', '2026-03-11 11:53:11'),
-(24, 'test', 'test', 'info', 'active', 3116, '2026-04-27 17:48:44', NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -253,33 +223,6 @@ CREATE TABLE IF NOT EXISTS `messages` (
   KEY `idx_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `messages`
---
-
-INSERT INTO `messages` (`id`, `announcement_id`, `sender_id`, `sender_role`, `sender_name`, `message`, `is_read`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 5, '2023-0195', 'user', 'Unknown', 'why', 1, '2026-01-12 15:35:08', '2026-01-12 23:35:49', NULL),
-(2, 5, '2023-0195', 'user', 'Unknown', 'hey', 1, '2026-01-12 15:35:24', '2026-01-12 23:35:49', NULL),
-(3, 5, '2023', 'admin', 'Unknown', 'kasi maan ngayun', 1, '2026-01-12 15:36:11', '2026-01-12 23:36:29', NULL),
-(4, 7, '2023-0195', 'user', 'Jumyr Manalo Moreno', 'hey', 1, '2026-01-12 15:41:01', '2026-01-12 23:47:26', NULL),
-(5, 7, '2023-0195', 'user', 'Jumyr Manalo Moreno', 'bakit ganun', 1, '2026-01-12 15:46:20', '2026-01-12 23:47:26', NULL),
-(6, 5, '2023-0195', 'user', 'Jumyr Manalo Moreno', 'oh', 1, '2026-01-12 15:46:54', '2026-01-12 23:47:20', NULL),
-(7, 5, '2023-0195', 'user', 'Jumyr Manalo Moreno', 'huuuuu', 1, '2026-01-12 15:52:17', '2026-01-13 00:18:07', NULL),
-(8, 5, '2023-0195', 'admin', 'Unknown', 'jijij', 0, '2026-01-12 16:00:15', '2026-01-13 00:00:15', NULL),
-(9, 5, '2023-0195', 'user', 'Jumyr Moreno', 'bat ganun', 1, '2026-01-12 16:13:13', '2026-01-13 00:18:07', NULL),
-(10, 5, '2023-0195', 'user', 'Jumyr Moreno', 'hala ka', 1, '2026-01-12 16:13:26', '2026-01-13 00:18:07', NULL),
-(11, 5, '2023-0195', 'user', 'Jumyr Moreno', 'saan na', 1, '2026-01-12 16:14:35', '2026-01-13 00:18:07', NULL),
-(12, 5, '2023-0195', 'user', 'Jumyr Moreno', 'diko makita', 1, '2026-01-12 16:14:39', '2026-01-13 00:18:07', NULL),
-(13, 5, '2023', 'admin', 'jumyr', 'hgcfgfc', 1, '2026-01-12 16:24:41', '2026-01-13 09:37:11', NULL),
-(14, 19, '2023', 'admin', 'jumyr', 'any feedback', 0, '2026-01-12 16:26:15', '2026-01-13 00:26:15', NULL),
-(15, 19, '2023', 'admin', 'jumyr', 'lol', 0, '2026-01-12 16:26:40', '2026-01-13 00:26:40', NULL),
-(16, 19, '2023', 'admin', 'jumyr', 'lol', 0, '2026-01-12 16:26:45', '2026-01-13 00:26:45', NULL),
-(17, 19, '2023', 'admin', 'jumyr', 'hoho', 0, '2026-01-12 16:26:56', '2026-01-13 00:26:56', NULL),
-(18, 19, '2023', 'admin', 'jumyr', 'j', 0, '2026-01-12 16:27:21', '2026-01-13 00:27:21', NULL),
-(19, 19, '2023', 'admin', 'jumyr', 'k', 0, '2026-01-12 16:27:23', '2026-01-13 00:27:23', NULL),
-(20, 19, '2023', 'admin', 'jumyr', 'k', 0, '2026-01-12 16:27:23', '2026-01-13 00:27:23', NULL),
-(21, 19, '2023', 'admin', 'jumyr', 'k', 0, '2026-01-12 16:27:24', '2026-01-13 00:27:24', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -333,19 +276,7 @@ CREATE TABLE IF NOT EXISTS `reports` (
   KEY `idx_report_period` (`report_period_start`,`report_period_end`),
   KEY `idx_reports_student_dept` (`student_id`,`department_code`),
   KEY `idx_reports_status_date` (`status`,`generated_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `reports`
---
-
-INSERT INTO `reports` (`id`, `report_id`, `student_id`, `student_name`, `student_contact`, `department`, `department_code`, `section`, `section_id`, `yearlevel`, `uniform_count`, `footwear_count`, `no_id_count`, `total_violations`, `status`, `last_violation_date`, `report_period_start`, `report_period_end`, `generated_at`, `updated_at`, `deleted_at`) VALUES
-(12, 'R491', '2023-0206', 'Patrick James V Romasanta', 'N/A', 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3rd Year', 1, 2, 1, 4, 'permitted', '2026-03-08', '2026-03-08', '2026-03-08', '2026-03-08 11:15:04', '2026-03-08 12:31:57', NULL),
-(13, 'R489', '2023-0195', 'Jumyr M Moreno', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 0, 2, 0, 2, 'permitted', '2026-03-11', '2026-03-11', '2026-03-11', '2026-03-11 20:03:55', '2026-03-11 23:02:33', NULL),
-(14, 'R463', '2023-0216', 'Cristine S Manalo', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 0, 2, 0, 2, 'permitted', '2026-03-12', '2026-03-12', '2026-03-12', '2026-03-12 09:13:27', '2026-03-12 10:44:27', NULL),
-(15, 'R451', '2023-0216', 'Cristine S Manalo', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 1, 2, 0, 3, 'permitted', '2026-03-19', '2026-03-12', '2026-03-19', '2026-03-15 21:28:31', '2026-03-19 13:26:26', NULL),
-(16, 'R477', '2023-0195', 'Jumyr M Moreno', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 0, 2, 0, 2, 'permitted', '2026-03-11', '2026-03-11', '2026-03-11', '2026-03-15 21:28:31', '2026-03-19 13:26:27', NULL),
-(17, 'R479', '2023-0206', 'Patrick James V Romasanta', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 1, 2, 1, 4, 'permitted', '2026-03-08', '2026-03-08', '2026-03-08', '2026-03-15 21:28:31', '2026-03-19 13:26:29', NULL);
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -362,28 +293,7 @@ CREATE TABLE IF NOT EXISTS `report_recommendations` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_report_id` (`report_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=467 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `report_recommendations`
---
-
-INSERT INTO `report_recommendations` (`id`, `report_id`, `recommendation`, `priority`, `created_at`) VALUES
-(452, 12, 'Issue written warning', 'medium', '2026-03-19 13:26:34'),
-(453, 12, 'Monitor uniform compliance', 'medium', '2026-03-19 13:26:35'),
-(454, 12, 'Schedule follow-up meeting', 'medium', '2026-03-19 13:26:35'),
-(455, 13, 'Remind student about dress code policies', 'medium', '2026-03-19 13:26:36'),
-(456, 13, 'Monitor compliance for 2 weeks', 'medium', '2026-03-19 13:26:36'),
-(457, 14, 'Remind student about dress code policies', 'medium', '2026-03-19 13:26:37'),
-(458, 14, 'Monitor compliance for 2 weeks', 'medium', '2026-03-19 13:26:37'),
-(459, 15, 'Issue written warning', 'medium', '2026-03-19 13:26:37'),
-(460, 15, 'Monitor uniform compliance', 'medium', '2026-03-19 13:26:38'),
-(461, 15, 'Schedule follow-up meeting', 'medium', '2026-03-19 13:26:38'),
-(462, 16, 'Remind student about dress code policies', 'medium', '2026-03-19 13:26:38'),
-(463, 16, 'Monitor compliance for 2 weeks', 'medium', '2026-03-19 13:26:39'),
-(464, 17, 'Issue written warning', 'medium', '2026-03-19 13:26:39'),
-(465, 17, 'Monitor uniform compliance', 'medium', '2026-03-19 13:26:39'),
-(466, 17, 'Schedule follow-up meeting', 'medium', '2026-03-19 13:26:39');
+) ENGINE=InnoDB AUTO_INCREMENT=499 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -407,31 +317,7 @@ CREATE TABLE IF NOT EXISTS `report_violations` (
   KEY `idx_report_id` (`report_id`),
   KEY `idx_violation_id` (`violation_id`),
   KEY `idx_violation_date` (`violation_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=329 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `report_violations`
---
-
-INSERT INTO `report_violations` (`id`, `report_id`, `violation_id`, `violation_type`, `violation_level`, `violation_date`, `violation_time`, `status`, `notes`, `created_at`) VALUES
-(311, 17, 97, 'Improper Footwear', 'Permitted 1', '2026-03-08', '11:14:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(312, 12, 97, 'Improper Footwear', 'Permitted 1', '2026-03-08', '11:14:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(313, 17, 98, 'Improper Footwear', 'Permitted 2', '2026-03-08', '12:16:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(314, 12, 98, 'Improper Footwear', 'Permitted 2', '2026-03-08', '12:16:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(315, 17, 99, 'Improper Uniform', 'Permitted 1', '2026-03-08', '12:26:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(316, 12, 99, 'Improper Uniform', 'Permitted 1', '2026-03-08', '12:26:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(317, 17, 100, 'No ID', 'Permitted 1', '2026-03-08', '12:31:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(318, 12, 100, 'No ID', 'Permitted 1', '2026-03-08', '12:31:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(319, 16, 101, 'Improper Footwear', 'Permitted 1', '2026-03-11', '20:03:00', 'permitted', 'not wearing proper uniform', '2026-03-15 21:28:31'),
-(320, 13, 101, 'Improper Footwear', 'Permitted 1', '2026-03-11', '20:03:00', 'permitted', 'not wearing proper uniform', '2026-03-15 21:28:31'),
-(321, 16, 102, 'Improper Footwear', 'Permitted 2', '2026-03-11', '23:02:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(322, 13, 102, 'Improper Footwear', 'Permitted 2', '2026-03-11', '23:02:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(323, 15, 103, 'Improper Footwear', 'Permitted 1', '2026-03-12', '09:12:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(324, 14, 103, 'Improper Footwear', 'Permitted 1', '2026-03-12', '09:12:00', 'permitted', NULL, '2026-03-15 21:28:31'),
-(325, 15, 104, 'Improper Footwear', 'Permitted 2', '2026-03-12', '10:43:00', 'permitted', 'Matigas an ulo', '2026-03-15 21:28:31'),
-(326, 14, 104, 'Improper Footwear', 'Permitted 2', '2026-03-12', '10:43:00', 'permitted', 'Matigas an ulo', '2026-03-15 21:28:31'),
-(327, 15, 105, 'Improper Uniform', 'Permitted 1', '2026-03-19', '13:25:00', 'permitted', 'f', '2026-03-19 13:26:31'),
-(328, 14, 105, 'Improper Uniform', 'Permitted 1', '2026-03-19', '13:25:00', 'permitted', 'f', '2026-03-19 13:26:32');
+) ENGINE=InnoDB AUTO_INCREMENT=334 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -564,17 +450,6 @@ CREATE TABLE IF NOT EXISTS `slip_requests` (
   KEY `violation_id` (`violation_id`),
   KEY `requested_by_user_id` (`requested_by_user_id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Dumping data for table `slip_requests`
---
-
-INSERT INTO `slip_requests` (`id`, `violation_id`, `student_id_code`, `requested_by_user_id`, `request_date`, `status`, `approved_by_user_id`, `approval_date`, `admin_notes`, `processed_date`) VALUES
-(1, 104, '2023-0216', 6247, '2026-03-19 09:48:43', 'approved', 3116, '2026-03-19 09:49:20', NULL, NULL),
-(2, 103, '2023-0216', 6247, '2026-03-19 10:35:22', 'approved', 3116, '2026-03-19 10:35:59', NULL, NULL),
-(3, 102, '2023-0195', 6273, '2026-03-19 10:42:24', 'approved', 3116, '2026-03-19 10:42:55', NULL, NULL),
-(4, 101, '2023-0195', 6273, '2026-03-19 13:25:02', 'approved', NULL, NULL, NULL, '2026-03-19 13:31:08'),
-(5, 105, '2023-0216', 6247, '2026-03-20 10:35:12', 'approved', NULL, NULL, NULL, '2026-03-20 10:35:43');
 
 -- --------------------------------------------------------
 
@@ -1206,7 +1081,7 @@ CREATE TABLE IF NOT EXISTS `system_logs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `created_at` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=268 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=269 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `system_logs`
@@ -1480,7 +1355,31 @@ INSERT INTO `system_logs` (`id`, `user_id`, `username`, `action`, `details`, `ip
 (264, 3116, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-27 09:57:53'),
 (265, 3116, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-27 10:00:12'),
 (266, 3116, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-27 10:41:08'),
-(267, 6275, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-27 10:41:49');
+(267, 6275, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-04-27 10:41:49'),
+(268, 3116, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', '2026-05-02 07:16:16');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_settings`
+--
+
+DROP TABLE IF EXISTS `system_settings`;
+CREATE TABLE IF NOT EXISTS `system_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text COLLATE utf8mb4_unicode_ci,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_setting_key` (`setting_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `system_settings`
+--
+
+INSERT INTO `system_settings` (`id`, `setting_key`, `setting_value`, `updated_at`) VALUES
+(1, 'last_monthly_reset', '2026-05', '2026-05-02 07:16:18');
 
 -- --------------------------------------------------------
 
@@ -2102,22 +2001,7 @@ CREATE TABLE IF NOT EXISTS `violations` (
   KEY `idx_is_read` (`is_read`),
   KEY `idx_slip_requested` (`slip_requested`),
   KEY `idx_slip_permitted` (`slip_permitted`)
-) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `violations`
---
-
-INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`, `is_archived`, `is_read`, `slip_requested`, `slip_requested_at`, `slip_permitted`, `slip_permitted_at`) VALUES
-(97, 'VIOL-2026-001', '2023-0206', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '11:14:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-07 19:15:04', '2026-03-08 03:15:04', NULL, 0, 0, 0, NULL, 0, NULL),
-(98, 'VIOL-2026-002', '2023-0206', 3, 14, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:16:00', 'gate_1', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-07 20:16:29', '2026-03-08 04:16:29', NULL, 0, 0, 0, NULL, 0, NULL),
-(99, 'VIOL-2026-003', '2023-0206', 1, 1, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:26:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-08 04:27:06', '2026-03-08 04:27:06', NULL, 0, 0, 0, NULL, 0, NULL),
-(100, 'VIOL-2026-004', '2023-0206', 2, 7, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:31:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-08 04:31:57', '2026-03-08 04:31:57', NULL, 0, 0, 0, NULL, 0, NULL),
-(101, 'VIOL-2026-005', '2023-0195', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-03-11', '20:03:00', 'classroom', 'adminOsas@colegio.edu', 'not wearing proper uniform', 'permitted', NULL, '2026-03-11 12:03:54', '2026-03-11 12:03:54', NULL, 0, 0, 0, NULL, 0, NULL),
-(102, 'VIOL-2026-006', '2023-0195', 3, 14, 'Bachelor of Science in Information Systems', '12', '2026-03-11', '23:02:00', 'gate_2', 'Admin User', NULL, 'permitted', NULL, '2026-03-11 15:02:33', '2026-03-11 15:02:33', NULL, 0, 0, 0, NULL, 0, NULL),
-(103, 'VIOL-2026-007', '2023-0216', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-03-12', '09:12:00', 'others', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-12 01:13:27', '2026-03-12 01:13:27', NULL, 0, 0, 0, NULL, 0, NULL),
-(104, 'VIOL-2026-008', '2023-0216', 3, 14, 'Bachelor of Science in Information Systems', '12', '2026-03-12', '10:43:00', 'others', 'June Paul Anuevo', 'Matigas an ulo', 'permitted', NULL, '2026-03-12 02:44:26', '2026-03-19 00:12:18', NULL, 0, 0, 1, '2026-03-19 08:12:18', 0, NULL),
-(105, 'VIOL-2026-009', '2023-0216', 1, 1, 'Bachelor of Science in Information Systems', '12', '2026-03-19', '13:25:00', 'gate_1', 'Cedrick H. Almarez', 'f', 'permitted', NULL, '2026-03-19 05:26:22', '2026-03-19 05:26:22', NULL, 0, 0, 0, NULL, 0, NULL);
+) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
