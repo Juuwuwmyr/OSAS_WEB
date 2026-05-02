@@ -1237,36 +1237,84 @@ body.dark {
 /* ========================================= */
 
 @media screen and (max-width: 768px) {
+  /* ── Header ── */
   .Reports-head-title {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 15px;
+    gap: 10px;
+    padding: 12px 14px;
   }
 
+  .Reports-head-title h1 {
+    font-size: 1.3rem;
+  }
+
+  .Reports-subtitle { font-size: 0.78rem; margin-bottom: 4px; }
+
+  /* ── Action buttons — horizontal row ── */
   .Reports-header-actions {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
 
   .Reports-button-group {
-    width: 100%;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 4px;
     background: transparent;
     border: none;
     box-shadow: none;
+    padding: 0;
   }
 
   .Reports-btn {
-    flex: 1;
-    min-width: calc(50% - 6px);
-    justify-content: center;
+    font-size: 11px;
+    padding: 7px 12px;
+    white-space: nowrap;
   }
 
+  /* ── Stats cards — 2 columns ── */
+  .Reports-stats-overview {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  .Reports-stat-card {
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .Reports-stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .Reports-stat-value { font-size: 1.4rem; }
+  .Reports-stat-title { font-size: 0.72rem; }
+
+  /* ── Filters — stack vertically ── */
+  .Reports-filters-section {
+    padding: 12px;
+  }
+
+  .Reports-filters-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  .Reports-filter-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── Table — card layout ── */
   .Reports-table-container {
     overflow-x: hidden !important;
     background: transparent;
@@ -1276,48 +1324,42 @@ body.dark {
     min-width: 0 !important;
   }
 
-  .Reports-content-card table, 
-  .Reports-content-card thead, 
-  .Reports-content-card tbody, 
-  .Reports-content-card th, 
-  .Reports-content-card td, 
-  .Reports-content-card tr { 
-    display: block; 
+  .Reports-content-card table,
+  .Reports-content-card thead,
+  .Reports-content-card tbody,
+  .Reports-content-card th,
+  .Reports-content-card td,
+  .Reports-content-card tr {
+    display: block;
     width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
   }
 
-  /* Hide table headers (but keep for accessibility) */
-  .Reports-content-card thead tr { 
+  .Reports-content-card thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
 
   .Reports-content-card tbody tr {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 12px;
+    padding: 12px;
     background: var(--light);
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: transform 0.3s ease;
   }
 
-  .Reports-content-card tbody tr:hover {
-    transform: translateY(-2px);
-  }
-
-  .Reports-content-card td { 
+  .Reports-content-card td {
     border: none;
     position: relative;
-    padding-left: 52% !important; 
+    padding-left: 50% !important;
     text-align: right !important;
-    padding-top: 10px !important;
-    padding-bottom: 10px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
     border-bottom: 1px solid var(--grey);
-    min-height: 48px;
+    min-height: 40px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
