@@ -52,8 +52,10 @@ function initReportsModule() {
 
         // ========== API CONFIG ==========
         
-        // Detect the correct API path based on current page location
-        function getAPIBasePath() { const p=window.location.pathname.split('/').filter(Boolean); const d=['app','api','includes','assets','public']; return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/'; }
+        function getAPIBasePath() {
+            const p = window.location.pathname.split('/').filter(Boolean);
+            const d = ['app','api','includes','assets','public'];
+            return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/';
         }
         
         const API_BASE = getAPIBasePath();
