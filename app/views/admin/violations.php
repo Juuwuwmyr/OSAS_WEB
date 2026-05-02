@@ -554,14 +554,23 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- Empty State -->
   <div class="Violations-empty-state" id="ViolationsEmptyState" style="display: none;">
-    <div class="Violations-empty-icon">
-      <i class='bx bx-error-circle'></i>
+    <div class="empty-state-inner">
+      <div class="empty-state-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="32" fill="rgba(212,175,55,0.08)"/>
+          <path d="M20 44L26 38M44 20L38 26M26 20L32 26L38 20M32 38V44M20 32H26M38 32H44" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="32" cy="32" r="8" stroke="#D4AF37" stroke-width="2" stroke-dasharray="4 3"/>
+        </svg>
+      </div>
+      <div class="empty-state-text">
+        <h3>No Violations Recorded</h3>
+        <p>There are no violation records for this period.<br>Start by recording the first violation.</p>
+      </div>
+      <button class="empty-state-btn" id="btnRecordFirstViolation">
+        <i class='bx bx-plus'></i>
+        <span>Record First Violation</span>
+      </button>
     </div>
-    <h3>No Violations Found</h3>
-    <p>No violation records have been created yet</p>
-    <button class="Violations-btn-primary" id="btnRecordFirstViolation">
-      <i class='bx bx-plus'></i> Record First Violation
-    </button>
   </div>
 
   <!-- STUDENT DETAILS PANEL (shown when searching by student ID) -->
