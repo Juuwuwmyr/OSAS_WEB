@@ -42,6 +42,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <meta name="theme-color" content="#D4AF37">
     <link rel="icon" type="image/png" sizes="32x32" href="app/assets/img/default.png">
     <link rel="icon" type="image/png" sizes="192x192" href="app/assets/img/default.png">
+    <link rel="shortcut icon" href="app/assets/img/default.png">
     <link rel="apple-touch-icon" href="app/assets/img/default.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
