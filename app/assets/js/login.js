@@ -300,6 +300,14 @@ function handleLoginFormSubmit(e) {
                     theme: darkMode ? 'dark' : 'light'
                 };
                 localStorage.setItem('userSession', JSON.stringify(sessionData));
+                // Cache credentials hash for offline login (username only, never store plain password)
+                localStorage.setItem('offlineUser', JSON.stringify({
+                    username: sessionData.username,
+                    name: sessionData.name,
+                    role: sessionData.role,
+                    studentId: sessionData.studentId,
+                    studentIdCode: sessionData.studentIdCode
+                }));
                 if (payload.studentId) {
                     localStorage.setItem('student_id', payload.studentId);
                     if (payload.studentIdCode) localStorage.setItem('student_id_code', payload.studentIdCode);
@@ -321,13 +329,52 @@ function handleLoginFormSubmit(e) {
         })
         .catch(err => {
             console.error('Login error:', err);
+
+            // OFFLINE LOGIN — check if we have a cached user profile
+            if (!navigator.onLine) {
+                const offlineUser = localStorage.getItem('offlineUser');
+                if (offlineUser) {
+                    try {
+                        const cached = JSON.parse(offlineUser);
+                        // Only allow offline login for the same username
+                        if (cached.username === username.trim()) {
+                            loginButton.innerHTML = `<i class="fas fa-check-circle"></i><span>Offline Login</span>`;
+                            loginButton.classList.add('btn-success');
+                            showLoginAlert('Offline Mode — using cached session', 'success');
+                            showToast('Offline Mode active. Data will sync when online.', 'warning', 'Offline Login');
+
+                            // Restore session from cache
+                            const sessionData = {
+                                ...cached,
+                                expires: Date.now() + 6 * 60 * 60 * 1000, // 6h
+                                offlineMode: true
+                            };
+                            localStorage.setItem('userSession', JSON.stringify(sessionData));
+
+                            setTimeout(() => {
+                                const root = (function() {
+                                    const p = window.location.pathname.split('/').filter(Boolean);
+                                    const d = ['app','api','includes','assets','public'];
+                                    return (p.length === 0 || d.includes(p[0])) ? '' : '/' + p[0];
+                                })();
+                                window.location.href = cached.role === 'admin'
+                                    ? root + '/includes/dashboard.php'
+                                    : root + '/includes/user_dashboard.php';
+                            }, 1200);
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                showLoginAlert('You are offline. Please connect to the internet to log in for the first time.', 'error');
+                showToast('No internet connection', 'error', 'Offline');
+            } else {
+                showLoginAlert('Unable to connect. Please try again.', 'error');
+                showToast('Connection error', 'error', 'Error');
+            }
+
             loginButton.disabled = false;
             loginButton.innerHTML = `<span>Login</span>`;
             loginButton.classList.remove('btn-success');
-            // Only show connection error for actual network failures
-            const msg = 'Unable to connect. Please check your internet connection.';
-            showLoginAlert(msg, 'error');
-            showToast(msg, 'error', 'Connection Error');
         });
 }
 

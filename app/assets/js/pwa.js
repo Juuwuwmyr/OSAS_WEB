@@ -69,12 +69,20 @@ function showNetworkToast(isOnline) {
         toast = document.createElement('div');
         toast.id = 'network-status-toast';
         toast.style.cssText = `
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            padding: 10px 24px; border-radius: 24px; z-index: 99999;
-            font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
-            display: none; align-items: center; gap: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            transition: opacity 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999999;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
         `;
         document.body.appendChild(toast);
     }
@@ -92,7 +100,7 @@ function showNetworkToast(isOnline) {
     } else {
         toast.style.background = '#ef4444';
         toast.style.color = '#fff';
-        toast.innerHTML = `<i class='bx bx-wifi-off'></i> You are Offline`;
+        toast.innerHTML = `<i class='bx bx-wifi-off'></i> Offline Mode — cached data shown`;
         toast.style.display = 'flex';
     }
 }
