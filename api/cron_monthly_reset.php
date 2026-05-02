@@ -34,12 +34,15 @@ try {
 
     // Update the last reset tracker in DB
     $currentMonth = date('Y-m');
-    $model->query(
+    $conn = $model->getConnection();
+    $stmt = $conn->prepare(
         "INSERT INTO system_settings (setting_key, setting_value)
          VALUES ('last_monthly_reset', ?)
-         ON DUPLICATE KEY UPDATE setting_value = ?",
-        [$currentMonth, $currentMonth]
+         ON DUPLICATE KEY UPDATE setting_value = ?"
     );
+    $stmt->bind_param('ss', $currentMonth, $currentMonth);
+    $stmt->execute();
+    $stmt->close();
 
     $msg = "✅ Monthly reset completed for $currentMonth";
     error_log($msg);

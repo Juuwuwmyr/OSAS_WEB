@@ -355,11 +355,14 @@ class ViolationModel extends Model {
                 error_log("📅 New month detected ($currentMonth). Triggering auto-archive...");
                 $archived = $this->archivePreviousMonthViolations();
                 if ($archived) {
-                    $this->conn->query(
+                    $stmt = $this->conn->prepare(
                         "INSERT INTO system_settings (setting_key, setting_value)
-                         VALUES ('last_monthly_reset', '$currentMonth')
-                         ON DUPLICATE KEY UPDATE setting_value = '$currentMonth'"
+                         VALUES ('last_monthly_reset', ?)
+                         ON DUPLICATE KEY UPDATE setting_value = ?"
                     );
+                    $stmt->bind_param('ss', $currentMonth, $currentMonth);
+                    $stmt->execute();
+                    $stmt->close();
                 }
             }
         } catch (Exception $e) {
