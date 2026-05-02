@@ -2692,9 +2692,8 @@ function initViolationsModule() {
                         </div>
                     `}).join('');
 
-                    // Click handler — open evidence popup for the clicked violation
+                    // Click handler — Evidence badge opens lightbox directly (no popup)
                     timelineEl.addEventListener('click', function(e) {
-                        // Only trigger on the Evidence badge click
                         const badge = e.target.closest('.timeline-evidence-badge');
                         if (!badge) return;
 
@@ -2703,46 +2702,20 @@ function initViolationsModule() {
 
                         const vid = parseInt(item.dataset.vid);
                         const clicked = violations.find(v => v.id === vid);
-                        if (!clicked) return;
-
-                        // Build popup content
-                        const popup     = document.getElementById('evidencePopup');
-                        const popupGrid = document.getElementById('evidencePopupGrid');
-                        const popupTitle = document.getElementById('evidencePopupTitle');
-                        if (!popup || !popupGrid) return;
+                        if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
                         const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
-                        if (popupTitle) popupTitle.textContent = label;
+                        const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
 
-                        if (clicked.attachments && clicked.attachments.length > 0) {
-                            const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
+                        if (imageAttachments.length > 0) {
                             window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
                             window._lightboxIndex  = 0;
                             window._lightboxLabel  = label;
-
-                            popupGrid.innerHTML = clicked.attachments.map(filePath => {
-                                const fullUrl  = getImageUrl(filePath);
-                                const fileName = filePath.split('/').pop();
-                                const isImage  = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
-                                const imgIdx   = imageAttachments.indexOf(filePath);
-
-                                if (isImage) {
-                                    return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to enlarge">
-                                        <img src="${fullUrl}" alt="${fileName}" loading="lazy"
-                                             onerror="this.src='https://ui-avatars.com/api/?name=IMG&background=eee&color=999&size=100'">
-                                        <div class="evidence-overlay"><i class='bx bx-zoom-in'></i></div>
-                                    </div>`;
-                                } else {
-                                    return `<a href="${fullUrl}" target="_blank" class="evidence-thumb evidence-file-thumb" title="${fileName}">
-                                        <i class='bx bxs-file-blank'></i><span>${fileName}</span>
-                                    </a>`;
-                                }
-                            }).join('');
+                            openLightbox(0);
                         } else {
-                            popupGrid.innerHTML = '<p class="no-attachments" style="padding:16px;">No evidence for this violation.</p>';
+                            // Non-image file — open in new tab
+                            window.open(getImageUrl(clicked.attachments[0]), '_blank');
                         }
-
-                        popup.style.display = 'block';
                     });
                 } else {
                     timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">No history available.</p>';

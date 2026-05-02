@@ -496,15 +496,7 @@ require_once __DIR__ . '/../../core/View.php';
         <!-- Evidence Section REMOVED — click the Evidence badge in Violation History to view -->
 
         <!-- Evidence Popup (shown when clicking Evidence badge in history) -->
-        <div id="evidencePopup" class="evidence-popup" style="display:none">
-          <div class="evidence-popup-header">
-            <span class="evidence-popup-title" id="evidencePopupTitle">Evidence</span>
-            <button class="evidence-popup-close" onclick="document.getElementById('evidencePopup').style.display='none'">
-              <i class='bx bx-x'></i>
-            </button>
-          </div>
-          <div class="evidence-popup-grid" id="evidencePopupGrid"></div>
-        </div>
+        <!-- REMOVED — Evidence badge now opens lightbox directly -->
 
         <!-- Image Lightbox -->
         <div id="evidenceLightbox" class="evidence-lightbox" style="display:none">
