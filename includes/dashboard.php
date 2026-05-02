@@ -34,6 +34,8 @@ if ($_SESSION['role'] !== 'admin') {
   <title>E-OSAS SYSTEM</title>
   <link rel="manifest" href="<?= View::url('manifest.json') ?>">
   <meta name="theme-color" content="#D4AF37">
+  <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
+  <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/topnav.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/content-layout.css') ?>">

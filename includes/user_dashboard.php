@@ -77,6 +77,8 @@ if (!$student_id) {
     <title>E-OSAS SYSTEM</title>
     <link rel="manifest" href="<?= View::url('manifest.json') ?>">
     <meta name="theme-color" content="#D4AF37">
+    <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
+    <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>?v=<?= time() ?>">

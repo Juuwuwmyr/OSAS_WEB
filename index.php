@@ -40,6 +40,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <meta name="description" content="The official digital student affairs management system of Colegio de Naujan. One platform for every student, zero paperwork.">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#D4AF37">
+    <link rel="icon" type="image/png" sizes="32x32" href="app/assets/img/default.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="app/assets/img/default.png">
+    <link rel="apple-touch-icon" href="app/assets/img/default.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
