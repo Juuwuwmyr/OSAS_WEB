@@ -2718,6 +2718,7 @@ function initViolationsModule() {
                             const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
                             window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
                             window._lightboxIndex  = 0;
+                            window._lightboxLabel  = label;
 
                             popupGrid.innerHTML = clicked.attachments.map(filePath => {
                                 const fullUrl  = getImageUrl(filePath);
@@ -4747,19 +4748,34 @@ window.initViolationsModule = initViolationsModule;
 
 // ── Lightbox for evidence images ─────────────────────────────────────────────
 function openLightbox(index) {
-    const lb  = document.getElementById('evidenceLightbox');
-    const img = document.getElementById('lightboxImg');
-    const cap = document.getElementById('lightboxCaption');
+    const lb    = document.getElementById('evidenceLightbox');
+    const img   = document.getElementById('lightboxImg');
+    const cap   = document.getElementById('lightboxCaption');
+    const label = document.getElementById('lightboxLabel');
     if (!lb || !window._lightboxImages || !window._lightboxImages.length) return;
 
     window._lightboxIndex = Math.max(0, Math.min(index, window._lightboxImages.length - 1));
-    img.src = window._lightboxImages[window._lightboxIndex];
-    if (cap) cap.textContent = `${window._lightboxIndex + 1} / ${window._lightboxImages.length}`;
+
+    // Animate image swap
+    if (img.src) {
+        img.style.opacity = '0';
+        img.style.transform = 'scale(0.95)';
+    }
+    setTimeout(() => {
+        img.src = window._lightboxImages[window._lightboxIndex];
+        img.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+        img.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+    }, img.src ? 120 : 0);
+
+    const total = window._lightboxImages.length;
+    if (cap)   cap.textContent   = `${window._lightboxIndex + 1} / ${total}`;
+    if (label) label.textContent = window._lightboxLabel || 'Evidence';
 
     const prevBtn = document.getElementById('lightboxPrev');
     const nextBtn = document.getElementById('lightboxNext');
-    if (prevBtn) prevBtn.style.visibility = window._lightboxImages.length > 1 ? 'visible' : 'hidden';
-    if (nextBtn) nextBtn.style.visibility = window._lightboxImages.length > 1 ? 'visible' : 'hidden';
+    if (prevBtn) prevBtn.style.visibility = total > 1 ? 'visible' : 'hidden';
+    if (nextBtn) nextBtn.style.visibility = total > 1 ? 'visible' : 'hidden';
 
     lb.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -4767,7 +4783,15 @@ function openLightbox(index) {
 
 function closeLightbox() {
     const lb = document.getElementById('evidenceLightbox');
-    if (lb) lb.style.display = 'none';
+    if (lb) {
+        lb.style.opacity = '0';
+        lb.style.transition = 'opacity 0.15s ease';
+        setTimeout(() => {
+            lb.style.display = 'none';
+            lb.style.opacity = '';
+            lb.style.transition = '';
+        }, 150);
+    }
     document.body.style.overflow = '';
 }
 

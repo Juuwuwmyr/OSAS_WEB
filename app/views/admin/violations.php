@@ -510,11 +510,18 @@ require_once __DIR__ . '/../../core/View.php';
         <div id="evidenceLightbox" class="evidence-lightbox" style="display:none">
           <div class="evidence-lightbox-overlay" onclick="closeLightbox()"></div>
           <div class="evidence-lightbox-content">
-            <button class="evidence-lightbox-close" onclick="closeLightbox()"><i class='bx bx-x'></i></button>
-            <button class="evidence-lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)"><i class='bx bx-chevron-left'></i></button>
-            <img id="lightboxImg" src="" alt="Evidence">
-            <div class="evidence-lightbox-caption" id="lightboxCaption"></div>
-            <button class="evidence-lightbox-next" id="lightboxNext" onclick="lightboxNav(1)"><i class='bx bx-chevron-right'></i></button>
+            <div class="evidence-lightbox-topbar">
+              <span class="evidence-lightbox-label" id="lightboxLabel">Evidence</span>
+              <button class="evidence-lightbox-close" onclick="closeLightbox()"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="evidence-lightbox-imgwrap">
+              <button class="evidence-lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)"><i class='bx bx-chevron-left'></i></button>
+              <img id="lightboxImg" src="" alt="Evidence">
+              <button class="evidence-lightbox-next" id="lightboxNext" onclick="lightboxNav(1)"><i class='bx bx-chevron-right'></i></button>
+            </div>
+            <div class="evidence-lightbox-caption">
+              <span class="evidence-lightbox-counter" id="lightboxCaption">1 / 1</span>
+            </div>
           </div>
         </div>
 
