@@ -2628,39 +2628,9 @@ function initViolationsModule() {
             setElementText('detailNotes', violation.notes || 'No notes available.');
             
             // Attachments display
+             // Evidence is now shown via the Evidence badge in Violation History — not here
              const attachmentsContainer = document.getElementById('detailAttachments');
-             if (attachmentsContainer) {
-                 if (violation.attachments && violation.attachments.length > 0) {
-                     // Collect image URLs for lightbox navigation
-                     const imageAttachments = violation.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
-                     window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
-                     window._lightboxIndex  = 0;
-
-                     attachmentsContainer.innerHTML = violation.attachments.map((filePath, i) => {
-                         const fullUrl  = getImageUrl(filePath);
-                         const fileName = filePath.split('/').pop();
-                         const isImage  = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
-                         const imgIdx   = imageAttachments.indexOf(filePath);
-
-                         if (isImage) {
-                             return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to view">
-                                 <img src="${fullUrl}" alt="${fileName}" loading="lazy"
-                                      onerror="this.src='https://ui-avatars.com/api/?name=IMG&background=eee&color=999&size=100'">
-                                 <div class="evidence-overlay"><i class='bx bx-zoom-in'></i></div>
-                             </div>`;
-                         } else {
-                             return `<a href="${fullUrl}" target="_blank" class="evidence-thumb evidence-file-thumb" title="${fileName}">
-                                 <i class='bx bxs-file-blank'></i>
-                                 <span>${fileName}</span>
-                             </a>`;
-                         }
-                     }).join('');
-                     attachmentsContainer.style.display = 'grid';
-                 } else {
-                    attachmentsContainer.innerHTML = '<p class="no-attachments">No attachments available.</p>';
-                    attachmentsContainer.style.display = 'block';
-                }
-            }
+             if (attachmentsContainer) attachmentsContainer.innerHTML = '';
             
             // Populate timeline
             const timelineEl = document.getElementById('detailTimeline');
@@ -2698,14 +2668,14 @@ function initViolationsModule() {
                         const hasEvidence = v.attachments && v.attachments.length > 0;
 
                         return `
-                        <div class="timeline-item ${activeClass}" data-vid="${v.id}" style="cursor:pointer" title="Click to view evidence for this violation">
+                        <div class="timeline-item ${activeClass}" data-vid="${v.id}">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
                                 <span class="timeline-date">${dateStr} ${timeStr ? '• ' + timeStr : ''}</span>
                                 <span class="timeline-title">
                                     ${v.violationLevelLabel || v.level || 'Level'} - ${v.violationTypeLabel || v.type || 'Type'}
                                     ${isCurrent ? '<span style="font-size:10px;background:#eee;padding:2px 6px;border-radius:4px;margin-left:5px;">Viewing</span>' : ''}
-                                    ${hasEvidence ? '<span style="font-size:10px;background:#fff3cd;color:#856404;padding:2px 6px;border-radius:4px;margin-left:5px;"><i class=\'bx bx-image-alt\'></i> Evidence</span>' : ''}
+                                    ${hasEvidence ? `<button type="button" class="timeline-evidence-badge" data-vid="${v.id}" title="View evidence for this violation"><i class='bx bx-image-alt'></i> Evidence (${v.attachments.length})</button>` : ''}
                                 </span>
                                 <span class="timeline-desc">
                                     Reported at ${v.locationLabel || v.location}
@@ -2722,40 +2692,41 @@ function initViolationsModule() {
                         </div>
                     `}).join('');
 
-                    // Click handler — switch evidence panel to the clicked violation
+                    // Click handler — open evidence popup for the clicked violation
                     timelineEl.addEventListener('click', function(e) {
-                        const item = e.target.closest('.timeline-item[data-vid]');
+                        // Only trigger on the Evidence badge click
+                        const badge = e.target.closest('.timeline-evidence-badge');
+                        if (!badge) return;
+
+                        const item = badge.closest('.timeline-item[data-vid]');
                         if (!item) return;
 
                         const vid = parseInt(item.dataset.vid);
                         const clicked = violations.find(v => v.id === vid);
                         if (!clicked) return;
 
-                        // Update active state
-                        timelineEl.querySelectorAll('.timeline-item').forEach(el => el.classList.remove('current-viewing'));
-                        item.classList.add('current-viewing');
+                        // Build popup content
+                        const popup     = document.getElementById('evidencePopup');
+                        const popupGrid = document.getElementById('evidencePopupGrid');
+                        const popupTitle = document.getElementById('evidencePopupTitle');
+                        if (!popup || !popupGrid) return;
 
-                        // Update evidence section
-                        const attachmentsContainer = document.getElementById('detailAttachments');
-                        const evidenceHeader = document.querySelector('.evidence-section-header h4');
-                        if (!attachmentsContainer) return;
-
-                        const label = `${clicked.violationLevelLabel || ''} - ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
-                        if (evidenceHeader) evidenceHeader.innerHTML = `<i class='bx bx-image-alt'></i> Evidence — <span style="font-weight:400;color:var(--dark-grey);font-size:11px;">${label}</span>`;
+                        const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
+                        if (popupTitle) popupTitle.textContent = label;
 
                         if (clicked.attachments && clicked.attachments.length > 0) {
                             const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
                             window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
                             window._lightboxIndex  = 0;
 
-                            attachmentsContainer.innerHTML = clicked.attachments.map(filePath => {
+                            popupGrid.innerHTML = clicked.attachments.map(filePath => {
                                 const fullUrl  = getImageUrl(filePath);
                                 const fileName = filePath.split('/').pop();
                                 const isImage  = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
                                 const imgIdx   = imageAttachments.indexOf(filePath);
 
                                 if (isImage) {
-                                    return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to view">
+                                    return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to enlarge">
                                         <img src="${fullUrl}" alt="${fileName}" loading="lazy"
                                              onerror="this.src='https://ui-avatars.com/api/?name=IMG&background=eee&color=999&size=100'">
                                         <div class="evidence-overlay"><i class='bx bx-zoom-in'></i></div>
@@ -2766,11 +2737,11 @@ function initViolationsModule() {
                                     </a>`;
                                 }
                             }).join('');
-                            attachmentsContainer.style.display = 'grid';
                         } else {
-                            attachmentsContainer.innerHTML = '<p class="no-attachments">No evidence for this violation.</p>';
-                            attachmentsContainer.style.display = 'block';
+                            popupGrid.innerHTML = '<p class="no-attachments" style="padding:16px;">No evidence for this violation.</p>';
                         }
+
+                        popup.style.display = 'block';
                     });
                 } else {
                     timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">No history available.</p>';

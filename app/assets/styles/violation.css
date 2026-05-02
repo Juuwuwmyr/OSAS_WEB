@@ -2054,14 +2054,85 @@ body.dark {
   font-size: 15px;
 }
 
-.evidence-display-grid {
+/* Evidence popup removed — now shown via popup on badge click */
+.evidence-display-grid { display: none; }
+
+/* Evidence badge button in timeline */
+.timeline-evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.timeline-evidence-badge:hover {
+  background: #ffc107;
+  color: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255,193,7,0.4);
+}
+
+.timeline-evidence-badge i { font-size: 12px; }
+
+/* Evidence popup panel (inside the details modal) */
+.evidence-popup {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--light);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.evidence-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--grey);
+  border-bottom: 1px solid var(--border);
+}
+
+.evidence-popup-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.evidence-popup-close {
+  background: none;
+  border: none;
+  color: var(--dark-grey);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.evidence-popup-close:hover { color: #dc3545; }
+
+.evidence-popup-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 10px;
   padding: 12px;
-  background: var(--grey);
-  border-radius: 10px;
-  min-height: 48px;
 }
 
 .evidence-thumb {

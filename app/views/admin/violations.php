@@ -493,14 +493,17 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
 
-        <!-- Evidence Section -->
-        <div class="violation-evidence-section">
-          <div class="evidence-section-header">
-            <h4><i class='bx bx-image-alt'></i> Evidence / Attachments</h4>
+        <!-- Evidence Section REMOVED — click the Evidence badge in Violation History to view -->
+
+        <!-- Evidence Popup (shown when clicking Evidence badge in history) -->
+        <div id="evidencePopup" class="evidence-popup" style="display:none">
+          <div class="evidence-popup-header">
+            <span class="evidence-popup-title" id="evidencePopupTitle">Evidence</span>
+            <button class="evidence-popup-close" onclick="document.getElementById('evidencePopup').style.display='none'">
+              <i class='bx bx-x'></i>
+            </button>
           </div>
-          <div id="detailAttachments" class="evidence-display-grid">
-            <p class="no-attachments">No attachments available.</p>
-          </div>
+          <div class="evidence-popup-grid" id="evidencePopupGrid"></div>
         </div>
 
         <!-- Image Lightbox -->
