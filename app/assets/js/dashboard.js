@@ -152,17 +152,9 @@ function resolvePath(relativePath) {
     return root + '/' + relativePath;
 }
 
-// Initialize service worker for PWA
+// Service worker is registered by pwa.js from the root — no duplicate needed here
 function initializeServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('../sw.js')
-            .then(registration => {
-                console.log('✅ Service Worker registered:', registration);
-            })
-            .catch(error => {
-                console.log('❌ Service Worker registration failed:', error);
-            });
-    }
+    // pwa.js handles SW registration at the correct root scope
 }
 
 // Authentication check — PHP already validated the session before serving this page.

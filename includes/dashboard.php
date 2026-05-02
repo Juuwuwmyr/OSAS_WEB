@@ -32,6 +32,8 @@ if ($_SESSION['role'] !== 'admin') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
+  <link rel="manifest" href="<?= View::url('manifest.json') ?>">
+  <meta name="theme-color" content="#D4AF37">
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/topnav.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/content-layout.css') ?>">
@@ -69,5 +71,6 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="<?= View::asset('js/announcement.js') ?>"></script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
+  <script src="<?= View::asset('js/pwa.js') ?>"></script>
 </body>
 </html>

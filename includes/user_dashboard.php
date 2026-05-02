@@ -75,6 +75,8 @@ if (!$student_id) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-OSAS SYSTEM</title>
+    <link rel="manifest" href="<?= View::url('manifest.json') ?>">
+    <meta name="theme-color" content="#D4AF37">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>?v=<?= time() ?>">
@@ -114,6 +116,7 @@ if (!$student_id) {
     <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
     <script src="<?= View::asset('js/chatbot.js') ?>"></script>
     <?php View::partial('logout_modal'); ?>
+    <script src="<?= View::asset('js/pwa.js') ?>"></script>
 
     <div id="DownloadFormatModal" class="download-modal" style="display:none;">
         <div class="download-modal-overlay" onclick="closeDownloadModal()"></div>

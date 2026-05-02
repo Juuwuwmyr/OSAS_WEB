@@ -1,20 +1,26 @@
 {
-  "name": "OSAS Student Entrance System",
-  "short_name": "OSAS",
-  "start_url": "index.php",
+  "name": "E-OSAS — Student Affairs System",
+  "short_name": "E-OSAS",
+  "description": "Office of Student Affairs and Services — Colegio de Naujan",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#F5F5F2",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f0f",
   "theme_color": "#D4AF37",
+  "categories": ["education", "productivity"],
   "icons": [
     {
       "src": "app/assets/img/default.png",
-      "sizes": "500x500",
-      "type": "image/png"
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "app/assets/img/default.png",
-      "sizes": "500x500",
-      "type": "image/png"
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
