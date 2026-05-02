@@ -2809,6 +2809,7 @@ body.dark {
 .Violations-empty-state {
   margin: 0;
   padding: 0;
+  width: 100%;
 }
 
 .empty-state-inner {
@@ -2821,9 +2822,10 @@ body.dark {
   text-align: center;
   background: var(--light);
   border-radius: 16px;
-  margin: 16px;
+  margin: 16px auto;
   border: 1.5px dashed var(--border);
   transition: border-color 0.2s;
+  max-width: 100%;
 }
 
 .empty-state-inner:hover {

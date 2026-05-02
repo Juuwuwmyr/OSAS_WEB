@@ -4409,9 +4409,6 @@ function initViolationsModule() {
                     console.warn('⚠️ Students API not accessible, but continuing...');
                 }
 
-                // Show loading overlay
-                showLoadingOverlay('Initializing violations system...');
-
                 // Check if elements exist
                 console.log('Checking DOM elements...');
                 console.log('tableBody:', tableBody);
