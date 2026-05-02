@@ -2631,18 +2631,31 @@ function initViolationsModule() {
              const attachmentsContainer = document.getElementById('detailAttachments');
              if (attachmentsContainer) {
                  if (violation.attachments && violation.attachments.length > 0) {
-                     attachmentsContainer.innerHTML = violation.attachments.map(filePath => {
-                         // Resolve full URL for the attachment
-                         const fullUrl = getImageUrl(filePath);
+                     // Collect image URLs for lightbox navigation
+                     const imageAttachments = violation.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
+                     window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
+                     window._lightboxIndex  = 0;
+
+                     attachmentsContainer.innerHTML = violation.attachments.map((filePath, i) => {
+                         const fullUrl  = getImageUrl(filePath);
                          const fileName = filePath.split('/').pop();
-                         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
-                         
-                         return `<a href="${fullUrl}" target="_blank" class="attachment-item">
-                             <i class='bx ${isImage ? 'bx-image' : 'bx-file'}'></i>
-                             <span>${fileName}</span>
-                         </a>`;
+                         const isImage  = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+                         const imgIdx   = imageAttachments.indexOf(filePath);
+
+                         if (isImage) {
+                             return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to view">
+                                 <img src="${fullUrl}" alt="${fileName}" loading="lazy"
+                                      onerror="this.src='https://ui-avatars.com/api/?name=IMG&background=eee&color=999&size=100'">
+                                 <div class="evidence-overlay"><i class='bx bx-zoom-in'></i></div>
+                             </div>`;
+                         } else {
+                             return `<a href="${fullUrl}" target="_blank" class="evidence-thumb evidence-file-thumb" title="${fileName}">
+                                 <i class='bx bxs-file-blank'></i>
+                                 <span>${fileName}</span>
+                             </a>`;
+                         }
                      }).join('');
-                     attachmentsContainer.style.display = 'flex';
+                     attachmentsContainer.style.display = 'grid';
                  } else {
                     attachmentsContainer.innerHTML = '<p class="no-attachments">No attachments available.</p>';
                     attachmentsContainer.style.display = 'block';
@@ -2675,51 +2688,92 @@ function initViolationsModule() {
                 });
 
                 if (studentHistory.length > 0) {
-                    timelineEl.innerHTML = studentHistory.map(v => {
-                        // Highlight the current violation being viewed
-                        // Since we deduplicated, we need to check if the current violation MATCHES one of the history items content-wise
-                        // instead of just ID check, because the specific ID we are viewing might have been filtered out as a duplicate
-                        // but its "content equivalent" is still there.
-                        
+                    timelineEl.innerHTML = studentHistory.map((v, idx) => {
                         const viewingKey = `${violation.violationTypeLabel}|${violation.violationLevelLabel}|${violation.violationDate}|${violation.violationTime}|${violation.location}|${violation.reportedBy}`;
                         const currentKey = `${v.violationTypeLabel}|${v.violationLevelLabel}|${v.violationDate}|${v.violationTime}|${v.location}|${v.reportedBy}`;
-                        
-                        const isCurrent = viewingKey === currentKey;
+                        const isCurrent  = viewingKey === currentKey;
                         const activeClass = isCurrent ? 'current-viewing' : '';
                         const dateStr = formatDate(v.dateReported || v.date);
                         const timeStr = formatTime(v.violationTime);
-                        
+                        const hasEvidence = v.attachments && v.attachments.length > 0;
+
                         return `
-                        <div class="timeline-item ${activeClass}">
+                        <div class="timeline-item ${activeClass}" data-vid="${v.id}" style="cursor:pointer" title="Click to view evidence for this violation">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
                                 <span class="timeline-date">${dateStr} ${timeStr ? '• ' + timeStr : ''}</span>
                                 <span class="timeline-title">
                                     ${v.violationLevelLabel || v.level || 'Level'} - ${v.violationTypeLabel || v.type || 'Type'}
-                                    ${isCurrent ? '<span style="font-size: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Current</span>' : ''}
+                                    ${isCurrent ? '<span style="font-size:10px;background:#eee;padding:2px 6px;border-radius:4px;margin-left:5px;">Viewing</span>' : ''}
+                                    ${hasEvidence ? '<span style="font-size:10px;background:#fff3cd;color:#856404;padding:2px 6px;border-radius:4px;margin-left:5px;"><i class=\'bx bx-image-alt\'></i> Evidence</span>' : ''}
                                 </span>
                                 <span class="timeline-desc">
-                                    Reported at ${v.locationLabel || v.location} 
+                                    Reported at ${v.locationLabel || v.location}
                                     ${(() => {
-                                        let itemStatus = v.status;
-                                        const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                                        if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
-                                            itemStatus = 'disciplinary';
-                                        }
-                                        
-                                        if (itemStatus === 'resolved') {
-                                            return '<span style="color: green; font-weight: bold;">(Resolved)</span>';
-                                        } else if (itemStatus === 'disciplinary') {
-                                            return '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
-                                        }
+                                        let s = v.status;
+                                        const ll = (v.violationLevelLabel || '').toLowerCase();
+                                        if (ll.includes('warning 3') || ll.includes('3rd')) s = 'disciplinary';
+                                        if (s === 'resolved') return '<span style="color:green;font-weight:bold;">(Resolved)</span>';
+                                        if (s === 'disciplinary') return '<span style="color:#e74c3c;font-weight:bold;">(Disciplinary)</span>';
                                         return '';
                                     })()}
                                 </span>
                             </div>
                         </div>
                     `}).join('');
+
+                    // Click handler — switch evidence panel to the clicked violation
+                    timelineEl.addEventListener('click', function(e) {
+                        const item = e.target.closest('.timeline-item[data-vid]');
+                        if (!item) return;
+
+                        const vid = parseInt(item.dataset.vid);
+                        const clicked = violations.find(v => v.id === vid);
+                        if (!clicked) return;
+
+                        // Update active state
+                        timelineEl.querySelectorAll('.timeline-item').forEach(el => el.classList.remove('current-viewing'));
+                        item.classList.add('current-viewing');
+
+                        // Update evidence section
+                        const attachmentsContainer = document.getElementById('detailAttachments');
+                        const evidenceHeader = document.querySelector('.evidence-section-header h4');
+                        if (!attachmentsContainer) return;
+
+                        const label = `${clicked.violationLevelLabel || ''} - ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
+                        if (evidenceHeader) evidenceHeader.innerHTML = `<i class='bx bx-image-alt'></i> Evidence — <span style="font-weight:400;color:var(--dark-grey);font-size:11px;">${label}</span>`;
+
+                        if (clicked.attachments && clicked.attachments.length > 0) {
+                            const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
+                            window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
+                            window._lightboxIndex  = 0;
+
+                            attachmentsContainer.innerHTML = clicked.attachments.map(filePath => {
+                                const fullUrl  = getImageUrl(filePath);
+                                const fileName = filePath.split('/').pop();
+                                const isImage  = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+                                const imgIdx   = imageAttachments.indexOf(filePath);
+
+                                if (isImage) {
+                                    return `<div class="evidence-thumb" onclick="openLightbox(${imgIdx})" title="Click to view">
+                                        <img src="${fullUrl}" alt="${fileName}" loading="lazy"
+                                             onerror="this.src='https://ui-avatars.com/api/?name=IMG&background=eee&color=999&size=100'">
+                                        <div class="evidence-overlay"><i class='bx bx-zoom-in'></i></div>
+                                    </div>`;
+                                } else {
+                                    return `<a href="${fullUrl}" target="_blank" class="evidence-thumb evidence-file-thumb" title="${fileName}">
+                                        <i class='bx bxs-file-blank'></i><span>${fileName}</span>
+                                    </a>`;
+                                }
+                            }).join('');
+                            attachmentsContainer.style.display = 'grid';
+                        } else {
+                            attachmentsContainer.innerHTML = '<p class="no-attachments">No evidence for this violation.</p>';
+                            attachmentsContainer.style.display = 'block';
+                        }
+                    });
                 } else {
-                    timelineEl.innerHTML = '<p style="color: #6c757d; font-size: 14px; text-align: center; padding: 10px;">No history available.</p>';
+                    timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">No history available.</p>';
                 }
             }
             
@@ -3774,105 +3828,91 @@ function initViolationsModule() {
         // --- Attachment Preview Functions ---
         function updateAttachmentPreviews() {
             const container = document.getElementById('attachmentPreviews');
+            const countEl   = document.getElementById('evidenceCount');
             if (!container) return;
 
+            if (countEl) countEl.textContent = selectedFiles.length + ' file' + (selectedFiles.length !== 1 ? 's' : '');
             container.innerHTML = '';
-            
-            if (selectedFiles.length === 0) {
-                // Keep the container visible if needed by layout, or let CSS handle it
-                return;
-            }
 
             selectedFiles.forEach((file, index) => {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'preview-item';
-                
-                // Format file size
-                const fileSize = file.size < 1024 * 1024 
-                    ? (file.size / 1024).toFixed(1) + ' KB' 
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+
+                const fileSize = file.size < 1024 * 1024
+                    ? (file.size / 1024).toFixed(1) + ' KB'
                     : (file.size / (1024 * 1024)).toFixed(1) + ' MB';
 
-                // If it's an image, show a thumbnail
+                const ext = file.name.split('.').pop().toUpperCase();
+
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewItem.innerHTML = `
-                            <img src="${e.target.result}" alt="preview">
+                    reader.onload = e => {
+                        item.innerHTML = `
+                            <img src="${e.target.result}" alt="${file.name}">
                             <div class="file-size">${fileSize}</div>
-                            <button type="button" class="remove-btn" data-index="${index}" title="Remove file">
-                                <i class='bx bx-x'></i>
-                            </button>
-                        `;
+                            <button type="button" class="remove-btn" data-index="${index}" title="Remove"><i class='bx bx-x'></i></button>`;
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    // Show file icon for other types
-                    previewItem.innerHTML = `
+                    item.innerHTML = `
                         <div class="file-icon-preview">
-                            <i class='bx bxs-file-blank' style="font-size: 24px; color: #ffcc00;"></i>
-                            <div class="file-size">${fileSize}</div>
+                            <i class='bx bxs-file-blank'></i>
+                            <span class="file-ext">${ext}</span>
                         </div>
-                        <button type="button" class="remove-btn" data-index="${index}" title="Remove file">
-                            <i class='bx bx-x'></i>
-                        </button>
-                    `;
+                        <div class="file-size">${fileSize}</div>
+                        <button type="button" class="remove-btn" data-index="${index}" title="Remove"><i class='bx bx-x'></i></button>`;
                 }
-                
-                container.appendChild(previewItem);
+                container.appendChild(item);
             });
 
-            // Event delegation for removal to handle async FileReader renders
             container.onclick = function(e) {
-                const removeBtn = e.target.closest('.remove-btn');
-                if (!removeBtn) return;
-
+                const btn = e.target.closest('.remove-btn');
+                if (!btn) return;
                 e.preventDefault();
-                e.stopPropagation();
-                
-                const idx = parseInt(removeBtn.dataset.index);
-                const fileName = selectedFiles[idx]?.name || 'file';
-                
-                console.log(`🗑️ Removing attachment: ${fileName} at index ${idx}`);
-                
-                const item = removeBtn.closest('.preview-item');
-                if (item) {
-                    item.style.transform = 'scale(0.8)';
-                    item.style.opacity = '0';
-                    item.style.transition = 'all 0.2s ease';
-                }
-                
-                setTimeout(() => {
-                    selectedFiles.splice(idx, 1);
-                    updateAttachmentPreviews();
-                }, 200);
+                const idx = parseInt(btn.dataset.index);
+                const item = btn.closest('.preview-item');
+                if (item) { item.style.opacity = '0'; item.style.transform = 'scale(0.8)'; item.style.transition = 'all 0.2s'; }
+                setTimeout(() => { selectedFiles.splice(idx, 1); updateAttachmentPreviews(); }, 200);
             };
         }
 
         function setupAttachmentHandler() {
-            const fileInput = document.getElementById('violationAttachment');
+            const fileInput   = document.getElementById('violationAttachment');
+            const dropzone    = document.getElementById('evidenceDropzone');
+            const browseBtn   = document.getElementById('evidenceBrowseBtn');
             if (!fileInput) return;
 
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    // Add new files to the array
-                    for (let i = 0; i < this.files.length; i++) {
-                        // Check if file already exists in selection to avoid duplicates
-                        const alreadyExists = selectedFiles.some(f => 
-                            f.name === this.files[i].name && 
-                            f.size === this.files[i].size
-                        );
-                        
-                        if (!alreadyExists) {
-                            selectedFiles.push(this.files[i]);
-                        }
-                    }
-                    
-                    // Clear the input so it can trigger change again for same file
-                    this.value = '';
-                    
-                    updateAttachmentPreviews();
-                }
+            // Browse button click
+            if (browseBtn) browseBtn.addEventListener('click', () => fileInput.click());
+            // Clicking anywhere on dropzone also opens file picker
+            if (dropzone) dropzone.addEventListener('click', e => {
+                if (e.target !== browseBtn) fileInput.click();
             });
+
+            // Drag & drop
+            if (dropzone) {
+                dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+                dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+                dropzone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    addFiles(e.dataTransfer.files);
+                });
+            }
+
+            fileInput.addEventListener('change', function() {
+                addFiles(this.files);
+                this.value = '';
+            });
+
+            function addFiles(files) {
+                for (const file of files) {
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        selectedFiles.push(file);
+                    }
+                }
+                updateAttachmentPreviews();
+            }
         }
 
         function populateSuggestedNotes(violationType) {
@@ -4733,3 +4773,44 @@ function initViolationsModule() {
 
 // Make function globally available
 window.initViolationsModule = initViolationsModule;
+
+// ── Lightbox for evidence images ─────────────────────────────────────────────
+function openLightbox(index) {
+    const lb  = document.getElementById('evidenceLightbox');
+    const img = document.getElementById('lightboxImg');
+    const cap = document.getElementById('lightboxCaption');
+    if (!lb || !window._lightboxImages || !window._lightboxImages.length) return;
+
+    window._lightboxIndex = Math.max(0, Math.min(index, window._lightboxImages.length - 1));
+    img.src = window._lightboxImages[window._lightboxIndex];
+    if (cap) cap.textContent = `${window._lightboxIndex + 1} / ${window._lightboxImages.length}`;
+
+    const prevBtn = document.getElementById('lightboxPrev');
+    const nextBtn = document.getElementById('lightboxNext');
+    if (prevBtn) prevBtn.style.visibility = window._lightboxImages.length > 1 ? 'visible' : 'hidden';
+    if (nextBtn) nextBtn.style.visibility = window._lightboxImages.length > 1 ? 'visible' : 'hidden';
+
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    const lb = document.getElementById('evidenceLightbox');
+    if (lb) lb.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function lightboxNav(dir) {
+    if (!window._lightboxImages) return;
+    const next = window._lightboxIndex + dir;
+    if (next >= 0 && next < window._lightboxImages.length) openLightbox(next);
+}
+
+// Keyboard navigation for lightbox
+document.addEventListener('keydown', function(e) {
+    const lb = document.getElementById('evidenceLightbox');
+    if (!lb || lb.style.display === 'none') return;
+    if (e.key === 'Escape')      closeLightbox();
+    if (e.key === 'ArrowRight')  lightboxNav(1);
+    if (e.key === 'ArrowLeft')   lightboxNav(-1);
+});

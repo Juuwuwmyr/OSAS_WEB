@@ -381,18 +381,26 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Attachments -->
         <div class="violation-attachments">
-          <h4>Attachments (Optional)</h4>
-          <div class="attachments-compact-wrapper">
-            <div class="attachment-upload">
-              <input type="file" id="violationAttachment" name="violationAttachment" accept="image/*,.pdf,.doc,.docx" multiple>
-              <label for="violationAttachment" class="attachment-label">
-                <i class='bx bx-plus-circle'></i>
-                <span>Add Evidence</span>
-              </label>
+          <div class="evidence-upload-header">
+            <div class="evidence-upload-title">
+              <i class='bx bx-camera'></i>
+              <span>Evidence / Attachments <em>(Optional)</em></span>
             </div>
-            <!-- Attachment Previews -->
-            <div id="attachmentPreviews" class="attachment-previews-container"></div>
+            <span class="evidence-count" id="evidenceCount">0 files</span>
           </div>
+
+          <div class="evidence-dropzone" id="evidenceDropzone">
+            <input type="file" id="violationAttachment" name="violationAttachment"
+                   accept="image/*,.pdf,.doc,.docx" multiple style="display:none">
+            <div class="evidence-dropzone-inner" id="evidenceDropzoneInner">
+              <i class='bx bx-cloud-upload'></i>
+              <p>Drag & drop files here or <button type="button" class="evidence-browse-btn" id="evidenceBrowseBtn">Browse</button></p>
+              <span>Supports: JPG, PNG, GIF, WEBP, PDF, DOC — Max 5MB each</span>
+            </div>
+          </div>
+
+          <!-- Attachment Previews Grid -->
+          <div id="attachmentPreviews" class="evidence-previews-grid"></div>
         </div>
 
         <!-- Action Buttons -->
@@ -487,9 +495,23 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Evidence Section -->
         <div class="violation-evidence-section">
-          <h4>Evidence / Attachments</h4>
-          <div id="detailAttachments" class="attachments-grid">
+          <div class="evidence-section-header">
+            <h4><i class='bx bx-image-alt'></i> Evidence / Attachments</h4>
+          </div>
+          <div id="detailAttachments" class="evidence-display-grid">
             <p class="no-attachments">No attachments available.</p>
+          </div>
+        </div>
+
+        <!-- Image Lightbox -->
+        <div id="evidenceLightbox" class="evidence-lightbox" style="display:none">
+          <div class="evidence-lightbox-overlay" onclick="closeLightbox()"></div>
+          <div class="evidence-lightbox-content">
+            <button class="evidence-lightbox-close" onclick="closeLightbox()"><i class='bx bx-x'></i></button>
+            <button class="evidence-lightbox-prev" id="lightboxPrev" onclick="lightboxNav(-1)"><i class='bx bx-chevron-left'></i></button>
+            <img id="lightboxImg" src="" alt="Evidence">
+            <div class="evidence-lightbox-caption" id="lightboxCaption"></div>
+            <button class="evidence-lightbox-next" id="lightboxNext" onclick="lightboxNav(1)"><i class='bx bx-chevron-right'></i></button>
           </div>
         </div>
 
