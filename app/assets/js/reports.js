@@ -242,33 +242,16 @@ function initReportsModule() {
                 console.log(`✅ Loaded ${reports.length} reports from database`);
                 
                 if (reports.length === 0) {
-                    console.warn('⚠️ No reports found. This could mean:');
-                    console.warn('  1. No violations exist in the database');
-                    console.warn('  2. Filters are too restrictive');
-                    console.warn('  3. No students have violations');
-                    console.warn('  4. student_id mismatch between violations and students tables');
-                    console.warn('💡 Try: Clear all filters and check if violations exist in the Violations page');
-                    
-                    // Show helpful message in table
                     if (tableBody) {
-                        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px;">
-                            <div style="font-size: 1.2em; color: #666; margin-bottom: 10px;">
-                                <i class='bx bx-info-circle' style="font-size: 2em; color: #4a90e2;"></i>
-                            </div>
-                            <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px; color: #333;">
-                                No Reports Found
-                            </div>
-                            <div style="color: #666; line-height: 1.6;">
-                                <p>There are no violation reports to display. This could mean:</p>
-                                <ul style="text-align: left; display: inline-block; margin: 10px 0;">
-                                    <li>No violations have been recorded in the database</li>
-                                    <li>The current filters are too restrictive</li>
-                                    <li>No students have violations matching the criteria</li>
-                                </ul>
-                                <p style="margin-top: 15px;">
-                                    <strong>Tip:</strong> Go to the <strong>Violations</strong> page to add violations, 
-                                    or try clearing your filters.
-                                </p>
+                        tableBody.innerHTML = `<tr><td colspan="10">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 24px;text-align:center;">
+                                <div style="width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,0.08);border:1.5px solid rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:center;">
+                                    <i class='bx bx-bar-chart-alt-2' style="font-size:24px;color:#D4AF37;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:4px;">No Reports Found</div>
+                                    <div style="font-size:12px;color:var(--dark-grey);line-height:1.6;">No violations match the current filters.<br>Try adjusting your search criteria.</div>
+                                </div>
                             </div>
                         </td></tr>`;
                     }

@@ -610,14 +610,25 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- Empty State -->
   <div class="Reports-empty-state" id="ReportsEmptyState" style="display: none;">
-    <div class="Reports-empty-icon">
-      <i class='bx bx-bar-chart-alt'></i>
+    <div class="reports-empty-inner">
+      <div class="reports-empty-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="32" fill="rgba(212,175,55,0.08)"/>
+          <rect x="18" y="38" width="6" height="10" rx="2" fill="#D4AF37" opacity="0.4"/>
+          <rect x="27" y="28" width="6" height="20" rx="2" fill="#D4AF37" opacity="0.6"/>
+          <rect x="36" y="20" width="6" height="28" rx="2" fill="#D4AF37" opacity="0.9"/>
+          <path d="M16 44 Q24 36 32 30 Q40 24 48 18" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="3 2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="reports-empty-text">
+        <h3>No Reports Generated</h3>
+        <p>No violation data matches the current filters.<br>Try adjusting your criteria or generate a new report.</p>
+      </div>
+      <button class="reports-empty-btn" id="btnGenerateFirstReport">
+        <i class='bx bx-bar-chart-alt-2'></i>
+        <span>Generate Report</span>
+      </button>
     </div>
-    <h3>No Reports Generated</h3>
-    <p>Generate your first report to view analytics and insights</p>
-    <button class="Reports-btn-primary" id="btnGenerateFirstReport">
-      <i class='bx bx-plus'></i> Generate First Report
-    </button>
   </div>
 
   <!-- Export Modal -->
