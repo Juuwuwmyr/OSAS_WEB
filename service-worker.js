@@ -1,5 +1,7 @@
-const CACHE_NAME = 'osas-cache-v5';
-const API_CACHE  = 'osas-api-v5';
+// Version auto-updates on every deploy — change this date when deploying
+const BUILD_DATE = '2026-05-03';
+const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
+const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
 const PRECACHE_ASSETS = [
   '/', '/index.php', '/manifest.json',
