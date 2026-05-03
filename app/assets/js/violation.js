@@ -113,19 +113,23 @@ function initViolationsModule() {
 
         // ========== DATA & CONFIG ==========
         
-        // Dynamic data
-        let violations = [];
-        let filteredViolations = []; // To store currently filtered items for printing/stats
-        let currentView = 'current'; // 'current' or 'archive'
-        let students = [];
-        let violationTypes = [];
-        let isLoading = false;
-        let isSubmitting = false; // Form submission lock
-        let currentPage = 1;
-        let itemsPerPage = 10;
-        let totalRecords = 0;
-        let totalPages = 0;
-        let selectedFiles = []; // To store selected attachment files
+        // Use window-level cache so data persists when switching pages and back
+        // This prevents re-fetching every time the violations page is visited
+        if (!window._violationsCache) window._violationsCache = { violations: [], students: [], violationTypes: [], loaded: false };
+        const _cache = window._violationsCache;
+
+        let violations      = _cache.violations;
+        let filteredViolations = [];
+        let currentView     = 'current';
+        let students        = _cache.students;
+        let violationTypes  = _cache.violationTypes;
+        let isLoading       = false;
+        let isSubmitting    = false;
+        let currentPage     = 1;
+        let itemsPerPage    = 10;
+        let totalRecords    = 0;
+        let totalPages      = 0;
+        let selectedFiles   = [];
 
         function getCurrentAdminName() {
             const sessionStr = localStorage.getItem('userSession');
@@ -327,8 +331,10 @@ function initViolationsModule() {
                 if (window.offlineDB && violations.length > 0) {
                     window.offlineDB.saveViolations(violations).catch(err => console.error('Cache failed:', err));
                 }
-                
-                console.log(`✅ Loaded ${violations.length} violations`);
+
+                // Sync to window cache for instant restore on page revisit
+                _cache.violations = violations;
+                _cache.loaded = true;
                 console.log('Violations array:', violations);
                 
                 if (violations.length === 0) {
@@ -2227,11 +2233,23 @@ function initViolationsModule() {
             const pendingPctEl = document.getElementById('pendingViolationsPct');
             const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
             
-            const _acu = window.animateCountUp;
-            if (totalEl)       _acu ? _acu(totalEl, total) : (totalEl.textContent = total);
-            if (resolvedEl)    _acu ? _acu(resolvedEl, resolved) : (resolvedEl.textContent = resolved);
-            if (pendingEl)     _acu ? _acu(pendingEl, pending) : (pendingEl.textContent = pending);
-            if (disciplinaryEl) _acu ? _acu(disciplinaryEl, disciplinary) : (disciplinaryEl.textContent = disciplinary);
+            const _acu = window.animateCountUp || function(el, target) {
+                // Inline count-up fallback
+                const start = parseInt(el.textContent) || 0;
+                if (start === target) return;
+                const range = target - start;
+                const step  = Math.max(1, Math.abs(Math.round(range / 50)));
+                let cur = start;
+                const t = setInterval(() => {
+                    cur += range > 0 ? step : -step;
+                    if ((range > 0 && cur >= target) || (range < 0 && cur <= target)) { cur = target; clearInterval(t); }
+                    el.textContent = cur;
+                }, 16);
+            };
+            if (totalEl)        _acu(totalEl, total);
+            if (resolvedEl)     _acu(resolvedEl, resolved);
+            if (pendingEl)      _acu(pendingEl, pending);
+            if (disciplinaryEl) _acu(disciplinaryEl, disciplinary);
 
             const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
             const pendingPct = total > 0 ? Math.round((pending / total) * 100) : 0;
@@ -4433,6 +4451,24 @@ function initViolationsModule() {
         async function initializeData() {
             try {
                 console.log('🚀 Initializing violations data...');
+
+                // ── CACHE HIT: render immediately, refresh in background ──────
+                if (_cache.loaded && _cache.violations.length > 0) {
+                    console.log('⚡ Using cached violations data, rendering immediately...');
+                    violations     = _cache.violations;
+                    students       = _cache.students;
+                    violationTypes = _cache.violationTypes;
+                    renderViolations();
+                    updateStats();
+                    loadDepartments();
+                    addRefreshButton();
+                    // Refresh in background silently
+                    loadViolations(false).then(() => { renderViolations(); updateStats(); });
+                    loadStudents(false);
+                    if (violationTypes.length === 0) loadViolationTypes();
+                    hideLoadingOverlay();
+                    return;
+                }
 
                 // Check API connectivity first
                 const apiStatus = await checkAPIConnectivity();
