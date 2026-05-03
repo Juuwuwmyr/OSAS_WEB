@@ -10,6 +10,17 @@ if ('serviceWorker' in navigator) {
                 console.log('✅ SW registered, scope:', reg.scope);
                 reg.update();
 
+                // Detect new SW waiting — show update toast
+                reg.addEventListener('updatefound', () => {
+                    const newSW = reg.installing;
+                    if (!newSW) return;
+                    newSW.addEventListener('statechange', () => {
+                        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                            showUpdateToast(newSW);
+                        }
+                    });
+                });
+
                 // Listen for messages from SW (Background Sync trigger)
                 navigator.serviceWorker.addEventListener('message', async (event) => {
                     if (event.data && event.data.type === 'SYNC_VIOLATIONS') {
@@ -22,6 +33,44 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.warn('❌ SW registration failed:', err));
     });
 }
+
+function showUpdateToast(newSW) {
+    let toast = document.getElementById('sw-update-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sw-update-toast';
+        toast.style.cssText = `
+            position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+            z-index:999999;background:#1e293b;color:#fff;
+            padding:10px 16px;border-radius:12px;font-size:12px;font-weight:600;
+            display:flex;align-items:center;gap:10px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.3);white-space:nowrap;
+        `;
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+        <span>🔄 Update available</span>
+        <button onclick="applyUpdate()" style="
+            background:#D4AF37;color:#000;border:none;padding:4px 12px;
+            border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+            Reload
+        </button>
+        <button onclick="document.getElementById('sw-update-toast').style.display='none'" style="
+            background:rgba(255,255,255,0.1);color:#fff;border:none;
+            width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button>
+    `;
+    toast.style.display = 'flex';
+    window._pendingSW = newSW;
+}
+
+window.applyUpdate = function() {
+    if (window._pendingSW) {
+        window._pendingSW.postMessage({ type: 'SKIP_WAITING' });
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
+};
 
 // ── Register Background Sync when coming back online ─────────────────────────
 async function registerBackgroundSync() {
