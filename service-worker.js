@@ -1,212 +1,258 @@
-const CACHE_NAME = "osas-cache-v3";
+const CACHE_NAME = 'osas-cache-v5';
+const API_CACHE  = 'osas-api-v5';
 
-// Core assets to pre-cache on install
 const PRECACHE_ASSETS = [
-  "/",
-  "/index.php",
-  "/manifest.json",
-  "/app/assets/styles/login.css",
-  "/app/assets/styles/dashboard.css",
-  "/app/assets/styles/topnav.css",
-  "/app/assets/styles/content-layout.css",
-  "/app/assets/styles/user_dashboard.css",
-  "/app/assets/styles/user_topnav.css",
-  "/app/assets/styles/settings.css",
-  "/app/assets/styles/violation.css",
-  "/app/assets/styles/chatbot.css",
-  "/app/assets/img/default.png",
-  "/app/assets/js/pwa.js",
-  "/app/assets/js/dashboard.js",
-  "/app/assets/js/user_dashboard.js",
-  "/app/assets/js/dashboardData.js",
-  "/app/assets/js/userDashboardData.js",
-  "/app/assets/js/utils/theme.js",
-  "/app/assets/js/utils/eyeCare.js",
-  "/app/assets/js/utils/notification.js",
-  "/app/assets/js/utils/offlineDB.js",
-  "/app/assets/js/department.js",
-  "/app/assets/js/section.js",
-  "/app/assets/js/student.js",
-  "/app/assets/js/violation.js",
-  "/app/assets/js/reports.js",
-  "/app/assets/js/announcement.js",
-  "/app/assets/js/chatbot.js",
-  "/app/assets/js/userViolations.js",
-  "/app/assets/js/userAnnouncements.js"
+  '/', '/index.php', '/manifest.json',
+  '/app/assets/styles/login.css',
+  '/app/assets/styles/dashboard.css',
+  '/app/assets/styles/topnav.css',
+  '/app/assets/styles/content-layout.css',
+  '/app/assets/styles/user_dashboard.css',
+  '/app/assets/styles/user_topnav.css',
+  '/app/assets/styles/settings.css',
+  '/app/assets/styles/violation.css',
+  '/app/assets/styles/report.css',
+  '/app/assets/styles/students.css',
+  '/app/assets/styles/department.css',
+  '/app/assets/styles/section.css',
+  '/app/assets/styles/announcements.css',
+  '/app/assets/styles/chatbot.css',
+  '/app/assets/img/default.png',
+  '/app/assets/js/pwa.js',
+  '/app/assets/js/dashboard.js',
+  '/app/assets/js/user_dashboard.js',
+  '/app/assets/js/dashboardData.js',
+  '/app/assets/js/userDashboardData.js',
+  '/app/assets/js/utils/theme.js',
+  '/app/assets/js/utils/eyeCare.js',
+  '/app/assets/js/utils/notification.js',
+  '/app/assets/js/utils/offlineDB.js',
+  '/app/assets/js/department.js',
+  '/app/assets/js/section.js',
+  '/app/assets/js/student.js',
+  '/app/assets/js/violation.js',
+  '/app/assets/js/reports.js',
+  '/app/assets/js/announcement.js',
+  '/app/assets/js/chatbot.js',
+  '/app/assets/js/userViolations.js',
+  '/app/assets/js/userAnnouncements.js'
 ];
 
 // ── INSTALL ───────────────────────────────────────────────────────────────────
-self.addEventListener("install", (event) => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.allSettled(
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(
         PRECACHE_ASSETS.map(url =>
-          fetch(url).then(res => { if (res.ok) cache.put(url, res); }).catch(() => {})
+          fetch(url).then(r => { if (r.ok) cache.put(url, r); }).catch(() => {})
         )
-      );
-    })
+      )
+    )
   );
   self.skipWaiting();
 });
 
 // ── ACTIVATE ──────────────────────────────────────────────────────────────────
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(names =>
-      Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
-    )
-  );
-  self.clients.claim();
-});
-
-// ── FETCH ─────────────────────────────────────────────────────────────────────
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-  if (event.request.method !== "GET") return;
-
-  // API / PHP — network first, cache fallback
-  if (url.pathname.includes("/api/") || url.pathname.endsWith(".php")) {
-    event.respondWith(
-      fetch(event.request)
-        .then(res => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
-          }
-          return res;
-        })
-        .catch(() =>
-          caches.match(event.request).then(cached => cached ||
-            new Response(
-              JSON.stringify({ status: "offline", message: "You are offline. Showing cached data." }),
-              { headers: { "Content-Type": "application/json" } }
-            )
-          )
-        )
-    );
-    return;
-  }
-
-  // Static assets — cache first
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(res => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
-        }
-        return res;
-      }).catch(() => {
-        if (event.request.mode === "navigate") return caches.match("/index.php");
-      });
-    })
-  );
-});
-
-// ── BACKGROUND SYNC ───────────────────────────────────────────────────────────
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-violations") {
-    event.waitUntil(syncPendingViolations());
-  }
-});
-
-async function syncPendingViolations() {
-  // Notify all clients to run their sync function
-  const clients = await self.clients.matchAll({ type: "window" });
-  clients.forEach(client => {
-    client.postMessage({ type: "SYNC_VIOLATIONS" });
-  });
-}
-
-// ── MESSAGE HANDLER ───────────────────────────────────────────────────────────
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
-// ── INSTALL: pre-cache core assets ────────────────────────────────────────────
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // addAll fails if any single request fails — use individual puts to be resilient
-      return Promise.allSettled(
-        PRECACHE_ASSETS.map(url =>
-          fetch(url).then(res => {
-            if (res.ok) cache.put(url, res);
-          }).catch(() => {}) // silently skip failed assets
-        )
-      );
-    })
-  );
-  self.skipWaiting();
-});
-
-// ── ACTIVATE: clean up old caches ─────────────────────────────────────────────
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) =>
       Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
+        names.filter(n => n !== CACHE_NAME && n !== API_CACHE).map(n => caches.delete(n))
       )
     )
   );
   self.clients.claim();
 });
 
-// ── FETCH: network-first for API/PHP, cache-first for static assets ───────────
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+// ── FETCH ─────────────────────────────────────────────────────────────────────
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  const url = new URL(req.url);
 
-  // Skip non-GET and cross-origin requests (except CDN assets already cached)
-  if (event.request.method !== "GET") return;
+  if (req.method !== 'GET') return;
 
-  // API calls — network first, offline fallback
-  if (url.pathname.includes("/api/") || url.pathname.endsWith(".php")) {
+  // API calls — network first, offline fallback with client-side filtering
+  if (url.pathname.includes('/api/')) {
+    event.respondWith(handleAPIRequest(req, url));
+    return;
+  }
+
+  // PHP pages — network first, cache fallback
+  if (url.pathname.endsWith('.php') || url.pathname === '/') {
     event.respondWith(
-      fetch(event.request)
-        .then(res => {
-          // Cache successful GET API responses for offline use
-          if (res.ok && event.request.method === "GET") {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return res;
-        })
-        .catch(() => {
-          // Offline: return cached version if available
-          return caches.match(event.request).then(cached => {
-            if (cached) return cached;
-            // Return a JSON offline response for API calls
-            return new Response(
-              JSON.stringify({ status: "offline", message: "You are offline. Showing cached data." }),
-              { headers: { "Content-Type": "application/json" } }
-            );
-          });
-        })
+      fetch(req).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(req, clone));
+        }
+        return res;
+      }).catch(() =>
+        caches.match(req).then(c => c || caches.match('/index.php'))
+      )
     );
     return;
   }
 
-  // Static assets — cache first, network fallback
+  // Static assets — cache first
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(req).then(cached => {
       if (cached) return cached;
-      return fetch(event.request).then(res => {
+      return fetch(req).then(res => {
         if (res.ok) {
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(c => c.put(req, clone));
         }
         return res;
-      }).catch(() => {
-        // Return offline page for navigation requests
-        if (event.request.mode === "navigate") {
-          return caches.match("/index.php");
-        }
-      });
+      }).catch(() => null);
     })
   );
+});
+
+// ── API REQUEST HANDLER ───────────────────────────────────────────────────────
+async function handleAPIRequest(req, url) {
+  try {
+    const res = await fetch(req);
+    if (res.ok) {
+      // Cache the full dataset (base endpoint without pagination/search params)
+      const clone = res.clone();
+      const cache = await caches.open(API_CACHE);
+      const baseKey = getBaseKey(url);
+      cache.put(baseKey, clone);
+    }
+    return res;
+  } catch (e) {
+    // Offline — serve from cache with client-side filtering
+    return serveOffline(url);
+  }
+}
+
+// Strip pagination/search params to get the base cache key
+function getBaseKey(url) {
+  const base = url.origin + url.pathname;
+  const action = url.searchParams.get('action') || '';
+
+  if (url.pathname.includes('violations.php')) {
+    if (action === 'types') return new Request(base + '?action=types');
+    if (action === '') return new Request(base);
+    return new Request(base + '?action=' + action);
+  }
+  if (url.pathname.includes('students.php')) {
+    return new Request(base + '?action=get&filter=active&page=1&limit=1000');
+  }
+  return new Request(url.href);
+}
+
+// Serve offline response with client-side filtering
+async function serveOffline(url) {
+  const cache  = await caches.open(API_CACHE);
+  const base   = url.origin + url.pathname;
+  const action = url.searchParams.get('action') || '';
+
+  // ── violations.php ────────────────────────────────────────────────────────
+  if (url.pathname.includes('violations.php')) {
+    if (action === 'types') {
+      const c = await cache.match(new Request(base + '?action=types'));
+      if (c) return c.clone();
+      return offlineJSON({ status: 'success', data: [] });
+    }
+
+    // Find cached violations (try exact match, then scan)
+    let cached = await cache.match(new Request(base));
+    if (!cached) {
+      const keys = await cache.keys();
+      for (const k of keys) {
+        if (k.url.includes('violations.php') && !k.url.includes('action=')) {
+          cached = await cache.match(k); break;
+        }
+      }
+    }
+    if (!cached) return offlineJSON({ status: 'success', violations: [], data: [], total: 0 });
+
+    const data = await cached.json();
+    let list = data.violations || data.data?.violations || data.data || [];
+    if (!Array.isArray(list)) list = [];
+
+    // Client-side filters
+    const search     = url.searchParams.get('search') || '';
+    const dept       = url.searchParams.get('department') || '';
+    const status     = url.searchParams.get('status') || '';
+    const isArchived = url.searchParams.get('is_archived');
+    const studentId  = url.searchParams.get('student_id') || '';
+
+    if (isArchived !== null) list = list.filter(v => (v.is_archived || 0) == parseInt(isArchived));
+    if (studentId)  list = list.filter(v => (v.student_id || v.studentId || '').toLowerCase() === studentId.toLowerCase());
+    if (search)     { const s = search.toLowerCase(); list = list.filter(v => JSON.stringify(v).toLowerCase().includes(s)); }
+    if (dept && dept !== 'all') list = list.filter(v => (v.department || v.student_dept || '').toLowerCase().includes(dept.toLowerCase()));
+    if (status && status !== 'all') list = list.filter(v => (v.status || '').toLowerCase() === status.toLowerCase());
+
+    const page  = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const total = list.length;
+    const paged = list.slice((page - 1) * limit, page * limit);
+
+    return offlineJSON({ status: 'success', offline: true, violations: paged, data: { violations: paged, total, page, limit, pages: Math.ceil(total / limit) }, total });
+  }
+
+  // ── students.php ──────────────────────────────────────────────────────────
+  if (url.pathname.includes('students.php')) {
+    let cached = await cache.match(new Request(base + '?action=get&filter=active&page=1&limit=1000'));
+    if (!cached) {
+      const keys = await cache.keys();
+      for (const k of keys) { if (k.url.includes('students.php')) { cached = await cache.match(k); break; } }
+    }
+    if (!cached) return offlineJSON({ status: 'success', data: { students: [], total: 0 } });
+
+    const data = await cached.json();
+    let list = data.data?.students || data.students || data.data || [];
+    if (!Array.isArray(list)) list = [];
+
+    const search  = url.searchParams.get('search') || '';
+    const dept    = url.searchParams.get('department') || '';
+    const section = url.searchParams.get('section') || '';
+
+    if (search)  { const s = search.toLowerCase(); list = list.filter(st => JSON.stringify(st).toLowerCase().includes(s)); }
+    if (dept && dept !== 'all')    list = list.filter(st => (st.department || '').toLowerCase() === dept.toLowerCase());
+    if (section && section !== 'all') list = list.filter(st => (st.section_id || st.section || '').toString() === section);
+
+    const page  = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const total = list.length;
+    const paged = list.slice((page - 1) * limit, page * limit);
+
+    return offlineJSON({ status: 'success', offline: true, data: { students: paged, total, page, limit, pages: Math.ceil(total / limit) } });
+  }
+
+  // ── Other endpoints — return cached or empty ──────────────────────────────
+  const endpoints = ['departments.php', 'sections.php', 'announcements.php', 'dashboard_stats.php', 'reports.php'];
+  for (const ep of endpoints) {
+    if (url.pathname.includes(ep)) {
+      const keys = await cache.keys();
+      for (const k of keys) { if (k.url.includes(ep)) { const c = await cache.match(k); if (c) return c.clone(); } }
+      return offlineJSON({ status: 'success', offline: true, data: [] });
+    }
+  }
+
+  return offlineJSON({ status: 'offline', message: 'No cached data available.', data: [] });
+}
+
+function offlineJSON(data) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'X-Offline': '1' }
+  });
+}
+
+// ── BACKGROUND SYNC ───────────────────────────────────────────────────────────
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-violations') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(clients =>
+        clients.forEach(c => c.postMessage({ type: 'SYNC_VIOLATIONS' }))
+      )
+    );
+  }
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });

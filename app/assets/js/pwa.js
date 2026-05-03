@@ -68,68 +68,70 @@ let _offlineTimer = null;
 function showNetworkToast(isOnline) {
     if (_offlineTimer) { clearTimeout(_offlineTimer); _offlineTimer = null; }
 
-    let bar = document.getElementById('network-status-bar');
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'network-status-bar';
-        bar.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 999999;
-            height: 36px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.2);
-            transition: opacity 0.3s ease;
+    let toast = document.getElementById('network-status-bar');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'network-status-bar';
+        toast.style.cssText = `
+            position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);
+            z-index:999999;display:none;align-items:center;gap:10px;
+            padding:10px 16px 10px 14px;border-radius:12px;
+            font-size:12px;font-weight:600;letter-spacing:0.01em;white-space:nowrap;
+            box-shadow:0 4px 24px rgba(0,0,0,0.22);
+            opacity:0;transition:opacity 0.25s ease,transform 0.25s ease;
+            max-width:calc(100vw - 32px);
         `;
-        document.body.appendChild(bar);
+        document.body.appendChild(toast);
     }
 
-    if (isOnline) {
-        bar.style.background = 'linear-gradient(90deg,#059669,#10b981)';
-        bar.style.color = '#fff';
-        bar.innerHTML = `
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                <circle cx="12" cy="20" r="1" fill="currentColor"/>
-            </svg>
-            Back Online
-        `;
-        bar.style.display = 'flex';
-        bar.style.opacity = '1';
-        registerBackgroundSync();
+    const show = () => {
+        toast.style.display = 'flex';
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+        });
+    };
+    const hide = (delay = 0) => {
         setTimeout(() => {
-            bar.style.opacity = '0';
-            setTimeout(() => { bar.style.display = 'none'; bar.style.opacity = '1'; }, 300);
-        }, 3000);
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(20px)';
+            setTimeout(() => { toast.style.display = 'none'; }, 280);
+        }, delay);
+    };
+
+    if (isOnline) {
+        toast.style.background = '#064e3b';
+        toast.style.color = '#6ee7b7';
+        toast.style.border = '1px solid rgba(110,231,183,0.2)';
+        toast.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
+            </svg>
+            <span>Back online</span>`;
+        show();
+        registerBackgroundSync();
+        hide(3000);
     } else {
-        // 4-second delay before showing offline bar (avoids false positives)
+        // 4-second delay to avoid false positives on slow connections
         _offlineTimer = setTimeout(() => {
             if (navigator.onLine) return;
-            bar.style.background = 'linear-gradient(90deg,#b91c1c,#ef4444)';
-            bar.style.color = '#fff';
-            bar.innerHTML = `
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            toast.style.background = '#1c1917';
+            toast.style.color = '#fca5a5';
+            toast.style.border = '1px solid rgba(252,165,165,0.15)';
+            toast.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="1" y1="1" x2="23" y2="23"/>
-                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
-                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
-                    <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
-                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
-                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                    <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                    <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
                 </svg>
-                Offline Mode &nbsp;·&nbsp; Cached data shown
-            `;
-            bar.style.display = 'flex';
-            bar.style.opacity = '1';
+                <span>Offline mode &nbsp;·&nbsp; Cached data</span>
+                <button onclick="document.getElementById('network-status-bar').style.display='none'" style="
+                    background:rgba(255,255,255,0.08);border:none;color:inherit;
+                    width:20px;height:20px;border-radius:50%;display:flex;align-items:center;
+                    justify-content:center;cursor:pointer;font-size:13px;margin-left:4px;flex-shrink:0;">✕</button>`;
+            show();
         }, 4000);
     }
 }
@@ -137,9 +139,32 @@ function showNetworkToast(isOnline) {
 window.addEventListener('online',  () => showNetworkToast(true));
 window.addEventListener('offline', () => showNetworkToast(false));
 
-// Refresh badge on page load
 window.addEventListener('DOMContentLoaded', () => {
     if (window.refreshOfflineBadge) window.refreshOfflineBadge();
-    // Show offline bar on load if already offline (with 1s delay)
     if (!navigator.onLine) setTimeout(() => showNetworkToast(false), 1000);
+    // Warm API cache silently 3s after dashboard loads
+    if (navigator.onLine && window.location.pathname.includes('dashboard')) {
+        setTimeout(warmAPICache, 3000);
+    }
 });
+
+// ── Pre-warm API cache ────────────────────────────────────────────────────────
+async function warmAPICache() {
+    if (!navigator.onLine) return;
+    const p = window.location.pathname.split('/').filter(Boolean);
+    const d = ['app','api','includes','assets','public'];
+    const root = (p.length === 0 || d.includes(p[0])) ? '' : '/' + p[0];
+    const api  = root + '/api/';
+    const endpoints = [
+        api + 'violations.php',
+        api + 'students.php?action=get&filter=active&page=1&limit=1000',
+        api + 'violations.php?action=types',
+        api + 'departments.php?action=get&filter=active',
+        api + 'sections.php?action=get&filter=active',
+        api + 'announcements.php?action=active',
+        api + 'dashboard_stats.php'
+    ];
+    await Promise.allSettled(endpoints.map(url => fetch(url).catch(() => {})));
+    console.log('✅ API cache warmed for offline use');
+}
+window.warmAPICache = warmAPICache;

@@ -392,10 +392,13 @@ class DashboardData {
                 }
             } else {
                  console.warn(`⚠️ Expected 4 stat boxes, found ${statsBoxes.length}. Retrying in 500ms...`);
-                 // Retry if boxes not found yet
-                 setTimeout(() => {
-                     this.updateStats();
-                 }, 500);
+                 // Only retry if we're actually on the dashboard/dashcontent page
+                 const onDashboard = document.getElementById('violators-count') !== null ||
+                                     document.querySelector('.box-info') !== null ||
+                                     document.getElementById('dashcontent-page') !== null;
+                 if (onDashboard) {
+                     setTimeout(() => { this.updateStats(); }, 500);
+                 }
             }
         }
     }
@@ -418,8 +421,13 @@ class DashboardData {
         const monthlyCanvas = document.getElementById('monthlyTrendsChart');
         
         if (!violationTypesCanvas && !departmentCanvas && !monthlyCanvas) {
-            console.warn('⚠️ Chart canvases not found, retrying in 500ms...');
-            setTimeout(() => this.updateCharts(), 500);
+            // Only retry if on dashboard page
+            const onDashboard = document.getElementById('violators-count') !== null ||
+                                document.querySelector('.box-info') !== null;
+            if (onDashboard) {
+                console.warn('⚠️ Chart canvases not found, retrying in 500ms...');
+                setTimeout(() => this.updateCharts(), 500);
+            }
             return;
         }
         
