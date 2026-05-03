@@ -207,6 +207,13 @@ class ViolationController extends Controller
             $this->error('Invalid request method');
         }
 
+        // Restore session from cookies if session expired (handles offline sync after reconnect)
+        if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+            $_SESSION['user_id'] = $_COOKIE['user_id'];
+            $_SESSION['username'] = $_COOKIE['username'] ?? '';
+            $_SESSION['role']    = $_COOKIE['role'];
+        }
+
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }

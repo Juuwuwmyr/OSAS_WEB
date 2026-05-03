@@ -1706,13 +1706,21 @@ function initViolationsModule() {
 
                         const response = await fetch(API_BASE + 'violations.php', {
                             method: 'POST',
+                            credentials: 'include',
                             body: formData
                         });
 
-                        if (response.ok) {
+                        const responseText = await response.text();
+                        console.log('Sync response:', response.status, responseText);
+
+                        let result;
+                        try { result = JSON.parse(responseText); } catch(e) { result = null; }
+
+                        if (response.ok && result && result.status === 'success') {
                             await window.offlineDB.removeFromQueue(item.tempId);
                             synced++;
                         } else {
+                            console.error('Sync failed:', result?.message || responseText);
                             failed++;
                         }
                     }
