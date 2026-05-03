@@ -109,22 +109,10 @@ class OfflineDB {
     // ── Badge update ──────────────────────────────────────────────────────────
     async _updateBadge() {
         const count = await this.getPendingCount();
-        // Update the pending badge in the UI
         const badge = document.getElementById('offlinePendingBadge');
         if (badge) {
             badge.textContent = count;
             badge.style.display = count > 0 ? 'flex' : 'none';
-        }
-        // Update the sync banner
-        const banner = document.getElementById('offlineSyncBanner');
-        if (banner) {
-            if (count > 0) {
-                banner.style.display = 'flex';
-                const msg = banner.querySelector('.sync-banner-msg');
-                if (msg) msg.textContent = `${count} violation${count > 1 ? 's' : ''} pending sync`;
-            } else {
-                banner.style.display = 'none';
-            }
         }
     }
 }
