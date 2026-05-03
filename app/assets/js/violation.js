@@ -902,23 +902,39 @@ function initViolationsModule() {
                     
                     showNotification('You are offline. Violation saved locally and will sync when online.', 'warning', 6000);
                     
-                    // Optimistic UI update
-                    const tempId = 'TEMP-' + Date.now();
+                    // Optimistic UI update — fill in real values from form data
+                    const tempId    = 'TEMP-' + Date.now();
                     const studentId = formData.get('studentId');
-                    const student = students.find(s => s.studentId === studentId);
-                    
+                    const student   = students.find(s => s.studentId === studentId);
+
+                    // Resolve violation type label
+                    const vtypeId  = formData.get('violationType');
+                    const vlevelId = formData.get('violationLevel');
+                    const vtype    = violationTypes.find(t => String(t.id) === String(vtypeId));
+                    let vlevelLabel = '';
+                    if (vtype && vtype.levels) {
+                        const vlevel = vtype.levels.find(l => String(l.id) === String(vlevelId));
+                        vlevelLabel = vlevel ? vlevel.name : vlevelId;
+                    }
+
                     const offlineViolation = {
-                        id: tempId,
-                        caseId: 'OFFLINE-SYNC',
-                        studentId: studentId,
-                        studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
-                        studentImage: student ? student.avatar : '',
-                        violationTypeLabel: 'Sync Pending...',
-                        violationLevelLabel: '...',
-                        dateReported: formData.get('violationDate'),
-                        violationTime: formData.get('violationTime'),
-                        status: 'pending',
-                        statusLabel: 'Pending Sync'
+                        id:                  tempId,
+                        caseId:              'OFFLINE-SYNC',
+                        studentId:           studentId,
+                        studentName:         student ? `${student.firstName} ${student.lastName}` : (formData.get('studentName') || 'Unknown'),
+                        studentImage:        student ? student.avatar : '',
+                        violationTypeLabel:  vtype ? vtype.name : (formData.get('violationTypeName') || 'Pending Sync'),
+                        violationLevelLabel: vlevelLabel || formData.get('violationLevelName') || '—',
+                        department:          formData.get('department') || student?.department || 'N/A',
+                        section:             student?.section || formData.get('section') || 'N/A',
+                        studentYearlevel:    student?.yearlevel || 'N/A',
+                        dateReported:        formData.get('violationDate'),
+                        violationTime:       formData.get('violationTime'),
+                        location:            formData.get('violationLocation') || '',
+                        reportedBy:          formData.get('reportedBy') || '',
+                        status:              'pending',
+                        statusLabel:         'Pending Sync',
+                        is_archived:         0
                     };
                     
                     violations.unshift(offlineViolation);
