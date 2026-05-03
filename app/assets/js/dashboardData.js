@@ -330,23 +330,24 @@ class DashboardData {
         const penaltiesCount = document.getElementById('penalties-count');
         
         if (violatorsCount) {
-            violatorsCount.textContent = this.stats.violators || 0;
-            console.log('✅ Updated violators by ID:', this.stats.violators || 0);
+            if (window.animateCountUp) animateCountUp(violatorsCount, this.stats.violators || 0);
+            else violatorsCount.textContent = this.stats.violators || 0;
         }
         
         if (studentsCount) {
-            studentsCount.textContent = this.stats.students || 0;
-            console.log('✅ Updated students by ID:', this.stats.students || 0);
+            if (window.animateCountUp) animateCountUp(studentsCount, this.stats.students || 0);
+            else studentsCount.textContent = this.stats.students || 0;
         }
         
         if (departmentsCount) {
-            departmentsCount.textContent = this.stats.departments || 0;
-            console.log('✅ Updated departments by ID:', this.stats.departments || 0);
+            if (window.animateCountUp) animateCountUp(departmentsCount, this.stats.departments || 0);
+            else departmentsCount.textContent = this.stats.departments || 0;
         }
         
         if (penaltiesCount) {
-            penaltiesCount.textContent = this.stats.penalties || 0;
-            console.log('✅ Updated penalties by ID:', this.stats.penalties || 0);
+        if (penaltiesCount) {
+            if (window.animateCountUp) animateCountUp(penaltiesCount, this.stats.penalties || 0);
+            else penaltiesCount.textContent = this.stats.penalties || 0;
         }
         
         // If IDs not found, fallback to selector based (legacy support)

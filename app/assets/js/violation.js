@@ -2227,10 +2227,11 @@ function initViolationsModule() {
             const pendingPctEl = document.getElementById('pendingViolationsPct');
             const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
             
-            if (totalEl) totalEl.textContent = total;
-            if (resolvedEl) resolvedEl.textContent = resolved;
-            if (pendingEl) pendingEl.textContent = pending;
-            if (disciplinaryEl) disciplinaryEl.textContent = disciplinary;
+            const _acu = window.animateCountUp;
+            if (totalEl)       _acu ? _acu(totalEl, total) : (totalEl.textContent = total);
+            if (resolvedEl)    _acu ? _acu(resolvedEl, resolved) : (resolvedEl.textContent = resolved);
+            if (pendingEl)     _acu ? _acu(pendingEl, pending) : (pendingEl.textContent = pending);
+            if (disciplinaryEl) _acu ? _acu(disciplinaryEl, disciplinary) : (disciplinaryEl.textContent = disciplinary);
 
             const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
             const pendingPct = total > 0 ? Math.round((pending / total) * 100) : 0;

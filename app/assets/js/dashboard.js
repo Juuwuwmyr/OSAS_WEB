@@ -236,12 +236,26 @@ window.executeLogout = function() {
 }
 
 // Enhanced content loading with error handling and loading states
+// Page cache — stores loaded HTML so switching back is instant
+const _pageCache = {};
+const _CACHE_PAGES = ['admin_page/department', 'admin_page/Sections', 'admin_page/Students',
+                      'admin_page/Violations', 'admin_page/Reports', 'admin_page/Announcements'];
+
 function loadContent(page) {
     // Save current page to sessionStorage for refresh persistence
     sessionStorage.setItem('lastPage', page);
 
     // Update active navigation item
     updateActiveNavItem(page);
+
+    // ── CACHE HIT: restore instantly without XHR ──────────────────────────
+    if (_pageCache[page]) {
+        mainContent.innerHTML = _pageCache[page];
+        updateThemeColor();
+        initializeModule(page);
+        if (page === 'admin_page/dashcontent') _triggerDashboardData();
+        return;
+    }
 
     // Show loading state
     mainContent.innerHTML = `
@@ -368,6 +382,12 @@ function loadContent(page) {
                     const bodyClone = bodyContent.cloneNode(true);
                     bodyClone.querySelectorAll('script').forEach(script => script.remove());
                     mainContent.innerHTML = bodyClone.innerHTML;
+
+                    // Cache the rendered HTML for instant restore on revisit
+                    // Don't cache dashcontent (it has live charts) or pages that mutate heavily
+                    if (_CACHE_PAGES.some(p => page.toLowerCase().includes(p.toLowerCase().replace('admin_page/', '')))) {
+                        _pageCache[page] = bodyClone.innerHTML;
+                    }
                 } else {
                     // If no body tag, try to get main content
                     const mainTag = tempDiv.querySelector('main');
@@ -441,38 +461,7 @@ function loadContent(page) {
 
             // Initialize dashboard data if dashboard page is loaded
             if (page === 'admin_page/dashcontent') {
-                // Reset data loaded flag for new content
-                if (typeof window !== 'undefined') {
-                    window.dashboardDataLoaded = false;
-                }
-                
-                // Wait a bit longer for content to be fully rendered
-                setTimeout(() => {
-                    if (typeof initDashboardData === 'function') {
-                        console.log('🔄 Calling initDashboardData for dashcontent...');
-                        // Reset the init flag to allow re-initialization
-                        if (window.initDashboardDataAttempted !== undefined) {
-                            window.initDashboardDataAttempted = false;
-                        }
-                        initDashboardData();
-                    } else if (window.dashboardDataInstance) {
-                        console.log('🔄 Using existing dashboardDataInstance...');
-                        window.dashboardDataInstance.loadAllData().catch(error => {
-                            console.error('❌ Error loading dashboard data:', error);
-                        });
-                    } else {
-                        console.warn('⚠️ initDashboardData function not found, trying to create instance...');
-                        // Try to create instance if it doesn't exist
-                        if (typeof DashboardData !== 'undefined') {
-                            window.dashboardDataInstance = new DashboardData();
-                            setTimeout(() => {
-                                window.dashboardDataInstance.loadAllData().catch(error => {
-                                    console.error('❌ Error loading dashboard data:', error);
-                                });
-                            }, 500);
-                        }
-                    }
-                }, 600);
+                _triggerDashboardData();
             }
 
             console.log(`✅ ${page} loaded successfully`);
@@ -516,6 +505,40 @@ function loadContent(page) {
 
     xhr.send();
 }
+
+// ── Dashboard data trigger helper ─────────────────────────────────────────────
+function _triggerDashboardData() {
+    if (typeof window !== 'undefined') window.dashboardDataLoaded = false;
+    setTimeout(() => {
+        if (typeof initDashboardData === 'function') {
+            if (window.initDashboardDataAttempted !== undefined) window.initDashboardDataAttempted = false;
+            initDashboardData();
+        } else if (window.dashboardDataInstance) {
+            window.dashboardDataInstance.loadAllData().catch(e => console.error('❌', e));
+        } else if (typeof DashboardData !== 'undefined') {
+            window.dashboardDataInstance = new DashboardData();
+            setTimeout(() => window.dashboardDataInstance.loadAllData().catch(e => console.error('❌', e)), 500);
+        }
+    }, 600);
+}
+
+// ── Count-up animation for stat numbers ───────────────────────────────────────
+function animateCountUp(el, target, duration = 800) {
+    const start = parseInt(el.textContent) || 0;
+    if (start === target) return;
+    const range   = target - start;
+    const step    = Math.max(1, Math.abs(Math.round(range / (duration / 16))));
+    let   current = start;
+    const timer   = setInterval(() => {
+        current += range > 0 ? step : -step;
+        if ((range > 0 && current >= target) || (range < 0 && current <= target)) {
+            current = target;
+            clearInterval(timer);
+        }
+        el.textContent = current.toLocaleString();
+    }, 16);
+}
+window.animateCountUp = animateCountUp;
 
 // Module initializer function
 // Module initializer function - UPDATED VERSION
