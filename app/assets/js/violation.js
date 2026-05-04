@@ -382,7 +382,21 @@ function initViolationsModule() {
                 if (showLoading) hideLoadingOverlay();
             }
         }
+        // In-flight promise guard — prevents duplicate concurrent fetches
+        let _studentsLoadPromise = null;
+
         async function loadStudents(showLoading = false) {
+            // If a load is already in progress, wait for it instead of firing a second request
+            if (_studentsLoadPromise) {
+                return _studentsLoadPromise;
+            }
+            _studentsLoadPromise = _doLoadStudents(showLoading).finally(() => {
+                _studentsLoadPromise = null;
+            });
+            return _studentsLoadPromise;
+        }
+
+        async function _doLoadStudents(showLoading = false) {
             try {
                 if (showLoading) showLoadingOverlay('Loading students...');
                 console.log('🔄 Loading students data...');
@@ -418,28 +432,31 @@ function initViolationsModule() {
                 }
 
                 students = Array.isArray(list) ? list : [];
-                console.log(`✅ Loaded ${students.length} students`);
 
-                // Process student data to fix image paths
+                // Normalize all student objects to camelCase so field access is consistent
+                // regardless of whether the API returned raw snake_case or already-mapped fields
                 students = students.map(student => {
-                    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
+                    const firstName  = student.firstName  || student.first_name  || '';
+                    const lastName   = student.lastName   || student.last_name   || '';
+                    const middleName = student.middleName || student.middle_name || '';
+                    const fullName   = `${firstName} ${lastName}`.trim();
                     return {
                         ...student,
-                        avatar: getImageUrl(student.avatar, fullName)
+                        // Guarantee camelCase fields are always present
+                        studentId:  student.studentId  || student.student_id  || '',
+                        firstName,
+                        lastName,
+                        middleName,
+                        department: student.department  || student.department_name || 'N/A',
+                        section:    student.section     || student.section_code    || student.section_name || 'N/A',
+                        yearlevel:  student.yearlevel   || student.year_level      || 'N/A',
+                        contact:    student.contact     || student.contact_number  || student.phone || 'N/A',
+                        avatar:     getImageUrl(student.avatar, fullName)
                     };
                 });
 
-                // Validate student data structure
-                if (students.length > 0) {
-                    const firstStudent = students[0];
-                    console.log('Student data structure:', {
-                        hasId: 'studentId' in firstStudent,
-                        hasName: 'firstName' in firstStudent && 'lastName' in firstStudent,
-                        sampleId: firstStudent.studentId,
-                        sampleName: `${firstStudent.firstName} ${firstStudent.lastName}`,
-                        avatar: firstStudent.avatar
-                    });
-                }
+                // Sync to window cache so next page visit and concurrent searches use fresh data
+                _cache.students = students;
 
                 return students;
             } catch (error) {
@@ -2971,16 +2988,19 @@ function initViolationsModule() {
                 return;
             }
 
-            // Ensure students data is loaded (lazy-load only if not yet available)
+            // If students aren't loaded yet (background load still in flight or not started),
+            // wait for them — loadStudents deduplicates concurrent calls via the promise guard
             if (students.length === 0) {
                 showLoadingOverlay('Loading students...');
                 try {
                     await loadStudents(false);
                 } catch (error) {
                     console.error('Error loading students during search:', error);
-                } finally {
+                    showNotification('Could not load student data. Please try again.', 'error');
                     hideLoadingOverlay();
+                    return;
                 }
+                hideLoadingOverlay();
             }
 
             // More robust search logic — handle both camelCase and snake_case field names
