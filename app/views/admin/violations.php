@@ -277,7 +277,7 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="studentSearch">Search Student</label>
           <div class="student-search-wrapper">
             <input type="text" id="studentSearch" placeholder="Search by Student ID or Name...">
-            <button type="button" class="Violations-search-btn">
+            <button type="button" id="searchStudentBtn" class="Violations-search-btn">
               <i class='bx bx-search-alt'></i> Search
             </button>
             <button type="button" class="Violations-refresh-btn" id="refreshStudentsBtn" title="Refresh student data">

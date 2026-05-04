@@ -4128,6 +4128,31 @@ function initViolationsModule() {
             });
         }
 
+        if (searchStudentBtn) {
+            searchStudentBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await handleStudentSearch();
+                } catch (error) {
+                    console.error('Error searching student:', error);
+                    alert('Failed to search student. Please try again.');
+                }
+            });
+        } else {
+            // Fallback: query by class in case the element was loaded after init
+            const fallbackBtn = document.querySelector('.Violations-search-btn');
+            if (fallbackBtn) {
+                fallbackBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        await handleStudentSearch();
+                    } catch (error) {
+                        console.error('Error searching student:', error);
+                    }
+                });
+            }
+        }
+
         // 9. VIOLATION TYPE SELECTION
         const violationTypeCards = document.querySelectorAll('.violation-type-card');
         violationTypeCards.forEach(card => {
