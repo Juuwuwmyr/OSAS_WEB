@@ -220,31 +220,9 @@ function initSectionsModule() {
             if (activePctEl)   activePctEl.textContent   = `${activePct}%`;
             if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
         }
-            const submitBtn = document.querySelector('#sectionsForm button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-            
-            try {
-                const response = await fetch(`${apiBase}?action=add`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
 
-                if (data.status === 'success') {
-                    showSuccess(data.message || 'Section added successfully!');
-                    await fetchSections();
-                    await fetchStats();
-                    closeModal();
-                } else {
-                    showError(data.message || 'Failed to add section');
-                }
-            } catch (error) {
-                console.error('Error adding section:', error);
-                showError('Failed to add section. Please try again.');
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
+        async function addSection(formData) {
+            const submitBtn = document.querySelector('#sectionsForm button[type="submit"]');
 
         async function updateSection(sectionId, formData) {
             try {
@@ -462,7 +440,7 @@ function initSectionsModule() {
                 s.department,
                 s.academic_year,
                 s.student_count,
-                s.status.charAt(0).toUpperCase() + s.status.slice(1)
+                s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Active'
             ]);
 
             doc.autoTable({
@@ -763,6 +741,8 @@ function initSectionsModule() {
 
         // --- Render function ---
         function renderSections() {
+            const tableBody = document.getElementById('sectionsTableBody');
+            if (!tableBody) return;
             const list = Array.isArray(sections) ? sections : [];
             if (list.length === 0) {
                 tableBody.innerHTML = '';
@@ -797,7 +777,7 @@ function initSectionsModule() {
                     <td class="student-count" data-label="Students">${s.student_count || 0}</td>
                     <td class="date-created" data-label="Date Created">${s.date || ''}</td>
                     <td data-label="Status">
-                        <span class="sections-status-badge ${s.status}">${s.status === 'active' ? 'Active' : 'Archived'}</span>
+                        <span class="sections-status-badge ${s.status || 'active'}">${(s.status || 'active') === 'active' ? 'Active' : 'Archived'}</span>
                     </td>
                     <td data-label="Actions">
                         <div class="sections-action-buttons">
