@@ -1,4 +1,5 @@
-// Version auto-updates on every deploy — change this date when deploying
+// Cache version — auto-updated by .git/hooks/post-merge on the server
+// When git pull brings new commits, the hook rewrites this line automatically
 const BUILD_DATE = '2026-05-03';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
