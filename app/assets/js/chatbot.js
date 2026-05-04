@@ -408,74 +408,81 @@ class Chatbot {
         chatbotPanel.innerHTML = `
             <div class="chatbot-header">
                 <div class="chatbot-title">
-                    <img src="${botImgPath}" alt="Bot" class="chatbot-header-img">
-                    <span>OSAS Assistant</span>
+                    <div class="chatbot-header-avatar">
+                        <img src="${botImgPath}" alt="Bot" class="chatbot-header-img">
+                    </div>
+                    <div class="chatbot-header-text">
+                        <span class="chatbot-header-name">OSAS Assistant</span>
+                        <span class="chatbot-header-status">
+                            <span class="status-dot"></span>Online
+                        </span>
+                    </div>
                 </div>
                 <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <div class="chatbot-prompts-top" id="chatbot-prompts-top">
                 <div class="prompts-top-header">
                     <div class="prompts-top-title">
-                        <i class="bx bx-sparkles" aria-hidden="true"></i>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         <span>Quick Prompts</span>
                     </div>
                     <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts" aria-label="Toggle prompts">
-                        <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg>
+                        <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="18 15 12 9 6 15"/></svg>
                     </button>
                 </div>
                 <div class="prompts-top-content" id="prompts-top-content">
-                    <div class="prompts-top-grid" id="prompts-top-grid">
-                        <!-- Quick prompts will be added here -->
-                    </div>
+                    <div class="prompts-top-grid" id="prompts-top-grid"></div>
                 </div>
             </div>
             <div class="chatbot-messages" id="chatbot-messages">
-                <div class="chatbot-message bot welcome-message">
-                    <div class="message-content">
-                        <img src="${botImgPath}" alt="Bot" class="chatbot-msg-img">
-                        <div class="message-text">
-                            <p style="margin-bottom: 12px; font-weight: 600;">Hello! I'm your OSAS assistant. 👋</p>
-                            <p style="margin-bottom: 8px;">I can help you with:</p>
-                            <ul style="margin: 0; padding-left: 20px; font-size: 13px; opacity: 0.9;">
-                                <li>Student information and statistics</li>
-                                <li>Violation management</li>
-                                <li>Department and section details</li>
-                                <li>System navigation and features</li>
-                            </ul>
-                            <p style="margin-top: 12px; font-size: 13px; opacity: 0.8;">
-                                <i class="bx bx-sparkles" style="font-size: 14px;"></i> 
-                                Check the <strong>Quick Prompts</strong> above for suggested questions!
-                            </p>
+                <div class="welcome-card">
+                    <div class="welcome-card-glow"></div>
+                    <div class="welcome-card-top">
+                        <div class="welcome-avatar-ring">
+                            <img src="${botImgPath}" alt="Bot" class="welcome-avatar-img">
+                        </div>
+                        <div class="welcome-badge">AI Powered</div>
+                    </div>
+                    <h3 class="welcome-title">Hi there! 👋</h3>
+                    <p class="welcome-subtitle">I'm your <strong>OSAS Assistant</strong> — here to help you navigate the system instantly.</p>
+                    <div class="welcome-features">
+                        <div class="welcome-feature">
+                            <span class="feature-icon">🎓</span>
+                            <span>Students & Statistics</span>
+                        </div>
+                        <div class="welcome-feature">
+                            <span class="feature-icon">⚠️</span>
+                            <span>Violation Management</span>
+                        </div>
+                        <div class="welcome-feature">
+                            <span class="feature-icon">🏢</span>
+                            <span>Departments & Sections</span>
+                        </div>
+                        <div class="welcome-feature">
+                            <span class="feature-icon">🧭</span>
+                            <span>System Navigation</span>
                         </div>
                     </div>
+                    <p class="welcome-hint">✨ Try a <strong>Quick Prompt</strong> above to get started!</p>
                 </div>
             </div>
             <div class="chatbot-input-container">
-                <input 
-                    type="text" 
-                    id="chatbot-input" 
-                    placeholder="Type your message..." 
-                    autocomplete="off"
-                />
+                <input type="text" id="chatbot-input" placeholder="Ask me anything..." autocomplete="off"/>
                 <button id="chatbot-send" aria-label="Send message">
-                    <i class="bx bx-paper-plane" aria-hidden="true"></i>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
             </div>
             <div class="chatbot-loading" id="chatbot-loading" style="display: none;">
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
+                <div class="loading-dots"><span></span><span></span><span></span></div>
             </div>
         `;
         document.body.appendChild(chatbotPanel);
 
         // Create prompt selector modal
         this.createPromptSelectorModal();
-        
+
         // Load quick prompts
         this.loadQuickPrompts();
     }
@@ -488,7 +495,7 @@ class Chatbot {
             <div class="prompt-selector-content">
                 <div class="prompt-selector-header">
                     <div class="prompt-selector-title">
-                        <i class="bx bx-sparkles" aria-hidden="true"></i>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         <span>Select a Prompt</span>
                     </div>
                     <button class="prompt-selector-close" id="prompt-selector-close" aria-label="Close">
