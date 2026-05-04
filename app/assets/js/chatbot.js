@@ -670,6 +670,75 @@ class Chatbot {
                 this.close();
             }
         });
+
+        // Make the panel draggable via the header
+        this.initDrag();
+    }
+
+    initDrag() {
+        const panel  = document.getElementById('chatbot-panel');
+        const handle = panel.querySelector('.chatbot-header');
+        if (!handle || !panel) return;
+
+        let dragging = false;
+        let startX, startY, startLeft, startTop;
+
+        const onStart = (e) => {
+            // Ignore clicks on the close button
+            if (e.target.closest('#chatbot-close')) return;
+
+            dragging = true;
+            panel.classList.add('dragging');
+
+            const touch = e.touches ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
+
+            // Switch from bottom/right anchoring to top/left so we can move freely
+            const rect = panel.getBoundingClientRect();
+            panel.style.left   = rect.left + 'px';
+            panel.style.top    = rect.top  + 'px';
+            panel.style.right  = 'auto';
+            panel.style.bottom = 'auto';
+
+            startLeft = rect.left;
+            startTop  = rect.top;
+
+            e.preventDefault();
+        };
+
+        const onMove = (e) => {
+            if (!dragging) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+
+            // Clamp within viewport
+            const maxLeft = window.innerWidth  - panel.offsetWidth;
+            const maxTop  = window.innerHeight - panel.offsetHeight;
+            const newLeft = Math.max(0, Math.min(startLeft + dx, maxLeft));
+            const newTop  = Math.max(0, Math.min(startTop  + dy, maxTop));
+
+            panel.style.left = newLeft + 'px';
+            panel.style.top  = newTop  + 'px';
+            e.preventDefault();
+        };
+
+        const onEnd = () => {
+            if (!dragging) return;
+            dragging = false;
+            panel.classList.remove('dragging');
+        };
+
+        // Mouse events
+        handle.addEventListener('mousedown',  onStart);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onEnd);
+
+        // Touch events (mobile)
+        handle.addEventListener('touchstart',  onStart, { passive: false });
+        document.addEventListener('touchmove', onMove,  { passive: false });
+        document.addEventListener('touchend',  onEnd);
     }
 
     toggle() {

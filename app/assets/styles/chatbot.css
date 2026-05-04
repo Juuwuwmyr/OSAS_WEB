@@ -957,6 +957,30 @@ body.dark .prompt-card-desc {
 }
 
 /* ========================================= */
+/*        DRAGGABLE PANEL                    */
+/* ========================================= */
+.chatbot-header {
+    cursor: grab;
+    user-select: none;
+}
+
+.chatbot-header:active,
+#chatbot-panel.dragging .chatbot-header {
+    cursor: grabbing;
+}
+
+#chatbot-panel.dragging {
+    /* Disable transition while dragging so it follows the cursor instantly */
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s ease !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25),
+                0 8px 24px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(0, 0, 0, 0.08);
+    opacity: 0.96;
+}
+
+/* ========================================= */
 /*        RESPONSIVE DESIGN                  */
 /* ========================================= */
 @media screen and (max-width: 768px) {
