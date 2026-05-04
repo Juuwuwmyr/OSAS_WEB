@@ -2983,49 +2983,50 @@ function initViolationsModule() {
                 }
             }
 
-            // More robust search logic
+            // More robust search logic — handle both camelCase and snake_case field names
             const student = students.find(s => {
-                if (!s || !s.studentId) return false;
+                if (!s) return false;
+                const sid = (s.studentId || s.student_id || '').toLowerCase();
+                if (!sid) return false;
 
-                const studentId = s.studentId.toLowerCase();
                 const searchLower = searchTerm.toLowerCase();
-                const fullName = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase().trim();
+                const fn = (s.firstName || s.first_name || '').toLowerCase();
+                const ln = (s.lastName  || s.last_name  || '').toLowerCase();
+                const fullName = `${fn} ${ln}`.trim();
 
-                // Exact match first
-                if (studentId === searchLower) return true;
-
-                // Student ID contains search term
-                if (studentId.includes(searchLower)) return true;
-
-                // Name contains search term
+                if (sid === searchLower)          return true;
+                if (sid.includes(searchLower))    return true;
                 if (fullName.includes(searchLower)) return true;
-
-                // Search term contains student ID
-                if (searchLower.includes(studentId)) return true;
-
+                if (searchLower.includes(sid))    return true;
                 return false;
             });
-
-            console.log('Search result:', student);
             
             if (student) {
-                console.log('✅ Found student:', student);
-                const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
+                // Normalize field names — handle both camelCase (from API) and snake_case (raw DB)
+                const firstName   = student.firstName   || student.first_name   || '';
+                const middleName  = student.middleName  || student.middle_name  || '';
+                const lastName    = student.lastName    || student.last_name    || '';
+                const studentId   = student.studentId   || student.student_id   || '';
+                const department  = student.department  || student.department_name || 'N/A';
+                const section     = student.section     || student.section_code || student.section_name || 'N/A';
+                const yearlevel   = student.yearlevel   || student.year_level   || 'N/A';
+                const contact     = student.contact     || student.contact_number || student.phone || student.email || 'N/A';
+
+                const fullName = `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`.trim();
                 const imageUrl = getImageUrl(student.avatar, fullName);
-                console.log('📷 Student image URL:', imageUrl);
-                
-                document.getElementById('modalStudentId').textContent = student.studentId;
-                document.getElementById('modalStudentName').textContent = fullName;
+
+                document.getElementById('modalStudentId').textContent        = studentId;
+                document.getElementById('modalStudentName').textContent      = fullName;
                 const img = document.getElementById('modalStudentImage');
                 img.src = imageUrl;
                 img.onerror = function() {
-                    this.onerror = null; // prevent infinite loop
+                    this.onerror = null;
                     this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80`;
                 };
-                document.getElementById('modalStudentDept').textContent = student.department || 'N/A';
-                document.getElementById('modalStudentSection').textContent = student.section || 'N/A';
-                document.getElementById('modalStudentYearlevel').textContent = student.yearlevel || 'N/A';
-                document.getElementById('modalStudentContact').textContent = student.contact || student.email || 'N/A';
+                document.getElementById('modalStudentDept').textContent      = department;
+                document.getElementById('modalStudentSection').textContent   = section;
+                document.getElementById('modalStudentYearlevel').textContent = yearlevel;
+                document.getElementById('modalStudentContact').textContent   = contact;
 
                 if (selectedStudentCard) {
                     selectedStudentCard.style.display = 'flex';
@@ -3036,11 +3037,11 @@ function initViolationsModule() {
                     modalEntranceBtn.style.display = 'flex';
                 }
 
-                showNotification(`Student found: ${student.firstName} ${student.lastName} (${student.studentId})`, 'success');
+                showNotification(`Student found: ${firstName} ${lastName} (${studentId})`, 'success');
 
                 // Check for existing violations
                 checkStudentViolationHistory();
-                updateViolationTypeBadges(student.studentId);
+                updateViolationTypeBadges(studentId);
             } else {
                 console.log('❌ No student found for search term:', searchTerm);
                 console.log('Available students:', students.length);
