@@ -1045,156 +1045,344 @@ body.dark .prompt-card-desc {
 }
 
 /* ========================================= */
-/*        WELCOME CARD REDESIGN              */
+/*        WELCOME CARD — PROFESSIONAL        */
 /* ========================================= */
 .welcome-card {
+    margin: 4px 0 8px;
+    animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.welcome-card-inner {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    padding: 24px 20px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+body.dark .welcome-card-inner {
+    background: #252525;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+/* Avatar row */
+.welcome-avatar-wrap {
     position: relative;
-    margin: 8px 4px;
-    padding: 28px 24px 24px;
-    background: linear-gradient(145deg, #1a2a4a 0%, #1B4F72 60%, #0f3460 100%);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(27,79,114,0.35), 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.welcome-card-glow {
-    position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 160px;
-    height: 160px;
-    background: radial-gradient(circle, rgba(255,215,0,0.18) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-.welcome-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 18px;
-}
-
-.welcome-avatar-ring {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,215,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 20px rgba(255,215,0,0.2);
+    width: 52px;
+    height: 52px;
+    margin-bottom: 16px;
 }
 
 .welcome-avatar-img {
-    width: 40px !important;
-    height: 40px !important;
+    width: 52px !important;
+    height: 52px !important;
     object-fit: contain !important;
     display: block !important;
-    filter: brightness(1) saturate(1.1) !important;
+    border-radius: 14px !important;
+    background: #f0f4f8;
+    padding: 4px;
+    filter: brightness(1) saturate(1) !important;
 }
 
-.welcome-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: #FFD700;
-    background: rgba(255,215,0,0.12);
-    border: 1px solid rgba(255,215,0,0.3);
-    padding: 4px 10px;
-    border-radius: 20px;
+body.dark .welcome-avatar-img {
+    background: #333;
 }
 
-.welcome-title {
-    font-size: 20px;
+.welcome-online-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 0 rgba(34,197,94,0.4);
+    animation: pulse-online 2.5s infinite;
+}
+
+body.dark .welcome-online-dot {
+    border-color: #252525;
+}
+
+@keyframes pulse-online {
+    0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Text block */
+.welcome-text-block {
+    margin-bottom: 18px;
+}
+
+.welcome-greeting {
+    font-size: 12px !important;
+    font-weight: 500;
+    color: #6b7280;
+    margin: 0 0 4px !important;
+    letter-spacing: 0.2px;
+}
+
+body.dark .welcome-greeting {
+    color: #9ca3af;
+}
+
+.welcome-name {
+    font-size: 18px !important;
     font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 8px 0;
+    color: #111827;
+    margin: 0 0 8px !important;
     line-height: 1.2;
+    letter-spacing: -0.3px;
 }
 
-.welcome-subtitle {
-    font-size: 13px;
-    color: rgba(255,255,255,0.75);
-    margin: 0 0 20px 0;
+body.dark .welcome-name {
+    color: #f9fafb;
+}
+
+.welcome-desc {
+    font-size: 13px !important;
+    color: #6b7280;
+    margin: 0 !important;
     line-height: 1.6;
 }
 
-.welcome-subtitle strong {
-    color: #FFD700;
-    font-weight: 600;
+body.dark .welcome-desc {
+    color: #9ca3af;
 }
 
-.welcome-features {
+/* Divider */
+.welcome-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.06);
+    margin: 16px 0;
+}
+
+body.dark .welcome-divider {
+    background: rgba(255,255,255,0.07);
+}
+
+/* Capabilities grid */
+.welcome-capabilities {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
-.welcome-feature {
+.welcome-cap-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 9px 11px;
+    background: #f9fafb;
+    border: 1px solid rgba(0,0,0,0.06);
     border-radius: 10px;
-    padding: 8px 10px;
-    font-size: 11.5px;
-    color: rgba(255,255,255,0.85);
+    font-size: 12px !important;
     font-weight: 500;
-    transition: background 0.2s;
+    color: #374151;
+    transition: background 0.15s, border-color 0.15s;
+    cursor: default;
 }
 
-.welcome-feature:hover {
-    background: rgba(255,255,255,0.12);
+.welcome-cap-item:hover {
+    background: #f3f4f6;
+    border-color: rgba(0,0,0,0.1);
 }
 
-.feature-icon {
-    font-size: 15px;
+body.dark .welcome-cap-item {
+    background: #2e2e2e;
+    border-color: rgba(255,255,255,0.07);
+    color: #d1d5db;
+}
+
+body.dark .welcome-cap-item:hover {
+    background: #363636;
+}
+
+.welcome-cap-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(27,79,114,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #1B4F72;
+}
+
+body.dark .welcome-cap-icon {
+    background: rgba(255,255,255,0.08);
+    color: #93c5fd;
+}
+
+.welcome-cap-icon svg {
+    display: block;
+}
+
+/* CTA line */
+.welcome-cta {
+    font-size: 11.5px !important;
+    color: #9ca3af;
+    margin: 0 !important;
+    text-align: center;
+    line-height: 1.5;
+}
+
+body.dark .welcome-cta {
+    color: #6b7280;
+}
+
+/* ========================================= */
+/*   QUICK PROMPTS — CHIP STYLE              */
+/* ========================================= */
+.chatbot-prompts-top {
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
     flex-shrink: 0;
 }
 
-.welcome-hint {
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
-    margin: 0;
-    text-align: center;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+body.dark .chatbot-prompts-top {
+    background: #1e1e1e;
+    border-bottom-color: rgba(255,255,255,0.08);
 }
 
-.welcome-hint strong {
-    color: #FFD700;
+.prompts-top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
 }
 
-/* Dark mode welcome card — already dark bg, just tweak */
-body.dark .welcome-card {
-    background: linear-gradient(145deg, #0d1b2e 0%, #1B4F72 60%, #0a2540 100%);
+.prompts-top-title {
+    font-size: 11px !important;
+    font-weight: 600;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+body.dark .prompts-top-title {
+    color: #6b7280;
+}
+
+.prompts-top-title svg {
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+.prompts-top-toggle {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.prompts-top-toggle:hover {
+    color: #374151;
+}
+
+body.dark .prompts-top-toggle:hover {
+    color: #d1d5db;
+}
+
+.prompts-top-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.prompts-top-content.expanded {
+    max-height: 120px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Horizontal scrolling chips */
+.prompts-top-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 16px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.prompts-top-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.prompt-top-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px !important;
+    color: #374151;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    line-height: 1.4;
+}
+
+.prompt-top-item:hover {
+    background: #1B4F72;
+    border-color: #1B4F72;
+    color: #fff;
+}
+
+body.dark .prompt-top-item {
+    background: #2e2e2e;
+    border-color: rgba(255,255,255,0.08);
+    color: #d1d5db;
+}
+
+body.dark .prompt-top-item:hover {
+    background: #1B4F72;
+    border-color: #1B4F72;
+    color: #fff;
 }
 
 /* ========================================= */
-/*        BOT MESSAGE ICON                   */
+/*   BOT MSG ICON / CHEVRON / BUTTON         */
 /* ========================================= */
 .chatbot-msg-img {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px !important;
+    height: 28px !important;
     object-fit: contain !important;
     display: block !important;
-    border-radius: 50% !important;
+    border-radius: 8px !important;
+    background: #f0f4f8;
     flex-shrink: 0;
     margin-top: 2px;
     filter: brightness(1) saturate(1) !important;
 }
 
-/* Chevron rotation transition */
+body.dark .chatbot-msg-img {
+    background: #2e2e2e;
+}
+
 .toggle-chevron {
     transition: transform 0.3s ease;
     display: block;
 }
 
-/* Floating button — bot image, no background circle */
 #chatbot-button .chatbot-btn-img {
     width: 60px !important;
     height: 60px !important;
@@ -1202,26 +1390,6 @@ body.dark .welcome-card {
     display: block !important;
     border-radius: 0 !important;
     flex-shrink: 0;
-}
-.chatbot-header {
-    cursor: grab;
-    user-select: none;
-}
-
-.chatbot-header:active,
-#chatbot-panel.dragging .chatbot-header {
-    cursor: grabbing;
-}
-
-#chatbot-panel.dragging {
-    /* Disable transition while dragging so it follows the cursor instantly */
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s ease !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25),
-                0 8px 24px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(0, 0, 0, 0.08);
-    opacity: 0.96;
 }
 
 /* ========================================= */
