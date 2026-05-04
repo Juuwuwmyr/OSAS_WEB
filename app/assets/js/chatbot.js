@@ -412,7 +412,7 @@ class Chatbot {
                     <span>OSAS Assistant</span>
                 </div>
                 <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
-                    <i class="bx bx-x" aria-hidden="true"></i>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <div class="chatbot-prompts-top" id="chatbot-prompts-top">
@@ -422,7 +422,7 @@ class Chatbot {
                         <span>Quick Prompts</span>
                     </div>
                     <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts" aria-label="Toggle prompts">
-                        <i class="bx bx-chevron-up" aria-hidden="true"></i>
+                        <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="18 15 12 9 6 15"/></svg>
                     </button>
                 </div>
                 <div class="prompts-top-content" id="prompts-top-content">
@@ -492,7 +492,7 @@ class Chatbot {
                         <span>Select a Prompt</span>
                     </div>
                     <button class="prompt-selector-close" id="prompt-selector-close" aria-label="Close">
-                        <i class="bx bx-x" aria-hidden="true"></i>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
                 <div class="prompt-selector-body" id="prompt-selector-body">
@@ -780,11 +780,8 @@ class Chatbot {
             promptsContent.classList.add('expanded');
             const toggleBtn = document.getElementById('prompts-top-toggle');
             if (toggleBtn) {
-                const icon = toggleBtn.querySelector('i');
-                if (icon) {
-                    icon.className = 'bx bx-chevron-down';
-                    icon.setAttribute('aria-hidden', 'true');
-                }
+                const chevron = toggleBtn.querySelector('.toggle-chevron');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
             }
         }
         document.getElementById('chatbot-input').focus();
@@ -1174,10 +1171,10 @@ class Chatbot {
         const toggleBtn = document.getElementById('prompts-top-toggle');
         if (promptsContent && toggleBtn) {
             const isExpanded = promptsContent.classList.toggle('expanded');
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-                icon.className = isExpanded ? 'bx bx-chevron-down' : 'bx bx-chevron-up';
-                icon.setAttribute('aria-hidden', 'true');
+            // Rotate the chevron SVG instead of swapping icon class
+            const chevron = toggleBtn.querySelector('.toggle-chevron');
+            if (chevron) {
+                chevron.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
             }
         }
     }
