@@ -392,110 +392,71 @@ class Chatbot {
     }
 
     createChatbotUI() {
-        // Create chatbot button
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+
+        // ── Floating trigger button ──────────────────────────────────────
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
-        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
-        // Use only the image — no fallback icon rendered alongside it
-        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chatbot" class="chatbot-btn-img">`;
-        chatbotButton.title = 'Open Chatbot';
-        chatbotButton.setAttribute('aria-label', 'Open Chatbot');
+        chatbotButton.setAttribute('aria-label', 'Open chat');
+        chatbotButton.title = 'Chat with OSAS Assistant';
+        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chat" class="chatbot-btn-img">`;
         document.body.appendChild(chatbotButton);
 
-        // Create chatbot panel
+        // ── Main panel ───────────────────────────────────────────────────
         const chatbotPanel = document.createElement('div');
         chatbotPanel.id = 'chatbot-panel';
         chatbotPanel.innerHTML = `
-            <div class="chatbot-header">
-                <div class="chatbot-title">
-                    <div class="chatbot-header-avatar">
-                        <img src="${botImgPath}" alt="Bot" class="chatbot-header-img">
-                    </div>
-                    <div class="chatbot-header-text">
-                        <span class="chatbot-header-name">OSAS Assistant</span>
-                        <span class="chatbot-header-status">
-                            <span class="status-dot"></span>Online
-                        </span>
-                    </div>
+            <!-- HEADER -->
+            <div class="cb-header">
+                <div class="cb-header-avatar">
+                    <img src="${botImgPath}" alt="OSAS Assistant" class="cb-avatar-img">
+                    <span class="cb-online-dot"></span>
                 </div>
-                <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <div class="cb-header-info">
+                    <span class="cb-header-name">OSAS Assistant</span>
+                    <span class="cb-header-sub">AI · Always here to help</span>
+                </div>
+                <button class="cb-close-btn" id="chatbot-close" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
                 </button>
             </div>
-            <div class="chatbot-prompts-top" id="chatbot-prompts-top">
-                <div class="prompts-top-header">
-                    <div class="prompts-top-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <span>Suggested</span>
-                    </div>
-                    <button class="prompts-top-toggle" id="prompts-top-toggle" title="Toggle prompts" aria-label="Toggle prompts">
-                        <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="18 15 12 9 6 15"/></svg>
-                    </button>
-                </div>
-                <div class="prompts-top-content" id="prompts-top-content">
-                    <div class="prompts-top-grid" id="prompts-top-grid"></div>
-                </div>
-            </div>
-            <div class="chatbot-messages" id="chatbot-messages">
-                <div class="welcome-card">
-                    <div class="welcome-card-inner">
-                        <div class="welcome-avatar-wrap">
-                            <img src="${botImgPath}" alt="OSAS Assistant" class="welcome-avatar-img">
-                            <span class="welcome-online-dot"></span>
-                        </div>
-                        <div class="welcome-text-block">
-                            <p class="welcome-greeting">Hello there 👋</p>
-                            <h2 class="welcome-name">OSAS Assistant</h2>
-                            <p class="welcome-desc">Ask me anything about students, violations, departments, or how to use the system.</p>
-                        </div>
-                        <div class="welcome-divider"></div>
-                        <div class="welcome-capabilities">
-                            <div class="welcome-cap-item">
-                                <div class="welcome-cap-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                </div>
-                                <span>Students & Records</span>
-                            </div>
-                            <div class="welcome-cap-item">
-                                <div class="welcome-cap-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                </div>
-                                <span>Violations</span>
-                            </div>
-                            <div class="welcome-cap-item">
-                                <div class="welcome-cap-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                                </div>
-                                <span>Departments</span>
-                            </div>
-                            <div class="welcome-cap-item">
-                                <div class="welcome-cap-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                </div>
-                                <span>System Help</span>
-                            </div>
-                        </div>
-                        <p class="welcome-cta">Use the quick prompts above or type your question below.</p>
+
+            <!-- MESSAGES -->
+            <div class="cb-messages" id="chatbot-messages">
+                <!-- Welcome bubble from bot -->
+                <div class="cb-msg-row cb-bot-row">
+                    <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
+                    <div class="cb-bubble cb-bot-bubble">
+                        <p>Hi there 👋 I'm your <strong>OSAS Assistant</strong>.</p>
+                        <p>Ask me anything about students, violations, departments, or how to use the system.</p>
                     </div>
                 </div>
+                <!-- Suggestion chips -->
+                <div class="cb-chips" id="cb-chips">
+                    <button class="cb-chip" data-prompt="How many students are in the system?">Student count</button>
+                    <button class="cb-chip" data-prompt="Show me violation statistics">Violations</button>
+                    <button class="cb-chip" data-prompt="What departments exist?">Departments</button>
+                    <button class="cb-chip" data-prompt="How do I use the system?">System help</button>
+                </div>
             </div>
-            <div class="chatbot-input-container">
-                <input type="text" id="chatbot-input" placeholder="Ask me anything..." autocomplete="off"/>
-                <button id="chatbot-send" aria-label="Send message">
+
+            <!-- INPUT BAR -->
+            <div class="cb-input-bar">
+                <input type="text" id="chatbot-input" class="cb-input" placeholder="Write a reply…" autocomplete="off">
+                <button id="chatbot-send" class="cb-send-btn" aria-label="Send">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
             </div>
-            <div class="chatbot-loading" id="chatbot-loading" style="display: none;">
-                <div class="loading-dots"><span></span><span></span><span></span></div>
+
+            <!-- TYPING INDICATOR -->
+            <div class="cb-typing" id="chatbot-loading" style="display:none">
+                <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
+                <div class="cb-typing-dots"><span></span><span></span><span></span></div>
             </div>
         `;
         document.body.appendChild(chatbotPanel);
-
-        // Create prompt selector modal
-        this.createPromptSelectorModal();
-
-        // Load quick prompts
-        this.loadQuickPrompts();
     }
 
     createPromptSelectorModal() {
@@ -523,40 +484,7 @@ class Chatbot {
     }
 
     loadQuickPrompts() {
-        const quickPrompts = [
-            'How many students are in the system?',
-            'Show me violation statistics',
-            'What departments exist?',
-            'Help me understand the system',
-            'What sections are available?',
-            'Tell me about recent violations',
-            'How do I manage students?',
-            'What are the system features?',
-            'How to add a new student?',
-            'View my violations',
-            'Department management guide',
-            'System navigation help'
-        ];
-
-        const promptsGrid = document.getElementById('prompts-top-grid');
-        if (!promptsGrid) {
-            // Retry after a short delay if element not found
-            setTimeout(() => this.loadQuickPrompts(), 100);
-            return;
-        }
-
-        // Clear existing prompts
-        promptsGrid.innerHTML = '';
-
-        quickPrompts.forEach(prompt => {
-            const promptItem = document.createElement('div');
-            promptItem.className = 'prompt-top-item';
-            promptItem.textContent = prompt;
-            promptItem.addEventListener('click', () => {
-                this.usePrompt(prompt);
-            });
-            promptsGrid.appendChild(promptItem);
-        });
+        // Chips are now inline in the welcome HTML — nothing to do here
     }
 
     loadPromptCategories() {
@@ -635,104 +563,67 @@ class Chatbot {
     }
 
     attachEventListeners() {
-        // Open/close chatbot
-        document.getElementById('chatbot-button').addEventListener('click', () => {
-            this.toggle();
-        });
+        document.getElementById('chatbot-button').addEventListener('click', () => this.toggle());
+        document.getElementById('chatbot-close').addEventListener('click',  () => this.close());
 
-        document.getElementById('chatbot-close').addEventListener('click', () => {
-            this.close();
-        });
-
-        // Send message
-        const sendButton = document.getElementById('chatbot-send');
-        const input = document.getElementById('chatbot-input');
-
-        sendButton.addEventListener('click', () => {
-            this.sendMessage();
-        });
-
+        const sendBtn = document.getElementById('chatbot-send');
+        const input   = document.getElementById('chatbot-input');
+        sendBtn.addEventListener('click', () => this.sendMessage());
         input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); }
+        });
+
+        // Suggestion chips
+        document.getElementById('chatbot-messages').addEventListener('click', (e) => {
+            const chip = e.target.closest('.cb-chip');
+            if (chip) {
+                const prompt = chip.dataset.prompt;
+                // Remove chips after first use
+                const chipsEl = document.getElementById('cb-chips');
+                if (chipsEl) chipsEl.remove();
+                input.value = prompt;
                 this.sendMessage();
             }
         });
 
-        // Prompt toggle (top section)
-        const promptsTopToggle = document.getElementById('prompts-top-toggle');
-        if (promptsTopToggle) {
-            promptsTopToggle.addEventListener('click', () => {
-                this.togglePrompts();
-            });
-        }
-
-        // Prompt selector modal
+        // Prompt selector modal (kept for compatibility)
         const promptSelectorClose = document.getElementById('prompt-selector-close');
-        if (promptSelectorClose) {
-            promptSelectorClose.addEventListener('click', () => {
-                this.closePromptSelector();
-            });
-        }
-
+        if (promptSelectorClose) promptSelectorClose.addEventListener('click', () => this.closePromptSelector());
         const promptSelectorModal = document.getElementById('prompt-selector-modal');
         if (promptSelectorModal) {
             promptSelectorModal.addEventListener('click', (e) => {
-                if (e.target.id === 'prompt-selector-modal') {
-                    this.closePromptSelector();
-                }
+                if (e.target.id === 'prompt-selector-modal') this.closePromptSelector();
             });
         }
 
-        // Close on outside click
-        document.getElementById('chatbot-panel').addEventListener('click', (e) => {
-            if (e.target.id === 'chatbot-panel') {
-                this.close();
-            }
-        });
-
-        // Make the panel draggable via the header
         this.initDrag();
     }
 
     initDrag() {
         const panel  = document.getElementById('chatbot-panel');
         if (!panel) return;
-        const handle = panel.querySelector('.chatbot-header');
+        const handle = panel.querySelector('.cb-header');
         if (!handle) return;
 
         let dragging = false;
         let startX, startY, startLeft, startTop;
 
         const onStart = (e) => {
-            // Ignore clicks on the close button or its children
             if (e.target.closest('#chatbot-close')) return;
-            // Only drag when panel is open
             if (!panel.classList.contains('open')) return;
-
             dragging = true;
-
             const touch = e.touches ? e.touches[0] : e;
             startX = touch.clientX;
             startY = touch.clientY;
-
-            // Get the true rendered position (accounts for transform)
             const rect = panel.getBoundingClientRect();
-
-            // Disable ALL transitions and clear transform immediately
             panel.style.setProperty('transition', 'none', 'important');
             panel.style.setProperty('transform',  'none', 'important');
-
-            // Anchor by top/left from now on
             panel.style.left   = rect.left + 'px';
             panel.style.top    = rect.top  + 'px';
             panel.style.right  = 'auto';
             panel.style.bottom = 'auto';
-
             startLeft = rect.left;
             startTop  = rect.top;
-
-            // Prevent text selection during drag
             document.body.style.userSelect = 'none';
             e.preventDefault();
         };
@@ -740,14 +631,8 @@ class Chatbot {
         const onMove = (e) => {
             if (!dragging) return;
             const touch = e.touches ? e.touches[0] : e;
-            const dx = touch.clientX - startX;
-            const dy = touch.clientY - startY;
-
-            const maxLeft = window.innerWidth  - panel.offsetWidth;
-            const maxTop  = window.innerHeight - panel.offsetHeight;
-            const newLeft = Math.max(0, Math.min(startLeft + dx, maxLeft));
-            const newTop  = Math.max(0, Math.min(startTop  + dy, maxTop));
-
+            const newLeft = Math.max(0, Math.min(startLeft + touch.clientX - startX, window.innerWidth  - panel.offsetWidth));
+            const newTop  = Math.max(0, Math.min(startTop  + touch.clientY - startY, window.innerHeight - panel.offsetHeight));
             panel.style.left = newLeft + 'px';
             panel.style.top  = newTop  + 'px';
             e.preventDefault();
@@ -757,17 +642,13 @@ class Chatbot {
             if (!dragging) return;
             dragging = false;
             document.body.style.userSelect = '';
-            // Remove the important overrides so CSS transitions work again for open/close
             panel.style.removeProperty('transition');
             panel.style.removeProperty('transform');
         };
 
-        // Mouse
         handle.addEventListener('mousedown',  onStart);
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup',   onEnd);
-
-        // Touch (mobile)
         handle.addEventListener('touchstart',  onStart, { passive: false });
         document.addEventListener('touchmove', onMove,  { passive: false });
         document.addEventListener('touchend',  onEnd);
@@ -784,42 +665,23 @@ class Chatbot {
     open() {
         this.isOpen = true;
         const panel = document.getElementById('chatbot-panel');
-        // If the panel was dragged, it has inline transform:none — clear it so
-        // the CSS .open transition (translateY + scale) works correctly again
         if (panel.style.transform === 'none') {
             panel.style.transform  = '';
             panel.style.transition = '';
         }
         panel.classList.add('open');
         document.getElementById('chatbot-button').classList.add('active');
-        // Expand prompts by default
-        const promptsContent = document.getElementById('prompts-top-content');
-        if (promptsContent && !promptsContent.classList.contains('expanded')) {
-            promptsContent.classList.add('expanded');
-            const toggleBtn = document.getElementById('prompts-top-toggle');
-            if (toggleBtn) {
-                const chevron = toggleBtn.querySelector('.toggle-chevron');
-                if (chevron) chevron.style.transform = 'rotate(180deg)';
-            }
-        }
-        document.getElementById('chatbot-input').focus();
-        // Refresh database context when opening (but don't wait for it)
-        this.fetchDatabaseContext(true).catch(err => {
-            console.warn('Failed to refresh database context:', err);
-        });
+        const input = document.getElementById('chatbot-input');
+        if (input) input.focus();
+        this.fetchDatabaseContext(true).catch(() => {});
     }
 
     close() {
         this.isOpen = false;
         const panel = document.getElementById('chatbot-panel');
         panel.classList.remove('open');
-        // Reset position back to default bottom-right so next open is in the right place
-        panel.style.left       = '';
-        panel.style.top        = '';
-        panel.style.right      = '';
-        panel.style.bottom     = '';
-        panel.style.transform  = '';
-        panel.style.transition = '';
+        panel.style.left = panel.style.top = panel.style.right = panel.style.bottom = '';
+        panel.style.transform = panel.style.transition = '';
         document.getElementById('chatbot-button').classList.remove('active');
     }
 
@@ -1013,26 +875,36 @@ class Chatbot {
     }
 
     addMessage(role, content) {
-        const messagesContainer = document.getElementById('chatbot-messages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chatbot-message ${role}`;
+        const container = document.getElementById('chatbot-messages');
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        const row = document.createElement('div');
+        row.className = `cb-msg-row ${role === 'user' ? 'cb-user-row' : 'cb-bot-row'}`;
 
-        const icon = role === 'user' 
-            ? '<i class="bx bx-user-circle"></i>' 
-            : `<img src="${this.apiBase.replace('/api/', '/app/assets/img/bot.png')}" alt="Bot" class="chatbot-msg-img">`;
-
-        // Format content with lists and proper formatting
         const formattedContent = this.formatMessageContent(content);
 
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                ${icon}
-                <div class="message-text">${formattedContent}</div>
-            </div>
-        `;
+        if (role === 'user') {
+            row.innerHTML = `<div class="cb-bubble cb-user-bubble"><div class="cb-bubble-text">${formattedContent}</div></div>`;
+        } else {
+            row.innerHTML = `
+                <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
+                <div class="cb-bubble cb-bot-bubble"><div class="cb-bubble-text">${formattedContent}</div></div>
+            `;
+        }
 
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    showLoading() {
+        const el = document.getElementById('chatbot-loading');
+        if (el) el.style.display = 'flex';
+        const container = document.getElementById('chatbot-messages');
+        if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    hideLoading() {
+        const el = document.getElementById('chatbot-loading');
+        if (el) el.style.display = 'none';
     }
 
     /**
@@ -1170,42 +1042,20 @@ class Chatbot {
         return formatted;
     }
 
-    showLoading() {
-        document.getElementById('chatbot-loading').style.display = 'flex';
-    }
-
-    hideLoading() {
-        document.getElementById('chatbot-loading').style.display = 'none';
-    }
-
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    togglePrompts() {
-        const promptsContent = document.getElementById('prompts-top-content');
-        const toggleBtn = document.getElementById('prompts-top-toggle');
-        if (promptsContent && toggleBtn) {
-            const isExpanded = promptsContent.classList.toggle('expanded');
-            // Rotate the chevron SVG instead of swapping icon class
-            const chevron = toggleBtn.querySelector('.toggle-chevron');
-            if (chevron) {
-                chevron.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-        }
-    }
+    togglePrompts() { /* no-op — prompts are now inline chips */ }
 
     usePrompt(promptText) {
         const input = document.getElementById('chatbot-input');
         if (input) {
             input.value = promptText;
             input.focus();
-            // Auto-send after a short delay
-            setTimeout(() => {
-                this.sendMessage();
-            }, 300);
+            setTimeout(() => this.sendMessage(), 300);
         }
     }
 
