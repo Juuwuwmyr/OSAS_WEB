@@ -223,6 +223,30 @@ function initSectionsModule() {
 
         async function addSection(formData) {
             const submitBtn = document.querySelector('#sectionsForm button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${apiBase}?action=add`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showSuccess(data.message || 'Section added successfully!');
+                    await fetchSections();
+                    await fetchStats();
+                    closeModal();
+                } else {
+                    showError(data.message || 'Failed to add section');
+                }
+            } catch (error) {
+                console.error('Error adding section:', error);
+                showError('Failed to add section. Please try again.');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
 
         async function updateSection(sectionId, formData) {
             try {
