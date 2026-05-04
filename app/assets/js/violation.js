@@ -2971,32 +2971,16 @@ function initViolationsModule() {
                 return;
             }
 
-            // Sync latest data before searching to ensure badges and history are accurate
-            // This ensures that if a violation was just recorded (even from another device),
-            // the history check will be up to date.
-            showLoadingOverlay('Syncing records...');
-            try {
-                await loadViolations(false);
-            } catch (error) {
-                console.error('Error syncing data during search:', error);
-            } finally {
-                hideLoadingOverlay();
-            }
-            
-            console.log('🔍 Searching for student:', searchTerm);
-            console.log('📊 Current students array length:', students.length);
-            console.log('📋 Students API available?', typeof fetch !== 'undefined');
-
-            // Ensure students data is loaded
+            // Ensure students data is loaded (lazy-load only if not yet available)
             if (students.length === 0) {
-                console.log('Students array is empty, loading students...');
-                await loadStudents(true);
-                console.log('Students loaded, new length:', students.length);
-            }
-
-            // Debug: Log first few students to check data structure
-            if (students.length > 0) {
-                console.log('Sample student data:', students.slice(0, 3));
+                showLoadingOverlay('Loading students...');
+                try {
+                    await loadStudents(false);
+                } catch (error) {
+                    console.error('Error loading students during search:', error);
+                } finally {
+                    hideLoadingOverlay();
+                }
             }
 
             // More robust search logic
@@ -4470,67 +4454,31 @@ function initViolationsModule() {
                     return;
                 }
 
-                // Check API connectivity first
-                const apiStatus = await checkAPIConnectivity();
-                console.log('API Status:', apiStatus);
-
-                if (!apiStatus.violations && !apiStatus.students) {
-                    console.error('Both APIs failed. API_BASE:', API_BASE);
-                    console.error('Full violations URL:', window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + API_BASE + 'violations.php');
-                    throw new Error('API endpoints not accessible. Please check if the PHP files exist in the api directory. API path: ' + API_BASE);
-                }
-                
-                // Log warnings but continue if at least one API works
-                if (!apiStatus.violations) {
-                    console.warn('⚠️ Violations API not accessible, but continuing...');
-                }
-                if (!apiStatus.students) {
-                    console.warn('⚠️ Students API not accessible, but continuing...');
-                }
-
-                // Check if elements exist
-                console.log('Checking DOM elements...');
-                console.log('tableBody:', tableBody);
-                console.log('btnAddViolation:', document.getElementById('btnAddViolations'));
-
                 if (!tableBody) {
                     throw new Error('Required DOM elements not found. Please check the HTML structure.');
                 }
 
-                // Load data in parallel
-                console.log('Loading data...');
-                const [violationsData, studentsData] = await Promise.all([
+                // Load violations and violation types immediately (needed for table render).
+                // Students and departments load in background — only needed for the add-violation modal.
+                const [violationsData] = await Promise.all([
                     loadViolations(false),
-                    loadStudents(false),
-                    loadViolationTypes(false),
-                    loadDepartments(false)
+                    loadViolationTypes()
                 ]);
 
-                console.log('Data loaded, violations:', violationsData.length, 'students:', studentsData.length);
-
-                // Debug: Log available student IDs
-                if (studentsData.length > 0) {
-                    console.log('Available student IDs:', studentsData.map(s => s.studentId).slice(0, 10));
-                } else {
-                    console.warn('No students data loaded!');
-                }
-
-                console.log('Data loaded, rendering violations...');
-                // Render violations
+                // Render as soon as violations are ready
                 renderViolations();
-
-                console.log('Adding refresh button...');
-                // Add refresh button to header
+                updateStats();
                 addRefreshButton();
 
-                // Update stats after data is loaded
-                updateStats();
+                // Load supporting data in background (not needed for initial render)
+                Promise.all([
+                    loadStudents(false),
+                    loadDepartments()
+                ]).catch(e => console.warn('Background data load error:', e));
 
             } catch (error) {
                 console.error('❌ Error initializing data:', error);
-                console.error('Error details:', error.stack);
 
-                // Provide specific error messages based on error type
                 let errorMessage = error.message;
                 let helpText = '';
 
@@ -4545,7 +4493,6 @@ function initViolationsModule() {
                     helpText = 'Please check the HTML structure of the violations page';
                 }
 
-                // Show error state in table
                 if (tableBody) {
                     tableBody.innerHTML = `
                         <tr>
