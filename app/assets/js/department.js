@@ -108,6 +108,12 @@ function initDepartmentModule() {
             <button class="action-btn view" data-id="${d.id}" title="View">
               <i class='bx bx-show'></i>
             </button>
+            ${d.status !== 'archived' ?
+              `<button class="action-btn edit" data-id="${d.id}" title="Edit">
+                <i class='bx bx-edit'></i>
+              </button>` :
+              ''
+            }
             ${d.status === 'archived' ? 
               `<button class="action-btn restore" data-id="${d.id}" title="Restore">
                 <i class='bx bx-reset'></i>
@@ -748,14 +754,49 @@ function initDepartmentModule() {
   loadDepartments('active');
 
   // --- Modal functions ---
-  function openModal(viewId = null) {
+  function openModal(viewId = null, editMode = false) {
     if (!modal) return;
     
     const modalTitle = document.getElementById('modalTitle');
     const form = document.getElementById('departmentForm');
     const saveBtn = form ? form.querySelector('button[type="submit"]') : null;
     
-    if (viewId) {
+    if (viewId && editMode) {
+      // Edit mode — fields enabled, save button visible
+      const span = modalTitle.querySelector('span');
+      if (span) {
+        span.textContent = 'Edit Department';
+      } else {
+        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Edit Department</span>';
+      }
+
+      const dept = departments.find(d => String(d.id) === String(viewId));
+
+      if (dept) {
+        document.getElementById('deptName').value = dept.name || '';
+        document.getElementById('deptCode').value = dept.code || '';
+        document.getElementById('hodName').value = (dept.hod === 'N/A' || !dept.hod) ? '' : dept.hod;
+        document.getElementById('deptDescription').value = dept.description || '';
+        document.getElementById('deptStatus').value = dept.status || 'active';
+      } else {
+        console.error('❌ Could not find department with ID:', viewId);
+      }
+
+      // Enable all fields
+      if (form) {
+        form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
+      }
+      if (saveBtn) {
+        saveBtn.style.display = '';
+        saveBtn.textContent = 'Update Department';
+      }
+
+      // Store IDs for the submit handler
+      modal.dataset.editingId = viewId;
+      const dept2 = departments.find(d => String(d.id) === String(viewId));
+      if (dept2) modal.dataset.editingDbId = dept2.dbId;
+
+    } else if (viewId) {
       // View mode — read-only
       const span = modalTitle.querySelector('span');
       if (span) {
@@ -815,7 +856,10 @@ function initDepartmentModule() {
       form.reset();
       form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
       const saveBtn = form.querySelector('button[type="submit"]');
-      if (saveBtn) saveBtn.style.display = '';
+      if (saveBtn) {
+        saveBtn.style.display = '';
+        saveBtn.textContent = 'Save Department';
+      }
     }
     delete modal.dataset.editingId;
   }
@@ -823,12 +867,18 @@ function initDepartmentModule() {
   // --- Actions (event delegation) ---
   tableBody.addEventListener('click', (e) => {
     const viewBtn = e.target.closest('.action-btn.view');
+    const editBtn = e.target.closest('.action-btn.edit');
     const restoreBtn = e.target.closest('.action-btn.restore');
     const deleteBtn = e.target.closest('.action-btn.delete');
 
     if (viewBtn) {
       const id = viewBtn.dataset.id;
       openModal(id);
+    }
+
+    if (editBtn) {
+      const id = editBtn.dataset.id;
+      openModal(id, true);
     }
 
     if (restoreBtn) {
