@@ -393,14 +393,31 @@ class Chatbot {
 
     createChatbotUI() {
         const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        const currentPath = window.location.pathname;
+        const isUser = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/');
 
         // ── Floating trigger button ──────────────────────────────────────
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
         chatbotButton.setAttribute('aria-label', 'Open chat');
-        chatbotButton.title = 'Chat with OSAS Assistant';
+        chatbotButton.title = 'Chat with OSAS Bot';
         chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chat" class="chatbot-btn-img">`;
         document.body.appendChild(chatbotButton);
+
+        // Role-specific welcome content
+        const welcomeText = isUser
+            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or how to use the student portal.</p>`
+            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
+
+        const chips = isUser
+            ? `<button class="cb-chip" data-prompt="What are my violations?">My violations</button>
+               <button class="cb-chip" data-prompt="Show me the latest announcements">Announcements</button>
+               <button class="cb-chip" data-prompt="How do I use the student portal?">Portal help</button>
+               <button class="cb-chip" data-prompt="What is the OSAS system?">About OSAS</button>`
+            : `<button class="cb-chip" data-prompt="How many students are in the system?">Student count</button>
+               <button class="cb-chip" data-prompt="Show me violation statistics">Violations</button>
+               <button class="cb-chip" data-prompt="What departments exist?">Departments</button>
+               <button class="cb-chip" data-prompt="How do I use the system?">System help</button>`;
 
         // ── Main panel ───────────────────────────────────────────────────
         const chatbotPanel = document.createElement('div');
@@ -409,11 +426,11 @@ class Chatbot {
             <!-- HEADER -->
             <div class="cb-header">
                 <div class="cb-header-avatar">
-                    <img src="${botImgPath}" alt="OSAS Assistant" class="cb-avatar-img">
+                    <img src="${botImgPath}" alt="OSAS Bot" class="cb-avatar-img">
                     <span class="cb-online-dot"></span>
                 </div>
                 <div class="cb-header-info">
-                    <span class="cb-header-name">OSAS Assistant</span>
+                    <span class="cb-header-name">OSAS Bot</span>
                     <span class="cb-header-sub">AI · Always here to help</span>
                 </div>
                 <button class="cb-close-btn" id="chatbot-close" aria-label="Close">
@@ -425,21 +442,11 @@ class Chatbot {
 
             <!-- MESSAGES -->
             <div class="cb-messages" id="chatbot-messages">
-                <!-- Welcome bubble from bot -->
                 <div class="cb-msg-row cb-bot-row">
                     <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
-                    <div class="cb-bubble cb-bot-bubble">
-                        <p>Hi there 👋 I'm your <strong>OSAS Assistant</strong>.</p>
-                        <p>Ask me anything about students, violations, departments, or how to use the system.</p>
-                    </div>
+                    <div class="cb-bubble cb-bot-bubble">${welcomeText}</div>
                 </div>
-                <!-- Suggestion chips -->
-                <div class="cb-chips" id="cb-chips">
-                    <button class="cb-chip" data-prompt="How many students are in the system?">Student count</button>
-                    <button class="cb-chip" data-prompt="Show me violation statistics">Violations</button>
-                    <button class="cb-chip" data-prompt="What departments exist?">Departments</button>
-                    <button class="cb-chip" data-prompt="How do I use the system?">System help</button>
-                </div>
+                <div class="cb-chips" id="cb-chips">${chips}</div>
             </div>
 
             <!-- INPUT BAR -->
@@ -720,7 +727,7 @@ class Chatbot {
             const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
 
             // Build conversation context for Puter.js
-            let conversationContext = "You are a helpful assistant for the OSAS (Office of Student Affairs System). ";
+            let conversationContext = "You are OSAS Bot, a helpful AI assistant for the OSAS (Office of Student Affairs System). ";
             
             if (userRole === 'user') {
                 conversationContext += "You are currently assisting a STUDENT. Your access is RESTRICTED. ";
