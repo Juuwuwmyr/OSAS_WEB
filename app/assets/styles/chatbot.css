@@ -980,7 +980,6 @@ body.dark .prompt-card-desc {
     object-fit: contain !important;
     display: block !important;
     border-radius: 0 !important;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
     flex-shrink: 0;
 }
 
@@ -1041,10 +1040,16 @@ body.dark .prompt-card-desc {
     }
 
     #chatbot-button {
-        bottom: 20px;
-        right: 20px;
-        width: 64px;
-        height: 64px;
+        /* Push up above the bottom nav bar (~60px) + extra breathing room */
+        bottom: 80px;
+        right: 16px;
+        width: 58px;
+        height: 58px;
+    }
+
+    #chatbot-button .chatbot-btn-img {
+        width: 58px !important;
+        height: 58px !important;
     }
 
     .prompts-top-grid {
@@ -1068,6 +1073,11 @@ body.dark .prompt-card-desc {
         border-radius: 0;
     }
 
+    #chatbot-button {
+        bottom: 80px;
+        right: 14px;
+    }
+
     .chatbot-message .message-content {
         max-width: 88%;
     }
@@ -1082,6 +1092,16 @@ body.dark .prompt-card-desc {
         font-size: 12.5px;
         text-align: center;
     }
+}
+
+/* Light mode — dim the bot image slightly so the orange doesn't glare */
+body:not(.dark) #chatbot-button .chatbot-btn-img {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)) brightness(0.82) saturate(0.85);
+}
+
+/* Dark mode — keep it vivid */
+body.dark #chatbot-button .chatbot-btn-img {
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)) brightness(1) saturate(1);
 }
 
 
