@@ -115,21 +115,23 @@ body.dark #chatbot-panel {
     height: 42px !important;
     object-fit: contain !important;
     display: block !important;
-    border-radius: 50% !important;
-    background: rgba(0,0,0,0.12);
-    padding: 4px;
-    filter: brightness(0.75) contrast(1.1) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    /* Darken slightly so the orange bot reads against the gold header */
+    filter: brightness(0.65) saturate(1.2) !important;
 }
 
 .cb-online-dot {
     position: absolute;
-    bottom: 1px;
-    right: 1px;
-    width: 10px;
-    height: 10px;
+    bottom: 0px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
     background: #22c55e;
     border-radius: 50%;
     border: 2px solid var(--gold);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
 }
 
 .cb-header-info {
