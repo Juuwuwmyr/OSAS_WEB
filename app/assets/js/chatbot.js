@@ -1,5 +1,5 @@
 /**
- * Chatbot Module
+ * Chatbot Module — OSAS Bot v2.1
  * Handles chatbot UI and API interactions
  */
 
