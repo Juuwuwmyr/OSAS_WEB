@@ -961,3 +961,22 @@ body.dark {
   color: var(--dark-grey);
   margin-bottom: 6px;
 }
+
+/* ── Mobile pagination fix ─────────────────────────────── */
+@media (max-width: 600px) {
+  .announcements-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .announcement-page-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}

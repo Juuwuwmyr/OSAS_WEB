@@ -4004,3 +4004,33 @@ body.dark {
 #Violations-page .Violations-table-footer {
   padding: 8px 16px !important;
 }
+
+/* ── Mobile pagination fix ─────────────────────────────── */
+@media (max-width: 600px) {
+  .Violations-table-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .Violations-footer-info {
+    text-align: center;
+  }
+
+  .Violations-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .Violations-pagination-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}

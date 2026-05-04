@@ -2282,3 +2282,34 @@ input[type="checkbox"]:checked + .toggle-label::after {
   display: flex;
   gap: 8px;
 }
+
+/* ── Mobile pagination fix ─────────────────────────────── */
+@media (max-width: 600px) {
+  .Reports-table-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .Reports-footer-info {
+    text-align: center;
+    align-items: center;
+  }
+
+  .Reports-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .Reports-pagination-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}
