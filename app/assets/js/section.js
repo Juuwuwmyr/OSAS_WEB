@@ -32,8 +32,13 @@ function initSectionsModule() {
             console.warn('⚠️ #sectionsModal not found');
         }
 
-        let sections = [];
-        let allSections = [];
+        // Use window-level cache so data persists when switching pages and back
+        // This prevents re-fetching every time the sections page is visited
+        if (!window._sectionsCache) window._sectionsCache = { sections: [], allSections: [], stats: null, loaded: false };
+        const _cache = window._sectionsCache;
+
+        let sections    = _cache.sections;
+        let allSections = _cache.allSections;
 
         // API path — works on AWS root AND local subfolder
         const _p = window.location.pathname.split('/').filter(Boolean);
@@ -92,7 +97,14 @@ function initSectionsModule() {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
 
-                console.log('Fetching sections from:', url);
+                // Cache-hit fast render: show cached data immediately while fresh fetch runs
+                if (_cache.loaded && _cache.sections.length > 0) {
+                    sections    = _cache.sections;
+                    allSections = _cache.allSections;
+                    renderSections();
+                    renderPagination();
+                    if (_cache.stats) updateStatsFromData(_cache.stats);
+                }
 
                 const response = await fetch(url);
                 
@@ -101,7 +113,6 @@ function initSectionsModule() {
                 }
 
                 const text = await response.text();
-                console.log('Raw API Response:', text);
 
                 let data;
                 try {
@@ -112,28 +123,32 @@ function initSectionsModule() {
                     throw new Error('Invalid JSON response from server');
                 }
 
-                console.log('Parsed API Response:', data);
-
                 if (data.status === 'success') {
                     const payload = data.data;
                     if (Array.isArray(payload)) {
-                        allSections = payload;
+                        allSections  = payload;
                         totalRecords = payload.length;
-                        totalPages = Math.ceil(totalRecords / itemsPerPage);
-                        const start = (currentPage - 1) * itemsPerPage;
-                        const end = start + itemsPerPage;
-                        sections = payload.slice(start, end);
+                        totalPages   = Math.ceil(totalRecords / itemsPerPage);
+                        const start  = (currentPage - 1) * itemsPerPage;
+                        const end    = start + itemsPerPage;
+                        sections     = payload.slice(start, end);
                     } else if (payload && Array.isArray(payload.sections)) {
-                        sections = payload.sections;
-                        totalRecords = typeof payload.total === 'number' ? payload.total : sections.length;
-                        totalPages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
-                        currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
-                        allSections = sections;
+                        sections     = payload.sections;
+                        totalRecords = typeof payload.total       === 'number' ? payload.total       : sections.length;
+                        totalPages   = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
+                        currentPage  = typeof payload.page        === 'number' ? payload.page        : currentPage;
+                        allSections  = sections;
                     } else {
                         console.error('Unexpected API data shape:', payload);
                         showError('Unexpected response from server while loading sections.');
                         return;
                     }
+
+                    // Sync fresh data back to window cache
+                    _cache.sections    = sections;
+                    _cache.allSections = allSections;
+                    _cache.loaded      = true;
+
                     renderSections();
                     updateStats();
                     renderPagination();
@@ -154,6 +169,8 @@ function initSectionsModule() {
                 const data = await response.json();
 
                 if (data.status === 'success') {
+                    // Cache stats for instant restore on next page visit
+                    _cache.stats = data.data;
                     updateStatsFromData(data.data);
                 }
             } catch (error) {
@@ -161,7 +178,48 @@ function initSectionsModule() {
             }
         }
 
-        async function addSection(formData) {
+        // Inline count-up animation fallback when window.animateCountUp is unavailable
+        function animateCount(el, target) {
+            if (!el) return;
+            if (window.animateCountUp) { window.animateCountUp(el, target); return; }
+            const start    = parseInt(el.textContent) || 0;
+            const duration = 600;
+            const range    = target - start;
+            // Dynamic step: larger values animate in bigger increments for snappier feel
+            const step     = range > 1000 ? 20 : range > 100 ? 10 : range > 10 ? 5 : 1;
+            const interval = Math.max(16, Math.floor(duration / (Math.abs(range) / step || 1)));
+            let current    = start;
+            const timer    = setInterval(() => {
+                current += range > 0 ? step : -step;
+                if ((range > 0 && current >= target) || (range <= 0 && current <= target)) {
+                    el.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    el.textContent = current;
+                }
+            }, interval);
+        }
+
+        function updateStatsFromData(stats) {
+            const totalEl      = document.getElementById('totalSections');
+            const activeEl     = document.getElementById('activeSections');
+            const archivedEl   = document.getElementById('archivedSections');
+            const activePctEl  = document.getElementById('activeSectionsPct');
+            const archivedPctEl = document.getElementById('archivedSectionsPct');
+
+            const total    = Number(stats.total)    || 0;
+            const active   = Number(stats.active)   || 0;
+            const archived = Number(stats.archived) || 0;
+
+            animateCount(totalEl,    total);
+            animateCount(activeEl,   active);
+            animateCount(archivedEl, archived);
+
+            const activePct   = total > 0 ? Math.round((active   / total) * 100) : 0;
+            const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
+            if (activePctEl)   activePctEl.textContent   = `${activePct}%`;
+            if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
+        }
             const submitBtn = document.querySelector('#sectionsForm button[type="submit"]');
             if (submitBtn) submitBtn.disabled = true;
             
@@ -768,31 +826,11 @@ function initSectionsModule() {
             fetchStats();
         }
 
-        function updateStatsFromData(stats) {
-            const totalEl = document.getElementById('totalSections');
-            const activeEl = document.getElementById('activeSections');
-            const archivedEl = document.getElementById('archivedSections');
-            const activePctEl = document.getElementById('activeSectionsPct');
-            const archivedPctEl = document.getElementById('archivedSectionsPct');
-            
-            if (totalEl) totalEl.textContent = stats.total || 0;
-            if (activeEl) activeEl.textContent = stats.active || 0;
-            if (archivedEl) archivedEl.textContent = stats.archived || 0;
-
-            const total = Number(stats.total) || 0;
-            const active = Number(stats.active) || 0;
-            const archived = Number(stats.archived) || 0;
-            const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
-            const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
-            if (activePctEl) activePctEl.textContent = `${activePct}%`;
-            if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
-        }
-
         function updateCounts(filteredSections) {
-            const showingEl = document.getElementById('showingSectionsCount');
+            const showingEl    = document.getElementById('showingSectionsCount');
             const totalCountEl = document.getElementById('totalSectionsCount');
             
-            if (showingEl) showingEl.textContent = filteredSections.length;
+            if (showingEl)    showingEl.textContent    = filteredSections.length;
             if (totalCountEl) totalCountEl.textContent = totalRecords;
         }
 

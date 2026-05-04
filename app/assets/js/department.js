@@ -31,13 +31,18 @@ function initDepartmentModule() {
     console.warn('⚠️ #departmentModal not found. Modal functionality disabled.');
   }
 
+  // Use window-level cache so data persists when switching pages and back
+  // This prevents re-fetching every time the departments page is visited
+  if (!window._departmentsCache) window._departmentsCache = { departments: [], stats: null, loaded: false };
+  const _cache = window._departmentsCache;
+
   // --- Department data (loaded from database) ---
-  let departments = [];
+  let departments = _cache.departments;
   let currentView = 'active'; // 'active' or 'archived'
-  let currentPage = 1;
+  let currentPage  = 1;
   let itemsPerPage = 10;
   let totalRecords = 0;
-  let totalPages = 0;
+  let totalPages   = 0;
 
   function getCurrentAdminName() {
       const sessionStr = localStorage.getItem('userSession');
@@ -188,12 +193,17 @@ function initDepartmentModule() {
   // --- Load departments from database ---
   async function loadDepartments(filter = 'active') {
     try {
-      // Determine correct API path based on context
       const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
       
       const searchTerm = searchInput ? searchInput.value : '';
       const url = `${apiPath}?action=get&filter=${filter}&search=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${itemsPerPage}`;
-      console.log('Fetching from:', url); // Debug log
+
+      // Cache-hit fast render: show cached data immediately while fresh fetch runs
+      if (_cache.loaded && _cache.departments.length > 0) {
+        departments = _cache.departments;
+        renderDepartments(departments);
+        if (_cache.stats) applyStats(_cache.stats);
+      }
       
       const response = await fetch(url);
       
@@ -202,7 +212,6 @@ function initDepartmentModule() {
       }
       
       const text = await response.text();
-      console.log('Raw API Response:', text); // Debug log
       
       let result;
       try {
@@ -212,8 +221,6 @@ function initDepartmentModule() {
         console.error('Response was:', text);
         throw new Error('Invalid JSON response from server');
       }
-      
-      console.log('Parsed API Response:', result); // Debug log
       
       if (result.status === 'success') {
         const payload = result.data;
@@ -231,57 +238,100 @@ function initDepartmentModule() {
           meta.total = payload.length;
         } else if (payload && Array.isArray(payload.departments)) {
           list = payload.departments;
-          meta.total = typeof payload.total === 'number' ? payload.total : list.length;
-          meta.page = typeof payload.page === 'number' ? payload.page : meta.page;
-          meta.limit = typeof payload.limit === 'number' ? payload.limit : meta.limit;
+          meta.total       = typeof payload.total       === 'number' ? payload.total       : list.length;
+          meta.page        = typeof payload.page        === 'number' ? payload.page        : meta.page;
+          meta.limit       = typeof payload.limit       === 'number' ? payload.limit       : meta.limit;
           meta.total_pages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(meta.total / meta.limit);
         } else {
           console.error('Unexpected API data shape:', payload);
           if (typeof showNotification === 'function') {
             showNotification('Unexpected response from server while loading departments.', 'error');
-          } else {
-            console.error('Unexpected response from server while loading departments.');
           }
           return;
         }
 
         totalRecords = meta.total;
-        totalPages = meta.total_pages;
-        currentPage = meta.page;
+        totalPages   = meta.total_pages;
+        currentPage  = meta.page;
 
         departments = list.map(dept => ({
-          id: dept.department_id,
-          name: dept.name,
-          code: dept.code,
-          hod: dept.hod,
+          id:           dept.department_id,
+          name:         dept.name,
+          code:         dept.code,
+          hod:          dept.hod,
           studentCount: dept.student_count,
-          date: dept.date,
-          status: dept.status,
-          description: dept.description,
-          dbId: dept.id // Store database ID for API calls
+          date:         dept.date,
+          status:       dept.status,
+          description:  dept.description,
+          dbId:         dept.id
         }));
+
+        // Sync fresh data back to window cache
+        _cache.departments = departments;
+        _cache.loaded      = true;
+
         renderDepartments(departments);
         loadStats();
       } else {
         console.error('Error loading departments:', result.message);
         if (typeof showNotification === 'function') {
           showNotification('Error loading departments: ' + result.message, 'error');
-        } else {
-          console.error('Error loading departments: ' + result.message);
         }
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
-      console.error('Full error details:', error.message, error.stack);
       if (typeof showNotification === 'function') {
         showNotification('Error fetching departments. Please check console.', 'error');
-      } else {
-        console.error('Error fetching departments. Please check your connection and console for details.');
       }
     }
   }
 
   // --- Load statistics from database ---
+
+  // Inline count-up animation fallback when window.animateCountUp is unavailable
+  function animateCount(el, target) {
+    if (!el) return;
+    if (window.animateCountUp) { window.animateCountUp(el, target); return; }
+    const start    = parseInt(el.textContent) || 0;
+    const duration = 600;
+    const range    = target - start;
+    // Dynamic step: larger values animate in bigger increments for snappier feel
+    const step     = range > 1000 ? 20 : range > 100 ? 10 : range > 10 ? 5 : 1;
+    const interval = Math.max(16, Math.floor(duration / (Math.abs(range) / step || 1)));
+    let current    = start;
+    const timer    = setInterval(() => {
+      current += range > 0 ? step : -step;
+      if ((range > 0 && current >= target) || (range <= 0 && current <= target)) {
+        el.textContent = target;
+        clearInterval(timer);
+      } else {
+        el.textContent = current;
+      }
+    }, interval);
+  }
+
+  // Apply a stats object to the DOM (shared by cache-hit path and fresh-fetch path)
+  function applyStats(stats) {
+    const totalEl      = document.getElementById('totalDepartments');
+    const activeEl     = document.getElementById('activeDepartments');
+    const archivedEl   = document.getElementById('archivedDepartments');
+    const activePctEl  = document.getElementById('activeDepartmentsPct');
+    const archivedPctEl = document.getElementById('archivedDepartmentsPct');
+
+    const total    = Number(stats.total)    || 0;
+    const active   = Number(stats.active)   || 0;
+    const archived = Number(stats.archived) || 0;
+
+    animateCount(totalEl,    total);
+    animateCount(activeEl,   active);
+    animateCount(archivedEl, archived);
+
+    const activePct   = total > 0 ? Math.round((active   / total) * 100) : 0;
+    const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
+    if (activePctEl)   activePctEl.textContent   = `${activePct}%`;
+    if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
+  }
+
   async function loadStats() {
     try {
       const _dp=window.location.pathname.split('/').filter(Boolean); const _dd=['app','api','includes','assets','public']; const apiPath=((_dp.length===0||_dd.includes(_dp[0]))?'':'/'+_dp[0])+'/api/departments.php';
@@ -290,24 +340,9 @@ function initDepartmentModule() {
       const result = await response.json();
       
       if (result.status === 'success') {
-        const stats = result.data;
-        const totalEl = document.getElementById('totalDepartments');
-        const activeEl = document.getElementById('activeDepartments');
-        const archivedEl = document.getElementById('archivedDepartments');
-        const activePctEl = document.getElementById('activeDepartmentsPct');
-        const archivedPctEl = document.getElementById('archivedDepartmentsPct');
-        
-        if (totalEl) totalEl.textContent = stats.total;
-        if (activeEl) activeEl.textContent = stats.active;
-        if (archivedEl) archivedEl.textContent = stats.archived;
-
-        const total = Number(stats.total) || 0;
-        const active = Number(stats.active) || 0;
-        const archived = Number(stats.archived) || 0;
-        const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
-        const archivedPct = total > 0 ? Math.round((archived / total) * 100) : 0;
-        if (activePctEl) activePctEl.textContent = `${activePct}%`;
-        if (archivedPctEl) archivedPctEl.textContent = `${archivedPct}%`;
+        // Cache stats for instant restore on next page visit
+        _cache.stats = result.data;
+        applyStats(result.data);
       }
     } catch (error) {
       console.error('Error loading stats:', error);
