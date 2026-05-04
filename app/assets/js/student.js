@@ -46,15 +46,20 @@ function initStudentsModule() {
             console.warn('⚠️ #StudentsModal not found');
         }
 
+        // Use window-level cache so data persists when switching pages and back
+        // This prevents re-fetching every time the students page is visited
+        if (!window._studentsCache) window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
+        const _cache = window._studentsCache;
+
         // Students data (will be loaded from database)
-        let students = [];
-        let allStudents = []; // Store all students for stats
+        let students    = _cache.students;
+        let allStudents = _cache.allStudents; // Store all students for stats
         let currentView = 'active'; // 'active' or 'archived'
         let editingStudentId = null;
-        let currentPage = 1;
-        let itemsPerPage = 10;
-        let totalRecords = 0;
-        let totalPages = 0;
+        let currentPage      = 1;
+        let itemsPerPage     = 10;
+        let totalRecords     = 0;
+        let totalPages       = 0;
 
         function getCurrentAdminName() {
             const sessionStr = localStorage.getItem('userSession');
@@ -220,17 +225,25 @@ function initStudentsModule() {
         // --- API Functions ---
         async function fetchStudents() {
             try {
-                const filter = filterSelect ? filterSelect.value : 'all';
-                const search = searchInput ? searchInput.value : '';
+                const filter     = filterSelect     ? filterSelect.value     : 'all';
+                const search     = searchInput      ? searchInput.value      : '';
                 const department = deptFilterSelect ? deptFilterSelect.value : 'all';
-                const section = sectionFilterSelect ? sectionFilterSelect.value : 'all';
+                const section    = sectionFilterSelect ? sectionFilterSelect.value : 'all';
                 
                 let url = `${apiBase}?action=get&filter=${filter}&page=${currentPage}&limit=${itemsPerPage}&department=${encodeURIComponent(department)}&section=${encodeURIComponent(section)}`;
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
-                
-                console.log('Fetching students from:', url); // Debug log
+
+                // Cache-hit fast render: if we have cached data, show it immediately
+                // while the fresh fetch runs in the background
+                if (_cache.loaded && _cache.students.length > 0) {
+                    students    = _cache.students;
+                    allStudents = _cache.allStudents;
+                    renderStudents();
+                    renderPagination();
+                    if (_cache.stats) applyStats(_cache.stats);
+                }
                 
                 const response = await fetch(url);
                 
@@ -239,7 +252,6 @@ function initStudentsModule() {
                 }
                 
                 const text = await response.text();
-                console.log('Raw API Response:', text); // Debug log
                 
                 let result;
                 try {
@@ -250,8 +262,6 @@ function initStudentsModule() {
                     throw new Error('Invalid JSON response from server. The students table may not exist. Please run the database setup SQL files.');
                 }
                 
-                console.log('Parsed API Response:', result); // Debug log
-                
                 if (result.status === 'success') {
                     const payload = result.data;
                     if (Array.isArray(payload)) {
@@ -261,30 +271,32 @@ function initStudentsModule() {
                             ? allStudents.filter(s => s.status && s.status.toLowerCase() === 'archived') 
                             : allStudents.filter(s => s.status && s.status.toLowerCase() !== 'archived');
                         totalRecords = viewFiltered.length;
-                        totalPages = Math.ceil(totalRecords / itemsPerPage);
-                        const start = (currentPage - 1) * itemsPerPage;
-                        const end = start + itemsPerPage;
-                        students = viewFiltered.slice(start, end);
+                        totalPages   = Math.ceil(totalRecords / itemsPerPage);
+                        const start  = (currentPage - 1) * itemsPerPage;
+                        const end    = start + itemsPerPage;
+                        students     = viewFiltered.slice(start, end);
                     } else if (payload && Array.isArray(payload.students)) {
                         // New paginated response
-                        allStudents = payload.students;
-                        totalRecords = typeof payload.total === 'number' ? payload.total : allStudents.length;
-                        totalPages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
-                        currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
+                        allStudents  = payload.students;
+                        totalRecords = typeof payload.total       === 'number' ? payload.total       : allStudents.length;
+                        totalPages   = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(totalRecords / itemsPerPage);
+                        currentPage  = typeof payload.page        === 'number' ? payload.page        : currentPage;
                         
-                        // Backend already filters by status when we pass the filter param, 
-                        // but we keep this for consistency and fallback
                         const viewFiltered = currentView === 'archived' 
                             ? allStudents.filter(s => s.status && s.status.toLowerCase() === 'archived') 
                             : allStudents.filter(s => s.status && s.status.toLowerCase() !== 'archived');
                         
-                        // If backend already filtered, viewFiltered should equal allStudents
                         students = viewFiltered;
                     } else {
                         console.error('Unexpected API data shape:', payload);
                         showError('Unexpected response from server while loading students.');
                         return;
                     }
+
+                    // Sync fresh data back to window cache
+                    _cache.students    = students;
+                    _cache.allStudents = allStudents;
+                    _cache.loaded      = true;
 
                     renderStudents();
                     renderPagination();
@@ -298,6 +310,57 @@ function initStudentsModule() {
                 console.error('Full error details:', error.message, error.stack);
                 showError('Error loading students: ' + error.message + '. Please check if the students table exists in the database.');
             }
+        }
+
+        // Inline count-up animation fallback when window.animateCountUp is unavailable
+        function animateCount(el, target) {
+            if (!el) return;
+            if (window.animateCountUp) { window.animateCountUp(el, target); return; }
+            const start    = parseInt(el.textContent) || 0;
+            const duration = 600;
+            const range    = target - start;
+            // Dynamic step: larger values animate in bigger increments for snappier feel
+            const step     = range > 1000 ? 20 : range > 100 ? 10 : range > 10 ? 5 : 1;
+            const interval = Math.max(16, Math.floor(duration / (Math.abs(range) / step || 1)));
+            let current    = start;
+            const timer    = setInterval(() => {
+                current += range > 0 ? step : -step;
+                if ((range > 0 && current >= target) || (range <= 0 && current <= target)) {
+                    el.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    el.textContent = current;
+                }
+            }, interval);
+        }
+
+        // Apply a stats object to the DOM (shared by cache-hit path and fresh-fetch path)
+        function applyStats(stats) {
+            const totalEl       = document.getElementById('totalStudents');
+            const activeEl      = document.getElementById('activeStudents');
+            const inactiveEl    = document.getElementById('inactiveStudents');
+            const graduatingEl  = document.getElementById('graduatingStudents');
+            const activePctEl   = document.getElementById('activeStudentsPct');
+            const inactivePctEl = document.getElementById('inactiveStudentsPct');
+            const graduatingPctEl = document.getElementById('graduatingStudentsPct');
+
+            const total      = Number(stats.total)      || 0;
+            const active     = Number(stats.active)     || 0;
+            const inactive   = Number(stats.inactive)   || 0;
+            const graduating = Number(stats.graduating) || 0;
+
+            animateCount(totalEl,      total);
+            animateCount(activeEl,     active);
+            animateCount(inactiveEl,   inactive);
+            animateCount(graduatingEl, graduating);
+
+            const activePct     = total > 0 ? Math.round((active     / total) * 100) : 0;
+            const inactivePct   = total > 0 ? Math.round((inactive   / total) * 100) : 0;
+            const graduatingPct = total > 0 ? Math.round((graduating / total) * 100) : 0;
+
+            if (activePctEl)     activePctEl.textContent     = `${activePct}%`;
+            if (inactivePctEl)   inactivePctEl.textContent   = `${inactivePct}%`;
+            if (graduatingPctEl) graduatingPctEl.textContent = `${graduatingPct}%`;
         }
 
         async function loadStats() {
@@ -318,30 +381,9 @@ function initStudentsModule() {
                 }
                 
                 if (result.status === 'success') {
-                    const stats = result.data;
-                    const totalEl = document.getElementById('totalStudents');
-                    const activeEl = document.getElementById('activeStudents');
-                    const inactiveEl = document.getElementById('inactiveStudents');
-                    const graduatingEl = document.getElementById('graduatingStudents');
-                    const activePctEl = document.getElementById('activeStudentsPct');
-                    const inactivePctEl = document.getElementById('inactiveStudentsPct');
-                    const graduatingPctEl = document.getElementById('graduatingStudentsPct');
-                    
-                    if (totalEl) totalEl.textContent = stats.total || 0;
-                    if (activeEl) activeEl.textContent = stats.active || 0;
-                    if (inactiveEl) inactiveEl.textContent = stats.inactive || 0;
-                    if (graduatingEl) graduatingEl.textContent = stats.graduating || 0;
-
-                    const total = Number(stats.total) || 0;
-                    const active = Number(stats.active) || 0;
-                    const inactive = Number(stats.inactive) || 0;
-                    const graduating = Number(stats.graduating) || 0;
-                    const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
-                    const inactivePct = total > 0 ? Math.round((inactive / total) * 100) : 0;
-                    const graduatingPct = total > 0 ? Math.round((graduating / total) * 100) : 0;
-                    if (activePctEl) activePctEl.textContent = `${activePct}%`;
-                    if (inactivePctEl) inactivePctEl.textContent = `${inactivePct}%`;
-                    if (graduatingPctEl) graduatingPctEl.textContent = `${graduatingPct}%`;
+                    // Cache stats for instant restore on next page visit
+                    _cache.stats = result.data;
+                    applyStats(result.data);
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
