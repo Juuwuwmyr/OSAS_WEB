@@ -395,7 +395,8 @@ class Chatbot {
         // Create chatbot button
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
-        chatbotButton.innerHTML = '<i class="bx bx-message-square-dots" aria-hidden="true"></i>';
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chatbot" class="chatbot-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-message-square-dots" aria-hidden="true" style="display:none"></i>`;
         chatbotButton.title = 'Open Chatbot';
         chatbotButton.setAttribute('aria-label', 'Open Chatbot');
         document.body.appendChild(chatbotButton);
@@ -406,7 +407,7 @@ class Chatbot {
         chatbotPanel.innerHTML = `
             <div class="chatbot-header">
                 <div class="chatbot-title">
-                    <i class="bx bx-bot" aria-hidden="true"></i>
+                    <img src="${botImgPath}" alt="Bot" class="chatbot-bot-icon header-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-bot" aria-hidden="true" style="display:none"></i>
                     <span>OSAS Assistant</span>
                 </div>
                 <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
@@ -432,7 +433,7 @@ class Chatbot {
             <div class="chatbot-messages" id="chatbot-messages">
                 <div class="chatbot-message bot welcome-message">
                     <div class="message-content">
-                        <i class="bx bx-bot" aria-hidden="true"></i>
+                        <img src="${botImgPath}" alt="Bot" class="chatbot-bot-icon msg-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-bot" aria-hidden="true" style="display:none"></i>
                         <div class="message-text">
                             <p style="margin-bottom: 12px; font-weight: 600;">Hello! I'm your OSAS assistant. 👋</p>
                             <p style="margin-bottom: 8px;">I can help you with:</p>
@@ -686,16 +687,23 @@ class Chatbot {
         const onStart = (e) => {
             // Ignore clicks on the close button
             if (e.target.closest('#chatbot-close')) return;
+            // Only drag when panel is open
+            if (!panel.classList.contains('open')) return;
 
             dragging = true;
-            panel.classList.add('dragging');
 
             const touch = e.touches ? e.touches[0] : e;
             startX = touch.clientX;
             startY = touch.clientY;
 
-            // Switch from bottom/right anchoring to top/left so we can move freely
+            // Compute current visual position accounting for any active transform
             const rect = panel.getBoundingClientRect();
+
+            // Kill transition and transform so top/left drive position directly
+            panel.style.transition = 'none';
+            panel.style.transform  = 'none';
+
+            // Switch from bottom/right anchoring to top/left
             panel.style.left   = rect.left + 'px';
             panel.style.top    = rect.top  + 'px';
             panel.style.right  = 'auto';
@@ -704,6 +712,7 @@ class Chatbot {
             startLeft = rect.left;
             startTop  = rect.top;
 
+            panel.classList.add('dragging');
             e.preventDefault();
         };
 
@@ -728,6 +737,8 @@ class Chatbot {
             if (!dragging) return;
             dragging = false;
             panel.classList.remove('dragging');
+            // Restore transition for open/close animations (but keep transform cleared)
+            panel.style.transition = '';
         };
 
         // Mouse events
@@ -751,7 +762,14 @@ class Chatbot {
 
     open() {
         this.isOpen = true;
-        document.getElementById('chatbot-panel').classList.add('open');
+        const panel = document.getElementById('chatbot-panel');
+        // If the panel was dragged, it has inline transform:none — clear it so
+        // the CSS .open transition (translateY + scale) works correctly again
+        if (panel.style.transform === 'none') {
+            panel.style.transform  = '';
+            panel.style.transition = '';
+        }
+        panel.classList.add('open');
         document.getElementById('chatbot-button').classList.add('active');
         // Expand prompts by default
         const promptsContent = document.getElementById('prompts-top-content');
@@ -775,7 +793,15 @@ class Chatbot {
 
     close() {
         this.isOpen = false;
-        document.getElementById('chatbot-panel').classList.remove('open');
+        const panel = document.getElementById('chatbot-panel');
+        panel.classList.remove('open');
+        // Reset position back to default bottom-right so next open is in the right place
+        panel.style.left       = '';
+        panel.style.top        = '';
+        panel.style.right      = '';
+        panel.style.bottom     = '';
+        panel.style.transform  = '';
+        panel.style.transition = '';
         document.getElementById('chatbot-button').classList.remove('active');
     }
 
@@ -975,7 +1001,7 @@ class Chatbot {
 
         const icon = role === 'user' 
             ? '<i class="bx bx-user-circle"></i>' 
-            : '<i class="bx bx-bot"></i>';
+            : `<img src="${this.apiBase.replace('/api/', '/app/assets/img/bot.png')}" alt="Bot" class="chatbot-bot-icon msg-bot-icon" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<i class=\\'bx bx-bot\\'></i>')">`;
 
         // Format content with lists and proper formatting
         const formattedContent = this.formatMessageContent(content);

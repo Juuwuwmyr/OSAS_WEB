@@ -959,6 +959,37 @@ body.dark .prompt-card-desc {
 /* ========================================= */
 /*        DRAGGABLE PANEL                    */
 /* ========================================= */
+
+/* Bot image icon — used in button, header, and messages */
+.chatbot-bot-icon {
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Floating button icon */
+#chatbot-button .chatbot-bot-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+
+/* Header title icon */
+.header-bot-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.25);
+    padding: 4px;
+}
+
+/* Message bubble icon */
+.msg-bot-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    margin-top: 2px;
+}
 .chatbot-header {
     cursor: grab;
     user-select: none;
