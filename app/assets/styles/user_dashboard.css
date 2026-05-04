@@ -1613,6 +1613,13 @@ body.dark #eye-care-overlay.active {
   min-height: 0;
 }
 
+/* On mobile, add bottom padding so pagination clears the fixed bottom nav */
+@media (max-width: 768px) {
+  #main-content {
+    padding-bottom: 80px !important;
+  }
+}
+
 /* MAIN */
 #content main {
   width: 100%;
