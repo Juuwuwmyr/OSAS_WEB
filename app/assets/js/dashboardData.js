@@ -345,7 +345,6 @@ class DashboardData {
         }
         
         if (penaltiesCount) {
-        if (penaltiesCount) {
             if (window.animateCountUp) animateCountUp(penaltiesCount, this.stats.penalties || 0);
             else penaltiesCount.textContent = this.stats.penalties || 0;
         }
