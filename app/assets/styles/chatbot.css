@@ -960,34 +960,60 @@ body.dark .prompt-card-desc {
 /*        DRAGGABLE PANEL                    */
 /* ========================================= */
 
-/* Bot image icon — used in button, header, and messages */
-.chatbot-bot-icon {
-    object-fit: contain;
+.chatbot-header {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.chatbot-header:active {
+    cursor: grabbing;
+}
+
+/* Let pointer events pass through title/children to the header drag handler */
+.chatbot-title,
+.chatbot-title * {
+    pointer-events: none;
+}
+
+/* But keep the close button clickable */
+.chatbot-close {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Floating button — bot image fills the circle cleanly */
+#chatbot-button .chatbot-btn-img {
+    width: 34px !important;
+    height: 34px !important;
+    object-fit: contain !important;
+    display: block !important;
+    border-radius: 0 !important;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
     flex-shrink: 0;
 }
 
-/* Floating button icon */
-#chatbot-button .chatbot-bot-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+/* Header title — bot image beside "OSAS Assistant" */
+.chatbot-header-img {
+    width: 34px !important;
+    height: 34px !important;
+    object-fit: contain !important;
+    display: block !important;
+    border-radius: 8px !important;
+    background: rgba(255,255,255,0.2);
+    padding: 3px;
+    flex-shrink: 0;
 }
 
-/* Header title icon */
-.header-bot-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.25);
-    padding: 4px;
-}
-
-/* Message bubble icon */
-.msg-bot-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+/* Message bubble — small bot avatar */
+.chatbot-msg-img {
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+    display: block !important;
+    border-radius: 50% !important;
+    background: rgba(27,79,114,0.08);
+    flex-shrink: 0;
     margin-top: 2px;
 }
 .chatbot-header {

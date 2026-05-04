@@ -396,7 +396,8 @@ class Chatbot {
         const chatbotButton = document.createElement('div');
         chatbotButton.id = 'chatbot-button';
         const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
-        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chatbot" class="chatbot-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-message-square-dots" aria-hidden="true" style="display:none"></i>`;
+        // Use only the image — no fallback icon rendered alongside it
+        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chatbot" class="chatbot-btn-img">`;
         chatbotButton.title = 'Open Chatbot';
         chatbotButton.setAttribute('aria-label', 'Open Chatbot');
         document.body.appendChild(chatbotButton);
@@ -407,7 +408,7 @@ class Chatbot {
         chatbotPanel.innerHTML = `
             <div class="chatbot-header">
                 <div class="chatbot-title">
-                    <img src="${botImgPath}" alt="Bot" class="chatbot-bot-icon header-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-bot" aria-hidden="true" style="display:none"></i>
+                    <img src="${botImgPath}" alt="Bot" class="chatbot-header-img">
                     <span>OSAS Assistant</span>
                 </div>
                 <button class="chatbot-close" id="chatbot-close" aria-label="Close chatbot">
@@ -433,7 +434,7 @@ class Chatbot {
             <div class="chatbot-messages" id="chatbot-messages">
                 <div class="chatbot-message bot welcome-message">
                     <div class="message-content">
-                        <img src="${botImgPath}" alt="Bot" class="chatbot-bot-icon msg-bot-icon" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><i class="bx bx-bot" aria-hidden="true" style="display:none"></i>
+                        <img src="${botImgPath}" alt="Bot" class="chatbot-msg-img">
                         <div class="message-text">
                             <p style="margin-bottom: 12px; font-weight: 600;">Hello! I'm your OSAS assistant. 👋</p>
                             <p style="margin-bottom: 8px;">I can help you with:</p>
@@ -678,14 +679,15 @@ class Chatbot {
 
     initDrag() {
         const panel  = document.getElementById('chatbot-panel');
+        if (!panel) return;
         const handle = panel.querySelector('.chatbot-header');
-        if (!handle || !panel) return;
+        if (!handle) return;
 
         let dragging = false;
         let startX, startY, startLeft, startTop;
 
         const onStart = (e) => {
-            // Ignore clicks on the close button
+            // Ignore clicks on the close button or its children
             if (e.target.closest('#chatbot-close')) return;
             // Only drag when panel is open
             if (!panel.classList.contains('open')) return;
@@ -696,14 +698,14 @@ class Chatbot {
             startX = touch.clientX;
             startY = touch.clientY;
 
-            // Compute current visual position accounting for any active transform
+            // Get the true rendered position (accounts for transform)
             const rect = panel.getBoundingClientRect();
 
-            // Kill transition and transform so top/left drive position directly
-            panel.style.transition = 'none';
-            panel.style.transform  = 'none';
+            // Disable ALL transitions and clear transform immediately
+            panel.style.setProperty('transition', 'none', 'important');
+            panel.style.setProperty('transform',  'none', 'important');
 
-            // Switch from bottom/right anchoring to top/left
+            // Anchor by top/left from now on
             panel.style.left   = rect.left + 'px';
             panel.style.top    = rect.top  + 'px';
             panel.style.right  = 'auto';
@@ -712,7 +714,8 @@ class Chatbot {
             startLeft = rect.left;
             startTop  = rect.top;
 
-            panel.classList.add('dragging');
+            // Prevent text selection during drag
+            document.body.style.userSelect = 'none';
             e.preventDefault();
         };
 
@@ -722,7 +725,6 @@ class Chatbot {
             const dx = touch.clientX - startX;
             const dy = touch.clientY - startY;
 
-            // Clamp within viewport
             const maxLeft = window.innerWidth  - panel.offsetWidth;
             const maxTop  = window.innerHeight - panel.offsetHeight;
             const newLeft = Math.max(0, Math.min(startLeft + dx, maxLeft));
@@ -736,17 +738,18 @@ class Chatbot {
         const onEnd = () => {
             if (!dragging) return;
             dragging = false;
-            panel.classList.remove('dragging');
-            // Restore transition for open/close animations (but keep transform cleared)
-            panel.style.transition = '';
+            document.body.style.userSelect = '';
+            // Remove the important overrides so CSS transitions work again for open/close
+            panel.style.removeProperty('transition');
+            panel.style.removeProperty('transform');
         };
 
-        // Mouse events
+        // Mouse
         handle.addEventListener('mousedown',  onStart);
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup',   onEnd);
 
-        // Touch events (mobile)
+        // Touch (mobile)
         handle.addEventListener('touchstart',  onStart, { passive: false });
         document.addEventListener('touchmove', onMove,  { passive: false });
         document.addEventListener('touchend',  onEnd);
@@ -1001,7 +1004,7 @@ class Chatbot {
 
         const icon = role === 'user' 
             ? '<i class="bx bx-user-circle"></i>' 
-            : `<img src="${this.apiBase.replace('/api/', '/app/assets/img/bot.png')}" alt="Bot" class="chatbot-bot-icon msg-bot-icon" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<i class=\\'bx bx-bot\\'></i>')">`;
+            : `<img src="${this.apiBase.replace('/api/', '/app/assets/img/bot.png')}" alt="Bot" class="chatbot-msg-img">`;
 
         // Format content with lists and proper formatting
         const formattedContent = this.formatMessageContent(content);
