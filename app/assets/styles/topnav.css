@@ -1191,6 +1191,12 @@ body.dark .moon-icon {
     margin-bottom: 70px !important;
     height: calc(100vh - 140px) !important;
   }
+
+  /* Ensure main content scrolls fully above the fixed bottom nav */
+  #main-content {
+    padding-bottom: 80px !important;
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 480px) {
