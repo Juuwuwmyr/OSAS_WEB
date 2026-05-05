@@ -219,15 +219,15 @@ require_once __DIR__ . '/../../core/View.php';
           <button class="Reports-view-btn" data-view="grid" title="Grid View">
             <i class='bx bx-grid-alt'></i>
           </button>
-          <button class="Reports-view-btn" data-view="cards" title="Card View">
-            <i class='bx bx-card'></i>
+          <button class="Reports-view-btn" data-view="list" title="List View">
+            <i class='bx bx-list-ul'></i>
           </button>
         </div>
       </div>
     </div>
 
     <!-- Reports Table -->
-    <div class="Reports-table-container">
+    <div class="Reports-table-container" id="reportsTableView">
       <table class="Reports-table">
         <thead>
           <tr>
@@ -298,6 +298,16 @@ require_once __DIR__ . '/../../core/View.php';
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Grid / Card View -->
+    <div id="reportsGridView" class="Reports-grid-container" style="display:none;">
+      <div id="ReportsGridBody" class="Reports-grid"></div>
+    </div>
+
+    <!-- List View -->
+    <div id="reportsListView" class="Reports-list-container" style="display:none;">
+      <div id="ReportsListBody" class="Reports-list"></div>
     </div>
 
     <!-- Table Footer -->

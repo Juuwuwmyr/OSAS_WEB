@@ -71,6 +71,7 @@ function initReportsModule() {
         let itemsPerPage = 10;
         let totalRecords = 0;
         let totalPages = 1;
+        let viewMode = localStorage.getItem('reportsViewMode') || 'table'; // 'table', 'grid', 'list'
 
         // ========== HELPER FUNCTIONS ==========
         
@@ -340,78 +341,179 @@ function initReportsModule() {
             // Show/hide empty state
             const emptyState = document.getElementById('ReportsEmptyState');
             if (emptyState) {
-                if (filteredReports.length === 0 && reports.length === 0) {
-                    emptyState.style.display = 'flex';
-                } else if (filteredReports.length === 0 && reports.length > 0) {
-                    emptyState.style.display = 'none';
-                    // Show message in table instead
-                    if (tableBody && tableBody.innerHTML.trim() === '') {
-                        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px; color: #666;">
-                            No reports match the current filters. Try adjusting your search or filter criteria.
-                        </td></tr>`;
-                    }
+                emptyState.style.display = (filteredReports.length === 0 && reports.length === 0) ? 'flex' : 'none';
+            }
+
+            // Show/hide view containers
+            const tableViewEl = document.getElementById('reportsTableView');
+            const gridViewEl  = document.getElementById('reportsGridView');
+            const listViewEl  = document.getElementById('reportsListView');
+            if (tableViewEl) tableViewEl.style.display = viewMode === 'table' ? '' : 'none';
+            if (gridViewEl)  gridViewEl.style.display  = viewMode === 'grid'  ? '' : 'none';
+            if (listViewEl)  listViewEl.style.display  = viewMode === 'list'  ? '' : 'none';
+
+            // ── Helper ──────────────────────────────────────────────────────
+            function actionBtns(id) {
+                return `<button class="Reports-action-btn view" data-id="${id}" title="View Details"><i class='bx bx-show'></i></button>
+                        <button class="Reports-action-btn export" data-id="${id}" title="Export Report"><i class='bx bx-download'></i></button>`;
+            }
+
+            // ── TABLE VIEW ──────────────────────────────────────────────────
+            if (filteredReports.length === 0 && reports.length > 0) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:#666;">No reports match the current filters.</td></tr>`;
+            } else {
+                tableBody.innerHTML = pageItems.map(report => {
+                    const deptClass    = getDepartmentClass(report.deptCode);
+                    const statusClass  = getStatusClass(report.status);
+                    const uniformClass = getCountBadgeClass(report.uniformCount);
+                    const footwearClass= getCountBadgeClass(report.footwearCount);
+                    const noIdClass    = getCountBadgeClass(report.noIdCount);
+                    const totalClass   = getCountBadgeClass(report.totalViolations);
+                    return `
+                    <tr data-id="${report.id}">
+                        <td class="report-student-info" data-label="Student">
+                            <div class="student-info-wrapper">
+                                <div class="student-avatar">
+                                    <img src="${report.studentImage}" alt="${report.studentName}"
+                                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(report.studentName)}&background=ffd700&color=333&size=32'">
+                                </div>
+                                <div class="student-details">
+                                    <strong>${report.studentName}</strong>
+                                    <small>${report.studentId} • ${report.section || 'N/A'}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="report-dept" data-label="Department">
+                            <span class="dept-badge ${deptClass}">${report.department}</span>
+                        </td>
+                        <td class="report-section" data-label="Section">${report.section}</td>
+                        <td class="report-yearlevel" data-label="Year Level">
+                            <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
+                        </td>
+                        <td class="violation-count uniform" data-label="Uniform">
+                            <div class="count-badge ${uniformClass}">${report.uniformCount}</div>
+                        </td>
+                        <td class="violation-count footwear" data-label="Footwear">
+                            <div class="count-badge ${footwearClass}">${report.footwearCount}</div>
+                        </td>
+                        <td class="violation-count no-id" data-label="No ID">
+                            <div class="count-badge ${noIdClass}">${report.noIdCount}</div>
+                        </td>
+                        <td class="total-violations" data-label="Total">
+                            <div class="total-badge ${totalClass}">${report.totalViolations}</div>
+                        </td>
+                        <td data-label="Status">
+                            <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
+                        </td>
+                        <td data-label="Actions">
+                            <div class="Reports-action-buttons">${actionBtns(report.id)}</div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // ── GRID / CARD VIEW ────────────────────────────────────────────
+            const gridBody = document.getElementById('ReportsGridBody');
+            if (gridBody) {
+                if (pageItems.length === 0) {
+                    gridBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;grid-column:1/-1;">No reports found</p>`;
                 } else {
-                    emptyState.style.display = 'none';
+                    gridBody.innerHTML = pageItems.map(report => {
+                        const deptClass    = getDepartmentClass(report.deptCode);
+                        const statusClass  = getStatusClass(report.status);
+                        const uniformClass = getCountBadgeClass(report.uniformCount);
+                        const footwearClass= getCountBadgeClass(report.footwearCount);
+                        const noIdClass    = getCountBadgeClass(report.noIdCount);
+                        const totalClass   = getCountBadgeClass(report.totalViolations);
+                        return `
+                        <div class="report-card" data-id="${report.id}">
+                            <div class="report-card-top ${report.status}"></div>
+                            <div class="report-card-body">
+                                <div class="report-card-student">
+                                    <img src="${report.studentImage}" alt="${report.studentName}" class="report-card-avatar"
+                                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(report.studentName)}&background=ffd700&color=333&size=44'">
+                                    <div class="report-card-student-info">
+                                        <p class="report-card-name">${report.studentName}</p>
+                                        <p class="report-card-id">${report.studentId}</p>
+                                    </div>
+                                </div>
+                                <div class="report-card-divider"></div>
+                                <div class="report-card-counts">
+                                    <div class="report-card-count-item">
+                                        <span class="report-card-count-label">Uniform</span>
+                                        <span class="report-card-count-value ${uniformClass}">${report.uniformCount}</span>
+                                    </div>
+                                    <div class="report-card-count-item">
+                                        <span class="report-card-count-label">Footwear</span>
+                                        <span class="report-card-count-value ${footwearClass}">${report.footwearCount}</span>
+                                    </div>
+                                    <div class="report-card-count-item">
+                                        <span class="report-card-count-label">No ID</span>
+                                        <span class="report-card-count-value ${noIdClass}">${report.noIdCount}</span>
+                                    </div>
+                                    <div class="report-card-count-item">
+                                        <span class="report-card-count-label">Total</span>
+                                        <span class="report-card-count-value ${totalClass}">${report.totalViolations}</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${report.department}</span>
+                                    <span class="yearlevel-badge" style="font-size:9px;padding:2px 6px;min-width:auto;">${report.yearlevel || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div class="report-card-footer">
+                                <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
+                                <div class="report-card-actions">${actionBtns(report.id)}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
                 }
             }
 
-            tableBody.innerHTML = pageItems.map(report => {
-                const deptClass = getDepartmentClass(report.deptCode);
-                const statusClass = getStatusClass(report.status);
-                const uniformClass = getCountBadgeClass(report.uniformCount);
-                const footwearClass = getCountBadgeClass(report.footwearCount);
-                const noIdClass = getCountBadgeClass(report.noIdCount);
-                const totalClass = getCountBadgeClass(report.totalViolations);
-                
-                return `
-                <tr data-id="${report.id}">
-                    <td class="report-student-info" data-label="Student">
-                        <div class="student-info-wrapper">
-                            <div class="student-avatar">
-                                <img src="${report.studentImage}" 
-                                     alt="${report.studentName}" 
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(report.studentName)}&background=ffd700&color=333&size=32'">
+            // ── LIST VIEW ───────────────────────────────────────────────────
+            const listBody = document.getElementById('ReportsListBody');
+            if (listBody) {
+                if (pageItems.length === 0) {
+                    listBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;">No reports found</p>`;
+                } else {
+                    listBody.innerHTML = pageItems.map(report => {
+                        const deptClass    = getDepartmentClass(report.deptCode);
+                        const statusClass  = getStatusClass(report.status);
+                        const uniformClass = getCountBadgeClass(report.uniformCount);
+                        const footwearClass= getCountBadgeClass(report.footwearCount);
+                        const noIdClass    = getCountBadgeClass(report.noIdCount);
+                        const totalClass   = getCountBadgeClass(report.totalViolations);
+                        return `
+                        <div class="report-list-item ${report.status}" data-id="${report.id}">
+                            <div class="report-list-top">
+                                <img src="${report.studentImage}" alt="${report.studentName}" class="report-list-avatar"
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(report.studentName)}&background=ffd700&color=333&size=36'">
+                                <div class="report-list-name-block">
+                                    <span class="report-list-name">${report.studentName}</span>
+                                    <span class="report-list-id">${report.studentId}</span>
+                                </div>
+                                <div class="report-list-actions">${actionBtns(report.id)}</div>
                             </div>
-                            <div class="student-details">
-                                <strong>${report.studentName}</strong>
-                                <small>${report.studentId} • ${report.section || 'N/A'}</small>
+                            <div class="report-list-badges">
+                                <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;">${report.department}</span>
+                                <span class="yearlevel-badge" style="font-size:9px;padding:2px 7px;min-width:auto;">${report.yearlevel || 'N/A'}</span>
+                                <span style="font-size:9px;color:var(--dark-grey);">
+                                    Uniform: <strong class="${uniformClass === 'none' ? '' : 'count-badge ' + uniformClass}" style="font-size:9px;padding:1px 5px;">${report.uniformCount}</strong>
+                                </span>
+                                <span style="font-size:9px;color:var(--dark-grey);">
+                                    Footwear: <strong class="${footwearClass === 'none' ? '' : 'count-badge ' + footwearClass}" style="font-size:9px;padding:1px 5px;">${report.footwearCount}</strong>
+                                </span>
+                                <span style="font-size:9px;color:var(--dark-grey);">
+                                    No ID: <strong class="${noIdClass === 'none' ? '' : 'count-badge ' + noIdClass}" style="font-size:9px;padding:1px 5px;">${report.noIdCount}</strong>
+                                </span>
+                                <span class="Reports-status-badge ${statusClass}" style="font-size:9px;">
+                                    Total: ${report.totalViolations} · ${report.statusLabel}
+                                </span>
                             </div>
-                        </div>
-                    </td>
-                    <td class="report-dept" data-label="Department">
-                        <span class="dept-badge ${deptClass}">${report.department}</span>
-                    </td>
-                    <td class="report-section" data-label="Section">${report.section}</td>
-                    <td class="report-yearlevel" data-label="Year Level">
-                        <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
-                    </td>
-                    <td class="violation-count uniform" data-label="Uniform">
-                        <div class="count-badge ${uniformClass}">${report.uniformCount}</div>
-                    </td>
-                    <td class="violation-count footwear" data-label="Footwear">
-                        <div class="count-badge ${footwearClass}">${report.footwearCount}</div>
-                    </td>
-                    <td class="violation-count no-id" data-label="No ID">
-                        <div class="count-badge ${noIdClass}">${report.noIdCount}</div>
-                    </td>
-                    <td class="total-violations" data-label="Total">
-                        <div class="total-badge ${totalClass}">${report.totalViolations}</div>
-                    </td>
-                    <td data-label="Status">
-                        <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
-                    </td>
-                    <td data-label="Actions">
-                        <div class="Reports-action-buttons">
-                            <button class="Reports-action-btn view" data-id="${report.id}" title="View Details">
-                                <i class='bx bx-show'></i>
-                            </button>
-                            <button class="Reports-action-btn export" data-id="${report.id}" title="Export Report">
-                                <i class='bx bx-download'></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `}).join('');
+                        </div>`;
+                    }).join('');
+                }
+            }
 
             calculateStats();
             const showingEl = document.getElementById('showingReportsCount');
@@ -982,19 +1084,24 @@ function initReportsModule() {
         if (viewButtons.length > 0) {
             viewButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    const view = this.dataset.view;
-                    
-                    // Remove active class from all buttons
+                    viewMode = this.dataset.view;
+                    localStorage.setItem('reportsViewMode', viewMode);
                     viewButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
                     this.classList.add('active');
-                    
-                    // For now, just log the view change
-                    console.log(`Switched to ${view} view`);
-                    alert(`Switched to ${view} view (Note: Grid/Card view implementation would go here)`);
+                    renderReports();
                 });
             });
+            // Set initial active state from saved preference
+            viewButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === viewMode);
+            });
         }
+
+        // Delegate clicks on grid and list views to the existing table click handler
+        const reportsGridView = document.getElementById('reportsGridView');
+        const reportsListView = document.getElementById('reportsListView');
+        if (reportsGridView) reportsGridView.addEventListener('click', handleTableClick);
+        if (reportsListView) reportsListView.addEventListener('click', handleTableClick);
 
         // 16. DETAILS MODAL ACTION BUTTONS
         const detailExportBtn = document.getElementById('detailExportBtn');
