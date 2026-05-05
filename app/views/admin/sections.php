@@ -104,6 +104,19 @@ if ($deptResult && $deptResult->num_rows > 0) {
               <option value="active">Active Only</option>
             </select>
 
+            <!-- View Toggle -->
+            <div class="sect-view-toggle">
+              <button class="sect-view-btn" data-view="table" title="Table View">
+                <i class='bx bx-table'></i>
+              </button>
+              <button class="sect-view-btn" data-view="grid" title="Grid View">
+                <i class='bx bx-grid-alt'></i>
+              </button>
+              <button class="sect-view-btn active" data-view="list" title="List View">
+                <i class='bx bx-list-ul'></i>
+              </button>
+            </div>
+
             <button class="sections-filter-btn" title="More filters">
               <i class='bx bx-filter-alt'></i>
             </button>
@@ -112,7 +125,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
       </div>
 
       <!-- Section Table -->
-      <div id="sectionsPrintArea" class="sections-table-container">
+      <div id="sectionsPrintArea" class="sections-table-container" id="sectTableView">
         <table class="sections-table">
           <thead>
             <tr>
@@ -138,6 +151,16 @@ if ($deptResult && $deptResult->num_rows > 0) {
             <!-- JS will populate rows from database -->
           </tbody>
         </table>
+      </div>
+
+      <!-- Grid View -->
+      <div id="sectGridView" class="sect-grid-container" style="display:none;">
+        <div id="sectGridBody" class="sect-grid"></div>
+      </div>
+
+      <!-- List View -->
+      <div id="sectListView" class="sect-list-container" style="display:none;">
+        <div id="sectListBody" class="sect-list"></div>
       </div>
 
       <!-- Table Footer -->

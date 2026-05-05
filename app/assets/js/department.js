@@ -39,6 +39,7 @@ function initDepartmentModule() {
   // --- Department data (loaded from database) ---
   let departments = _cache.departments;
   let currentView = 'active'; // 'active' or 'archived'
+  let viewMode    = localStorage.getItem('deptViewMode') || 'list'; // 'table', 'grid', 'list'
   let currentPage  = 1;
   let itemsPerPage = 10;
   let totalRecords = 0;
@@ -84,6 +85,25 @@ function initDepartmentModule() {
       if (emptyState) emptyState.style.display = 'none';
     }
 
+    // Show/hide view containers
+    const tableViewEl = document.getElementById('deptTableView');
+    const gridViewEl  = document.getElementById('deptGridView');
+    const listViewEl  = document.getElementById('deptListView');
+    if (tableViewEl) tableViewEl.style.display = viewMode === 'table' ? '' : 'none';
+    if (gridViewEl)  gridViewEl.style.display  = viewMode === 'grid'  ? '' : 'none';
+    if (listViewEl)  listViewEl.style.display  = viewMode === 'list'  ? '' : 'none';
+
+    // ── Helper: action buttons ──────────────────────────────
+    function actionBtns(d) {
+      return `
+        <button class="action-btn view" data-id="${d.id}" title="View"><i class='bx bx-show'></i></button>
+        ${d.status !== 'archived' ? `<button class="action-btn edit" data-id="${d.id}" title="Edit"><i class='bx bx-edit'></i></button>` : ''}
+        ${d.status === 'archived' ? `<button class="action-btn restore" data-id="${d.id}" title="Restore"><i class='bx bx-reset'></i></button>` : ''}
+        <button class="action-btn delete" data-id="${d.id}" title="Delete"><i class='bx bx-trash'></i></button>
+      `;
+    }
+
+    // ── TABLE VIEW ──────────────────────────────────────────
     tableBody.innerHTML = deptArray.map(d => `
       <tr data-id="${d.id}">
         <td class="department-name" data-label="Department Name">
@@ -104,29 +124,70 @@ function initDepartmentModule() {
           <span class="status-badge ${d.status}">${d.status === 'active' ? 'Active' : 'Archived'}</span>
         </td>
         <td data-label="Actions">
-          <div class="action-buttons">
-            <button class="action-btn view" data-id="${d.id}" title="View">
-              <i class='bx bx-show'></i>
-            </button>
-            ${d.status !== 'archived' ?
-              `<button class="action-btn edit" data-id="${d.id}" title="Edit">
-                <i class='bx bx-edit'></i>
-              </button>` :
-              ''
-            }
-            ${d.status === 'archived' ? 
-              `<button class="action-btn restore" data-id="${d.id}" title="Restore">
-                <i class='bx bx-reset'></i>
-              </button>` : 
-              ''
-            }
-            <button class="action-btn delete" data-id="${d.id}" title="Delete">
-              <i class='bx bx-trash'></i>
-            </button>
-          </div>
+          <div class="action-buttons">${actionBtns(d)}</div>
         </td>
       </tr>
     `).join('');
+
+    // ── GRID / CARD VIEW ────────────────────────────────────
+    const gridBody = document.getElementById('deptGridBody');
+    if (gridBody) {
+      gridBody.innerHTML = deptArray.map(d => `
+        <div class="dept-card" data-id="${d.id}">
+          <div class="dept-card-top"></div>
+          <div class="dept-card-body">
+            <div class="dept-card-icon-row">
+              <div class="dept-card-icon"><i class='bx ${getDeptIcon(d.code)}'></i></div>
+              <div>
+                <p class="dept-card-name">${d.name}</p>
+                <p class="dept-card-code">${d.code}</p>
+              </div>
+            </div>
+            <div class="dept-card-divider"></div>
+            <div class="dept-card-meta">
+              <div class="dept-card-meta-row">
+                <span class="dept-card-meta-label">HOD</span>
+                <span class="dept-card-meta-value" style="text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.hod || 'N/A'}</span>
+              </div>
+              <div class="dept-card-meta-row">
+                <span class="dept-card-meta-label">Students</span>
+                <span class="dept-card-meta-value">${d.studentCount}</span>
+              </div>
+            </div>
+          </div>
+          <div class="dept-card-footer">
+            <span class="status-badge ${d.status}" style="font-size:9px;">${d.status === 'active' ? 'Active' : 'Archived'}</span>
+            <div class="dept-card-actions">${actionBtns(d)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ── LIST VIEW ───────────────────────────────────────────
+    const listBody = document.getElementById('deptListBody');
+    if (listBody) {
+      listBody.innerHTML = deptArray.map(d => `
+        <div class="dept-list-item" data-id="${d.id}">
+          <div class="dept-list-top">
+            <div class="dept-list-icon"><i class='bx ${getDeptIcon(d.code)}'></i></div>
+            <div class="dept-list-name-block">
+              <span class="dept-list-name">${d.name}</span>
+              <span class="dept-list-code">${d.code}</span>
+            </div>
+            <div class="dept-list-actions">${actionBtns(d)}</div>
+          </div>
+          <div class="dept-list-badges">
+            <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+              <i class='bx bx-user'></i>${d.studentCount} students
+            </span>
+            <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+              <i class='bx bx-user-pin'></i>${d.hod || 'N/A'}
+            </span>
+            <span class="status-badge ${d.status}" style="font-size:9px;">${d.status === 'active' ? 'Active' : 'Archived'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
 
     // Update stats and counts
     updateStats();
@@ -865,7 +926,7 @@ function initDepartmentModule() {
   }
 
   // --- Actions (event delegation) ---
-  tableBody.addEventListener('click', (e) => {
+  function handleDeptActionClick(e) {
     const viewBtn = e.target.closest('.action-btn.view');
     const editBtn = e.target.closest('.action-btn.edit');
     const restoreBtn = e.target.closest('.action-btn.restore');
@@ -921,7 +982,8 @@ function initDepartmentModule() {
         }
       }
     }
-  });
+  }
+  tableBody.addEventListener('click', handleDeptActionClick);
 
   // --- Modal open/close + Save ---
   if (btnAddDepartment && modal) {
@@ -929,6 +991,26 @@ function initDepartmentModule() {
     btnAddDepartment.addEventListener('click', () => {
       openModal();
     });
+
+    // View toggle buttons
+    const deptViewBtns = document.querySelectorAll('.dept-view-btn');
+    deptViewBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        viewMode = btn.dataset.view;
+        localStorage.setItem('deptViewMode', viewMode);
+        deptViewBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderDepartments();
+      });
+    });
+    // Set initial active state
+    deptViewBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewMode));
+
+    // Delegate clicks on grid/list views
+    const deptGridView = document.getElementById('deptGridView');
+    const deptListView = document.getElementById('deptListView');
+    if (deptGridView) deptGridView.addEventListener('click', handleDeptActionClick);
+    if (deptListView) deptListView.addEventListener('click', handleDeptActionClick);
 
     // Export button
     if (exportBtn) {

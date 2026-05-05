@@ -1317,3 +1317,236 @@ body.dark #departmentModal .close-btn:hover {
     flex-shrink: 0;
   }
 }
+
+/* ========================================= */
+/*       DEPT VIEW TOGGLE BUTTONS           */
+/* ========================================= */
+.dept-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--grey);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.dept-view-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--dark-grey);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.dept-view-btn:hover { color: var(--dark); background: var(--light); }
+
+.dept-view-btn.active {
+  background: var(--light);
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
+}
+
+/* ========================================= */
+/*         DEPT GRID / CARD VIEW            */
+/* ========================================= */
+.dept-grid-container { padding: 16px; }
+
+.dept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.dept-card {
+  background: var(--light);
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+}
+
+.dept-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-color: var(--gold);
+}
+
+.dept-card-top {
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), #ffcc33);
+}
+
+.dept-card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.dept-card-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dept-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold), #ffcc33);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--dark);
+  flex-shrink: 0;
+}
+
+.dept-card-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.dept-card-code {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  color: var(--gold);
+  font-weight: 600;
+  margin: 0;
+}
+
+.dept-card-divider { height: 1px; background: var(--border); }
+
+.dept-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dept-card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+
+.dept-card-meta-label { color: var(--dark-grey); font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; }
+.dept-card-meta-value { font-weight: 600; color: var(--dark); font-size: 10px; }
+
+.dept-card-footer {
+  padding: 8px 14px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.dept-card-actions { display: flex; gap: 5px; }
+
+/* ========================================= */
+/*         DEPT LIST VIEW                   */
+/* ========================================= */
+.dept-list-container { padding: 12px 16px; }
+
+.dept-list { display: flex; flex-direction: column; gap: 8px; }
+
+.dept-list-item {
+  background: var(--light);
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  padding: 10px 14px 10px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dept-list-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--gold);
+  border-radius: 3px 0 0 3px;
+}
+
+.dept-list-item:hover {
+  border-color: var(--gold);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.dept-list-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dept-list-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold), #ffcc33);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--dark);
+  flex-shrink: 0;
+}
+
+.dept-list-name-block { flex: 1; min-width: 0; }
+
+.dept-list-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.dept-list-code {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  color: var(--gold);
+  font-weight: 600;
+  display: block;
+  margin-top: 1px;
+}
+
+.dept-list-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+.dept-list-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding-left: 44px;
+}
+
+@media (max-width: 768px) {
+  .dept-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .dept-list-badges { padding-left: 0; }
+}
+
+@media (max-width: 480px) {
+  .dept-grid { grid-template-columns: repeat(2, 1fr); }
+}

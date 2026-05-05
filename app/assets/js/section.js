@@ -39,6 +39,7 @@ function initSectionsModule() {
 
         let sections    = _cache.sections;
         let allSections = _cache.allSections;
+        let viewMode    = localStorage.getItem('sectViewMode') || 'list'; // 'table', 'grid', 'list'
 
         // API path — works on AWS root AND local subfolder
         const _p = window.location.pathname.split('/').filter(Boolean);
@@ -771,26 +772,38 @@ function initSectionsModule() {
             if (list.length === 0) {
                 tableBody.innerHTML = '';
                 const emptyState = document.getElementById('sectionsEmptyState');
-                if (emptyState) {
-                    emptyState.style.display = 'flex';
-                }
+                if (emptyState) emptyState.style.display = 'flex';
                 updateCounts([]);
                 renderPagination();
                 return;
             }
 
             const emptyState = document.getElementById('sectionsEmptyState');
-            if (emptyState) {
-                emptyState.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'none';
+
+            // Show/hide view containers
+            const tableViewEl = document.getElementById('sectionsPrintArea');
+            const gridViewEl  = document.getElementById('sectGridView');
+            const listViewEl  = document.getElementById('sectListView');
+            if (tableViewEl) tableViewEl.style.display = viewMode === 'table' ? '' : 'none';
+            if (gridViewEl)  gridViewEl.style.display  = viewMode === 'grid'  ? '' : 'none';
+            if (listViewEl)  listViewEl.style.display  = viewMode === 'list'  ? '' : 'none';
+
+            // ── Helper: action buttons ──────────────────────────
+            function actionBtns(s) {
+                return `
+                    <button class="sections-action-btn view" data-id="${s.id}" title="View"><i class='bx bx-show'></i></button>
+                    ${s.status === 'archived' ? `<button class="sections-action-btn restore" data-id="${s.id}" title="Restore"><i class='bx bx-reset'></i></button>` : ''}
+                    <button class="sections-action-btn delete" data-id="${s.id}" title="Delete"><i class='bx bx-trash'></i></button>
+                `;
             }
 
+            // ── TABLE VIEW ──────────────────────────────────────
             tableBody.innerHTML = list.map(s => `
                 <tr data-id="${s.id}">
                     <td class="section-name" data-label="Section Name">
                         <div class="section-name-wrapper">
-                            <div class="section-icon">
-                                <i class='bx bx-group'></i>
-                            </div>
+                            <div class="section-icon"><i class='bx bx-group'></i></div>
                             <div>
                                 <strong>${escapeHtml(s.name)}</strong>
                                 <small class="section-year">${escapeHtml(s.academic_year || '')}</small>
@@ -804,23 +817,70 @@ function initSectionsModule() {
                         <span class="sections-status-badge ${s.status || 'active'}">${(s.status || 'active') === 'active' ? 'Active' : 'Archived'}</span>
                     </td>
                     <td data-label="Actions">
-                        <div class="sections-action-buttons">
-                            <button class="sections-action-btn view" data-id="${s.id}" title="View">
-                                <i class='bx bx-show'></i>
-                            </button>
-                            ${s.status === 'archived' ? 
-                                `<button class="sections-action-btn restore" data-id="${s.id}" title="Restore">
-                                    <i class='bx bx-reset'></i>
-                                </button>` : 
-                                ''
-                            }
-                            <button class="sections-action-btn delete" data-id="${s.id}" title="Delete">
-                                <i class='bx bx-trash'></i>
-                            </button>
-                        </div>
+                        <div class="sections-action-buttons">${actionBtns(s)}</div>
                     </td>
                 </tr>
             `).join('');
+
+            // ── GRID / CARD VIEW ────────────────────────────────
+            const gridBody = document.getElementById('sectGridBody');
+            if (gridBody) {
+                gridBody.innerHTML = list.map(s => `
+                    <div class="sect-card" data-id="${s.id}">
+                        <div class="sect-card-top"></div>
+                        <div class="sect-card-body">
+                            <div class="sect-card-icon-row">
+                                <div class="sect-card-icon"><i class='bx bx-group'></i></div>
+                                <div>
+                                    <p class="sect-card-name">${escapeHtml(s.name)}</p>
+                                    <p class="sect-card-year">${escapeHtml(s.academic_year || '')}</p>
+                                </div>
+                            </div>
+                            <div class="sect-card-divider"></div>
+                            <div class="sect-card-meta">
+                                <div class="sect-card-meta-row">
+                                    <span class="sect-card-meta-label">Dept</span>
+                                    <span class="sect-card-meta-value" style="text-align:right;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.department || 'N/A')}</span>
+                                </div>
+                                <div class="sect-card-meta-row">
+                                    <span class="sect-card-meta-label">Students</span>
+                                    <span class="sect-card-meta-value">${s.student_count || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sect-card-footer">
+                            <span class="sections-status-badge ${s.status || 'active'}" style="font-size:9px;">${(s.status || 'active') === 'active' ? 'Active' : 'Archived'}</span>
+                            <div class="sect-card-actions">${actionBtns(s)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // ── LIST VIEW ───────────────────────────────────────
+            const listBody = document.getElementById('sectListBody');
+            if (listBody) {
+                listBody.innerHTML = list.map(s => `
+                    <div class="sect-list-item" data-id="${s.id}">
+                        <div class="sect-list-top">
+                            <div class="sect-list-icon"><i class='bx bx-group'></i></div>
+                            <div class="sect-list-name-block">
+                                <span class="sect-list-name">${escapeHtml(s.name)}</span>
+                                <span class="sect-list-year">${escapeHtml(s.academic_year || '')}</span>
+                            </div>
+                            <div class="sect-list-actions">${actionBtns(s)}</div>
+                        </div>
+                        <div class="sect-list-badges">
+                            <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+                                <i class='bx bx-buildings'></i>${escapeHtml(s.department || 'N/A')}
+                            </span>
+                            <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+                                <i class='bx bx-user'></i>${s.student_count || 0} students
+                            </span>
+                            <span class="sections-status-badge ${s.status || 'active'}" style="font-size:9px;">${(s.status || 'active') === 'active' ? 'Active' : 'Archived'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
 
             updateCounts(list);
             renderPagination();
@@ -1001,6 +1061,25 @@ function initSectionsModule() {
 
             // Event listeners for table
             tableBody.addEventListener('click', handleTableClick);
+
+            // View toggle buttons
+            const sectViewBtns = document.querySelectorAll('.sect-view-btn');
+            sectViewBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    viewMode = btn.dataset.view;
+                    localStorage.setItem('sectViewMode', viewMode);
+                    sectViewBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderSections();
+                });
+            });
+            sectViewBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewMode));
+
+            // Delegate clicks on grid/list views to the same handler
+            const sectGridView = document.getElementById('sectGridView');
+            const sectListView = document.getElementById('sectListView');
+            if (sectGridView) sectGridView.addEventListener('click', handleTableClick);
+            if (sectListView) sectListView.addEventListener('click', handleTableClick);
 
             // Add Section button
             if (btnAddSection) {

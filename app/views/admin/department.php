@@ -104,6 +104,19 @@ include '../../config/db_connect.php';
               <option value="active">Active Only</option>
             </select>
 
+            <!-- View Toggle -->
+            <div class="dept-view-toggle">
+              <button class="dept-view-btn" data-view="table" title="Table View">
+                <i class='bx bx-table'></i>
+              </button>
+              <button class="dept-view-btn" data-view="grid" title="Grid View">
+                <i class='bx bx-grid-alt'></i>
+              </button>
+              <button class="dept-view-btn active" data-view="list" title="List View">
+                <i class='bx bx-list-ul'></i>
+              </button>
+            </div>
+
             <button class="filter-btn" title="More filters">
               <i class='bx bx-filter-alt'></i>
             </button>
@@ -112,7 +125,7 @@ include '../../config/db_connect.php';
       </div>
 
       <!-- Department Table -->
-      <div class="table-wrapper">
+      <div class="table-wrapper" id="deptTableView">
         <table class="department-table">
           <thead>
             <tr>
@@ -138,6 +151,16 @@ include '../../config/db_connect.php';
             <!-- JS will populate rows from database -->
           </tbody>
         </table>
+      </div>
+
+      <!-- Grid View -->
+      <div id="deptGridView" class="dept-grid-container" style="display:none;">
+        <div id="deptGridBody" class="dept-grid"></div>
+      </div>
+
+      <!-- List View -->
+      <div id="deptListView" class="dept-list-container" style="display:none;">
+        <div id="deptListBody" class="dept-list"></div>
       </div>
 
       <!-- Table Footer -->
