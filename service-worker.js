@@ -1,6 +1,6 @@
 // Cache version — auto-updated by .git/hooks/post-merge on the server
 // When git pull brings new commits, the hook rewrites this line automatically
-const BUILD_DATE = '2026-05-03';
+const BUILD_DATE = '2026-05-05';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -136,8 +136,8 @@ function getBaseKey(url) {
 
   if (url.pathname.includes('violations.php')) {
     if (action === 'types') return new Request(base + '?action=types');
-    if (action === '') return new Request(base);
-    return new Request(base + '?action=' + action);
+    // Always cache to the limit=all key so offline has the full dataset
+    return new Request(base + '?limit=all');
   }
   if (url.pathname.includes('students.php')) {
     return new Request(base + '?action=get&filter=active&page=1&limit=1000');
@@ -159,8 +159,9 @@ async function serveOffline(url) {
       return offlineJSON({ status: 'success', data: [] });
     }
 
-    // Find cached violations (try exact match, then scan)
-    let cached = await cache.match(new Request(base));
+    // Find cached violations (try limit=all key first, then scan)
+    let cached = await cache.match(new Request(base + '?limit=all'));
+    if (!cached) cached = await cache.match(new Request(base));
     if (!cached) {
       const keys = await cache.keys();
       for (const k of keys) {
