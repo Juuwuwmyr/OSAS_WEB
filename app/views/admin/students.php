@@ -105,9 +105,24 @@ require_once '../../config/db_connect.php';
       </div>
 
       <div class="Students-header-right">
-        <div class="Students-search-box">
-          <i class='bx bx-search'></i>
-          <input type="text" id="searchStudent" placeholder="Search students...">
+        <div class="Students-search-toggle-row">
+          <div class="Students-search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchStudent" placeholder="Search students...">
+          </div>
+
+          <!-- View Toggle Buttons -->
+          <div class="Students-view-toggle">
+            <button class="Students-view-btn active" id="viewTable" title="Table View" data-view="table">
+              <i class='bx bx-table'></i>
+            </button>
+            <button class="Students-view-btn" id="viewGrid" title="Grid View" data-view="grid">
+              <i class='bx bx-grid-alt'></i>
+            </button>
+            <button class="Students-view-btn" id="viewList" title="List View" data-view="list">
+              <i class='bx bx-list-ul'></i>
+            </button>
+          </div>
         </div>
 
         <div class="Students-filter-group">
@@ -128,19 +143,6 @@ require_once '../../config/db_connect.php';
             <option value="all">All Sections</option>
             <!-- Sections will be loaded via JS based on department -->
           </select>
-
-          <!-- View Toggle Buttons -->
-          <div class="Students-view-toggle">
-            <button class="Students-view-btn active" id="viewTable" title="Table View" data-view="table">
-              <i class='bx bx-table'></i>
-            </button>
-            <button class="Students-view-btn" id="viewGrid" title="Grid View" data-view="grid">
-              <i class='bx bx-grid-alt'></i>
-            </button>
-            <button class="Students-view-btn" id="viewList" title="List View" data-view="list">
-              <i class='bx bx-list-ul'></i>
-            </button>
-          </div>
 
           <button class="Students-filter-btn" title="More filters">
             <i class='bx bx-filter-alt'></i>

@@ -852,22 +852,17 @@ function initStudentsModule() {
                     listBody.innerHTML = pageItems.map(s => {
                         const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
                         const deptClass = getDepartmentClass(s.department);
-                        const avatarUrl = buildAvatar(s, 40);
+                        const avatarUrl = buildAvatar(s, 36);
                         const statusClass = s.status || 'active';
                         return `
-                        <div class="student-list-item" data-id="${s.id}">
-                            <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-list-avatar"
-                                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=40'">
-                            <div class="student-list-info">
-                                <div class="student-list-name">${escapeHtml(fullName)}</div>
-                                <div class="student-list-sub">
-                                    <span><i class='bx bx-id-card'></i>${escapeHtml(s.studentId || '')}</span>
-                                    <span><i class='bx bx-buildings'></i><span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${escapeHtml(s.department || 'N/A')}</span></span>
-                                    <span><i class='bx bx-group'></i>${escapeHtml(s.section || 'N/A')}</span>
+                        <div class="student-list-item ${statusClass}" data-id="${s.id}">
+                            <div class="student-list-top">
+                                <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-list-avatar"
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=36'">
+                                <div class="student-list-name-block">
+                                    <span class="student-list-name">${escapeHtml(fullName)}</span>
+                                    <span class="student-list-id">${escapeHtml(s.studentId || '')}</span>
                                 </div>
-                            </div>
-                            <div class="student-list-right">
-                                <span class="Students-status-badge ${statusClass}">${formatStatus(s.status || 'active')}</span>
                                 <div class="student-list-actions">
                                     <button class="Students-action-btn view" data-id="${s.id}" title="View Profile">
                                         <i class='bx bx-user'></i>
@@ -878,6 +873,14 @@ function initStudentsModule() {
                                         </button>
                                     ` : '' }
                                 </div>
+                            </div>
+                            <div class="student-list-badges">
+                                <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(s.department || 'N/A')}</span>
+                                <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+                                    <i class='bx bx-group'></i>${escapeHtml(s.section || 'N/A')}
+                                </span>
+                                <span class="yearlevel-badge" style="font-size:9px;padding:2px 7px;min-width:auto;">${escapeHtml(s.yearlevel || 'N/A')}</span>
+                                <span class="Students-status-badge ${statusClass}" style="font-size:9px;">${formatStatus(s.status || 'active')}</span>
                             </div>
                         </div>
                         `;
