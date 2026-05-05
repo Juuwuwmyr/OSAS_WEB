@@ -2330,24 +2330,13 @@ function initViolationsModule() {
                         const statusClass = getStatusClass(displayStatus);
                         return `
                         <div class="violation-list-item ${displayStatus}" data-id="${v.id}">
-                            <img src="${v.studentImage}" alt="${v.studentName}" class="violation-list-avatar"
-                                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=38'">
-                            <div class="violation-list-info">
-                                <div class="violation-list-name">${v.studentName}</div>
-                                <div class="violation-list-sub">
-                                    <i class='bx bx-id-card'></i>${v.studentId}
+                            <div class="violation-list-top">
+                                <img src="${v.studentImage}" alt="${v.studentName}" class="violation-list-avatar"
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=36'">
+                                <div class="violation-list-name-block">
+                                    <span class="violation-list-name">${v.studentName}</span>
+                                    <span class="violation-list-id">${v.studentId}</span>
                                 </div>
-                                <div class="violation-list-sub">
-                                    <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 6px;">${v.violationTypeLabel}</span>
-                                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;">${v.violationLevelLabel}</span>
-                                </div>
-                                <div class="violation-list-sub">
-                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
-                                    <i class='bx bx-calendar' style="margin-left:4px;"></i>${formatDate(v.dateReported)}
-                                </div>
-                            </div>
-                            <div class="violation-list-right">
-                                <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
                                 <div class="violation-list-actions">
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
@@ -2361,6 +2350,15 @@ function initViolationsModule() {
                                         `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
                                     }
                                 </div>
+                            </div>
+                            <div class="violation-list-badges">
+                                <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${v.violationTypeLabel}</span>
+                                <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${v.violationLevelLabel}</span>
+                                <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
+                                <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${displayStatusLabel}</span>
+                                <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
+                                    <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.dateReported)}
+                                </span>
                             </div>
                         </div>`;
                     }).join('');
