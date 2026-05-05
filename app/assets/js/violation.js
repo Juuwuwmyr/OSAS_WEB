@@ -121,7 +121,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
-        let viewMode        = localStorage.getItem('violationsViewMode') || 'table'; // 'table', 'grid', 'list'
+        let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
         let isLoading       = false;

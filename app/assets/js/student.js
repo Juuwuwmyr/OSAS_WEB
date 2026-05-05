@@ -55,7 +55,7 @@ function initStudentsModule() {
         let students    = _cache.students;
         let allStudents = _cache.allStudents; // Store all students for stats
         let currentView = 'active'; // 'active' or 'archived'
-        let viewMode    = localStorage.getItem('studentsViewMode') || 'table'; // 'table', 'grid', 'list'
+        let viewMode    = localStorage.getItem('studentsViewMode') || 'list'; // 'table', 'grid', 'list'
         let editingStudentId = null;
         let currentPage      = 1;
         let itemsPerPage     = 10;

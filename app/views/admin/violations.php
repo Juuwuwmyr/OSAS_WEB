@@ -172,13 +172,13 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- View Toggle -->
         <div class="Violations-view-toggle">
-          <button class="Violations-view-btn active" data-view="table" title="Table View">
+          <button class="Violations-view-btn" data-view="table" title="Table View">
             <i class='bx bx-table'></i>
           </button>
           <button class="Violations-view-btn" data-view="grid" title="Grid View">
             <i class='bx bx-grid-alt'></i>
           </button>
-          <button class="Violations-view-btn" data-view="list" title="List View">
+          <button class="Violations-view-btn active" data-view="list" title="List View">
             <i class='bx bx-list-ul'></i>
           </button>
         </div>

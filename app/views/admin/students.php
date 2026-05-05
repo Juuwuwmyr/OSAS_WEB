@@ -113,13 +113,13 @@ require_once '../../config/db_connect.php';
 
           <!-- View Toggle Buttons -->
           <div class="Students-view-toggle">
-            <button class="Students-view-btn active" id="viewTable" title="Table View" data-view="table">
+            <button class="Students-view-btn" id="viewTable" title="Table View" data-view="table">
               <i class='bx bx-table'></i>
             </button>
             <button class="Students-view-btn" id="viewGrid" title="Grid View" data-view="grid">
               <i class='bx bx-grid-alt'></i>
             </button>
-            <button class="Students-view-btn" id="viewList" title="List View" data-view="list">
+            <button class="Students-view-btn active" id="viewList" title="List View" data-view="list">
               <i class='bx bx-list-ul'></i>
             </button>
           </div>

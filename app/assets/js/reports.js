@@ -71,7 +71,7 @@ function initReportsModule() {
         let itemsPerPage = 10;
         let totalRecords = 0;
         let totalPages = 1;
-        let viewMode = localStorage.getItem('reportsViewMode') || 'table'; // 'table', 'grid', 'list'
+        let viewMode = localStorage.getItem('reportsViewMode') || 'list'; // 'table', 'grid', 'list'
 
         // ========== HELPER FUNCTIONS ==========
         
