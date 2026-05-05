@@ -1988,10 +1988,15 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
 
-    // Initialize theme
+    // Initialize theme — default is light, respect saved preference
     const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(savedTheme === 'light' ? false : true);
+    if (!savedTheme) {
+        // First visit: force light and save it
+        localStorage.setItem('theme', 'light');
+        setTheme(false);
+    } else {
+        setTheme(savedTheme === 'dark');
+    }
 
     themeToggle.addEventListener('click', () => {
         setTheme(body.classList.contains('light'));
