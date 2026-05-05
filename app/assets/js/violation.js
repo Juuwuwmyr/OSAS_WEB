@@ -1287,14 +1287,47 @@ function initViolationsModule() {
             return 'default';
         }
 
+        function getDepartmentAcronym(dept) {
+            if (!dept) return 'N/A';
+            const upper = dept.trim().toUpperCase();
+            // Already an acronym (short code, no spaces)
+            if (upper.length <= 8 && !upper.includes(' ')) return upper;
+            // Map full names to acronyms
+            const map = {
+                'BACHELOR OF SCIENCE IN INFORMATION SYSTEM': 'BSIS',
+                'BACHELOR OF SCIENCE IN INFORMATION SYSTEMS': 'BSIS',
+                'BS INFORMATION SYSTEM': 'BSIS',
+                'BS INFORMATION SYSTEMS': 'BSIS',
+                'BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY': 'BSIT',
+                'BS INFORMATION TECHNOLOGY': 'BSIT',
+                'BACHELOR OF SCIENCE IN COMPUTER SCIENCE': 'BSCS',
+                'BS COMPUTER SCIENCE': 'BSCS',
+                'WELFARE AND FAMILY TECHNOLOGY': 'WFT',
+                'BACHELOR OF TECHNOLOGY AND LIVELIHOOD EDUCATION': 'BTVTED',
+                'BTVTED': 'BTVTED',
+                'COLLEGE OF HEALTH SCIENCES': 'CHS',
+                'HEALTH SCIENCES': 'CHS',
+            };
+            if (map[upper]) return map[upper];
+            // Fallback: extract uppercase letters from each word
+            const acronym = dept.trim().split(/\s+/)
+                .filter(w => w.length > 2 || /^[A-Z]/.test(w))
+                .map(w => w[0].toUpperCase())
+                .join('');
+            return acronym || dept;
+        }
+
         function getDepartmentClass(dept) {
+            const acronym = getDepartmentAcronym(dept);
             const classes = {
                 'BSIS': 'bsis',
+                'BSIT': 'bsis',
+                'BSCS': 'bsis',
                 'WFT': 'wft',
                 'BTVTED': 'btvted',
                 'CHS': 'chs'
             };
-            return classes[dept] || 'default';
+            return classes[acronym] || 'default';
         }
 
         function getStatusClass(status) {
@@ -2177,7 +2210,7 @@ function initViolationsModule() {
                         <span class="violation-level-badge ${levelClass}">${v.violationLevelLabel}</span>
                     </td>
                     <td class="violation-dept" data-label="Department">
-                        <span class="dept-badge ${deptClass}">${v.department}</span>
+                        <span class="dept-badge ${deptClass}" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
                     </td>
                     <td class="violation-section" data-label="Section">${v.section}</td>
                     <td class="violation-yearlevel" data-label="Year Level">
