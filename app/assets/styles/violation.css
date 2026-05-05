@@ -1400,11 +1400,13 @@ body.dark {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  align-items: center;
+  align-items: flex-start;
   text-align: left;
   border: 1.5px solid transparent;
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease-out;
+  min-width: 0;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -1448,21 +1450,27 @@ body.dark {
   flex-direction: column;
   gap: 6px;
   width: 100%;
+  min-width: 0;
+  flex: 1;
   align-items: flex-start;
 }
 
 .violation-detail-row {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .violation-detail-label {
-  min-width: 70px;
+  min-width: 80px;
+  max-width: 90px;
+  flex-shrink: 0;
   font-weight: 600;
   color: var(--dark-grey);
   font-size: 11px;
+  line-height: 1.4;
 }
 
 .violation-detail-value {
@@ -1470,7 +1478,11 @@ body.dark {
   font-weight: 500;
   font-size: 11px;
   flex: 1;
-  text-align: left;
+  text-align: right;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  line-height: 1.4;
 }
 
 /* Enhanced Violation Type Section */
@@ -2959,18 +2971,42 @@ body.dark {
   }
 
   .violation-student-info-card {
-    padding: 20px 15px;
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
+    padding: 14px 12px;
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+    gap: 12px;
   }
-  
+
+  .violation-student-details {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
   .violation-detail-row {
-    justify-content: center;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
-  
+
+  .violation-detail-label {
+    min-width: 72px;
+    max-width: 80px;
+    flex-shrink: 0;
+    font-size: 10px;
+    text-align: left;
+  }
+
   .violation-detail-value {
-    text-align: center;
+    text-align: right;
+    font-size: 10px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    flex: 1;
+    min-width: 0;
   }
   
   .Violations-form-actions {
@@ -2986,18 +3022,28 @@ body.dark {
 
   /* Detailed Student Info Mobile Fixes */
   .violation-student-info-card.detailed {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  .violation-student-info-card.detailed .violation-student-details {
+    flex: 1;
+    min-width: 0;
   }
 
   .violation-student-info-card.detailed .violation-student-details h3 {
-    text-align: center;
+    text-align: left;
+    font-size: 13px !important;
+    word-break: break-word;
   }
 
   .violation-student-info-card.detailed .student-meta,
   .violation-student-info-card.detailed .student-contact {
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 
