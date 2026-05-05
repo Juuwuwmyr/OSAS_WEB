@@ -55,6 +55,7 @@ function initStudentsModule() {
         let students    = _cache.students;
         let allStudents = _cache.allStudents; // Store all students for stats
         let currentView = 'active'; // 'active' or 'archived'
+        let viewMode    = localStorage.getItem('studentsViewMode') || 'table'; // 'table', 'grid', 'list'
         let editingStudentId = null;
         let currentPage      = 1;
         let itemsPerPage     = 10;
@@ -713,6 +714,14 @@ function initStudentsModule() {
                 emptyState.style.display = filteredStudents.length === 0 ? 'flex' : 'none';
             }
 
+            // Show/hide view containers based on viewMode
+            const tableView = document.getElementById('StudentsPrintArea');
+            const gridView  = document.getElementById('studentsGridView');
+            const listView  = document.getElementById('studentsListView');
+            if (tableView) tableView.style.display = viewMode === 'table' ? '' : 'none';
+            if (gridView)  gridView.style.display  = viewMode === 'grid'  ? '' : 'none';
+            if (listView)  listView.style.display  = viewMode === 'list'  ? '' : 'none';
+
             if (filteredStudents.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
@@ -722,35 +731,34 @@ function initStudentsModule() {
                         </td>
                     </tr>
                 `;
+                const gridBody = document.getElementById('StudentsGridBody');
+                const listBody = document.getElementById('StudentsListBody');
+                if (gridBody) gridBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;grid-column:1/-1;">No students found</p>`;
+                if (listBody) listBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;">No students found</p>`;
                 renderPagination();
             } else {
-                tableBody.innerHTML = filteredStudents.map(s => {
+                // students is already paginated by fetchStudents — use directly
+                const pageItems = filteredStudents;
+
+                // Helper: build avatar URL
+                function buildAvatar(s, size) {
+                    const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                    if (s.avatar && s.avatar !== '') {
+                        if (s.avatar.startsWith('http') || s.avatar.startsWith('data:')) return s.avatar;
+                        let norm = s.avatar;
+                        if (norm.startsWith('assets/') && !norm.startsWith('app/assets/')) norm = norm.replace('assets/', 'app/assets/');
+                        const pathMatch = window.location.pathname.match(/^(\/[^\/]+)\//);
+                        const base = pathMatch ? pathMatch[1] : '';
+                        return base + '/' + norm;
+                    }
+                    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=${size}`;
+                }
+
+                // ── TABLE VIEW ──────────────────────────────────────────────
+                tableBody.innerHTML = pageItems.map(s => {
                     const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
                     const deptClass = getDepartmentClass(s.department);
-                    
-                    // Build avatar URL - handle relative paths
-                    let avatarUrl = '';
-                    if (s.avatar && s.avatar !== '') {
-                        // If it's already a full URL (http/https) or data URL, use it as is
-                        if (s.avatar.startsWith('http') || s.avatar.startsWith('data:')) {
-                            avatarUrl = s.avatar;
-                        } else {
-                            // It's a relative path like 'assets/img/students/filename.jpg' or 'app/assets/img/students/filename.jpg'
-                            // Normalize to app/assets/ if it starts with assets/
-                            let normalizedAvatar = s.avatar;
-                            if (normalizedAvatar.startsWith('assets/') && !normalizedAvatar.startsWith('app/assets/')) {
-                                normalizedAvatar = normalizedAvatar.replace('assets/', 'app/assets/');
-                            }
-                            // Convert to absolute path from project root
-                            const pathMatch = window.location.pathname.match(/^(\/[^\/]+)\//);
-                            const projectBase = pathMatch ? pathMatch[1] : '';
-                            avatarUrl = projectBase + '/' + normalizedAvatar;
-                        }
-                    } else {
-                        // Use default avatar generator
-                        avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=40`;
-                    }
-                    
+                    const avatarUrl = buildAvatar(s, 40);
                     return `
                     <tr data-id="${s.id}">
                         <td class="student-image-cell" data-label="Image">
@@ -791,6 +799,90 @@ function initStudentsModule() {
                     </tr>
                 `;
                 }).join('');
+
+                // ── GRID / CARD VIEW ────────────────────────────────────────
+                const gridBody = document.getElementById('StudentsGridBody');
+                if (gridBody) {
+                    gridBody.innerHTML = pageItems.map(s => {
+                        const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                        const deptClass = getDepartmentClass(s.department);
+                        const avatarUrl = buildAvatar(s, 64);
+                        const statusClass = s.status || 'active';
+                        return `
+                        <div class="student-card" data-id="${s.id}">
+                            <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-card-avatar"
+                                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=64'">
+                            <p class="student-card-name">${escapeHtml(fullName)}</p>
+                            <p class="student-card-id">${escapeHtml(s.studentId || '')}</p>
+                            <div class="student-card-meta">
+                                <div class="student-card-meta-row">
+                                    <span>Dept</span>
+                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${escapeHtml(s.department || 'N/A')}</span>
+                                </div>
+                                <div class="student-card-meta-row">
+                                    <span>Section</span>
+                                    <span>${escapeHtml(s.section || 'N/A')}</span>
+                                </div>
+                                <div class="student-card-meta-row">
+                                    <span>Year</span>
+                                    <span>${escapeHtml(s.yearlevel || 'N/A')}</span>
+                                </div>
+                            </div>
+                            <div class="student-card-badges">
+                                <span class="Students-status-badge ${statusClass}">${formatStatus(s.status || 'active')}</span>
+                            </div>
+                            <div class="student-card-actions">
+                                <button class="Students-action-btn view" data-id="${s.id}" title="View Profile">
+                                    <i class='bx bx-user'></i>
+                                </button>
+                                ${ (s.status && s.status.toLowerCase() === 'archived') ? `
+                                    <button class="Students-action-btn restore" data-id="${s.id}" title="Restore">
+                                        <i class='bx bx-undo'></i>
+                                    </button>
+                                ` : '' }
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                }
+
+                // ── LIST VIEW ───────────────────────────────────────────────
+                const listBody = document.getElementById('StudentsListBody');
+                if (listBody) {
+                    listBody.innerHTML = pageItems.map(s => {
+                        const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                        const deptClass = getDepartmentClass(s.department);
+                        const avatarUrl = buildAvatar(s, 40);
+                        const statusClass = s.status || 'active';
+                        return `
+                        <div class="student-list-item" data-id="${s.id}">
+                            <img src="${avatarUrl}" alt="${escapeHtml(fullName)}" class="student-list-avatar"
+                                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=40'">
+                            <div class="student-list-info">
+                                <div class="student-list-name">${escapeHtml(fullName)}</div>
+                                <div class="student-list-sub">
+                                    <span><i class='bx bx-id-card'></i>${escapeHtml(s.studentId || '')}</span>
+                                    <span><i class='bx bx-buildings'></i><span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${escapeHtml(s.department || 'N/A')}</span></span>
+                                    <span><i class='bx bx-group'></i>${escapeHtml(s.section || 'N/A')}</span>
+                                </div>
+                            </div>
+                            <div class="student-list-right">
+                                <span class="Students-status-badge ${statusClass}">${formatStatus(s.status || 'active')}</span>
+                                <div class="student-list-actions">
+                                    <button class="Students-action-btn view" data-id="${s.id}" title="View Profile">
+                                        <i class='bx bx-user'></i>
+                                    </button>
+                                    ${ (s.status && s.status.toLowerCase() === 'archived') ? `
+                                        <button class="Students-action-btn restore" data-id="${s.id}" title="Restore">
+                                            <i class='bx bx-undo'></i>
+                                        </button>
+                                    ` : '' }
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                }
             }
 
             updateCounts(filteredStudents);
@@ -1664,6 +1756,29 @@ function initStudentsModule() {
 
             // Event listeners for table
             tableBody.addEventListener('click', handleTableClick);
+
+            // View toggle buttons
+            const viewBtns = document.querySelectorAll('.Students-view-btn');
+            viewBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    viewMode = btn.dataset.view;
+                    localStorage.setItem('studentsViewMode', viewMode);
+                    viewBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderStudents();
+                });
+            });
+
+            // Set initial active state from saved preference
+            viewBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === viewMode);
+            });
+
+            // Delegate clicks on grid and list views to handleTableClick
+            const gridView = document.getElementById('studentsGridView');
+            const listView = document.getElementById('studentsListView');
+            if (gridView) gridView.addEventListener('click', handleTableClick);
+            if (listView) listView.addEventListener('click', handleTableClick);
 
             // Export Students button
             if (exportBtn) {

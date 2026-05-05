@@ -129,6 +129,19 @@ require_once '../../config/db_connect.php';
             <!-- Sections will be loaded via JS based on department -->
           </select>
 
+          <!-- View Toggle Buttons -->
+          <div class="Students-view-toggle">
+            <button class="Students-view-btn active" id="viewTable" title="Table View" data-view="table">
+              <i class='bx bx-table'></i>
+            </button>
+            <button class="Students-view-btn" id="viewGrid" title="Grid View" data-view="grid">
+              <i class='bx bx-grid-alt'></i>
+            </button>
+            <button class="Students-view-btn" id="viewList" title="List View" data-view="list">
+              <i class='bx bx-list-ul'></i>
+            </button>
+          </div>
+
           <button class="Students-filter-btn" title="More filters">
             <i class='bx bx-filter-alt'></i>
           </button>
@@ -187,6 +200,16 @@ require_once '../../config/db_connect.php';
           <!-- JS will populate rows from database -->
         </tbody>
       </table>
+    </div>
+
+    <!-- Grid Card View -->
+    <div id="studentsGridView" class="Students-grid-container" style="display:none;">
+      <div id="StudentsGridBody" class="Students-grid"></div>
+    </div>
+
+    <!-- List View -->
+    <div id="studentsListView" class="Students-list-container" style="display:none;">
+      <div id="StudentsListBody" class="Students-list"></div>
     </div>
 
     <!-- Table Footer -->
