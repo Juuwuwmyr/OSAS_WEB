@@ -1,12 +1,13 @@
 // Theme Manager
 function initializeTheme() {
   const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  
+
   if (savedTheme) {
     window.darkMode = savedTheme === 'dark';
   } else {
+    // Default is always light — force-save so system preference doesn't override
     window.darkMode = false;
+    localStorage.setItem('theme', 'light');
   }
   
   updateTheme();
@@ -167,16 +168,5 @@ function toggleTheme() {
   }));
 }
 
-// Listen for system theme changes (compatible with login.js)
-const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-mediaQuery.addEventListener('change', function (e) {
-  // Only update if user hasn't explicitly set a preference
-  if (!localStorage.getItem('theme')) {
-    window.darkMode = e.matches;
-    updateTheme();
-    if (window.switchMode) {
-      window.switchMode.checked = window.darkMode;
-    }
-    console.log('🌐 System theme changed to:', window.darkMode ? 'dark' : 'light');
-  }
-});
+// System theme changes are intentionally ignored —
+// the app defaults to light mode and respects only the user's explicit toggle.

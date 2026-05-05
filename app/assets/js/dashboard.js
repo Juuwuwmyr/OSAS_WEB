@@ -9,8 +9,8 @@ const searchForm = document.querySelector('#content nav form');
 const switchMode = document.getElementById('switch-mode');
 const mainContent = document.getElementById('main-content');
 
-// Global state
-window.darkMode = true;
+// Global state — default light, respect saved preference
+window.darkMode = localStorage.getItem('theme') === 'dark';
 
 // Load default content (dashboard)
 document.addEventListener('DOMContentLoaded', function () {
