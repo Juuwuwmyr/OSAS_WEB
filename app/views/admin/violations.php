@@ -169,11 +169,24 @@ require_once __DIR__ . '/../../core/View.php';
         <button class="Violations-filter-btn" title="More filters">
           <i class='bx bx-filter-alt'></i>
         </button>
+
+        <!-- View Toggle -->
+        <div class="Violations-view-toggle">
+          <button class="Violations-view-btn active" data-view="table" title="Table View">
+            <i class='bx bx-table'></i>
+          </button>
+          <button class="Violations-view-btn" data-view="grid" title="Grid View">
+            <i class='bx bx-grid-alt'></i>
+          </button>
+          <button class="Violations-view-btn" data-view="list" title="List View">
+            <i class='bx bx-list-ul'></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Violations Table -->
-    <div class="Violations-table-container">
+    <div class="Violations-table-container" id="violationsTableView">
       <table class="Violations-table">
         <thead>
           <tr>
@@ -214,6 +227,16 @@ require_once __DIR__ . '/../../core/View.php';
           <!-- Data will be loaded dynamically -->
         </tbody>
       </table>
+    </div>
+
+    <!-- Grid / Card View -->
+    <div id="violationsGridView" class="Violations-grid-container" style="display:none;">
+      <div id="ViolationsGridBody" class="Violations-grid"></div>
+    </div>
+
+    <!-- List View -->
+    <div id="violationsListView" class="Violations-list-container" style="display:none;">
+      <div id="ViolationsListBody" class="Violations-list"></div>
     </div>
 
     <!-- Table Footer -->

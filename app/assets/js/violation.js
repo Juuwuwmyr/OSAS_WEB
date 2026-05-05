@@ -121,6 +121,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
+        let viewMode        = localStorage.getItem('violationsViewMode') || 'table'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
         let isLoading       = false;
@@ -2162,28 +2163,35 @@ function initViolationsModule() {
                 console.log('📭 Empty state display:', filteredViolations.length === 0 ? 'shown' : 'hidden');
             }
 
-            console.log('🛠️ Generating table rows for', pageItems.length, 'violations');
+            // Show/hide view containers
+            const tableViewEl = document.getElementById('violationsTableView');
+            const gridViewEl  = document.getElementById('violationsGridView');
+            const listViewEl  = document.getElementById('violationsListView');
+            if (tableViewEl) tableViewEl.style.display = viewMode === 'table' ? '' : 'none';
+            if (gridViewEl)  gridViewEl.style.display  = viewMode === 'grid'  ? '' : 'none';
+            if (listViewEl)  listViewEl.style.display  = viewMode === 'list'  ? '' : 'none';
 
-            const tableRows = pageItems.map(v => {
-                if (!v.id && v.id !== 0) {
-                    console.error('❌ Missing violation ID for item:', v);
-                }
-                
-                // Override Status Display Logic:
-                // If the level is Warning 3, it should ALWAYS display as Disciplinary, 
-                // regardless of what the database status says (to fix legacy data).
+            console.log('🛠️ Generating rows for', pageItems.length, 'violations, viewMode:', viewMode);
+
+            // ── Helper: compute display status ──────────────────────────────
+            function getDisplayStatus(v) {
                 let displayStatus = v.status;
                 let displayStatusLabel = v.statusLabel;
-
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                const ll = (v.violationLevelLabel || '').toLowerCase();
+                if (ll.includes('warning 3') || ll.includes('3rd')) {
                     displayStatus = 'disciplinary';
                     displayStatusLabel = 'Disciplinary';
                 }
+                return { displayStatus, displayStatusLabel };
+            }
 
-                const typeClass = getViolationTypeClass(v.violationTypeLabel);
-                const levelClass = getViolationLevelClass(v.violationLevelLabel || '');
-                const deptClass = getDepartmentClass(v.department);
+            // ── TABLE VIEW ──────────────────────────────────────────────────
+            const tableRows = pageItems.map(v => {
+                if (!v.id && v.id !== 0) console.error('❌ Missing violation ID for item:', v);
+                const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
+                const typeClass   = getViolationTypeClass(v.violationTypeLabel);
+                const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                const deptClass   = getDepartmentClass(v.department);
                 const statusClass = getStatusClass(displayStatus);
 
                 return `
@@ -2191,9 +2199,7 @@ function initViolationsModule() {
                     <td class="violation-student-cell" data-label="Student">
                         <div class="violation-student-info">
                             <div class="violation-student-image">
-                                <img src="${v.studentImage}" 
-                                     alt="${v.studentName}" 
-                                     class="student-avatar"
+                                <img src="${v.studentImage}" alt="${v.studentName}" class="student-avatar"
                                      onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=32'">
                             </div>
                             <div class="violation-student-name">
@@ -2225,34 +2231,141 @@ function initViolationsModule() {
                             <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                 <i class='bx bx-show'></i>
                             </button>
-                            <!-- Edit button removed as per request -->
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${displayStatus === 'resolved' ? 
+                            ${displayStatus === 'resolved' ?
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
-                                </button>` : 
-                                (displayStatus === 'disciplinary' ? 
+                                </button>` :
+                                (displayStatus === 'disciplinary' ?
                                 `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
                                     <i class='bx bx-check'></i>
                                 </button>` : '')
                             }
                         </div>
                     </td>
-                </tr>
-            `});
-
-            console.log('📄 Generated HTML rows:', tableRows.length, 'table rows');
-            console.log('📄 First row preview:', tableRows[0] ? tableRows[0].substring(0, 100) + '...' : 'No rows');
+                </tr>`;
+            });
 
             tableBody.innerHTML = tableRows.join('');
-
             console.log('✅ Table HTML set, row count in DOM:', tableBody.querySelectorAll('tr').length);
 
-            updateStats();
-            updateCounts(pageItems);
-            renderViolationsPagination();
+            // ── GRID / CARD VIEW ────────────────────────────────────────────
+            const gridBody = document.getElementById('ViolationsGridBody');
+            if (gridBody) {
+                if (pageItems.length === 0) {
+                    gridBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;grid-column:1/-1;">No violations found</p>`;
+                } else {
+                    gridBody.innerHTML = pageItems.map(v => {
+                        const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
+                        const typeClass   = getViolationTypeClass(v.violationTypeLabel);
+                        const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const deptClass   = getDepartmentClass(v.department);
+                        const statusClass = getStatusClass(displayStatus);
+                        return `
+                        <div class="violation-card" data-id="${v.id}">
+                            <div class="violation-card-top ${displayStatus}"></div>
+                            <div class="violation-card-body">
+                                <div class="violation-card-student">
+                                    <img src="${v.studentImage}" alt="${v.studentName}" class="violation-card-avatar"
+                                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=44'">
+                                    <div class="violation-card-student-info">
+                                        <p class="violation-card-name">${v.studentName}</p>
+                                        <p class="violation-card-id">${v.studentId}</p>
+                                    </div>
+                                </div>
+                                <div class="violation-card-divider"></div>
+                                <div class="violation-card-meta">
+                                    <div class="violation-card-meta-row">
+                                        <span class="violation-card-meta-label">Type</span>
+                                        <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 6px;">${v.violationTypeLabel}</span>
+                                    </div>
+                                    <div class="violation-card-meta-row">
+                                        <span class="violation-card-meta-label">Level</span>
+                                        <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;">${v.violationLevelLabel}</span>
+                                    </div>
+                                    <div class="violation-card-meta-row">
+                                        <span class="violation-card-meta-label">Dept</span>
+                                        <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
+                                    </div>
+                                    <div class="violation-card-meta-row">
+                                        <span class="violation-card-meta-label">Date</span>
+                                        <span style="font-size:10px;color:var(--dark);">${formatDate(v.dateReported)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="violation-card-footer">
+                                <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
+                                <div class="violation-card-actions">
+                                    <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
+                                        <i class='bx bx-show'></i>
+                                    </button>
+                                    <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
+                                        <i class='bx bx-receipt'></i>
+                                    </button>
+                                    ${displayStatus === 'resolved' ?
+                                        `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
+                                        (displayStatus === 'disciplinary' ?
+                                        `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
+                                    }
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // ── LIST VIEW ───────────────────────────────────────────────────
+            const listBody = document.getElementById('ViolationsListBody');
+            if (listBody) {
+                if (pageItems.length === 0) {
+                    listBody.innerHTML = `<p style="text-align:center;color:#999;padding:40px;">No violations found</p>`;
+                } else {
+                    listBody.innerHTML = pageItems.map(v => {
+                        const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
+                        const typeClass   = getViolationTypeClass(v.violationTypeLabel);
+                        const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const deptClass   = getDepartmentClass(v.department);
+                        const statusClass = getStatusClass(displayStatus);
+                        return `
+                        <div class="violation-list-item ${displayStatus}" data-id="${v.id}">
+                            <img src="${v.studentImage}" alt="${v.studentName}" class="violation-list-avatar"
+                                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=38'">
+                            <div class="violation-list-info">
+                                <div class="violation-list-name">${v.studentName}</div>
+                                <div class="violation-list-sub">
+                                    <i class='bx bx-id-card'></i>${v.studentId}
+                                </div>
+                                <div class="violation-list-sub">
+                                    <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 6px;">${v.violationTypeLabel}</span>
+                                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;">${v.violationLevelLabel}</span>
+                                </div>
+                                <div class="violation-list-sub">
+                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
+                                    <i class='bx bx-calendar' style="margin-left:4px;"></i>${formatDate(v.dateReported)}
+                                </div>
+                            </div>
+                            <div class="violation-list-right">
+                                <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
+                                <div class="violation-list-actions">
+                                    <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
+                                        <i class='bx bx-show'></i>
+                                    </button>
+                                    <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
+                                        <i class='bx bx-receipt'></i>
+                                    </button>
+                                    ${displayStatus === 'resolved' ?
+                                        `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
+                                        (displayStatus === 'disciplinary' ?
+                                        `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
+                                    }
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
 
             updateStats();
             updateCounts(pageItems);
@@ -4287,6 +4400,28 @@ function initViolationsModule() {
         if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveSearchInput) archiveSearchInput.addEventListener('input', () => { currentPage = 1; renderViolations(); });
+
+        // 12b. VIEW TOGGLE
+        const viewToggleBtns = document.querySelectorAll('.Violations-view-btn');
+        viewToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                viewMode = btn.dataset.view;
+                localStorage.setItem('violationsViewMode', viewMode);
+                viewToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderViolations();
+            });
+        });
+        // Set initial active state from saved preference
+        viewToggleBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === viewMode);
+        });
+
+        // Delegate clicks on grid and list views to the existing action handler
+        const violationsGridView = document.getElementById('violationsGridView');
+        const violationsListView = document.getElementById('violationsListView');
+        if (violationsGridView) violationsGridView.addEventListener('click', handleTableClick);
+        if (violationsListView) violationsListView.addEventListener('click', handleTableClick);
 
         // 13. TAB NAVIGATION
         const tabBtns = document.querySelectorAll('.Violations-tab-btn');
