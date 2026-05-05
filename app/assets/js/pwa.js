@@ -64,12 +64,18 @@ function showUpdateToast(newSW) {
 }
 
 window.applyUpdate = function() {
-    if (window._pendingSW) {
-        window._pendingSW.postMessage({ type: 'SKIP_WAITING' });
-    }
+    // Listen for controller change BEFORE posting the skip message
+    // so we never miss the event
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload();
     });
+
+    if (window._pendingSW) {
+        window._pendingSW.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+        // No pending SW tracked — just force a hard reload to pick up new assets
+        window.location.reload(true);
+    }
 };
 
 // ── Register Background Sync when coming back online ─────────────────────────
