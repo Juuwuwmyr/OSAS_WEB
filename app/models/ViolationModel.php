@@ -301,6 +301,7 @@ class ViolationModel extends Model {
                     'statusLabel' => $statusLabel,
                     'notes' => $row['notes'] ?? '',
                     'attachments' => !empty($row['attachments']) ? json_decode($row['attachments'], true) : [],
+                    'is_archived' => (int)($row['is_archived'] ?? 0),
                     'created_at' => $row['created_at'] ?? '',
                     'updated_at' => $row['updated_at'] ?? ''
                 ];

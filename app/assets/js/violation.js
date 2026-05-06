@@ -290,13 +290,12 @@ function initViolationsModule() {
                     if (cachedViolations && cachedViolations.length > 0) {
                         violations = cachedViolations
                             .filter(v => (v.is_archived || 0) == isArchived)
-                            // Sort by created_at DESC — matches the DB ORDER BY so the
-                            // "latest violation per student" grouping in renderViolations
-                            // picks the correct (newest) record for each student.
+                            // Sort by created_at DESC — matches DB ORDER BY so the
+                            // "latest violation per student" grouping picks the newest record.
                             .sort((a, b) => {
-                                const da = new Date(b.created_at || b.dateReported || b.date_reported || 0);
-                                const db2 = new Date(a.created_at || a.dateReported || a.date_reported || 0);
-                                return da - db2;
+                                const safeDate = s => { const d = new Date(s || 0); return isNaN(d) ? 0 : d.getTime(); };
+                                return safeDate(b.created_at || b.dateReported || b.date_reported)
+                                     - safeDate(a.created_at || a.dateReported || a.date_reported);
                             });
                         console.log(`✅ Loaded ${violations.length} violations from cache (filtered from ${cachedViolations.length})`);
                         return violations;
@@ -333,42 +332,51 @@ function initViolationsModule() {
                 violations = data.violations || data.data || [];
 
                 // ── Always cache the FULL dataset (both archived + active) ────
-                // Fire-and-forget: fetch the opposite archived state in the background
-                // so IndexedDB always holds every violation regardless of which tab
-                // the user was on when they last went online.
+                // Fetch the opposite archived state in the background so IndexedDB
+                // always holds every violation regardless of which tab was last visited.
+                // Use a timestamp so the SW does NOT serve a stale cached response.
                 if (window.offlineDB) {
                     const oppositeArchived = isArchived === 0 ? 1 : 0;
-                    fetch(API_BASE + `violations.php?is_archived=${oppositeArchived}&limit=all`)
+                    fetch(API_BASE + `violations.php?is_archived=${oppositeArchived}&limit=all&t=` + Date.now())
                         .then(r => r.ok ? r.json() : null)
                         .then(otherData => {
                             const otherList = (otherData && (otherData.violations || otherData.data)) || [];
-                            // Merge current + opposite into IndexedDB
+                            // Replace IndexedDB: keep opposite-archived records from existing cache,
+                            // but FULLY REPLACE current-archived records with fresh API data.
+                            // This ensures stale records for the current view are never kept.
                             window.offlineDB.getViolations().then(existing => {
-                                const map = new Map((existing || []).map(v => [String(v.id), v]));
-                                // Write current-view violations first
-                                violations.forEach(v => map.set(String(v.id), v));
-                                // Then overlay the opposite-view violations
+                                // Keep only the opposite-archived records from existing cache
+                                const kept = (existing || []).filter(v => (v.is_archived || 0) == oppositeArchived);
+                                // Build map: existing opposite records first, then fresh opposite records overwrite
+                                const map = new Map(kept.map(v => [String(v.id), v]));
                                 otherList.forEach(v => map.set(String(v.id), v));
-                                const merged = Array.from(map.values()).sort((a, b) => {
-                                    const da = new Date(b.created_at || b.dateReported || b.date_reported || 0);
-                                    const db2 = new Date(a.created_at || a.dateReported || a.date_reported || 0);
-                                    return da - db2;
-                                });
+                                // Add ALL fresh current-view records (completely replaces old current records)
+                                violations.forEach(v => map.set(String(v.id), v));
+                                const safeDate1 = s => { const d = new Date(s || 0); return isNaN(d) ? 0 : d.getTime(); };
+                                const merged = Array.from(map.values()).sort((a, b) =>
+                                    safeDate1(b.created_at || b.dateReported || b.date_reported) -
+                                    safeDate1(a.created_at || a.dateReported || a.date_reported)
+                                );
                                 window.offlineDB.saveViolations(merged)
                                     .then(() => console.log(`✅ IndexedDB updated: ${merged.length} total violations cached`))
                                     .catch(err => console.error('Cache save failed:', err));
                             }).catch(() => {
-                                // No existing cache — just save what we have
                                 const all = [...violations, ...otherList];
                                 window.offlineDB.saveViolations(all).catch(err => console.error('Cache save failed:', err));
                             });
                         })
                         .catch(() => {
-                            // Background fetch failed — at least save the current view
+                            // Background fetch failed — replace only the current-view records in IndexedDB
                             window.offlineDB.getViolations().then(existing => {
-                                const map = new Map((existing || []).map(v => [String(v.id), v]));
+                                // Keep opposite-archived records, replace current-archived with fresh data
+                                const kept = (existing || []).filter(v => (v.is_archived || 0) != isArchived);
+                                const map = new Map(kept.map(v => [String(v.id), v]));
                                 violations.forEach(v => map.set(String(v.id), v));
-                                const merged = Array.from(map.values());
+                                const safeDate2 = s => { const d = new Date(s || 0); return isNaN(d) ? 0 : d.getTime(); };
+                                const merged = Array.from(map.values()).sort((a, b) =>
+                                    safeDate2(b.created_at || b.dateReported || b.date_reported) -
+                                    safeDate2(a.created_at || a.dateReported || a.date_reported)
+                                );
                                 window.offlineDB.saveViolations(merged).catch(err => console.error('Cache save failed:', err));
                             }).catch(() => {
                                 window.offlineDB.saveViolations(violations).catch(err => console.error('Cache save failed:', err));
