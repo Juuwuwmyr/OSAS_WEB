@@ -288,7 +288,16 @@ function initViolationsModule() {
                     console.log('📡 OFFLINE: Loading violations from IndexedDB...');
                     const cachedViolations = await window.offlineDB.getViolations();
                     if (cachedViolations && cachedViolations.length > 0) {
-                        violations = cachedViolations.filter(v => (v.is_archived || 0) == isArchived);
+                        violations = cachedViolations
+                            .filter(v => (v.is_archived || 0) == isArchived)
+                            // Sort by created_at DESC — matches the DB ORDER BY so the
+                            // "latest violation per student" grouping in renderViolations
+                            // picks the correct (newest) record for each student.
+                            .sort((a, b) => {
+                                const da = new Date(b.created_at || b.dateReported || b.date_reported || 0);
+                                const db2 = new Date(a.created_at || a.dateReported || a.date_reported || 0);
+                                return da - db2;
+                            });
                         console.log(`✅ Loaded ${violations.length} violations from cache (filtered from ${cachedViolations.length})`);
                         return violations;
                     }
@@ -341,8 +350,8 @@ function initViolationsModule() {
                                 // Then overlay the opposite-view violations
                                 otherList.forEach(v => map.set(String(v.id), v));
                                 const merged = Array.from(map.values()).sort((a, b) => {
-                                    const da = new Date(b.dateReported || b.date_reported || 0);
-                                    const db2 = new Date(a.dateReported || a.date_reported || 0);
+                                    const da = new Date(b.created_at || b.dateReported || b.date_reported || 0);
+                                    const db2 = new Date(a.created_at || a.dateReported || a.date_reported || 0);
                                     return da - db2;
                                 });
                                 window.offlineDB.saveViolations(merged)
