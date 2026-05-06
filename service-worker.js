@@ -1,6 +1,6 @@
 // Cache version — auto-updated by .git/hooks/post-merge on the server
 // When git pull brings new commits, the hook rewrites this line automatically
-const BUILD_DATE = '2026-05-05';
+const BUILD_DATE = '2026-05-06';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -120,7 +120,7 @@ async function handleAPIRequest(req, url) {
       const clone = res.clone();
       const cache = await caches.open(API_CACHE);
       const baseKey = getBaseKey(url);
-      cache.put(baseKey, clone);
+      if (baseKey) cache.put(baseKey, clone);
     }
     return res;
   } catch (e) {
@@ -129,14 +129,22 @@ async function handleAPIRequest(req, url) {
   }
 }
 
-// Strip pagination/search params to get the base cache key
+// Strip pagination/search params to get the base cache key.
+// Returns null for requests that should not be cached (e.g. timestamped
+// violation fetches — those are handled by IndexedDB in violation.js).
 function getBaseKey(url) {
-  const base = url.origin + url.pathname;
+  const base   = url.origin + url.pathname;
   const action = url.searchParams.get('action') || '';
 
   if (url.pathname.includes('violations.php')) {
     if (action === 'types') return new Request(base + '?action=types');
-    // Always cache to the limit=all key so offline has the full dataset
+    // Violations with is_archived param: cache keyed by archived state
+    // so both active (0) and archived (1) datasets are stored separately.
+    const isArchived = url.searchParams.get('is_archived');
+    if (isArchived !== null) {
+      return new Request(base + `?is_archived=${isArchived}&limit=all`);
+    }
+    // Generic violations request — cache to the all-records key
     return new Request(base + '?limit=all');
   }
   if (url.pathname.includes('students.php')) {
@@ -159,9 +167,16 @@ async function serveOffline(url) {
       return offlineJSON({ status: 'success', data: [] });
     }
 
-    // Find cached violations (try limit=all key first, then scan)
-    let cached = await cache.match(new Request(base + '?limit=all'));
-    if (!cached) cached = await cache.match(new Request(base));
+    const isArchived = url.searchParams.get('is_archived');
+
+    // Try the keyed cache entry first (is_archived=0 or is_archived=1)
+    let cached = null;
+    if (isArchived !== null) {
+      cached = await cache.match(new Request(base + `?is_archived=${isArchived}&limit=all`));
+    }
+    // Fallback: generic limit=all key
+    if (!cached) cached = await cache.match(new Request(base + '?limit=all'));
+    // Last resort: scan all cached keys for any violations entry
     if (!cached) {
       const keys = await cache.keys();
       for (const k of keys) {
@@ -176,14 +191,17 @@ async function serveOffline(url) {
     let list = data.violations || data.data?.violations || data.data || [];
     if (!Array.isArray(list)) list = [];
 
+    // If we loaded from a generic cache key, filter by is_archived ourselves
+    if (isArchived !== null) {
+      list = list.filter(v => (v.is_archived || 0) == parseInt(isArchived));
+    }
+
     // Client-side filters
     const search     = url.searchParams.get('search') || '';
     const dept       = url.searchParams.get('department') || '';
     const status     = url.searchParams.get('status') || '';
-    const isArchived = url.searchParams.get('is_archived');
     const studentId  = url.searchParams.get('student_id') || '';
 
-    if (isArchived !== null) list = list.filter(v => (v.is_archived || 0) == parseInt(isArchived));
     if (studentId)  list = list.filter(v => (v.student_id || v.studentId || '').toLowerCase() === studentId.toLowerCase());
     if (search)     { const s = search.toLowerCase(); list = list.filter(v => JSON.stringify(v).toLowerCase().includes(s)); }
     if (dept && dept !== 'all') list = list.filter(v => (v.department || v.student_dept || '').toLowerCase().includes(dept.toLowerCase()));

@@ -281,22 +281,20 @@ function initViolationsModule() {
                 if (showLoading) showLoadingOverlay('Loading violations...');
                 console.log('🔄 Fetching violations data...', { currentView });
         
-                // Add timestamp to prevent caching and include is_archived parameter
                 const isArchived = currentView === 'archive' ? 1 : 0;
 
-                // CHECK OFFLINE STATUS
+                // ── OFFLINE: serve from IndexedDB ─────────────────────────────
                 if (!navigator.onLine && window.offlineDB) {
                     console.log('📡 OFFLINE: Loading violations from IndexedDB...');
                     const cachedViolations = await window.offlineDB.getViolations();
                     if (cachedViolations && cachedViolations.length > 0) {
-                        // Filter by archived status so archive tab still works offline
                         violations = cachedViolations.filter(v => (v.is_archived || 0) == isArchived);
                         console.log(`✅ Loaded ${violations.length} violations from cache (filtered from ${cachedViolations.length})`);
                         return violations;
                     }
                 }
 
-                // Fetch ALL violations (limit=all) so the offline cache is complete
+                // ── ONLINE: fetch the current view ────────────────────────────
                 const response = await fetch(API_BASE + `violations.php?is_archived=${isArchived}&limit=all&t=` + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
@@ -318,35 +316,55 @@ function initViolationsModule() {
                 
                 console.log('Parsed API Response:', data);
                 console.log('Response keys:', Object.keys(data));
-                console.log('Has violations key:', 'violations' in data);
-                console.log('Has data key:', 'data' in data);
-                console.log('Violations value:', data.violations);
-                console.log('Data value:', data.data);
                 
                 if (data.status === 'error') {
                     throw new Error(data.message || 'API returned error status');
                 }
                 
-                // FIXED: Make sure we're accessing the correct property
                 violations = data.violations || data.data || [];
-                
-                // Cache for offline use — merge with existing cache so we never lose data
-                if (window.offlineDB && violations.length > 0) {
-                    window.offlineDB.getViolations().then(existing => {
-                        // Build a map of existing violations by id
-                        const map = new Map((existing || []).map(v => [String(v.id), v]));
-                        // Overwrite with fresh data (newer wins)
-                        violations.forEach(v => map.set(String(v.id), v));
-                        // Sort by dateReported DESC so latest-per-student logic works correctly
-                        const merged = Array.from(map.values()).sort((a, b) => {
-                            const da = new Date(b.dateReported || b.date_reported || 0);
-                            const db2 = new Date(a.dateReported || a.date_reported || 0);
-                            return da - db2;
+
+                // ── Always cache the FULL dataset (both archived + active) ────
+                // Fire-and-forget: fetch the opposite archived state in the background
+                // so IndexedDB always holds every violation regardless of which tab
+                // the user was on when they last went online.
+                if (window.offlineDB) {
+                    const oppositeArchived = isArchived === 0 ? 1 : 0;
+                    fetch(API_BASE + `violations.php?is_archived=${oppositeArchived}&limit=all`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(otherData => {
+                            const otherList = (otherData && (otherData.violations || otherData.data)) || [];
+                            // Merge current + opposite into IndexedDB
+                            window.offlineDB.getViolations().then(existing => {
+                                const map = new Map((existing || []).map(v => [String(v.id), v]));
+                                // Write current-view violations first
+                                violations.forEach(v => map.set(String(v.id), v));
+                                // Then overlay the opposite-view violations
+                                otherList.forEach(v => map.set(String(v.id), v));
+                                const merged = Array.from(map.values()).sort((a, b) => {
+                                    const da = new Date(b.dateReported || b.date_reported || 0);
+                                    const db2 = new Date(a.dateReported || a.date_reported || 0);
+                                    return da - db2;
+                                });
+                                window.offlineDB.saveViolations(merged)
+                                    .then(() => console.log(`✅ IndexedDB updated: ${merged.length} total violations cached`))
+                                    .catch(err => console.error('Cache save failed:', err));
+                            }).catch(() => {
+                                // No existing cache — just save what we have
+                                const all = [...violations, ...otherList];
+                                window.offlineDB.saveViolations(all).catch(err => console.error('Cache save failed:', err));
+                            });
+                        })
+                        .catch(() => {
+                            // Background fetch failed — at least save the current view
+                            window.offlineDB.getViolations().then(existing => {
+                                const map = new Map((existing || []).map(v => [String(v.id), v]));
+                                violations.forEach(v => map.set(String(v.id), v));
+                                const merged = Array.from(map.values());
+                                window.offlineDB.saveViolations(merged).catch(err => console.error('Cache save failed:', err));
+                            }).catch(() => {
+                                window.offlineDB.saveViolations(violations).catch(err => console.error('Cache save failed:', err));
+                            });
                         });
-                        window.offlineDB.saveViolations(merged).catch(err => console.error('Cache failed:', err));
-                    }).catch(() => {
-                        window.offlineDB.saveViolations(violations).catch(err => console.error('Cache failed:', err));
-                    });
                 }
 
                 // Sync to window cache for instant restore on page revisit
