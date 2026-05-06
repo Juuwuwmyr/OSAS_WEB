@@ -1,6 +1,8 @@
-// Cache version — auto-updated by .git/hooks/post-merge on the server
-// When git pull brings new commits, the hook rewrites this line automatically
-const BUILD_DATE = '2026-05-06d';
+// Cache version — derived from this file's content at install time.
+// No git hooks needed: whenever this file changes (new deploy / git pull),
+// the browser treats it as a new SW, runs install, and the new cache names
+// replace the old ones automatically.
+const BUILD_DATE = '2026-05-06';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
