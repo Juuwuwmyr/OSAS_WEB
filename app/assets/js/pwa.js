@@ -24,9 +24,9 @@ if ('serviceWorker' in navigator) {
                 // Listen for messages from SW (Background Sync trigger)
                 navigator.serviceWorker.addEventListener('message', async (event) => {
                     if (event.data && event.data.type === 'SYNC_VIOLATIONS') {
-                        if (window.syncOfflineActions) {
-                            await window.syncOfflineActions();
-                        }
+                        // runGlobalSync works on any page; violation.js UI refresh
+                        // is handled inside runGlobalSync when it's available
+                        await runGlobalSync();
                     }
                 });
             })
@@ -78,17 +78,98 @@ window.applyUpdate = function() {
     }
 };
 
+// ── Global offline sync — works on ANY page, no violation.js required ────────
+let _syncInProgress = false;
+
+async function runGlobalSync() {
+    if (_syncInProgress || !navigator.onLine) return;
+    if (!window.offlineDB) return;
+
+    const queue = await window.offlineDB.getSyncQueue();
+    const pending = queue.filter(i => i.status === 'pending');
+    if (pending.length === 0) return;
+
+    _syncInProgress = true;
+    console.log(`🔄 [global] Syncing ${pending.length} offline violation(s)...`);
+
+    // Resolve API base from current path (same logic as violation.js)
+    const parts   = window.location.pathname.split('/').filter(Boolean);
+    const appDirs = ['app', 'api', 'includes', 'assets', 'public'];
+    const root    = (parts.length === 0 || appDirs.includes(parts[0])) ? '' : '/' + parts[0];
+    const apiBase = root + '/api/';
+
+    let synced = 0;
+    let failed = 0;
+
+    for (const item of pending) {
+        try {
+            if (item.action === 'POST_VIOLATION') {
+                const formData = new FormData();
+                for (const key in item.data) {
+                    formData.append(key, item.data[key]);
+                }
+
+                const response = await fetch(apiBase + 'violations.php', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const text = await response.text();
+                let result;
+                try { result = JSON.parse(text); } catch (e) { result = null; }
+
+                if (response.ok && result && result.status === 'success') {
+                    await window.offlineDB.removeFromQueue(item.tempId);
+                    synced++;
+                    console.log(`✅ [global] Synced item ${item.tempId}`);
+                } else {
+                    console.warn(`⚠️ [global] Sync failed for ${item.tempId}:`, result?.message || text);
+                    failed++;
+                }
+            }
+        } catch (err) {
+            console.error(`❌ [global] Sync error for ${item.tempId}:`, err);
+            failed++;
+        }
+    }
+
+    _syncInProgress = false;
+
+    // If violation.js is loaded (violations page), let it refresh the UI
+    if (window.syncOfflineActions && synced > 0) {
+        // UI already synced above — just trigger a reload of the violations list
+        // without re-posting (queue items already removed)
+        if (typeof window._reloadViolationsUI === 'function') {
+            window._reloadViolationsUI();
+        }
+    }
+
+    if (window.refreshOfflineBadge) window.refreshOfflineBadge();
+
+    if (synced > 0 && failed === 0) {
+        console.log(`✅ [global] All ${synced} violation(s) synced.`);
+    } else if (synced > 0) {
+        console.warn(`⚠️ [global] ${synced} synced, ${failed} failed.`);
+    }
+}
+
+// Expose globally so violation.js and SW messages can call it
+window.runGlobalSync = runGlobalSync;
+
 // ── Register Background Sync when coming back online ─────────────────────────
 async function registerBackgroundSync() {
+    // Always run the sync immediately — no waiting for SW or SyncManager
+    await runGlobalSync();
+
+    // Also register SW background sync as a belt-and-suspenders fallback
     if (!('serviceWorker' in navigator) || !('SyncManager' in window)) return;
     try {
         const reg = await navigator.serviceWorker.ready;
         await reg.sync.register('sync-violations');
-        console.log('✅ Background sync registered');
+        console.log('✅ Background sync tag registered');
     } catch (e) {
-        console.warn('Background sync not available:', e);
-        // Fallback: run sync directly
-        if (window.syncOfflineActions) window.syncOfflineActions();
+        console.warn('Background sync registration failed (non-critical):', e);
     }
 }
 
@@ -200,6 +281,28 @@ window.addEventListener('DOMContentLoaded', () => {
     // Warm API cache silently 3s after dashboard loads
     if (navigator.onLine && window.location.pathname.includes('dashboard')) {
         setTimeout(warmAPICache, 3000);
+    }
+
+    // Periodic sync check: every 30s when online, check for pending items
+    setInterval(async () => {
+        if (navigator.onLine && window.offlineDB) {
+            const count = await window.offlineDB.getPendingCount();
+            if (count > 0) {
+                console.log(`⏰ [periodic] Found ${count} pending item(s), triggering sync...`);
+                await runGlobalSync();
+            }
+        }
+    }, 30000); // 30 seconds
+
+    // Also run sync immediately on page load if online and pending items exist
+    if (navigator.onLine && window.offlineDB) {
+        setTimeout(async () => {
+            const count = await window.offlineDB.getPendingCount();
+            if (count > 0) {
+                console.log(`🚀 [startup] Found ${count} pending item(s), syncing now...`);
+                await runGlobalSync();
+            }
+        }, 2000); // 2 seconds after page load
     }
 });
 

@@ -1798,68 +1798,22 @@ function initViolationsModule() {
             }
         }
 
-        // SYNC OFFLINE ACTIONS
+        // SYNC OFFLINE ACTIONS (legacy wrapper — actual sync handled by pwa.js)
+        // This is kept for backward compatibility but now just triggers global sync
         window.syncOfflineActions = async function() {
             if (!navigator.onLine || !window.offlineDB) return;
-
-            const queue = await window.offlineDB.getSyncQueue();
-            const pending = queue.filter(i => i.status === 'pending');
-            if (pending.length === 0) return;
-
-            console.log(`🔄 Syncing ${pending.length} offline violations...`);
-            showNotification(`Syncing ${pending.length} offline violation${pending.length > 1 ? 's' : ''}...`, 'info', 3000);
-
-            let synced = 0;
-            let failed = 0;
-
-            for (const item of pending) {
-                try {
-                    if (item.action === 'POST_VIOLATION') {
-                        const formData = new FormData();
-                        for (const key in item.data) {
-                            formData.append(key, item.data[key]);
-                        }
-
-                        const response = await fetch(API_BASE + 'violations.php', {
-                            method: 'POST',
-                            credentials: 'include',
-                            body: formData
-                        });
-
-                        const responseText = await response.text();
-                        console.log('Sync response:', response.status, responseText);
-
-                        let result;
-                        try { result = JSON.parse(responseText); } catch(e) { result = null; }
-
-                        if (response.ok && result && result.status === 'success') {
-                            await window.offlineDB.removeFromQueue(item.tempId);
-                            synced++;
-                        } else {
-                            console.error('Sync failed:', result?.message || responseText);
-                            failed++;
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ Sync failed for item:', item.tempId, error);
-                    failed++;
-                }
+            // Delegate to global sync in pwa.js
+            if (window.runGlobalSync) {
+                await window.runGlobalSync();
             }
+        };
 
-            // Reload violations after sync
+        // UI-only reload (called by pwa.js after global sync completes)
+        window._reloadViolationsUI = async function() {
+            console.log('🔄 [violation.js] Reloading violations UI after global sync...');
             await loadViolations(false);
             renderViolations();
             updateStats();
-
-            if (synced > 0 && failed === 0) {
-                showNotification(`✅ ${synced} violation${synced > 1 ? 's' : ''} synced successfully!`, 'success', 4000);
-            } else if (synced > 0 && failed > 0) {
-                showNotification(`⚠️ ${synced} synced, ${failed} failed. Will retry when online.`, 'warning', 5000);
-            } else if (failed > 0) {
-                showNotification(`❌ Sync failed for ${failed} violation${failed > 1 ? 's' : ''}. Will retry.`, 'error', 5000);
-            }
-
-            // Update badge
             if (window.refreshOfflineBadge) window.refreshOfflineBadge();
         };
 
