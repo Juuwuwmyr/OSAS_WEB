@@ -969,6 +969,8 @@ function initViolationsModule() {
                     
                     showNotification('You are offline. Violation saved locally and will sync when online.', 'warning', 6000);
                     
+                    // ── Persist the pending violation to IndexedDB so it survives app restart ──
+                    
                     // Optimistic UI update — fill in real values from form data
                     const tempId    = 'TEMP-' + Date.now();
                     const studentId = formData.get('studentId');
@@ -1004,6 +1006,18 @@ function initViolationsModule() {
                         is_archived:         0
                     };
                     
+                    // ── Save pending violation to IndexedDB violations cache ──────────────
+                    // Without this, the pending entry disappears when the app is closed
+                    // and reopened because loadViolations() reads from IndexedDB on restart.
+                    try {
+                        const existingCached = await window.offlineDB.getViolations();
+                        const merged = [offlineViolation, ...(existingCached || [])];
+                        await window.offlineDB.saveViolations(merged);
+                        console.log('✅ Pending violation saved to IndexedDB cache for offline persistence');
+                    } catch (cacheErr) {
+                        console.warn('⚠️ Could not persist pending violation to IndexedDB:', cacheErr);
+                    }
+
                     violations.unshift(offlineViolation);
                     renderViolations();
                     

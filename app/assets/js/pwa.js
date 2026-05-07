@@ -121,6 +121,27 @@ async function runGlobalSync() {
 
                 if (response.ok && result && result.status === 'success') {
                     await window.offlineDB.removeFromQueue(item.tempId);
+
+                    // Remove the matching TEMP-* entry from the violations cache
+                    // so stale pending records don't linger when the page is closed
+                    // before _reloadViolationsUI can run.
+                    try {
+                        const cached = await window.offlineDB.getViolations();
+                        const studentId = item.data && item.data.studentId;
+                        const cleaned = cached.filter(v => {
+                            // Drop TEMP entries that belong to this queued item
+                            if (!String(v.id || '').startsWith('TEMP-')) return true;
+                            if (studentId && v.studentId !== studentId) return true;
+                            return false; // remove this temp entry
+                        });
+                        if (cleaned.length !== cached.length) {
+                            await window.offlineDB.saveViolations(cleaned);
+                            console.log(`🧹 [global] Removed stale TEMP violation from IndexedDB cache`);
+                        }
+                    } catch (cleanErr) {
+                        console.warn('⚠️ [global] Could not clean stale TEMP violation from cache:', cleanErr);
+                    }
+
                     synced++;
                     console.log(`✅ [global] Synced item ${item.tempId}`);
                 } else {
