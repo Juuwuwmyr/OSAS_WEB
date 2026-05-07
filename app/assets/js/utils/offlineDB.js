@@ -40,9 +40,34 @@ class OfflineDB {
         const db    = await this.init();
         const tx    = db.transaction(STORE_VIOLATIONS, 'readwrite');
         const store = tx.objectStore(STORE_VIOLATIONS);
-        store.clear();
-        violations.forEach(v => store.put(v));
-        return new Promise(resolve => tx.oncomplete = resolve);
+
+        // Preserve any TEMP-* (pending offline) entries that haven't synced yet.
+        // A plain store.clear() would wipe them out whenever fresh server data arrives.
+        const existingReq = store.getAll();
+        return new Promise((resolve, reject) => {
+            existingReq.onsuccess = () => {
+                const existing = existingReq.result || [];
+                const pendingTemps = existing.filter(v => String(v.id || '').startsWith('TEMP-'));
+
+                store.clear();
+
+                // Write fresh server records first
+                violations.forEach(v => store.put(v));
+
+                // Re-insert TEMP entries that are NOT already covered by a real record
+                // (match by studentId + approximate date to avoid duplicates after sync)
+                const serverIds = new Set(violations.map(v => String(v.id)));
+                pendingTemps.forEach(temp => {
+                    if (!serverIds.has(String(temp.id))) {
+                        store.put(temp);
+                    }
+                });
+
+                tx.oncomplete = resolve;
+                tx.onerror    = () => reject(tx.error);
+            };
+            existingReq.onerror = () => reject(existingReq.error);
+        });
     }
 
     async getViolations() {

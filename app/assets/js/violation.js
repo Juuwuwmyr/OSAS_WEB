@@ -287,8 +287,59 @@ function initViolationsModule() {
                 if (!navigator.onLine && window.offlineDB) {
                     console.log('📡 OFFLINE: Loading violations from IndexedDB...');
                     const cachedViolations = await window.offlineDB.getViolations();
-                    if (cachedViolations && cachedViolations.length > 0) {
-                        violations = cachedViolations
+
+                    // ── Safety net: rebuild any pending sync-queue items that are
+                    // missing from the violations cache (e.g. cache was wiped by a
+                    // brief online fetch before the user closed the app).
+                    const syncQueue = await window.offlineDB.getSyncQueue();
+                    const pendingItems = syncQueue.filter(i => i.status === 'pending' && i.action === 'POST_VIOLATION');
+                    const cachedIds   = new Set((cachedViolations || []).map(v => String(v.id || '')));
+
+                    const rebuilt = [];
+                    for (const item of pendingItems) {
+                        // Check if a TEMP entry for this item already exists in cache
+                        const alreadyCached = [...cachedIds].some(id => id.startsWith('TEMP-'));
+                        // Use tempId as a stable key so we don't duplicate
+                        const tempKey = 'TEMP-' + item.tempId;
+                        if (!cachedIds.has(tempKey)) {
+                            const d = item.data || {};
+                            rebuilt.push({
+                                id:                  tempKey,
+                                caseId:              'OFFLINE-SYNC',
+                                studentId:           d.studentId || '',
+                                studentName:         d.studentName || 'Unknown',
+                                studentImage:        '',
+                                violationTypeLabel:  d.violationTypeName || 'Pending Sync',
+                                violationLevelLabel: d.violationLevelName || '—',
+                                department:          d.department || 'N/A',
+                                section:             d.section || 'N/A',
+                                studentYearlevel:    d.yearlevel || 'N/A',
+                                dateReported:        d.violationDate || new Date().toISOString().split('T')[0],
+                                violationTime:       d.violationTime || '',
+                                location:            d.violationLocation || '',
+                                reportedBy:          d.reportedBy || '',
+                                status:              'pending',
+                                statusLabel:         'Pending Sync',
+                                is_archived:         0,
+                                created_at:          new Date(item.timestamp || Date.now()).toISOString()
+                            });
+                            cachedIds.add(tempKey);
+                        }
+                    }
+
+                    if (rebuilt.length > 0) {
+                        console.log(`🔧 Rebuilt ${rebuilt.length} pending violation(s) from sync queue (missing from cache)`);
+                        // Persist them back into the cache so next load doesn't need to rebuild
+                        const all = [...(cachedViolations || []), ...rebuilt];
+                        await window.offlineDB.saveViolations(all);
+                    }
+
+                    const allCached = rebuilt.length > 0
+                        ? [...(cachedViolations || []), ...rebuilt]
+                        : (cachedViolations || []);
+
+                    if (allCached.length > 0) {
+                        violations = allCached
                             .filter(v => (v.is_archived || 0) == isArchived)
                             // Sort by created_at DESC — matches DB ORDER BY so the
                             // "latest violation per student" grouping picks the newest record.
@@ -297,7 +348,7 @@ function initViolationsModule() {
                                 return safeDate(b.created_at || b.dateReported || b.date_reported)
                                      - safeDate(a.created_at || a.dateReported || a.date_reported);
                             });
-                        console.log(`✅ Loaded ${violations.length} violations from cache (filtered from ${cachedViolations.length})`);
+                        console.log(`✅ Loaded ${violations.length} violations from cache (filtered from ${allCached.length})`);
                         return violations;
                     }
                 }
@@ -965,14 +1016,16 @@ function initViolationsModule() {
                         }
                     });
 
-                    await window.offlineDB.queueAction('POST_VIOLATION', data);
+                    const queuedItem = await window.offlineDB.queueAction('POST_VIOLATION', data);
                     
                     showNotification('You are offline. Violation saved locally and will sync when online.', 'warning', 6000);
                     
                     // ── Persist the pending violation to IndexedDB so it survives app restart ──
                     
                     // Optimistic UI update — fill in real values from form data
-                    const tempId    = 'TEMP-' + Date.now();
+                    // Use 'TEMP-' + queuedItem.tempId so the safety-net in loadViolations
+                    // can match this cache entry to its sync-queue item by id.
+                    const tempId    = 'TEMP-' + queuedItem.tempId;
                     const studentId = formData.get('studentId');
                     const student   = students.find(s => s.studentId === studentId);
 
@@ -1003,7 +1056,8 @@ function initViolationsModule() {
                         reportedBy:          formData.get('reportedBy') || '',
                         status:              'pending',
                         statusLabel:         'Pending Sync',
-                        is_archived:         0
+                        is_archived:         0,
+                        created_at:          new Date().toISOString()
                     };
                     
                     // ── Save pending violation to IndexedDB violations cache ──────────────
