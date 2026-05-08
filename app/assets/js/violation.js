@@ -2243,7 +2243,7 @@ function initViolationsModule() {
                 let displayStatus = v.status;
                 let displayStatusLabel = v.statusLabel;
                 const ll = (v.violationLevelLabel || '').toLowerCase();
-                if (ll.includes('warning 3') || ll.includes('3rd')) {
+                if ((ll.includes('warning 3') || ll.includes('3rd')) && displayStatus !== 'resolved') {
                     displayStatus = 'disciplinary';
                     displayStatusLabel = 'Disciplinary';
                 }
@@ -2419,7 +2419,7 @@ function initViolationsModule() {
                             <div class="violation-list-badges">
                                 <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${v.violationTypeLabel}</span>
                                 <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${v.violationLevelLabel}</span>
-                                <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
+                                <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${v.section || 'N/A'}</span>
                                 <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${displayStatusLabel}</span>
                                 <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
                                     <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.dateReported)}
