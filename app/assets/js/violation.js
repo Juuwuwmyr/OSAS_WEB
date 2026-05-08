@@ -2299,7 +2299,7 @@ function initViolationsModule() {
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${displayStatus === 'resolved' ?
+                            ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
                                 </button>` :
@@ -2369,7 +2369,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' ?
+                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
                                         `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
                                         (displayStatus === 'disciplinary' ?
                                         `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
@@ -2409,7 +2409,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' ?
+                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
                                         `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
                                         (displayStatus === 'disciplinary' ?
                                         `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
