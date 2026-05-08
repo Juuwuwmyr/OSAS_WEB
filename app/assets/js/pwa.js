@@ -170,8 +170,22 @@ async function runGlobalSync() {
 
     if (synced > 0 && failed === 0) {
         console.log(`✅ [global] All ${synced} violation(s) synced.`);
+        if (typeof showNotification === 'function') {
+            showNotification(
+                `${synced} offline violation${synced > 1 ? 's' : ''} synced successfully.`,
+                'success',
+                'Sync Complete'
+            );
+        }
     } else if (synced > 0) {
         console.warn(`⚠️ [global] ${synced} synced, ${failed} failed.`);
+        if (typeof showNotification === 'function') {
+            showNotification(
+                `${synced} synced, ${failed} failed. Check your connection and try again.`,
+                'warning',
+                'Partial Sync'
+            );
+        }
     }
 }
 
