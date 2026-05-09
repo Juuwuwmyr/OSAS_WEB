@@ -245,6 +245,13 @@ function initStudentsModule() {
                     renderPagination();
                     if (_cache.stats) applyStats(_cache.stats);
                 }
+
+                // ── OFFLINE: serve from SW API cache with client-side filtering ──
+                if (!navigator.onLine) {
+                    console.log('📡 OFFLINE: Loading students from cache...');
+                    await _serveStudentsOffline(filter, search, department, section);
+                    return;
+                }
                 
                 const response = await fetch(url);
                 
@@ -308,8 +315,123 @@ function initStudentsModule() {
                 }
             } catch (error) {
                 console.error('Error fetching students:', error);
+                // If we went offline mid-request, fall back to cache silently
+                if (!navigator.onLine) {
+                    const filter     = filterSelect     ? filterSelect.value     : 'all';
+                    const search     = searchInput      ? searchInput.value      : '';
+                    const department = deptFilterSelect ? deptFilterSelect.value : 'all';
+                    const section    = sectionFilterSelect ? sectionFilterSelect.value : 'all';
+                    await _serveStudentsOffline(filter, search, department, section);
+                    return;
+                }
                 console.error('Full error details:', error.message, error.stack);
                 showError('Error loading students: ' + error.message + '. Please check if the students table exists in the database.');
+            }
+        }
+
+        /**
+         * Serve students from the SW API cache when offline.
+         * Reads the full cached dataset and applies client-side filtering + pagination.
+         */
+        async function _serveStudentsOffline(filter, search, department, section) {
+            try {
+                let list = [];
+
+                // Try the Cache API first (populated by SW / warmAPICache)
+                // Scan all caches whose name starts with 'osas-api-' to avoid
+                // hard-coding the BUILD_DATE cache name.
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    const apiCacheName = cacheNames.find(n => n.startsWith('osas-api-'));
+                    if (apiCacheName) {
+                        const cache = await caches.open(apiCacheName);
+                        // Try the canonical key first, then scan all students entries
+                        const canonicalKey = `${apiBase}?action=get&filter=active&page=1&limit=1000`;
+                        let cached = await cache.match(new Request(canonicalKey));
+                        if (!cached) {
+                            const keys = await cache.keys();
+                            for (const k of keys) {
+                                if (k.url.includes('students.php')) { cached = await cache.match(k); break; }
+                            }
+                        }
+                        if (cached) {
+                            const data = await cached.json();
+                            list = data.data?.students || data.students || data.data || [];
+                            if (!Array.isArray(list)) list = [];
+                            console.log(`✅ [offline] Loaded ${list.length} students from SW cache`);
+                        }
+                    }
+                }
+
+                // Fallback: use window cache if SW cache is empty
+                if (list.length === 0 && _cache.allStudents && _cache.allStudents.length > 0) {
+                    list = _cache.allStudents;
+                    console.log(`✅ [offline] Loaded ${list.length} students from window cache`);
+                }
+
+                if (list.length === 0) {
+                    console.warn('⚠️ [offline] No cached students found');
+                    renderStudents(); // renders empty state
+                    renderPagination();
+                    return;
+                }
+
+                // Client-side filtering
+                let filtered = list;
+
+                // Filter by status/view
+                const effectiveFilter = filter && filter !== 'all' ? filter : (currentView === 'archived' ? 'archived' : 'active');
+                if (effectiveFilter === 'active') {
+                    filtered = filtered.filter(s => !s.status || s.status.toLowerCase() === 'active');
+                } else if (effectiveFilter === 'archived') {
+                    filtered = filtered.filter(s => s.status && s.status.toLowerCase() === 'archived');
+                } else if (effectiveFilter === 'graduating') {
+                    filtered = filtered.filter(s => s.status && s.status.toLowerCase() === 'graduating');
+                } else if (effectiveFilter === 'inactive') {
+                    filtered = filtered.filter(s => s.status && s.status.toLowerCase() === 'inactive');
+                }
+
+                if (search) {
+                    const s = search.toLowerCase();
+                    filtered = filtered.filter(st => JSON.stringify(st).toLowerCase().includes(s));
+                }
+                if (department && department !== 'all') {
+                    filtered = filtered.filter(st => (st.department || st.department_name || '').toLowerCase() === department.toLowerCase());
+                }
+                if (section && section !== 'all') {
+                    filtered = filtered.filter(st => (st.section_id || st.section || st.section_code || '').toString() === section.toString());
+                }
+
+                // Pagination
+                totalRecords = filtered.length;
+                totalPages   = Math.ceil(totalRecords / itemsPerPage) || 1;
+                if (currentPage > totalPages) currentPage = 1;
+                const start  = (currentPage - 1) * itemsPerPage;
+                students     = filtered.slice(start, start + itemsPerPage);
+                allStudents  = filtered;
+
+                // Update window cache so pagination changes work offline
+                _cache.students    = students;
+                _cache.allStudents = list; // keep full list for re-filtering
+                _cache.loaded      = true;
+
+                // Derive stats from full cached list
+                if (!_cache.stats) {
+                    const total      = list.length;
+                    const active     = list.filter(s => !s.status || s.status.toLowerCase() === 'active').length;
+                    const inactive   = list.filter(s => s.status && s.status.toLowerCase() === 'inactive').length;
+                    const graduating = list.filter(s => s.status && s.status.toLowerCase() === 'graduating').length;
+                    _cache.stats = { total, active, inactive, graduating };
+                }
+                applyStats(_cache.stats);
+
+                renderStudents();
+                renderPagination();
+                console.log(`✅ [offline] Rendered ${students.length} of ${totalRecords} students`);
+            } catch (err) {
+                console.error('❌ [offline] Error serving students from cache:', err);
+                renderStudents(); // render empty state rather than crash
+                renderPagination();
             }
         }
 
@@ -365,6 +487,28 @@ function initStudentsModule() {
         }
 
         async function loadStats() {
+            // Skip live stats fetch when offline — _serveStudentsOffline already derived them
+            if (!navigator.onLine) {
+                if (_cache.stats) applyStats(_cache.stats);
+                else {
+                    // Try reading from SW cache
+                    try {
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            const apiCacheName = cacheNames.find(n => n.startsWith('osas-api-'));
+                            if (apiCacheName) {
+                                const cache = await caches.open(apiCacheName);
+                                const cached = await cache.match(new Request(`${apiBase}?action=stats`));
+                                if (cached) {
+                                    const data = await cached.json();
+                                    if (data.status === 'success') { _cache.stats = data.data; applyStats(data.data); }
+                                }
+                            }
+                        }
+                    } catch (e) { /* non-critical */ }
+                }
+                return;
+            }
             try {
                 const response = await fetch(`${apiBase}?action=stats`);
                 

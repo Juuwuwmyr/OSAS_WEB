@@ -150,6 +150,8 @@ function getBaseKey(url) {
     return new Request(base + '?limit=all');
   }
   if (url.pathname.includes('students.php')) {
+    // Cache the full active dataset keyed by a stable URL.
+    // student.js offline handler reads this key directly.
     return new Request(base + '?action=get&filter=active&page=1&limit=1000');
   }
   return new Request(url.href);

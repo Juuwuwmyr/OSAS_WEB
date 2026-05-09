@@ -351,6 +351,7 @@ async function warmAPICache() {
     const endpoints = [
         api + 'violations.php?limit=all',
         api + 'students.php?action=get&filter=active&page=1&limit=1000',
+        api + 'students.php?action=stats',
         api + 'violations.php?action=types',
         api + 'departments.php?action=get&filter=active',
         api + 'sections.php?action=get&filter=active',
