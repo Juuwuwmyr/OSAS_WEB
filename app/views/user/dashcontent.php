@@ -225,30 +225,28 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
       </div>
       <div class="violation-details-grid">
-        <div class="detail-item">
-          <span class="detail-label">Violation Type:</span>
-          <span class="detail-value badge" id="detailViolationType">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Level:</span>
-          <span class="detail-value badge warning" id="detailViolationLevel">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Date &amp; Time:</span>
-          <span class="detail-value" id="detailDateTime">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Location:</span>
-          <span class="detail-value" id="detailLocation">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Reported By:</span>
-          <span class="detail-value" id="detailReportedBy">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Status:</span>
-          <span class="detail-value badge warning" id="detailStatus">-</span>
-        </div>
+        <table class="vd-table">
+          <thead>
+            <tr>
+              <th>Violation Type</th>
+              <th>Level</th>
+              <th>Date &amp; Time</th>
+              <th>Location</th>
+              <th>Reported By</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="detail-value badge" id="detailViolationType">-</span></td>
+              <td><span class="detail-value badge warning" id="detailViolationLevel">-</span></td>
+              <td><span class="detail-value" id="detailDateTime">-</span></td>
+              <td><span class="detail-value" id="detailLocation">-</span></td>
+              <td><span class="detail-value" id="detailReportedBy">-</span></td>
+              <td><span class="detail-value badge warning" id="detailStatus">-</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <div class="violation-notes-section">
         <h4>Violation Description</h4>

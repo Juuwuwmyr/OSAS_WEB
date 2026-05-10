@@ -84,32 +84,46 @@ require_once __DIR__ . '/../../core/View.php';
           <option value="pending">Pending</option>
           <option value="warning">Warning</option>
         </select>
+        <!-- View Toggle -->
+        <div class="Violations-view-toggle">
+          <button class="Violations-view-btn" data-view="table" title="Table View" onclick="setUvView('table')">
+            <i class='bx bx-table'></i>
+          </button>
+          <button class="Violations-view-btn" data-view="grid" title="Grid View" onclick="setUvView('grid')">
+            <i class='bx bx-grid-alt'></i>
+          </button>
+          <button class="Violations-view-btn active" data-view="list" title="List View" onclick="setUvView('list')">
+            <i class='bx bx-list-ul'></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="uv-table-wrap">
-      <table class="uv-table">
-        <thead>
-          <tr>
-            <th>Violation Type</th>
-            <th>Offense Level</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="violationsTableBody">
-          <tr>
-            <td colspan="5">
-              <div class="uv-loading">
-                <div class="uv-spinner"></div>
-                <span>Loading violations…</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Table View -->
+    <div id="uvTableView" style="display:none;">
+      <div class="uv-table-wrap">
+        <table class="uv-table Violations-table">
+          <thead>
+            <tr>
+              <th>Violation Type</th>
+              <th>Offense Level</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="violationsTableBody">
+            <tr><td colspan="5"><div class="uv-loading"><div class="uv-spinner"></div><span>Loading…</span></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div id="uvListView" style="display:block;">
+      <div id="violationsListBody" style="padding: 12px 16px; display:flex; flex-direction:column; gap:10px;">
+        <div class="uv-loading"><div class="uv-spinner"></div><span>Loading violations…</span></div>
+      </div>
     </div>
 
   </div><!-- /uv-card -->
@@ -145,12 +159,28 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
         <div class="violation-details-grid">
-          <div class="detail-item"><span class="detail-label">Violation Type:</span><span class="detail-value badge" id="detailViolationType">-</span></div>
-          <div class="detail-item"><span class="detail-label">Level:</span><span class="detail-value badge warning" id="detailViolationLevel">-</span></div>
-          <div class="detail-item"><span class="detail-label">Date &amp; Time:</span><span class="detail-value" id="detailDateTime">-</span></div>
-          <div class="detail-item"><span class="detail-label">Location:</span><span class="detail-value" id="detailLocation">-</span></div>
-          <div class="detail-item"><span class="detail-label">Reported By:</span><span class="detail-value" id="detailReportedBy">-</span></div>
-          <div class="detail-item"><span class="detail-label">Status:</span><span class="detail-value badge warning" id="detailStatus">-</span></div>
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th>Violation Type</th>
+                <th>Level</th>
+                <th>Date &amp; Time</th>
+                <th>Location</th>
+                <th>Reported By</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="detail-value badge" id="detailViolationType">-</span></td>
+                <td><span class="detail-value badge warning" id="detailViolationLevel">-</span></td>
+                <td><span class="detail-value" id="detailDateTime">-</span></td>
+                <td><span class="detail-value" id="detailLocation">-</span></td>
+                <td><span class="detail-value" id="detailReportedBy">-</span></td>
+                <td><span class="detail-value badge warning" id="detailStatus">-</span></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <div class="violation-notes-section">
           <h4>Violation Description</h4>

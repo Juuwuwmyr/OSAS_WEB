@@ -6,6 +6,25 @@ const API_BASE = (function(){ const p=window.location.pathname.split('/').filter
 let studentId = null;
 let userViolations = [];
 let currentViolationId = null;
+let uvViewMode = 'list'; // default view
+
+/*********************************************************
+ * VIEW TOGGLE
+ *********************************************************/
+function setUvView(mode) {
+    uvViewMode = mode;
+    const tableView = document.getElementById('uvTableView');
+    const listView  = document.getElementById('uvListView');
+    if (tableView) tableView.style.display = mode === 'table' ? 'block' : 'none';
+    if (listView)  listView.style.display  = mode === 'list'  ? 'block' : 'none';
+
+    // Update active toggle button
+    document.querySelectorAll('.Violations-view-btn[data-view]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+
+    renderViolationTable();
+}
 
 /*********************************************************
  * INIT
@@ -145,6 +164,7 @@ function updateViolationStats() {
  *********************************************************/
 function renderViolationTable() {
     const tbody = document.getElementById('violationsTableBody');
+    const listBody = document.getElementById('violationsListBody');
     const showingCount = document.getElementById('showingViolationsCount');
     
     // Apply filters
@@ -153,15 +173,12 @@ function renderViolationTable() {
     const statusFilter = document.getElementById('statusFilter')?.value || 'all';
 
     const filtered = userViolations.filter(v => {
-        // Search filter (Case ID, Type, Date)
         const searchStr = `${v.case_id || v.id} ${v.violation_type_name || ''} ${v.violation_type || ''} ${v.violationTypeLabel || ''} ${v.created_at || ''}`.toLowerCase();
         const matchesSearch = !searchTerm || searchStr.includes(searchTerm);
 
-        // Type filter
         const rawType = String(v.violation_type_name || v.violation_type || v.violationType || '').toLowerCase();
-        const matchesType = typeFilter === 'all' || rawType.includes(typeFilter.replace('improper_', '')); // simple mapping
+        const matchesType = typeFilter === 'all' || rawType.includes(typeFilter.replace('improper_', ''));
 
-        // Status filter
         const status = (v.status || 'pending').toLowerCase();
         const matchesStatus = statusFilter === 'all' || 
                              (statusFilter === 'resolved' && (status === 'resolved' || status === 'permitted')) ||
@@ -173,17 +190,14 @@ function renderViolationTable() {
     if (showingCount) showingCount.textContent = filtered.length;
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align:center; padding:40px; color: #666;">
-                    No violations found matching your filters
-                </td>
-            </tr>
-        `;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#666;">No violations found matching your filters</td></tr>`;
+        if (listBody) listBody.innerHTML = `<div style="text-align:center; padding:40px; color: #666;">No violations found matching your filters</div>`;
         return;
     }
 
-    tbody.innerHTML = filtered.map(v => {
+    // ── TABLE VIEW ──
+    if (tbody) {
+        tbody.innerHTML = filtered.map(v => {
         const status = (v.status || 'pending').toLowerCase();
         
         const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
@@ -194,11 +208,9 @@ function renderViolationTable() {
         let statusText = 'Pending';
 
         if (status === 'resolved') {
-            // Only admin-approved disciplinary resolutions
             statusClass = 'resolved';
             statusText = 'Resolved';
         } else if (status === 'permitted') {
-            // Normal violations cleared by admin
             statusClass = 'permitted';
             statusText = 'Permitted';
         } else if (isDisciplinary || status === 'disciplinary') {
@@ -215,17 +227,70 @@ function renderViolationTable() {
         return `
             <tr class="violation-row">
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
-                <td data-label="Offense Level"><span class="sd-badge sd-badge--info">${level}</span></td>
+                <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
                 <td data-label="Status"><span class="Violations-status-badge ${statusClass}">${statusText}</span></td>
                 <td data-label="Actions">
-                    <button class="sd-view-btn" onclick="viewViolationDetails(${v.id})" title="View Details">
+                    <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
                         <i class='bx bx-show'></i> View
                     </button>
                 </td>
             </tr>
         `;
-    }).join('');
+        }).join('');
+    }
+
+    // ── LIST VIEW ──
+    if (listBody) {
+        listBody.innerHTML = filtered.map(v => {
+            const status = (v.status || 'pending').toLowerCase();
+            const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
+            const levelVal = String(level).toLowerCase();
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+
+            let statusClass = 'warning';
+            let statusText = 'Pending';
+            if (status === 'resolved') { statusClass = 'resolved'; statusText = 'Resolved'; }
+            else if (status === 'permitted') { statusClass = 'permitted'; statusText = 'Permitted'; }
+            else if (isDisciplinary || status === 'disciplinary') { statusClass = 'disciplinary'; statusText = 'Disciplinary'; }
+            else if (status === 'warning') { statusClass = 'warning'; statusText = 'Warning'; }
+
+            const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
+            const violationTypeFormatted = formatViolationType(String(violationType));
+            const typeClass  = getViolationTypeClass(violationType);
+            const levelClass = getViolationLevelClass(level);
+            const studentName = v.student_name || v.studentName || 'Student';
+            const studentIdCode = v.student_id_code || v.studentId || v.student_id || '';
+            const section = v.section || v.sectionLabel || 'N/A';
+            const imgSrc = getImageUrl(v.student_image || v.studentImage || '', studentName);
+
+            return `
+            <div class="violation-list-item ${statusClass}" data-id="${v.id}">
+                <div class="violation-list-top">
+                    <img src="${imgSrc}" alt="${escapeHtml(studentName)}" class="violation-list-avatar"
+                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=ffd700&color=333&size=36'">
+                    <div class="violation-list-name-block">
+                        <span class="violation-list-name">${escapeHtml(studentName)}</span>
+                        <span class="violation-list-id">${escapeHtml(studentIdCode)}</span>
+                    </div>
+                    <div class="violation-list-actions">
+                        <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
+                            <i class='bx bx-show'></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="violation-list-badges">
+                    <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(violationTypeFormatted)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(level)}</span>
+                    <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
+                    <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
+                    <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
+                        <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.created_at || v.violation_date || v.date)}
+                    </span>
+                </div>
+            </div>`;
+        }).join('');
+    }
 }
 
 function filterViolations() {
@@ -465,9 +530,8 @@ function viewViolationDetails(id) {
             }).join('');
             if (evidenceSection) evidenceSection.style.display = 'block';
         } else {
-            attachmentsContainer.innerHTML = '<p class="no-attachments">No attachments available.</p>';
-            // Hide if no attachments and we want it strictly like admin (admin shows "No attachments available")
-            // But usually admin only shows it if it's there. Let's keep it visible with "No attachments" for now.
+            attachmentsContainer.innerHTML = '';
+            if (evidenceSection) evidenceSection.style.display = 'none';
         }
     }
 
