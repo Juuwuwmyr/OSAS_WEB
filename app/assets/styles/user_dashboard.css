@@ -1297,17 +1297,19 @@ body.dark {
 
 .violation-details-grid {
   border-radius: 16px;
-  overflow: hidden;
-  background: var(--surface-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
+.violation-details-grid.dragging { cursor: grabbing; }
 
 .vd-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;
-  border-radius: 16px;
-  overflow: hidden;
 }
 
 /* Round the four corners via the corner cells */
@@ -1346,6 +1348,7 @@ body.dark {
   color: var(--text);
   font-weight: 400;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 /* keep old detail-item hidden if still present */
@@ -1611,6 +1614,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   .vd-table thead th,
   .vd-table tbody td { padding: 10px 10px; font-size: .72rem; }
   .detail-value.badge { font-size: .65rem; padding: 3px 8px; }
+  .violation-details-grid { overflow-x: auto; cursor: grab; user-select: none; }
+  .violation-details-grid.dragging { cursor: grabbing; }
   .Violations-modal-container { width: 95%; max-height: 95vh; }
   .download-options { grid-template-columns: 1fr; }
 }
