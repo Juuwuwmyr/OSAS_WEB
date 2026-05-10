@@ -215,11 +215,11 @@ function renderViolationTable() {
         return `
             <tr class="violation-row">
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
-                <td data-label="Offense Level"><span class="Violations-badge warning">${level}</span></td>
+                <td data-label="Offense Level"><span class="sd-badge sd-badge--info">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
                 <td data-label="Status"><span class="Violations-status-badge ${statusClass}">${statusText}</span></td>
                 <td data-label="Actions">
-                    <button class="Violations-btn small" onclick="viewViolationDetails(${v.id})" title="View Details">
+                    <button class="sd-view-btn" onclick="viewViolationDetails(${v.id})" title="View Details">
                         <i class='bx bx-show'></i> View
                     </button>
                 </td>
