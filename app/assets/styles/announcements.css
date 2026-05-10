@@ -1017,3 +1017,47 @@ body.dark {
     flex-shrink: 0;
   }
 }
+
+/* ── Font scale-down ── */
+#announcements-page { font-size: 13px; }
+.announcements-head-title h1 { font-size: 0.9rem !important; }
+.table-data .head h3 { font-size: 1rem !important; }
+#announcementsTable thead th { font-size: 11px !important; }
+#announcementsTable tbody td { font-size: 12px !important; padding: 14px 24px !important; }
+.announcement-type { font-size: 10px !important; }
+.status-badge { font-size: 11px !important; }
+#announcements-page .filter-btn { font-size: 12px !important; padding: 8px 16px !important; }
+#announcements-page .btn-download { font-size: 12px !important; padding: 10px 18px !important; }
+.header-text h3 { font-size: 1.1rem !important; }
+.header-text p { font-size: 0.78rem !important; }
+.form-group label { font-size: 0.78rem !important; }
+.input-wrapper input, .input-wrapper select, .textarea-wrapper textarea { font-size: 0.82rem !important; padding: 10px 14px 10px 44px !important; }
+.btn-cancel, .btn-submit { font-size: 0.82rem !important; padding: 11px 22px !important; }
+.announcements-breadcrumb { font-size: 11px !important; }
+
+/* ── Table section font fixes ── */
+#announcements-page .table-data .head h3 { font-size: 0.85rem !important; font-weight: 700 !important; }
+#announcements-page .table-data .head { padding: 14px 24px !important; }
+#announcements-page #announcementsTable thead th { font-size: 10px !important; padding: 12px 24px !important; letter-spacing: 0.3px !important; }
+#announcements-page #announcementsTable tbody td { font-size: 12px !important; padding: 12px 24px !important; }
+#announcements-page .empty-state p { font-size: 12px !important; }
+#announcements-page .empty-state i { font-size: 36px !important; }
+#announcements-page .announcements-pagination { padding: 14px 24px !important; }
+#announcements-page .announcement-page-btn { width: 28px !important; height: 28px !important; font-size: 11px !important; }
+
+/* ── Search + filter bar scale-down ── */
+#announcements-page .table-controls { padding: 12px 20px !important; gap: 12px !important; margin-bottom: 12px !important; border-radius: 14px !important; }
+#announcements-page .search-box input { font-size: 12px !important; padding: 9px 16px 9px 42px !important; border-radius: 10px !important; }
+#announcements-page .search-box i { font-size: 16px !important; left: 14px !important; }
+#announcements-page .filter-buttons { padding: 4px !important; border-radius: 10px !important; gap: 6px !important; }
+#announcements-page .filter-btn { font-size: 11px !important; padding: 6px 14px !important; border-radius: 8px !important; }
+
+/* ── Add Announcement button scale-down ── */
+#announcements-page .btn-download,
+#announcements-page .announcements-head-title .btn-download {
+  font-size: 11px !important;
+  padding: 8px 16px !important;
+  border-radius: 10px !important;
+  gap: 6px !important;
+}
+#announcements-page .btn-download i { font-size: 14px !important; }
