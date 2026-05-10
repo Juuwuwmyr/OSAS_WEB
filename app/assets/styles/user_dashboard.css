@@ -1451,6 +1451,10 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
     line-height: 1.3;
   }
   .sd-stat__glow { display: none; }
+  /* Scale blobs down on mobile to prevent overflow */
+  .sd-stat__blobs span:nth-child(1) { width: 65px; height: 65px; right: -18px; }
+  .sd-stat__blobs span:nth-child(2) { width: 50px; height: 50px; top: -12px; right: 6px; }
+  .sd-stat__blobs span:nth-child(3) { width: 38px; height: 38px; bottom: -10px; right: 20px; }
 
   /* Grid â€” single column */
   .sd-grid { grid-template-columns: 1fr; gap: 14px; }
