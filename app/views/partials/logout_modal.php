@@ -42,15 +42,14 @@
 .logout-modal-content {
     background: #fff;
     width: 90%;
-    max-width: 380px;
-    padding: 32px;
-    border-radius: 24px;
+    max-width: 320px;
+    padding: 24px;
+    border-radius: 18px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     transform: scale(0.9) translateY(20px);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-align: center;
-        font-family: 'Poppins', sans-serif;
-
+    font-family: 'Poppins', sans-serif;
 }
 
 .logout-modal-overlay.show .logout-modal-content {
@@ -58,16 +57,16 @@
 }
 
 .logout-icon-wrapper {
-    width: 72px;
-    height: 72px;
+    width: 52px;
+    height: 52px;
     background: rgba(255, 215, 0, 0.12);
     color: #ffd700;
-    font-size: 36px;
+    font-size: 26px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0 auto 24px;
+    margin: 0 auto 16px;
     animation: pulseLogout 2s infinite;
 }
 
@@ -78,35 +77,38 @@
 }
 
 .logout-modal-header h2 {
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    font-family: 'Poppins', sans-serif;
 }
 
 .logout-modal-body p {
-    color: #666;
-    font-size: 15px;
+    color: #6b7280;
+    font-size: 12px;
     line-height: 1.6;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
 }
 
 .logout-modal-footer {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
 }
 
 .logout-btn-cancel, .logout-btn-confirm {
     flex: 1;
-    padding: 14px;
-    border-radius: 14px;
-    font-size: 15px;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s ease;
     border: none;
     outline: none;
+    font-family: 'Poppins', sans-serif;
 }
 
 .logout-btn-cancel {

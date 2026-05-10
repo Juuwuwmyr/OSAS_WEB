@@ -1664,3 +1664,41 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   box-shadow: 0 4px 12px rgba(245,197,24,.3);
 }
 
+
+/* ── Font scale-down for 125% zoom screens ── */
+.sd-hero__name          { font-size: 1.1rem !important; }
+.sd-hero__greeting      { font-size: 0.65rem !important; }
+.sd-hero__sub           { font-size: 0.72rem !important; }
+.sd-chip                { font-size: 0.65rem !important; }
+.sd-ring__pct           { font-size: 0.88rem !important; }
+.sd-ring__txt           { font-size: 0.48rem !important; }
+.sd-hero__dl-btn        { font-size: 0.72rem !important; padding: 8px 14px !important; }
+
+.sd-stat__val           { font-size: 1.4rem !important; }
+.sd-stat__lbl           { font-size: 0.65rem !important; }
+
+.sd-card__title         { font-size: 0.82rem !important; }
+.violation-count        { font-size: 1.1rem !important; }
+.violation-details h4   { font-size: 0.78rem !important; }
+.violation-details p    { font-size: 0.68rem !important; }
+
+.sd-table thead th      { font-size: 0.62rem !important; padding: 8px 16px !important; }
+.sd-table tbody td      { font-size: 0.75rem !important; padding: 10px 16px !important; }
+
+.announcement-details h4 { font-size: 0.75rem !important; }
+.announcement-details p  { font-size: 0.68rem !important; }
+.announcement-time       { font-size: 0.62rem !important; }
+
+.sd-tip__body h4        { font-size: 0.78rem !important; }
+.sd-tip__body p         { font-size: 0.7rem !important; }
+
+/* ── Global scale-down: set base font smaller ── */
+.student-dash { font-size: 12px !important; }
+.sd-hero__name { font-size: 1rem !important; }
+.sd-stat__val  { font-size: 1.2rem !important; }
+.sd-card__title { font-size: 0.75rem !important; }
+.sd-hero__dl-btn { font-size: 0.68rem !important; padding: 7px 12px !important; }
+.sd-ring__pct { font-size: 0.82rem !important; }
+.violation-count { font-size: 1rem !important; }
+.sd-table thead th { font-size: 0.58rem !important; }
+.sd-table tbody td { font-size: 0.7rem !important; }

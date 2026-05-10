@@ -462,3 +462,11 @@ input:checked + .slider .sun-icon { opacity: .3; }
 
 body.dark .nav-link { color: var(--text-2); }
 body.dark .nav-link:hover { background: var(--gold-light); color: var(--gold); }
+
+/* ── Topnav font scale-down ── */
+.nav-title       { font-size: 0.78rem !important; }
+.nav-link        { font-size: 0.72rem !important; padding: 6px 8px !important; }
+.nav-link i      { font-size: 0.95rem !important; }
+.user-name       { font-size: 0.68rem !important; }
+.user-avatar img { width: 22px !important; height: 22px !important; }
+.user-avatar     { padding: 3px 8px 3px 3px !important; gap: 5px !important; }
