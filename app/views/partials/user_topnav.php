@@ -39,8 +39,8 @@ if (isset($student) && $student) {
     <span class="nav-title-compact" title="Office of Student Affairs and Services">OSAS</span>
   </div>
 
-  <!-- Navigation Menu -->
-  <ul class="nav-menu">
+  <!-- Desktop Navigation Menu (centre) -->
+  <ul class="nav-menu nav-menu--desktop">
     <li class="nav-item active">
       <a href="#" data-page="user-page/user_dashcontent" class="nav-link">
         <i class='bx bxs-dashboard'></i>
@@ -61,7 +61,7 @@ if (isset($student) && $student) {
     </li>
   </ul>
 
-  <!-- User Section -->
+  <!-- User Section (right) -->
   <div class="nav-user">
     <!-- Dark Mode Toggle -->
     <div class="nav-theme-toggle">
@@ -121,5 +121,29 @@ if (isset($student) && $student) {
       </div>
     </div>
   </div>
+</nav>
+
+<!-- Mobile Bottom Tab Bar -->
+<nav class="mobile-bottom-nav">
+  <ul class="nav-menu nav-menu--mobile">
+    <li class="nav-item active">
+      <a href="#" data-page="user-page/user_dashcontent" class="nav-link">
+        <i class='bx bxs-dashboard'></i>
+        <span>Dashboard</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="#" data-page="user-page/my_violations" class="nav-link">
+        <i class='bx bxs-shield-x'></i>
+        <span>Violations</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="#" data-page="user-page/announcements" class="nav-link">
+        <i class='bx bxs-megaphone'></i>
+        <span>Announcements</span>
+      </a>
+    </li>
+  </ul>
 </nav>
 <!-- TOP NAVIGATION -->

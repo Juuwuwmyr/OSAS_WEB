@@ -124,12 +124,12 @@ class UserDashboardData {
         this.stats.totalViolations = this.violations.length;
         this.stats.activeViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            return status !== 'resolved' && status !== 'permitted' && status !== 'cleared';
+            return status === 'warning';
         }).length;
 
         this.stats.resolvedViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            return status === 'resolved' || status === 'permitted' || status === 'cleared';
+            return status === 'permitted' || status === 'resolved';
         }).length;
 
         this.stats.violationTypes = {};
@@ -224,6 +224,24 @@ class UserDashboardData {
         setStat('statResolvedViolations', this.stats.resolvedViolations);
         setStat('statDaysClean', this.stats.daysClean);
 
+        // Update compliance ring (new redesigned hero)
+        if (typeof window.updateComplianceRing === 'function') {
+            window.updateComplianceRing(this.stats.totalViolations, this.stats.resolvedViolations);
+        }
+
+        // Update hero student name
+        const nameEl = document.getElementById('sdStudentName');
+        if (nameEl && nameEl.textContent === 'Student') {
+            const navName = document.querySelector('.user-name');
+            const sidebarName = document.getElementById('sidebarUsername');
+            const src = (navName && navName.textContent.trim() && navName.textContent.trim() !== 'User')
+                ? navName.textContent.trim()
+                : (sidebarName && sidebarName.textContent.trim() && sidebarName.textContent.trim() !== 'User')
+                    ? sidebarName.textContent.trim()
+                    : null;
+            if (src) nameEl.textContent = src;
+        }
+
         this.updateViolationSummary();
         this.updateRecentViolationsTable();
         this.updateAnnouncementsDisplay();
@@ -232,22 +250,21 @@ class UserDashboardData {
     }
 
     updateViolationSummary() {
-        const container = document.querySelector('.violation-summary') || document.getElementById('violationSummary');
+        const container = document.querySelector('.sd-violation-summary') ||
+                          document.querySelector('.violation-summary') ||
+                          document.getElementById('violationSummary');
         if (!container) return;
 
-        // Group violations by type label
         const typeCounts = {};
         this.violations.forEach(v => {
             const label = v.violationTypeLabel || v.violation_type_name || 'Other';
             typeCounts[label] = (typeCounts[label] || 0) + 1;
         });
 
-        // Sort by count descending
         const sortedTypes = Object.entries(typeCounts)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 3); // Show top 3
+            .slice(0, 4);
 
-        // Helper for icons
         const getIcon = (label) => {
             const lower = label.toLowerCase();
             if (lower.includes('uniform')) return 'bxs-t-shirt';
@@ -255,56 +272,66 @@ class UserDashboardData {
             if (lower.includes('id')) return 'bxs-id-card';
             if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
             if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
-            return 'bxs-error-circle'; // Default icon
+            return 'bxs-error-circle';
         };
+
+        const colors = [
+            { bg: 'var(--blue-light)',   color: 'var(--blue)',   bar: 'var(--blue)' },
+            { bg: 'rgba(255,140,0,.12)', color: 'var(--amber)',  bar: 'var(--amber)' },
+            { bg: 'var(--red-light)',    color: 'var(--red)',    bar: 'var(--red)' },
+            { bg: 'var(--purple-light)', color: 'var(--purple)', bar: 'var(--purple)' },
+        ];
 
         if (sortedTypes.length === 0) {
             container.innerHTML = `
-                <div class="violation-type" style="width:100%; justify-content:center;">
+                <div class="violation-type" style="justify-content:center; text-align:center;">
                     <div class="violation-details">
-                        <h4>No Violations</h4>
-                        <p>Keep it up!</p>
+                        <h4 style="color:var(--green)">🎉 No Violations</h4>
+                        <p>You're in good standing. Keep it up!</p>
                     </div>
-                </div>
-            `;
+                </div>`;
             return;
         }
 
-        container.innerHTML = sortedTypes.map(([label, count]) => {
-            const icon = getIcon(label);
+        const maxCount = sortedTypes[0][1];
+        container.innerHTML = sortedTypes.map(([label, count], i) => {
+            const c = colors[i % colors.length];
+            const pct = Math.round((count / maxCount) * 100);
             return `
                 <div class="violation-type">
-                    <div class="violation-icon" style="background: var(--light-blue); color: var(--blue);">
-                        <i class='bx ${icon}'></i>
+                    <div class="violation-icon" style="background:${c.bg}; color:${c.color};">
+                        <i class='bx ${getIcon(label)}'></i>
                     </div>
-                    <div class="violation-details">
-                        <h4>${label}</h4>
-                        <p>Violations: <span class="count">${count}</span></p>
+                    <div class="violation-details" style="flex:1;">
+                        <h4>${this.escapeHtml(label)}</h4>
+                        <div class="violation-bar-wrap">
+                            <div class="violation-bar" style="width:${pct}%; background:${c.bar};"></div>
+                        </div>
                     </div>
-                </div>
-            `;
+                    <span class="violation-count">${count}</span>
+                </div>`;
         }).join('');
     }
 
     updateRecentViolationsTable() {
-        const tbody = document.querySelector('.violation-history tbody') || document.getElementById('recentViolationsTableBody');
+        const tbody = document.querySelector('.sd-table tbody') ||
+                      document.querySelector('.violation-history tbody') ||
+                      document.getElementById('recentViolationsTableBody');
         if (!tbody) return;
 
         if (this.violations.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" style="text-align:center; padding:40px;">
-                        <i class='bx bx-info-circle' style="font-size:48px;"></i>
-                        <p>No violations found</p>
-                    </td>
-                </tr>
-            `;
+                <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-3);">
+                    <i class='bx bx-info-circle' style="font-size:2.5rem; display:block; margin-bottom:8px; opacity:.4;"></i>
+                    No violations found
+                </td></tr>`;
             return;
         }
 
-        const sorted = [...this.violations].sort((a,b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)).slice(0,10);
-        
-        // Helper for icons (reused)
+        const sorted = [...this.violations]
+            .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
+            .slice(0, 10);
+
         const getIcon = (label) => {
             const lower = (label || '').toLowerCase();
             if (lower.includes('uniform')) return 'bxs-t-shirt';
@@ -316,50 +343,38 @@ class UserDashboardData {
         };
 
         tbody.innerHTML = sorted.map(v => {
-            // Use dynamic label
             const typeLabel = v.violationTypeLabel || v.violation_type || v.type || 'Unknown';
-            const date = new Date(v.date || v.created_at || v.violation_date).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
-            
-            const status = (v.status || 'pending').toLowerCase();
-            const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
-            const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+            const date = new Date(v.date || v.created_at || v.violation_date)
+                .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-            let statusClass = 'pending';
-            let statusText = 'Pending';
+            const status = (v.status || 'warning').toLowerCase();
+            const level = String(v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
+            const isDisciplinary = level.includes('3') || level.includes('disciplinary') || status === 'disciplinary';
 
-            if (status === 'resolved' || status === 'permitted') {
-                statusClass = 'completed'; // Changed from success to match dashboard style usually, or keep 'resolved'
-                statusText = isDisciplinary ? 'Resolved' : 'Permitted';
-            } else if (isDisciplinary || status === 'disciplinary') {
-                 statusClass = 'process';
-                 statusText = 'Disciplinary';
+            let badgeClass, badgeText;
+            if (status === 'resolved') {
+                // Only disciplinary violations approved by admin become "Resolved"
+                badgeClass = 'sd-badge--resolved'; badgeText = 'Resolved';
+            } else if (status === 'permitted') {
+                // Normal violations cleared by admin = "Permitted"
+                badgeClass = 'sd-badge--resolved'; badgeText = 'Permitted';
+            } else if (status === 'disciplinary' || isDisciplinary) {
+                badgeClass = 'sd-badge--warning'; badgeText = 'Disciplinary';
             } else if (status === 'warning') {
-                statusClass = 'pending';
-                statusText = 'Warning';
+                badgeClass = 'sd-badge--pending'; badgeText = 'Warning';
+            } else {
+                badgeClass = 'sd-badge--pending'; badgeText = 'Pending';
             }
-
-            // Note: The original code used 'resolved', 'pending', 'process' classes.
-            // Let's map our statusClass to those.
-            // pending -> orange/yellow
-            // completed -> green
-            // process -> red/purple
-            
-            let badgeClass = 'pending';
-            if (statusText === 'Resolved' || statusText === 'Permitted') badgeClass = 'completed';
-            else if (statusText === 'Disciplinary') badgeClass = 'process';
-            else badgeClass = 'pending'; // Warning/Pending
-
-            const icon = getIcon(typeLabel);
 
             return `
                 <tr>
-                    <td data-label="Date">${date}</td>
-                    <td data-label="Violation"><i class='bx ${icon}'></i> ${this.escapeHtml(typeLabel)}</td>
-                    <td data-label="Status"><span class="status ${badgeClass}">${statusText}</span></td>
-                    <td data-label="Actions"><button class="btn-view-details-icon" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details"><i class='bx bx-show'></i></button></td>
-                </tr>
-            `;
+                    <td>${date}</td>
+                    <td><i class='bx ${getIcon(typeLabel)}' style="vertical-align:middle; margin-right:5px;"></i>${this.escapeHtml(typeLabel)}</td>
+                    <td><span class="sd-badge ${badgeClass}">${badgeText}</span></td>
+                    <td><button class="sd-view-btn" onclick="viewViolationDetails(${v.id || v.violation_id})">
+                        <i class='bx bx-show'></i> View
+                    </button></td>
+                </tr>`;
         }).join('');
     }
 

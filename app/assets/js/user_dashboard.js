@@ -376,12 +376,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const defaultPage = 'user-page/user_dashcontent';
   loadContent(defaultPage);
 
-  // Highlight active menu
-  const dashboardLink = document.querySelector(`[data-page="${defaultPage}"]`);
-  if (dashboardLink) {
-    allSideMenu.forEach(i => i.parentElement.classList.remove('active'));
-    dashboardLink.parentElement.classList.add('active');
-  }
+  // Highlight active menu on all navs
+  syncNavActive(defaultPage);
 });
 
 // ===============================
@@ -670,6 +666,16 @@ allSideMenu.forEach(item => {
 const topNavLinks = document.querySelectorAll('.nav-menu .nav-link');
 console.log('Found', topNavLinks.length, 'top nav links');
 
+// Helper: sync active state across ALL nav menus (desktop + mobile bottom)
+function syncNavActive(page) {
+    document.querySelectorAll('.nav-menu .nav-link, .mobile-bottom-nav .nav-link').forEach(l => {
+        l.parentElement.classList.remove('active');
+        if (l.getAttribute('data-page') === page) {
+            l.parentElement.classList.add('active');
+        }
+    });
+}
+
 topNavLinks.forEach(link => {
   link.addEventListener('click', function (e) {
     e.preventDefault();
@@ -677,12 +683,7 @@ topNavLinks.forEach(link => {
     if (!page) return;
 
     console.log('Top nav clicked:', page);
-
-    // Update active state
-    topNavLinks.forEach(l => {
-      l.parentElement.classList.remove('active');
-    });
-    this.parentElement.classList.add('active');
+    syncNavActive(page);
 
     // Also update sidebar active state if it exists
     allSideMenu.forEach(i => {
@@ -693,6 +694,17 @@ topNavLinks.forEach(link => {
 
     loadContent(page);
   });
+});
+
+// Mobile bottom nav clicks
+document.querySelectorAll('.mobile-bottom-nav .nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const page = this.getAttribute('data-page');
+        if (!page) return;
+        syncNavActive(page);
+        loadContent(page);
+    });
 });
 
 // ===============================

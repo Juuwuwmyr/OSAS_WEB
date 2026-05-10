@@ -193,9 +193,14 @@ function renderViolationTable() {
         let statusClass = 'warning';
         let statusText = 'Pending';
 
-        if (status === 'resolved' || status === 'permitted') {
-            statusClass = isDisciplinary ? 'resolved' : 'permitted';
-            statusText = isDisciplinary ? 'Resolved' : 'Permitted';
+        if (status === 'resolved') {
+            // Only admin-approved disciplinary resolutions
+            statusClass = 'resolved';
+            statusText = 'Resolved';
+        } else if (status === 'permitted') {
+            // Normal violations cleared by admin
+            statusClass = 'permitted';
+            statusText = 'Permitted';
         } else if (isDisciplinary || status === 'disciplinary') {
             statusClass = 'disciplinary';
             statusText = 'Disciplinary';
@@ -325,9 +330,12 @@ function viewViolationDetails(id) {
     const levelLabel = (v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
     const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('disciplinary');
 
-    if (displayStatus === 'resolved' || displayStatus === 'permitted') {
-        displayStatusLabel = isDisciplinary ? 'Resolved' : 'Permitted';
-        displayStatus = 'resolved'; 
+    if (displayStatus === 'resolved') {
+        displayStatusLabel = 'Resolved';
+        // keep displayStatus = 'resolved'
+    } else if (displayStatus === 'permitted') {
+        displayStatusLabel = 'Permitted';
+        displayStatus = 'permitted';
     } else if (isDisciplinary || displayStatus === 'disciplinary') {
         displayStatus = 'disciplinary';
         displayStatusLabel = 'Disciplinary';
@@ -425,9 +433,10 @@ function viewViolationDetails(id) {
         const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
         const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('disciplinary');
         
-        if (itemStatus === 'resolved' || itemStatus === 'permitted') {
-            itemStatusLabel = svIsDisciplinary ? 'Resolved' : 'Permitted';
-            itemStatus = 'resolved'; 
+        if (itemStatus === 'resolved') {
+            itemStatusLabel = 'Resolved';
+        } else if (itemStatus === 'permitted') {
+            itemStatusLabel = 'Permitted';
         } else if (svIsDisciplinary || itemStatus === 'disciplinary') {
             itemStatus = 'disciplinary';
             itemStatusLabel = 'Disciplinary';
