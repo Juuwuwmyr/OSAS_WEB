@@ -107,6 +107,7 @@ try {
           <h3 id="violators-count"><?= $violatorsCount ?></h3>
           <p>Violators</p>
         </span>
+        <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>
       <li>
         <i class='bx bxs-group'></i>
@@ -114,6 +115,7 @@ try {
           <h3 id="students-count"><?= $studentsCount ?></h3>
           <p>Students</p>
         </span>
+        <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>
       <li>
         <i class='bx bxs-building'></i>
@@ -121,6 +123,7 @@ try {
           <h3 id="departments-count"><?= $departmentsCount ?></h3>
           <p>Departments</p>
         </span>
+        <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>
       <li>
         <i class='bx bxs-error-circle penalty-icon'></i>
@@ -128,6 +131,7 @@ try {
           <h3 id="penalties-count"><?= $penaltiesCount ?></h3>
           <p>Disciplinary</p>
         </span>
+        <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>
     </ul>
 

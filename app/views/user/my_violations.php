@@ -8,9 +8,9 @@ require_once __DIR__ . '/../../core/View.php';
   <!-- ── PAGE HEADER ── -->
   <div class="uv-header">
     <div class="uv-header__left">
-      <div class="uv-header__icon"><i class='bx bxs-shield-x'></i></div>
       <div>
         <h1 class="uv-header__title">My Violations</h1>
+        <p class="uv-header__desc">View and track your violation records in the institution</p>
         <nav class="uv-breadcrumb">
           <a href="#">Dashboard</a>
           <i class='bx bx-chevron-right'></i>
@@ -25,37 +25,33 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- ── STAT CARDS ── -->
   <div class="uv-stats">
-    <div class="uv-stat uv-stat--purple">
+    <div class="uv-stat">
       <div class="uv-stat__icon"><i class='bx bxs-t-shirt'></i></div>
       <div class="uv-stat__body">
-        <span class="uv-stat__val" id="statUniform">0</span>
         <span class="uv-stat__lbl">Improper Uniform</span>
+        <span class="uv-stat__val" id="statUniform">0</span>
       </div>
-      <div class="uv-stat__blob"></div>
     </div>
-    <div class="uv-stat uv-stat--teal">
+    <div class="uv-stat">
       <div class="uv-stat__icon"><i class='bx bxs-shopping-bag-alt'></i></div>
       <div class="uv-stat__body">
-        <span class="uv-stat__val" id="statFootwear">0</span>
         <span class="uv-stat__lbl">Improper Footwear</span>
+        <span class="uv-stat__val" id="statFootwear">0</span>
       </div>
-      <div class="uv-stat__blob"></div>
     </div>
-    <div class="uv-stat uv-stat--blue">
+    <div class="uv-stat">
       <div class="uv-stat__icon"><i class='bx bxs-id-card'></i></div>
       <div class="uv-stat__body">
-        <span class="uv-stat__val" id="statId">0</span>
         <span class="uv-stat__lbl">No ID Card</span>
+        <span class="uv-stat__val" id="statId">0</span>
       </div>
-      <div class="uv-stat__blob"></div>
     </div>
-    <div class="uv-stat uv-stat--gold">
+    <div class="uv-stat">
       <div class="uv-stat__icon"><i class='bx bxs-calendar-check'></i></div>
       <div class="uv-stat__body">
-        <span class="uv-stat__val" id="statTotal">0</span>
         <span class="uv-stat__lbl">Total Violations</span>
+        <span class="uv-stat__val" id="statTotal">0</span>
       </div>
-      <div class="uv-stat__blob"></div>
     </div>
   </div>
 

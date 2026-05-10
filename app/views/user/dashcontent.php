@@ -43,21 +43,21 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- ── STAT CARDS ── -->
   <div class="sd-stats">
-     <div class="sd-stat sd-stat--blue">
+    <div class="sd-stat sd-stat--blue">
       <div class="sd-stat__icon"><i class='bx bxs-folder-open'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statTotalViolations">—</span>
         <span class="sd-stat__lbl">Total Violations</span>
       </div>
-      <div class="sd-stat__glow"></div>
+      <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
-      <div class="sd-stat sd-stat--green">
+    <div class="sd-stat sd-stat--green">
       <div class="sd-stat__icon"><i class='bx bxs-check-shield'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statResolvedViolations">—</span>
         <span class="sd-stat__lbl">Permitted</span>
       </div>
-      <div class="sd-stat__glow"></div>
+      <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
     <div class="sd-stat sd-stat--amber">
       <div class="sd-stat__icon"><i class='bx bxs-error'></i></div>
@@ -65,7 +65,7 @@ require_once __DIR__ . '/../../core/View.php';
         <span class="sd-stat__val" id="statActiveViolations">—</span>
         <span class="sd-stat__lbl">Warning</span>
       </div>
-      <div class="sd-stat__glow"></div>
+      <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
     <div class="sd-stat sd-stat--gold">
       <div class="sd-stat__icon"><i class='bx bxs-time-five'></i></div>
@@ -73,7 +73,7 @@ require_once __DIR__ . '/../../core/View.php';
         <span class="sd-stat__val" id="statDaysClean">—</span>
         <span class="sd-stat__lbl">Days Clean</span>
       </div>
-      <div class="sd-stat__glow"></div>
+      <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
   </div>
 
