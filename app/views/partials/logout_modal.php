@@ -49,6 +49,8 @@
     transform: scale(0.9) translateY(20px);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-align: center;
+        font-family: 'Poppins', sans-serif;
+
 }
 
 .logout-modal-overlay.show .logout-modal-content {

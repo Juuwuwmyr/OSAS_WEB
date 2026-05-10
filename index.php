@@ -304,7 +304,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .hero-title {
-            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-size: clamp(2rem, 5vw, 3.8rem);
             font-weight: 800;
             line-height: 1.05;
             margin-bottom: 1.5rem;
@@ -322,7 +322,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .hero-subtitle {
-            font-size: 1.15rem;
+            font-size: 0.95rem;
             line-height: 1.7;
             color: var(--text-muted);
             margin-bottom: 2.5rem;
@@ -445,7 +445,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .section-title {
-            font-size: clamp(2rem, 4vw, 3rem);
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
             font-weight: 800;
             margin-bottom: 1rem;
         }
@@ -578,7 +578,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .stat-number {
-            font-size: 3.5rem;
+            font-size: 2.5rem;
             font-weight: 900;
             background: linear-gradient(135deg, var(--gold-light), var(--gold));
             -webkit-background-clip: text;
@@ -612,7 +612,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .quote-mark {
-            font-size: 6rem;
+            font-size: 4rem;
             line-height: 0.8;
             color: var(--gold);
             opacity: 0.2;
@@ -621,7 +621,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .quote-text {
-            font-size: 1.75rem;
+            font-size: 1.3rem;
             font-weight: 600;
             line-height: 1.5;
             color: var(--text);
@@ -680,13 +680,13 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .cta-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(1.8rem, 3.5vw, 2.8rem);
             font-weight: 800;
             margin-bottom: 1rem;
         }
 
         .cta-subtitle {
-            font-size: 1.15rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
             margin-bottom: 2.5rem;
         }
@@ -1343,9 +1343,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     .login-modal-content {
         background: var(--card);
         width: 100%;
-        max-width: 450px;
-        padding: 40px;
-        border-radius: 24px;
+        max-width: 380px;
+        padding: 28px 32px;
+        border-radius: 20px;
         border: 1px solid var(--border);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         transform: translateY(20px);
@@ -1385,19 +1385,19 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 
     .login-modal-header {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 
     .login-modal-logo {
-        width: 70px;
-        height: 70px;
+        width: 52px;
+        height: 52px;
         background: rgba(212, 175, 55, 0.1);
         border: 2px solid var(--gold);
-        border-radius: 16px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 20px;
+        margin: 0 auto 14px;
         overflow: hidden;
     }
 
@@ -1408,24 +1408,24 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     }
 
     .login-modal-header h2 {
-        font-size: 1.75rem;
+        font-size: 1.35rem;
         font-weight: 800;
         color: var(--text);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     .login-modal-header p {
-        font-size: 0.95rem;
+        font-size: 0.82rem;
         color: var(--text-muted);
     }
 
     .login-modal-form .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 14px;
     }
 
     .login-modal-form label {
         display: block;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: var(--text);
         margin-bottom: 8px;
@@ -1434,7 +1434,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     .login-modal-form input[type="text"],
     .login-modal-form input[type="password"] {
         width: 100%;
-        padding: 12px 16px;
+        padding: 10px 14px;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -1552,10 +1552,23 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     }
 
     .login-modal-footer p {
-        font-size: 0.85rem;
+        font-size: 0.72rem;
         color: var(--text-muted);
         line-height: 1.5;
     }
+
+    /* ── Login modal font scale-down ── */
+    .login-modal-content { font-size: 13px !important; scrollbar-width: none !important; -ms-overflow-style: none !important; }
+    .login-modal-content::-webkit-scrollbar { display: none !important; }
+    .login-modal-overlay { overflow: hidden !important; }
+    .login-modal-header h2 { font-size: 1.1rem !important; }
+    .login-modal-header p  { font-size: 0.72rem !important; }
+    .login-modal-form label { font-size: 0.72rem !important; }
+    .login-modal-form input[type="text"],
+    .login-modal-form input[type="password"],
+    .login-modal-form input[type="email"] { font-size: 0.8rem !important; padding: 9px 12px !important; }
+    .login-button { font-size: 0.82rem !important; padding: 10px !important; }
+    .login-modal-logo { width: 46px !important; height: 46px !important; }
 
     /* Inline login alert banner */
     .login-alert {

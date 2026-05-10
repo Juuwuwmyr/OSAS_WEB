@@ -25,37 +25,37 @@ $role     = $_SESSION['role'] ?? 'admin';
   <!-- Nav links -->
   <ul class="nav-menu">
     <li class="nav-item active">
-      <a href="#" data-page="admin_page/dashcontent" class="nav-link">
+      <a href="#" data-page="admin_page/dashcontent" class="nav-link" title="Dashboard">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Department" class="nav-link">
+      <a href="#" data-page="admin_page/Department" class="nav-link" title="Department">
         <i class='bx bxs-building'></i><span>Department</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Sections" class="nav-link">
+      <a href="#" data-page="admin_page/Sections" class="nav-link" title="Sections">
         <i class='bx bxs-layer'></i><span>Sections</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Students" class="nav-link">
+      <a href="#" data-page="admin_page/Students" class="nav-link" title="Students">
         <i class='bx bxs-group'></i><span>Students</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Violations" class="nav-link">
+      <a href="#" data-page="admin_page/Violations" class="nav-link" title="Violations">
         <i class='bx bxs-shield-x'></i><span>Violations</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Reports" class="nav-link">
+      <a href="#" data-page="admin_page/Reports" class="nav-link" title="Reports">
         <i class='bx bxs-file'></i><span>Reports</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="#" data-page="admin_page/Announcements" class="nav-link">
+      <a href="#" data-page="admin_page/Announcements" class="nav-link" title="Announcements">
         <i class='bx bxs-megaphone'></i><span>Announcements</span>
       </a>
     </li>

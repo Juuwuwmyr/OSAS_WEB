@@ -15,8 +15,8 @@
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 60px;
-    height: 60px;
+    width: 44px;
+    height: 44px;
     background: transparent;
     border: none;
     border-radius: 50%;
@@ -34,8 +34,8 @@
 #chatbot-button.active { transform: scale(0.95); }
 
 .chatbot-btn-img {
-    width: 60px !important;
-    height: 60px !important;
+    width: 44px !important;
+    height: 44px !important;
     object-fit: contain !important;
     display: block !important;
     border-radius: 0 !important;
@@ -439,8 +439,8 @@ body.dark .cb-input { color: #f3f4f6; }
     }
 
     .chatbot-btn-img {
-        width: 54px !important;
-        height: 54px !important;
+        width: 40px !important;
+        height: 40px !important;
     }
 
     #chatbot-panel {
