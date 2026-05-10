@@ -2232,7 +2232,7 @@ function initializeEventListeners() {
         }, 100);
     });
 
-    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link');
+    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link, .tn-user-dropdown .settings-link');
     if (settingsTriggers.length > 0) {
         settingsTriggers.forEach(function (trigger) {
             trigger.addEventListener('click', function (e) {
