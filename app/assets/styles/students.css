@@ -424,38 +424,39 @@ body.dark {
 /* ========================================= */
 .Students-stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .Students-stat-card {
   background: var(--light);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
-  border-left: 4px solid var(--gold);
+  border-left: 3px solid var(--gold);
 }
 
 .Students-stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
 }
 
 .Students-stat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 15px;
   color: var(--dark);
+  flex-shrink: 0;
 }
 
 .Students-stat-content {
@@ -463,22 +464,22 @@ body.dark {
 }
 
 .Students-stat-title {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--dark-grey);
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   font-weight: 500;
 }
 
 .Students-stat-value {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--dark);
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
 }
 
 .Students-stat-change,
 .Students-stat-percentage {
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   display: flex;
   align-items: center;
   gap: 4px;

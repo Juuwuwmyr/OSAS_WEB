@@ -83,16 +83,7 @@ require_once '../../config/db_connect.php';
       </div>
     </div>
 
-    <div class="Students-stat-card">
-      <div class="Students-stat-icon">
-        <i class='bx bx-calendar'></i>
-      </div>
-      <div class="Students-stat-content">
-        <h3 class="Students-stat-title">Graduating</h3>
-        <div class="Students-stat-value" id="graduatingStudents">0</div>
-        <div class="Students-stat-percentage" id="graduatingStudentsPct">0%</div>
-      </div>
-    </div>
+  
   </div>
 
   <!-- MAIN CONTENT CARD -->
