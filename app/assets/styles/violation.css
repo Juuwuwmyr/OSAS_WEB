@@ -2481,8 +2481,8 @@ body.dark {
 
 .case-id {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-weight: 600;
-  color: var(--gold);
+  font-weight: 700;
+  color: var(--text) !important;
   font-size: 13px !important;
 }
 

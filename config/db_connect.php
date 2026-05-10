@@ -3,7 +3,7 @@
 // LOCAL WAMP SETTINGS (for development)
 $host = "localhost";  // or "127.0.0.1"
 $user = "root";       // default WAMP MySQL user
-$pass = "Osas2026";           // default WAMP MySQL password (usually empty)
+$pass = "";           // default WAMP MySQL password (usually empty)
 $dbname = "osas";     // your local database name
 
 // REMOTE HOSTING SETTINGS (uncomment when deploying online)
