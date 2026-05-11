@@ -4960,3 +4960,13 @@ body.dark {
   background: #f44336;
   color: #fff;
 }
+
+/* ── Export modals — restore normal font sizes ── */
+#ExportViolationsModal .Violations-modal-container { max-width: 360px !important; }
+#ExportViolationsModal .Violations-modal-container *,
+#ExportViolationsModal .Violations-modal-container p,
+#ExportViolationsModal .Violations-modal-container span,
+#ExportViolationsModal .Violations-modal-container div { font-size: 12px !important; }
+#ExportViolationsModal .Violations-modal-header h2 { font-size: 0.88rem !important; }
+#ExportViolationsModal .Violations-modal-container .export-options button { font-size: 12px !important; font-weight: 500 !important; padding: 8px 12px !important; }
+#ExportViolationsModal .Violations-modal-container .export-options button i { font-size: 16px !important; }

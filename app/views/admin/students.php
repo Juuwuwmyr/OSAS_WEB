@@ -363,7 +363,7 @@ require_once '../../config/db_connect.php';
   <!-- Export Modal -->
   <div id="ExportStudentsModal" class="modal">
     <div class="modal-overlay" id="ExportModalOverlay"></div>
-    <div class="modal-container" style="max-width: 400px;">
+    <div class="modal-container" style="max-width: 360px;">
       <div class="modal-header">
         <h2>
           <i class='bx bx-download'></i>
@@ -373,20 +373,20 @@ require_once '../../config/db_connect.php';
           <i class='bx bx-x'></i>
         </button>
       </div>
-      <div class="modal-body" style="padding: 20px;">
-        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the student records.</p>
-        <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
-          <button id="exportPDF" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF</span>
+      <div class="modal-body" style="padding: 16px;">
+        <p style="margin-bottom: 14px; color: #666; font-size: 11px;">Select your preferred format to download the student records.</p>
+        <div class="export-options" style="display: flex; flex-direction: column; gap: 8px;">
+          <button id="exportPDF" class="Students-btn outline" style="justify-content: flex-start; width: 100%; padding: 8px 12px; font-size: 11px;">
+            <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 16px;"></i>
+            <span style="margin-left: 8px;">Export as PDF</span>
           </button>
-          <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file' style="color: #10B981; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (.xlsx)</span>
+          <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%; padding: 8px 12px; font-size: 11px;">
+            <i class='bx bxs-file' style="color: #10B981; font-size: 16px;"></i>
+            <span style="margin-left: 8px;">Export as Excel (.xlsx)</span>
           </button>
-          <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-doc' style="color: #2563EB; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Word (.docx)</span>
+          <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%; padding: 8px 12px; font-size: 11px;">
+            <i class='bx bxs-file-doc' style="color: #2563EB; font-size: 16px;"></i>
+            <span style="margin-left: 8px;">Export as Word (.docx)</span>
           </button>
         </div>
       </div>

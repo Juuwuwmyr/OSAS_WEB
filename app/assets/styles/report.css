@@ -2619,6 +2619,13 @@ input[type="checkbox"]:checked + .toggle-label::after {
   border-radius: 8px !important;
 }
 
+/* ── Export modal override — restore normal font sizes ── */
+#ExportReportsModal .Reports-modal-container { max-width: 360px !important; }
+#ExportReportsModal .Reports-modal-container p,
+#ExportReportsModal .Reports-modal-container span { font-size: 12px !important; }
+#ExportReportsModal .Reports-modal-container .export-options button { font-size: 12px !important; font-weight: 500 !important; padding: 8px 12px !important; }
+#ExportReportsModal .Reports-modal-container .export-options button i { font-size: 16px !important; }
+
 /* ── Fix calendar icon overlap caused by modal padding override ── */
 .Reports-modal-container .date-input input { padding: 7px 10px 7px 34px !important; }
 .Reports-modal-container .date-input i { font-size: 13px !important; left: 10px !important; }
