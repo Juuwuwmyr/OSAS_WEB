@@ -401,17 +401,19 @@ body.dark {
 
 /* Table Header */
 .Violations-table-header {
-  padding: 16px 20px 12px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .Violations-header-left {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .Violations-table-title {
@@ -430,13 +432,15 @@ body.dark {
 .Violations-header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .Violations-search-box {
   position: relative;
-  width: 220px;
+  min-width: 160px;
+  flex: 1;
+  max-width: 240px;
 }
 
 .Violations-search-box i {
@@ -472,6 +476,8 @@ body.dark {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .Violations-date-filter {
@@ -4833,4 +4839,124 @@ body.dark {
 #ViolationRecordModal.Violations-modal .Violations-modal-container {
   max-width: 700px !important;
   width: 92% !important;
+}
+
+/* ============================================================
+   SLIP REQUESTS TABLE — matches main violations table style
+   ============================================================ */
+#slipRequestsContainer {
+  overflow-x: auto;
+  padding: 0 20px 20px;
+}
+
+#slipRequestsTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+  table-layout: auto;
+}
+
+#slipRequestsTable thead {
+  border-bottom: 3px solid var(--border);
+  background: rgba(255,215,0,.03);
+}
+
+#slipRequestsTable th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--dark-grey);
+  white-space: nowrap;
+}
+
+#slipRequestsTable tbody tr {
+  border-bottom: 1.5px solid var(--border);
+  transition: background .2s;
+}
+
+#slipRequestsTable tbody tr:hover {
+  background: rgba(255,215,0,.06);
+}
+
+#slipRequestsTable tbody tr:nth-child(even) {
+  background: rgba(255,215,0,.02);
+}
+
+#slipRequestsTable td {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--dark);
+  vertical-align: middle;
+}
+
+/* Status badges in slip requests */
+#slipRequestsTable .slip-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  border: 1.5px solid transparent;
+}
+
+#slipRequestsTable .slip-status-badge.pending {
+  background: rgba(255,152,0,.15);
+  color: #e65100;
+  border-color: rgba(255,152,0,.3);
+}
+
+#slipRequestsTable .slip-status-badge.approved {
+  background: rgba(76,175,80,.15);
+  color: #1b5e20;
+  border-color: rgba(76,175,80,.3);
+}
+
+#slipRequestsTable .slip-status-badge.denied {
+  background: rgba(244,67,54,.15);
+  color: #b71c1c;
+  border-color: rgba(244,67,54,.3);
+}
+
+/* Action buttons in slip requests */
+#slipRequestsTable .slip-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: var(--light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all .2s;
+  color: var(--dark);
+}
+
+#slipRequestsTable .slip-action-btn.approve {
+  background: rgba(76,175,80,.1);
+  color: #1b5e20;
+  border-color: rgba(76,175,80,.3);
+}
+
+#slipRequestsTable .slip-action-btn.approve:hover {
+  background: #4caf50;
+  color: #fff;
+}
+
+#slipRequestsTable .slip-action-btn.deny {
+  background: rgba(244,67,54,.1);
+  color: #b71c1c;
+  border-color: rgba(244,67,54,.3);
+}
+
+#slipRequestsTable .slip-action-btn.deny:hover {
+  background: #f44336;
+  color: #fff;
 }

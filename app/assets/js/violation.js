@@ -4503,6 +4503,8 @@ function initViolationsModule() {
                 const archiveFiltersGroup = document.getElementById('archiveFilters');
                 const mainTableContainer = document.querySelector('.Violations-table-container:not(#slipRequestsContainer)');
                 const slipRequestsContainer = document.getElementById('slipRequestsContainer');
+                const violationsGridView = document.getElementById('violationsGridView');
+                const violationsListView = document.getElementById('violationsListView');
                 const btnAddViolationLocal = document.getElementById('btnAddViolations');
                 const footerInfo = document.querySelector('.Violations-footer-info');
                 const pagination = document.querySelector('.Violations-pagination');
@@ -4511,6 +4513,8 @@ function initViolationsModule() {
                 if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
                 if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
                 if (mainTableContainer) mainTableContainer.style.display = 'none';
+                if (violationsGridView) violationsGridView.style.display = 'none';
+                if (violationsListView) violationsListView.style.display = 'none';
                 if (slipRequestsContainer) slipRequestsContainer.style.display = 'none';
                 if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'none';
                 if (footerInfo) footerInfo.style.display = 'none';
@@ -4562,29 +4566,28 @@ function initViolationsModule() {
             if (!tbody) return;
 
             if (!requests || requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No requests found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#999; font-size:12px;">No slip requests found.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = requests.map(req => {
                 const status = req.status || 'pending';
-                const statusClass = status === 'approved' ? 'permitted' : (status === 'denied' ? 'disciplinary' : 'warning');
                 const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
-                
+
                 let actionsHtml = '';
                 if (status === 'pending') {
                     actionsHtml = `
-                        <div class="Violations-action-buttons" style="display: flex; gap: 5px; justify-content: center;">
-                            <button class="Violations-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve">
+                        <div style="display:flex; gap:5px; align-items:center;">
+                            <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve">
                                 <i class='bx bx-check'></i>
                             </button>
-                            <button class="Violations-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny">
+                            <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny">
                                 <i class='bx bx-x'></i>
                             </button>
                         </div>
                     `;
                 } else {
-                    actionsHtml = '<span style="color: #7f8c8d; font-size: 0.85rem;">None</span>';
+                    actionsHtml = `<span style="color:#aaa; font-size:10px;">—</span>`;
                 }
 
                 return `
@@ -4593,12 +4596,8 @@ function initViolationsModule() {
                         <td>${req.student_id}</td>
                         <td>${new Date(req.request_date).toLocaleString()}</td>
                         <td>${req.requested_by_name || 'System'}</td>
-                        <td>
-                            <span class="Violations-status-badge ${statusClass}">${statusLabel}</span>
-                        </td>
-                        <td style="text-align: center;">
-                            ${actionsHtml}
-                        </td>
+                        <td><span class="slip-status-badge ${status}">${statusLabel}</span></td>
+                        <td>${actionsHtml}</td>
                     </tr>
                 `;
             }).join('');
