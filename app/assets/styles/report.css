@@ -2586,22 +2586,38 @@ input[type="checkbox"]:checked + .toggle-label::after {
 }
 
 /* ── Custom Report Modal font scale-down ── */
-.Reports-modal-container { font-size: 13px !important; }
+.Reports-modal-container { font-size: 11px !important; max-width: 560px !important; width: 92% !important; }
 .Reports-modal-header { padding: 12px 16px !important; }
-.Reports-modal-header h2 { font-size: 0.9rem !important; }
-.Reports-modal-header h2 i { font-size: 16px !important; }
+.Reports-modal-header h2 { font-size: 0.82rem !important; }
+.Reports-modal-header h2 i { font-size: 15px !important; }
 .Reports-modal-container .form-group,
-.Reports-modal-container .Reports-form-group { margin-bottom: 12px !important; }
+.Reports-modal-container .Reports-form-group { margin-bottom: 10px !important; }
 .Reports-modal-container label,
-.Reports-modal-container .form-label { font-size: 0.72rem !important; font-weight: 600 !important; margin-bottom: 4px !important; }
+.Reports-modal-container .form-label { font-size: 0.65rem !important; font-weight: 600 !important; margin-bottom: 3px !important; }
 .Reports-modal-container input,
 .Reports-modal-container select,
-.Reports-modal-container textarea { font-size: 0.78rem !important; padding: 7px 10px !important; }
-.Reports-modal-container input[type="checkbox"] { width: 13px !important; height: 13px !important; }
+.Reports-modal-container textarea { font-size: 0.7rem !important; padding: 6px 9px !important; }
+.Reports-modal-container input[type="checkbox"] { width: 12px !important; height: 12px !important; }
 .Reports-modal-container .dept-checkbox-label,
-.Reports-modal-container .checkbox-label { font-size: 0.75rem !important; }
+.Reports-modal-container .checkbox-label { font-size: 0.68rem !important; }
 .Reports-modal-close-btn,
-.Reports-modal-container .close-btn { width: 26px !important; height: 26px !important; font-size: 16px !important; }
+.Reports-modal-container .close-btn { width: 26px !important; height: 26px !important; font-size: 15px !important; }
+.Reports-modal-container p,
+.Reports-modal-container span,
+.Reports-modal-container div { font-size: 0.7rem !important; }
+.Reports-modal-container h3,
+.Reports-modal-container h4 { font-size: 0.72rem !important; }
+/* Action buttons */
+.Reports-form-actions { display: flex; gap: 10px; padding: 12px 16px !important; }
+.Reports-form-actions button,
+.Reports-form-actions .Reports-btn-primary,
+.Reports-form-actions .Reports-btn-outline { 
+  padding: 8px 16px !important; 
+  font-size: 0.75rem !important; 
+  height: auto !important;
+  min-height: unset !important;
+  border-radius: 8px !important;
+}
 
 /* ── Fix calendar icon overlap caused by modal padding override ── */
 .Reports-modal-container .date-input input { padding: 7px 10px 7px 34px !important; }
