@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../models/AnnouncementModel.php';
@@ -37,11 +37,13 @@ function escapeHtml($text) {
 }
 ?>
 <!-- Announcements Page -->
-<main>
-    <div class="head-title">
+<div id="announcements-page">
+  <main>
+    <div class="announcements-head-title">
       <div class="left">
         <h1>Announcements</h1>
-        <ul class="breadcrumb">
+        <p class="announcements-subtitle">Stay updated with the latest news and information from the institution</p>
+        <ul class="announcements-breadcrumb">
           <li>
             <a href="#">Dashboard</a>
           </li>
@@ -83,18 +85,16 @@ function escapeHtml($text) {
         </select>
       </div>
       <div class="search-group">
+        <i class='bx bx-search'></i>
         <input type="text" id="searchInput" placeholder="Search announcements..." onkeyup="searchAnnouncements()">
-        <button class="search-btn" onclick="searchAnnouncements()">
-          <i class='bx bx-search'></i>
-        </button>
       </div>
     </div>
   
     <!-- Announcements List -->
     <div class="announcements-list" id="announcementsListContainer">
       <?php if (empty($announcements)): ?>
-        <div style="text-align: center; padding: 40px;">
-          <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
+        <div class="empty-state">
+          <i class='bx bx-info-circle'></i>
           <p>No announcements available</p>
         </div>
       <?php else: ?>
@@ -151,6 +151,7 @@ function escapeHtml($text) {
       </button>
     </div>
   </main>
+</div>
   
   <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
 

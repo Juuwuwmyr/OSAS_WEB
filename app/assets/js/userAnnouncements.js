@@ -178,8 +178,8 @@ function renderAnnouncements() {
 
     if (!Array.isArray(announcements) || announcements.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 40px;">
-                <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
+            <div class="empty-state">
+                <i class='bx bx-info-circle'></i>
                 <p>No announcements available</p>
             </div>
         `;
@@ -318,7 +318,7 @@ function filterAnnouncements() {
             showCard = false;
         }
         
-        card.style.display = showCard ? 'block' : 'none';
+        card.style.display = showCard ? 'flex' : 'none';
     });
 }
 
@@ -331,7 +331,7 @@ function searchAnnouncements() {
         const content = card.querySelector('.announcement-content p')?.textContent.toLowerCase() || '';
         
         if (title.includes(searchTerm) || content.includes(searchTerm)) {
-            card.style.display = 'block';
+            card.style.display = 'flex';
         } else {
             card.style.display = 'none';
         }

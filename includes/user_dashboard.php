@@ -83,6 +83,7 @@ if (!$student_id) {
     <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= View::asset('styles/announcements.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
