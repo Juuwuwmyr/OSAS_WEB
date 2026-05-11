@@ -5082,3 +5082,51 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowRight')  lightboxNav(1);
     if (e.key === 'ArrowLeft')   lightboxNav(-1);
 });
+
+// ── Drag scroll for violation-details-grid ────────────────────────────────────
+(function initAdminDragScroll() {
+    function attachDragScroll(el) {
+        if (!el || el.dataset.dragInit) return;
+        el.dataset.dragInit = '1';
+        let isDown = false, startX, scrollLeft;
+
+        el.addEventListener('mousedown', e => {
+            isDown = true;
+            el.classList.add('dragging');
+            startX = e.pageX - el.offsetLeft;
+            scrollLeft = el.scrollLeft;
+        });
+        el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('dragging'); });
+        el.addEventListener('mouseup',    () => { isDown = false; el.classList.remove('dragging'); });
+        el.addEventListener('mousemove',  e => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - el.offsetLeft;
+            el.scrollLeft = scrollLeft - (x - startX) * 1.5;
+        });
+
+        let touchStartX, touchScrollLeft;
+        el.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].pageX - el.offsetLeft;
+            touchScrollLeft = el.scrollLeft;
+        }, { passive: true });
+        el.addEventListener('touchmove', e => {
+            const x = e.touches[0].pageX - el.offsetLeft;
+            el.scrollLeft = touchScrollLeft - (x - touchStartX);
+        }, { passive: true });
+    }
+
+    // Attach to any existing grids and watch for new ones (modal opens dynamically)
+    const observer = new MutationObserver(() => {
+        document.querySelectorAll('.vd-table-scroll, .violation-details-grid').forEach(el => {
+            if (!el.dataset.dragInit) attachDragScroll(el);
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.vd-table-scroll, .violation-details-grid').forEach(el => {
+            if (!el.dataset.dragInit) attachDragScroll(el);
+        });
+    });
+})();

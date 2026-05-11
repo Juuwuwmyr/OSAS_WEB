@@ -2571,20 +2571,32 @@ body.dark {
 
 /* Details Grid */
 .violation-details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Increased min-width from 100px */
-  gap: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
   margin: 10px 0;
-  padding: 12px;
   background: var(--grey);
   border-radius: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.violation-details-grid::-webkit-scrollbar { display: none; }
+.violation-details-grid.dragging { cursor: grabbing; }
 
 .detail-item {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  padding: 10px 14px;
+  min-width: 130px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(0,0,0,0.06);
 }
+.detail-item:last-child { border-right: none; }
 
 .detail-label {
   font-weight: 600;
@@ -4409,4 +4421,410 @@ body.dark {
   .violation-list-badges {
     padding-left: 0;
   }
+}
+
+
+/* ============================================================
+   ADMIN VIOLATION DETAILS MODAL — MODERNIZED
+   Scoped to #ViolationDetailsModal to avoid affecting record modal
+   ============================================================ */
+
+#ViolationDetailsModal.Violations-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+}
+#ViolationDetailsModal.Violations-modal.active {
+  display: flex;
+}
+
+#ViolationDetailsModal .Violations-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+}
+
+#ViolationDetailsModal .Violations-modal-container {
+  position: relative;
+  z-index: 1;
+  background: var(--light, #FAFAF8);
+  border-radius: 20px;
+  width: 92%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.14);
+  border: 1px solid rgba(0,0,0,0.08);
+  animation: adminModalIn .35s cubic-bezier(0.34,1.56,0.64,1);
+  margin: 0;
+}
+
+@keyframes adminModalIn {
+  from { opacity: 0; transform: translateY(24px) scale(.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Header */
+#ViolationDetailsModal .Violations-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  background: linear-gradient(135deg, rgba(255,215,0,.15) 0%, transparent 100%);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+}
+
+#ViolationDetailsModal .Violations-modal-header h2 {
+  margin: 0;
+  font-size: 1rem !important;
+  font-weight: 700;
+  color: var(--dark, #1A1A1A);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 0;
+  flex: 1;
+}
+
+#ViolationDetailsModal .Violations-modal-header h2 i {
+  font-size: 1.2rem;
+  color: var(--gold, #FFD700);
+}
+
+/* Close button */
+#ViolationDetailsModal .Violations-close-btn {
+  position: static;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: var(--grey, #F0F0ED);
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all .2s ease;
+  flex-shrink: 0;
+}
+#ViolationDetailsModal .Violations-close-btn:hover {
+  background: #ffe5e5;
+  color: #e53e3e;
+  border-color: #e53e3e;
+  transform: none;
+}
+
+/* Content wrapper */
+#ViolationDetailsModal .violation-details-content {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+}
+
+/* Reset forced 12px font inside this modal */
+#ViolationDetailsModal .Violations-modal *,
+#ViolationDetailsModal .Violations-modal span,
+#ViolationDetailsModal .Violations-modal p,
+#ViolationDetailsModal .Violations-modal div {
+  font-size: inherit;
+}
+
+/* Case header */
+#ViolationDetailsModal .case-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 10px;
+  border-bottom: none;
+  background: var(--grey, #F0F0ED);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+#ViolationDetailsModal .case-id {
+  font-size: .72rem !important;
+  font-weight: 700;
+  color: var(--dark, #1A1A1A) !important;
+}
+
+/* Student info card */
+#ViolationDetailsModal .violation-student-info-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: var(--grey, #F0F0ED) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  margin: 0;
+}
+
+#ViolationDetailsModal .violation-student-info-card .violation-student-image img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold, #FFD700);
+  box-shadow: 0 0 0 3px rgba(255,215,0,.15);
+}
+
+#ViolationDetailsModal .violation-student-details h3 {
+  font-size: .88rem !important;
+  font-weight: 700;
+  color: var(--dark, #1A1A1A);
+  margin-bottom: 6px;
+}
+
+#ViolationDetailsModal .student-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#ViolationDetailsModal .student-meta span,
+#ViolationDetailsModal .student-id,
+#ViolationDetailsModal .student-section {
+  font-size: .7rem;
+  color: var(--dark-grey, #888);
+}
+
+#ViolationDetailsModal .student-contact {
+  font-size: .7rem;
+  color: var(--dark-grey, #888);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Details grid — modern table */
+#ViolationDetailsModal .violation-details-grid {
+  display: block !important;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--grey, #F0F0ED);
+  margin: 0;
+  cursor: default;
+}
+
+#ViolationDetailsModal .violation-details-grid .vd-table-scroll {
+  overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+#ViolationDetailsModal .violation-details-grid .vd-table-scroll::-webkit-scrollbar { display: none; }
+#ViolationDetailsModal .violation-details-grid .vd-table-scroll.dragging { cursor: grabbing; }
+
+#ViolationDetailsModal .vd-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  display: table !important;
+  table-layout: auto !important;
+}
+
+#ViolationDetailsModal .vd-table thead { display: table-header-group !important; }
+#ViolationDetailsModal .vd-table tbody { display: table-row-group !important; }
+#ViolationDetailsModal .vd-table tr   { display: table-row !important; }
+#ViolationDetailsModal .vd-table th,
+#ViolationDetailsModal .vd-table td   { display: table-cell !important; }
+
+#ViolationDetailsModal .vd-table thead tr {
+  background: transparent;
+}
+
+#ViolationDetailsModal .vd-table thead th {
+  padding: 8px 14px;
+  font-size: .6rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--dark-grey, #888);
+  text-align: left;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+#ViolationDetailsModal .vd-table tbody tr {
+  background: var(--light, #FAFAF8);
+  transition: background .15s;
+}
+
+#ViolationDetailsModal .vd-table tbody tr:hover {
+  background: var(--grey, #F0F0ED);
+}
+
+#ViolationDetailsModal .vd-table tbody td {
+  padding: 10px 14px;
+  font-size: .72rem !important;
+  color: var(--dark, #1A1A1A);
+  font-weight: 400;
+  vertical-align: middle;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+/* detail-item hidden inside this modal */
+#ViolationDetailsModal .detail-item { display: none !important; }
+
+/* Notes section */
+#ViolationDetailsModal .violation-notes-section {
+  margin: 0;
+  background: var(--grey, #F0F0ED);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  padding: 14px 16px;
+}
+
+#ViolationDetailsModal .violation-notes-section h4,
+#ViolationDetailsModal .violation-evidence-section h4,
+#ViolationDetailsModal .violation-history h4 {
+  font-size: .75rem !important;
+  font-weight: 700;
+  color: var(--dark, #1A1A1A);
+  margin-bottom: 8px;
+}
+
+#ViolationDetailsModal .notes-content {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: .72rem;
+  color: var(--dark-grey, #555);
+  line-height: 1.6;
+}
+
+/* History */
+#ViolationDetailsModal .violation-history {
+  margin: 0;
+}
+
+#ViolationDetailsModal .timeline {
+  position: relative;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#ViolationDetailsModal .timeline::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(0,0,0,0.08);
+}
+
+#ViolationDetailsModal .timeline-item {
+  position: relative;
+  margin-bottom: 0;
+  border-radius: 10px;
+}
+
+#ViolationDetailsModal .timeline-marker {
+  position: absolute;
+  left: -20px;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold, #FFD700);
+  border: 2px solid var(--light, #fff);
+}
+
+#ViolationDetailsModal .timeline-content {
+  background: var(--grey, #F0F0ED);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 3px solid var(--gold, #FFD700);
+}
+
+#ViolationDetailsModal .timeline-date {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--dark, #1A1A1A);
+  margin-bottom: 2px;
+}
+
+#ViolationDetailsModal .timeline-title {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--dark, #1A1A1A);
+  margin-bottom: 2px;
+}
+
+#ViolationDetailsModal .timeline-desc {
+  font-size: .65rem;
+  color: var(--dark-grey, #888);
+}
+
+/* Action buttons */
+#ViolationDetailsModal .violation-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  margin-top: 0;
+}
+
+#ViolationDetailsModal .violation-details-actions .Violations-action-btn {
+  flex: 1;
+  min-width: 100px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: .78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  gap: 6px;
+}
+
+/* detail-value-container inside admin modal table cells */
+#ViolationDetailsModal .vd-table td .detail-value-container {
+  display: block;
+  font-size: .72rem !important;
+  color: var(--dark, #1A1A1A);
+}
+
+#ViolationDetailsModal .vd-table td .detail-value-container > div {
+  margin-bottom: 4px;
+  min-height: 20px;
+  line-height: 20px;
+  font-size: .72rem !important;
+}
+
+#ViolationDetailsModal .vd-table td .detail-value-container > div * {
+  font-size: .72rem !important;
+}
+
+#ViolationDetailsModal .case-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .65rem !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  line-height: 1;
 }

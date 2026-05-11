@@ -482,29 +482,29 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Violation Details -->
         <div class="violation-details-grid">
-          <div class="detail-item">
-            <span class="detail-label">Violation Type:</span>
-            <span class="detail-value badge uniform" id="detailViolationType">Improper Uniform</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Level:</span>
-            <span class="detail-value badge warning" id="detailViolationLevel">Warning 2</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Date & Time:</span>
-            <span class="detail-value" id="detailDateTime">Feb 15, 2024 • 08:15 AM</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Location:</span>
-            <span class="detail-value" id="detailLocation">Main Gate 1</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Reported By:</span>
-            <span class="detail-value" id="detailReportedBy">Officer Maria Santos</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Status:</span>
-            <span class="detail-value badge warning" id="detailStatus">Active Warning</span>
+          <div class="vd-table-scroll">
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th>Violation Type</th>
+                  <th>Level</th>
+                  <th>Date &amp; Time</th>
+                  <th>Location</th>
+                  <th>Reported By</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span id="detailViolationType">-</span></td>
+                  <td><span id="detailViolationLevel">-</span></td>
+                  <td><span id="detailDateTime">-</span></td>
+                  <td><span id="detailLocation">-</span></td>
+                  <td><span id="detailReportedBy">-</span></td>
+                  <td><span id="detailStatus">-</span></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
