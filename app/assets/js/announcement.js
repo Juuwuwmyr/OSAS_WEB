@@ -150,18 +150,18 @@
                 <td data-label="Title">
                     <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
                     <br>
-                    <small style="color: var(--dark-grey); font-size: 13px;">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
+                    <small style="color: var(--dark-grey); font-size: 11px;">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
                 </td>
-                <td data-label="Type">
+                <td data-label="Category">
                     <span class="announcement-type ${typeClass}">${typeClass}</span>
                 </td>
                 <td data-label="Status">
                     <span class="status-badge ${statusClass}">${statusText}</span>
                 </td>
-                <td data-label="Date Created">${createdDate}</td>
+                <td data-label="Date">${createdDate}</td>
                 <td data-label="Actions">
                     <div class="action-buttons">
-                        ${announcement.status === 'archived' 
+                        ${announcement.status === 'archived'
                             ? `<button class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore">
                                  <i class='bx bx-undo'></i>
                                </button>`
@@ -172,9 +172,6 @@
                                  <i class='bx bx-archive'></i>
                                </button>`
                         }
-                        <button class="action-btn delete" onclick="deleteAnnouncement(${announcement.id})" title="Delete">
-                          <i class='bx bx-trash'></i>
-                        </button>
                     </div>
                 </td>
             `;
@@ -332,6 +329,9 @@
     function setFilter(filter) {
         currentFilter = filter;
         currentPage = 1;
+        // Sync dropdown if it exists
+        const dropdown = document.getElementById('announcementStatusFilter');
+        if (dropdown) dropdown.value = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
         });

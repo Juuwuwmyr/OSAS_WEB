@@ -445,3 +445,574 @@ body.dark {
     min-width: 100%;
   }
 }
+
+/* ── Admin announcement action buttons — white square style ── */
+#announcements-page .action-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  background: #ffffff !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  color: #6b7280 !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+#announcements-page .action-btn i {
+  font-size: 15px !important;
+  color: inherit !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+#announcements-page .action-btn:hover {
+  background: #f5f5f5 !important;
+  border-color: rgba(0,0,0,0.18) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12) !important;
+  color: #374151 !important;
+}
+
+#announcements-page .action-btn.edit:hover   { color: #f59e0b !important; border-color: rgba(245,158,11,0.3) !important; }
+#announcements-page .action-btn.archive:hover { color: #6b7280 !important; }
+#announcements-page .action-btn.restore:hover { color: #10b981 !important; border-color: rgba(16,185,129,0.3) !important; }
+
+/* Status badges for active/archived */
+.status-badge.active  { color: #10B981 !important; }
+.status-badge.active::before  { background: #10B981 !important; }
+.status-badge.archived { color: #9ca3af !important; }
+.status-badge.archived::before { background: #9ca3af !important; }
+
+/* ── Announcement Modal ── */
+.announcement-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+}
+
+.announcement-modal.show {
+  display: flex;
+}
+
+.announcement-modal-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.announcement-modal-panel {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
+  border-radius: 16px;
+  width: 92%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  animation: modalPopIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes modalPopIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.announcement-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, rgba(255,215,0,.12) 0%, transparent 100%);
+}
+
+.announcement-modal-header .header-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(255,215,0,.15);
+  color: #d97706;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.announcement-modal-header .header-text { flex: 1; }
+.announcement-modal-header .header-text h3 { font-size: 0.95rem; font-weight: 700; color: #111; margin: 0 0 2px; }
+.announcement-modal-header .header-text p  { font-size: 0.72rem; color: #888; margin: 0; }
+
+.announcement-modal-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #f5f5f5;
+  color: #888;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.announcement-modal-close:hover { background: #ffe5e5; color: #ef4444; border-color: #ef4444; }
+
+.modern-form { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.modern-form .form-group { display: flex; flex-direction: column; gap: 5px; }
+.modern-form .form-group label { font-size: 0.72rem; font-weight: 600; color: #555; }
+.modern-form .form-group .required { color: #ef4444; }
+
+.modern-form .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.modern-form .input-wrapper i {
+  position: absolute;
+  left: 10px;
+  color: #aaa;
+  font-size: 16px;
+  pointer-events: none;
+}
+.modern-form .input-wrapper input,
+.modern-form .input-wrapper select {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #333;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modern-form .input-wrapper input:focus,
+.modern-form .input-wrapper select:focus { border-color: #FFD700; background: #fff; }
+
+.modern-form .textarea-wrapper textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #333;
+  background: #fafafa;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.modern-form .textarea-wrapper textarea:focus { border-color: #FFD700; background: #fff; }
+
+.announcement-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.btn-cancel {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: #f5f5f5;
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-cancel:hover { background: #e5e7eb; }
+
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #1a1a1a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-submit:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+/* ── Admin side layout fixes to match user side ── */
+#announcements-page main {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: transparent;
+}
+
+/* Header card */
+.announcements-head-title {
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.announcements-head-title .left h1,
+.announcements-head-title .announcements-left h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: #333;
+}
+
+.announcements-head-title .left .announcements-subtitle,
+.announcements-head-title .announcements-left .announcement-subtitle {
+  font-size: 0.78rem;
+  color: #666;
+  margin: 0 0 6px;
+}
+
+.announcements-head-title .announcement-actions button,
+.announcements-head-title .btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #444;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.announcements-head-title .announcement-actions button:hover,
+.announcements-head-title .btn-download:hover {
+  background: #FFD700;
+  color: #000;
+  border-color: #FFD700;
+  transform: translateY(-1px);
+}
+
+/* Filter bar */
+.announcement-filters,
+.table-controls {
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 16px;
+  padding: 12px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.announcement-filters .filter-group,
+.table-controls .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.announcement-filters .filter-group label,
+.table-controls .filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  white-space: nowrap;
+}
+
+.announcement-filters .filter-group select,
+.table-controls .filter-group select,
+#announcementStatusFilter {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.75rem;
+  color: #444;
+  outline: none;
+  cursor: pointer;
+}
+
+.announcement-filters .search-group,
+.table-controls .search-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  background: #f3f4f6;
+  border-radius: 99px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.announcement-filters .search-group:focus-within,
+.table-controls .search-box:focus-within {
+  background: #fff;
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
+}
+
+.announcement-filters .search-group i,
+.table-controls .search-box i {
+  color: #aaa;
+  font-size: 15px;
+}
+
+.announcement-filters .search-group input,
+.table-controls .search-box input,
+#announcementSearch {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  font-size: 0.75rem;
+  color: #444;
+  outline: none;
+}
+
+/* Table card */
+#announcements-page .table-data {
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+#announcements-page .table-data .head {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+#announcements-page .table-data .head h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+#announcementsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#announcementsTable thead {
+  background: #f9fafb;
+}
+
+#announcementsTable th {
+  padding: 10px 20px;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #9ca3af;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+#announcementsTable td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 0.82rem;
+  color: #444;
+  vertical-align: middle;
+}
+
+#announcementsTable tr:last-child td { border-bottom: none; }
+#announcementsTable tr:hover td { background: #fafafa; }
+
+/* Pagination */
+.announcements-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.announcement-page-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #555;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.announcement-page-btn.active {
+  background: #FFD700;
+  border-color: #FFD700;
+  color: #000;
+}
+
+.announcement-page-btn:hover:not(.active):not(:disabled) {
+  background: #f3f4f6;
+}
+
+.announcement-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Fix: add side padding to main container ── */
+#announcements-page {
+  padding: 20px 24px !important;
+  box-sizing: border-box;
+}
+
+#announcements-page main {
+  padding: 0 !important;
+  max-width: 100%;
+}
+
+/* ── Proper spacing fix ── */
+#announcements-page,
+#announcements-page main {
+  padding: 20px 24px !important;
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Cards should not be 100vw */
+#announcements-page .announcements-head-title,
+#announcements-page .announcement-filters,
+#announcements-page .table-controls,
+#announcements-page .table-data {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ── Page background so cards stand out ── */
+#announcements-page {
+  background: #f3f4f6 !important;
+  min-height: 100%;
+}
+
+#announcements-page .announcements-head-title,
+#announcements-page .announcement-filters,
+#announcements-page .table-controls,
+#announcements-page .table-data {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+
+/* ── Fix: proper gap between cards ── */
+#announcements-page main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  padding: 20px 24px !important;
+}
+
+/* Each card must be a separate block */
+#announcements-page .announcements-head-title { margin: 0 !important; }
+#announcements-page .announcement-filters,
+#announcements-page .table-controls { margin: 0 !important; }
+#announcements-page .table-data { margin: 0 !important; }
+
+/* ── FINAL FIX: ensure each section is visually separate ── */
+#announcements-page main > * {
+  flex-shrink: 0;
+}
+
+#announcements-page .announcement-filters,
+#announcements-page .table-controls {
+  border-radius: 12px !important;
+  padding: 10px 20px !important;
+}
+
+#announcements-page .table-data {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+/* The page wrapper itself provides the gap */
+#announcements-page {
+  padding: 20px 24px !important;
+  background: #f3f4f6 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+}
+
+#announcements-page main {
+  display: contents !important;
+}
+
+/* ============================================================
+   DEFINITIVE LAYOUT FIX — overrides all previous rules
+   ============================================================ */
+#announcements-page {
+  padding: 20px 24px !important;
+  background: #f3f4f6 !important;
+  box-sizing: border-box !important;
+  min-height: 100% !important;
+}
+
+#announcements-page main {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  background: transparent !important;
+}
+
+/* Each card */
+#announcements-page .announcements-head-title,
+#announcements-page .announcement-filters,
+#announcements-page .table-controls,
+#announcements-page .table-data {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+/* ── Modal panel must NOT inherit the card width fix ── */
+.announcement-modal-panel {
+  width: 92% !important;
+  max-width: 520px !important;
+  box-sizing: border-box !important;
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+}
