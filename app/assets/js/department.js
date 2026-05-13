@@ -99,7 +99,6 @@ function initDepartmentModule() {
         <button class="action-btn view" data-id="${d.id}" title="View"><i class='bx bx-show'></i></button>
         ${d.status !== 'archived' ? `<button class="action-btn edit" data-id="${d.id}" title="Edit"><i class='bx bx-edit'></i></button>` : ''}
         ${d.status === 'archived' ? `<button class="action-btn restore" data-id="${d.id}" title="Restore"><i class='bx bx-reset'></i></button>` : ''}
-        <button class="action-btn delete" data-id="${d.id}" title="Delete"><i class='bx bx-trash'></i></button>
       `;
     }
 

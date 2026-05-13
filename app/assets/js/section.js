@@ -794,7 +794,6 @@ function initSectionsModule() {
                 return `
                     <button class="sections-action-btn view" data-id="${s.id}" title="View"><i class='bx bx-show'></i></button>
                     ${s.status === 'archived' ? `<button class="sections-action-btn restore" data-id="${s.id}" title="Restore"><i class='bx bx-reset'></i></button>` : ''}
-                    <button class="sections-action-btn delete" data-id="${s.id}" title="Delete"><i class='bx bx-trash'></i></button>
                 `;
             }
 

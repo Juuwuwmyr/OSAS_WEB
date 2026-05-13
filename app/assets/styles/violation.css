@@ -4993,3 +4993,64 @@ body.dark {
 #ExportViolationsModal .Violations-modal-header h2 { font-size: 0.88rem !important; }
 #ExportViolationsModal .Violations-modal-container .export-options button { font-size: 12px !important; font-weight: 500 !important; padding: 8px 12px !important; }
 #ExportViolationsModal .Violations-modal-container .export-options button i { font-size: 16px !important; }
+
+/* ── Entrance button — white square like view button ── */
+.Violations-action-btn.entrance,
+.violation-list-actions .Violations-action-btn.entrance {
+  background: #ffffff !important;
+  color: #6366f1 !important;
+  border-color: rgba(0,0,0,0.1) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+.Violations-action-btn.entrance:hover,
+.violation-list-actions .Violations-action-btn.entrance:hover {
+  background: #f5f5f5 !important;
+  color: #4f46e5 !important;
+  border-color: rgba(99,102,241,0.3) !important;
+  box-shadow: 0 3px 8px rgba(99,102,241,0.15) !important;
+}
+
+.Violations-action-btn.entrance i,
+.violation-list-actions .Violations-action-btn.entrance i {
+  color: inherit !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+/* ── Uniform icon size and color for view + entrance ── */
+.violation-list-actions .Violations-action-btn.view i,
+.violation-list-actions .Violations-action-btn.entrance i {
+  font-size: 18px !important;
+  color: #6b7280 !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+
+.violation-list-actions .Violations-action-btn.entrance {
+  background: #ffffff !important;
+  color: #6b7280 !important;
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+.violation-list-actions .Violations-action-btn.entrance:hover i,
+.violation-list-actions .Violations-action-btn.view:hover i {
+  color: #374151 !important;
+}
+
+/* ── Uniform 15px icon size, remove outline artifact ── */
+.violation-list-actions .Violations-action-btn i,
+.Violations-action-buttons .Violations-action-btn i {
+  font-size: 15px !important;
+  color: #6b7280 !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  filter: none !important;
+}
+.violation-list-actions .Violations-action-btn,
+.Violations-action-buttons .Violations-action-btn {
+  width: 32px !important;
+  height: 32px !important;
+}
