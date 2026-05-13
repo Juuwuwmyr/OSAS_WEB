@@ -91,60 +91,77 @@ function escapeHtml($text) {
     </div>
   
     <!-- Announcements List -->
-    <div class="announcements-list" id="announcementsListContainer">
-      <?php if (empty($announcements)): ?>
-        <div class="empty-state">
-          <i class='bx bx-info-circle'></i>
-          <p>No announcements available</p>
+    <div class="table-data" id="announcementsTableContainer">
+      <div class="order">
+        <div class="head">
+          <h3>Recent Announcements</h3>
         </div>
-      <?php else: ?>
-        <?php foreach ($announcements as $announcement): ?>
-          <?php
-            $type = $announcement['type'] ?? 'info';
-            $typeClass = $type === 'urgent' ? 'urgent' : ($type === 'warning' ? 'warning' : 'general');
-            $announcementId = $announcement['id'] ?? 0;
-            $title = escapeHtml($announcement['title'] ?? 'Untitled');
-            $message = escapeHtml($announcement['message'] ?? '');
-            $timeAgo = formatTimeAgo($announcement['created_at'] ?? '');
-            $category = $type === 'urgent' ? 'Urgent' : ($type === 'warning' ? 'Warning' : 'General');
-            
-            $icon = 'bxs-info-circle';
-            if ($type === 'urgent') $icon = 'bxs-error-circle';
-            else if ($type === 'warning') $icon = 'bxs-error';
-            else if ($type === 'info') $icon = 'bxs-info-circle';
-            else $icon = 'bxs-bell';
-          ?>
-          <div class="announcement-card <?= $typeClass ?> unread" data-category="<?= $type ?>">
-            <div class="announcement-header">
-              <div class="announcement-icon <?= $typeClass ?>">
-                <i class='bx <?= $icon ?>'></i>
-              </div>
-              <div class="announcement-title">
-                <h3><?= $title ?></h3>
-                <div class="announcement-meta">
-                  <span class="announcement-date"><?= $timeAgo ?></span>
-                  <span class="announcement-category <?= $typeClass ?>"><?= $category ?></span>
-                </div>
-              </div>
-              <div class="announcement-actions">
-                <button class="btn-mark-read" onclick="markAsRead(<?= $announcementId ?>, this)">
-                  <i class='bx bxs-check-circle'></i>
-                </button>
-              </div>
-            </div>
-            <div class="announcement-content">
-              <p><?= $message ?></p>
-              <div class="announcement-tags">
-                <span class="tag"><?= $category ?></span>
-              </div>
-            </div>
-          </div>
-        <?php endforeach; ?>
-      <?php endif; ?>
+        <div class="table-wrapper">
+          <table id="announcementsTable">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="announcementsTableBody">
+              <?php if (empty($announcements)): ?>
+                <tr>
+                  <td colspan="5" class="empty-row">
+                    <div class="empty-state">
+                      <i class='bx bx-info-circle'></i>
+                      <p>No announcements available</p>
+                    </div>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($announcements as $announcement): ?>
+                  <?php $isRead = $announcement['is_read'] ?? false; ?>
+                  <tr data-id="<?= $announcement['id'] ?>" class="<?= $isRead ? 'read' : 'unread' ?>">
+                    <td>
+                      <div class="announcement-title-cell">
+                        <span class="title-text"><?= escapeHtml($announcement['title']) ?></span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="announcement-type <?= strtolower($announcement['category'] ?? 'info') ?>">
+                        <?= escapeHtml($announcement['category'] ?? 'General') ?>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-badge <?= $isRead ? 'read' : 'unread' ?>">
+                        <?= $isRead ? 'Read' : 'Unread' ?>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="date-text"><?= date('M d, Y', strtotime($announcement['created_at'] ?? 'now')) ?></span>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="action-btn view" onclick="viewAnnouncement(<?= $announcement['id'] ?>)" title="View">
+                          <i class='bx bx-show'></i>
+                        </button>
+                        <?php if (!$isRead): ?>
+                          <button class="action-btn mark-read" onclick="markAsRead(<?= $announcement['id'] ?>)" title="Mark as Read">
+                            <i class='bx bx-check'></i>
+                          </button>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   
     <!-- Load More Button -->
-    <div class="load-more-container">
+    <div class="load-more-container" id="loadMoreContainer" style="display: <?= count($announcements) >= 10 ? 'flex' : 'none' ?>;">
       <button class="btn-load-more" onclick="loadMoreAnnouncements()">
         <i class='bx bx-plus'></i>
         <span>Load More Announcements</span>

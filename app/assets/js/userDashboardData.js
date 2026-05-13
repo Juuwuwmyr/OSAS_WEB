@@ -371,9 +371,13 @@ class UserDashboardData {
                     <td>${date}</td>
                     <td><i class='bx ${getIcon(typeLabel)}' style="vertical-align:middle; margin-right:5px;"></i>${this.escapeHtml(typeLabel)}</td>
                     <td><span class="sd-badge ${badgeClass}">${badgeText}</span></td>
-                    <td><button class="sd-view-btn" onclick="viewViolationDetails(${v.id || v.violation_id})">
-                        <i class='bx bx-show'></i> View
-                    </button></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="sd-view-btn" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details">
+                                <i class='bx bx-show'></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
         }).join('');
     }

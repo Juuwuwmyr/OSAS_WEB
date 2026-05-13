@@ -17,12 +17,10 @@ function initializeUserAnnouncements() {
     console.log('🔄 Initializing announcements module...');
     
     // Make sure we're on the announcements page
-    const container = document.querySelector('.announcements-list') || 
-                      document.getElementById('announcementsListContainer') ||
-                      document.getElementById('announcementsContent');
+    const tableContainer = document.getElementById('announcementsTableContainer');
 
-    if (!container) {
-        console.warn('⚠️ Announcements container not found, not on announcements page');
+    if (!tableContainer) {
+        console.warn('⚠️ Announcements table container not found, not on announcements page');
         return;
     }
     
@@ -30,8 +28,8 @@ function initializeUserAnnouncements() {
     restoreAnnouncementState();
     
     // Check if announcements are already rendered from PHP
-    const existingCards = container.querySelectorAll('.announcement-card');
-    if (existingCards.length > 0) {
+    const existingRows = document.querySelectorAll('tbody#announcementsTableBody tr');
+    if (existingRows.length > 0 && !existingRows[0].classList.contains('empty-row')) {
         console.log('✅ Announcements already rendered from PHP, parsing existing data...');
         // Parse existing announcements from DOM
         parseExistingAnnouncements();
@@ -44,18 +42,7 @@ function initializeUserAnnouncements() {
     loadAnnouncements();
     
     // Setup filter listeners
-    setTimeout(() => {
-        const categoryFilter = document.getElementById('categoryFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        if (categoryFilter) {
-            categoryFilter.addEventListener('change', filterAnnouncements);
-            console.log('✅ Category filter listener added');
-        }
-        if (statusFilter) {
-            statusFilter.addEventListener('change', filterAnnouncements);
-            console.log('✅ Status filter listener added');
-        }
-    }, 200);
+    setupFilterListeners();
 }
 
 // Initialize immediately if DOM is ready, or wait for it
@@ -99,20 +86,18 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 async function loadAnnouncements() {
     try {
-        const container = document.querySelector('.announcements-list') || 
-                          document.getElementById('announcementsListContainer') ||
-                          document.getElementById('announcementsContent');
+        const tableBody = document.getElementById('announcementsTableBody');
 
-        if (!container) {
-            console.warn('⚠️ Announcements container not found, retrying in 500ms...');
+        if (!tableBody) {
+            console.warn('⚠️ Announcements table body not found, retrying in 500ms...');
             setTimeout(loadAnnouncements, 500);
             return;
         }
 
         console.log('🔄 Loading announcements from:', USER_API_BASE + 'announcements.php?action=active');
         // Only show loading if empty
-        if (!container.innerHTML.trim() || container.innerHTML.includes('Loading')) {
-             container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading-spinner"></div><p>Loading announcements...</p></div>';
+        if (!tableBody.innerHTML.trim() || tableBody.innerHTML.includes('No announcements')) {
+             tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="loading-spinner"></div><p>Loading announcements...</p></td></tr>';
         }
 
         const response = await fetch(USER_API_BASE + 'announcements.php?action=active');
@@ -153,120 +138,135 @@ async function loadAnnouncements() {
     } catch (error) {
         console.error('❌ Error loading announcements:', error);
         console.error('Error details:', error.message, error.stack);
-        const container = document.querySelector('.announcements-list') || document.getElementById('announcementsListContainer');
-        if (container) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #ef4444;">
-                    <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
-                    <p>Error loading announcements: ${error.message}</p>
-                    <button onclick="loadAnnouncements()" style="margin-top: 10px; padding: 8px 16px; background: var(--gold); border: none; border-radius: 6px; cursor: pointer;">Retry</button>
-                </div>
+        const tableBody = document.getElementById('announcementsTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">
+                        <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
+                        <p>Error loading announcements: ${error.message}</p>
+                        <button onclick="loadAnnouncements()" style="margin-top: 10px; padding: 8px 16px; background: var(--gold); border: none; border-radius: 6px; cursor: pointer;">Retry</button>
+                    </td>
+                </tr>
             `;
         }
     }
 }
 
 function renderAnnouncements() {
-    const container = document.querySelector('.announcements-list') || 
-                      document.getElementById('announcementsListContainer') ||
-                      document.getElementById('announcementsContent');
+    const tableBody = document.getElementById('announcementsTableBody');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
 
-    if (!container) {
-        console.warn('⚠️ Announcements container not found');
+    if (!tableBody) {
+        console.warn('⚠️ Announcements table body not found');
         return;
     }
 
     if (!Array.isArray(announcements) || announcements.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class='bx bx-info-circle'></i>
-                <p>No announcements available</p>
-            </div>
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-row">
+                    <div class="empty-state">
+                        <i class='bx bx-info-circle'></i>
+                        <p>No announcements available</p>
+                    </div>
+                </td>
+            </tr>
         `;
+        if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         return;
     }
 
-    console.log('Rendering', announcements.length, 'announcements');
+    // Toggle Load More button based on count (10 or more)
+    if (loadMoreContainer) {
+        loadMoreContainer.style.display = announcements.length >= 10 ? 'flex' : 'none';
+    }
+
+    console.log('Rendering', announcements.length, 'announcements into table');
     
     try {
-        container.innerHTML = announcements.map(announcement => {
-            const type = announcement.type || 'info';
-            const typeClass = type === 'urgent' ? 'urgent' : type === 'warning' ? 'warning' : 'general';
+        tableBody.innerHTML = announcements.map(announcement => {
+            const type = announcement.type || announcement.category || 'info';
+            const typeClass = type === 'urgent' ? 'urgent' : type === 'warning' ? 'warning' : 'info';
             const announcementId = announcement.id || 0;
             const isRead = readAnnouncements.includes(announcementId);
             const readClass = isRead ? 'read' : 'unread';
             
-            let icon = 'bxs-info-circle';
-            if (type === 'urgent') icon = 'bxs-error-circle';
-            else if (type === 'warning') icon = 'bxs-error';
-            else if (type === 'info') icon = 'bxs-info-circle';
-            else icon = 'bxs-bell';
-
             const timeAgo = formatTimeAgo(announcement.created_at || announcement.createdAt || '');
-            const category = type === 'urgent' ? 'Urgent' : type === 'warning' ? 'Warning' : 'General';
+            const category = type.charAt(0).toUpperCase() + type.slice(1);
             const title = escapeHtml(announcement.title || 'Untitled');
-            const message = escapeHtml(announcement.message || announcement.content || '');
 
             return `
-                <div class="announcement-card ${typeClass} ${readClass}" data-category="${type}">
-                    <div class="announcement-header">
-                        <div class="announcement-icon ${typeClass}">
-                            <i class='bx ${icon}'></i>
+                <tr data-id="${announcementId}" class="${readClass}">
+                    <td>
+                        <div class="announcement-title-cell">
+                            <span class="title-text">${title}</span>
                         </div>
-                        <div class="announcement-title">
-                            <h3>${title}</h3>
-                            <div class="announcement-meta">
-                                <span class="announcement-date">${timeAgo}</span>
-                                <span class="announcement-category ${typeClass}">${category}</span>
-                            </div>
-                        </div>
-                        <div class="announcement-actions">
-                            <button class="btn-mark-read" onclick="markAsRead(${announcementId}, this)" style="display: ${isRead ? 'none' : 'block'};">
-                                <i class='bx bxs-check-circle'></i>
+                    </td>
+                    <td>
+                        <span class="announcement-type ${typeClass}">
+                            ${category}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${readClass}">
+                            ${isRead ? 'Read' : 'Unread'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="date-text">${timeAgo}</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewAnnouncement(${announcementId})" title="View">
+                                <i class='bx bx-show'></i>
                             </button>
+                            ${!isRead ? `
+                                <button class="action-btn mark-read" onclick="markAsRead(${announcementId}, this)" title="Mark as Read">
+                                    <i class='bx bx-check'></i>
+                                </button>
+                            ` : ''}
                         </div>
-                    </div>
-                    <div class="announcement-content">
-                        <p>${message}</p>
-                        <div class="announcement-tags">
-                            <span class="tag">${category}</span>
-                        </div>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
         }).join('');
         
-        console.log('✅ Announcements rendered successfully');
+        console.log('✅ Announcements rendered successfully in table');
     } catch (error) {
         console.error('❌ Error rendering announcements:', error);
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #ef4444;">
-                <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
-                <p>Error rendering announcements: ${error.message}</p>
-            </div>
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">
+                    <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>Error rendering announcements: ${error.message}</p>
+                </td>
+            </tr>
         `;
     }
 }
 
 // Parse existing announcements from DOM (rendered by PHP)
 function parseExistingAnnouncements() {
-    const cards = document.querySelectorAll('.announcement-card');
+    const rows = document.querySelectorAll('tbody#announcementsTableBody tr');
     announcements = [];
     
-    cards.forEach(card => {
-        const announcementId = parseInt(card.querySelector('.btn-mark-read')?.getAttribute('onclick')?.match(/\d+/)?.[0] || '0');
-        const title = card.querySelector('h3')?.textContent || '';
-        const message = card.querySelector('.announcement-content p')?.textContent || '';
-        const category = card.getAttribute('data-category') || 'info';
-        const type = category;
-        const isRead = card.classList.contains('read');
+    rows.forEach(row => {
+        if (row.classList.contains('empty-row')) return;
+        
+        const announcementId = parseInt(row.getAttribute('data-id') || '0');
+        const title = row.querySelector('.title-text')?.textContent || '';
+        const categoryBadge = row.querySelector('.announcement-type');
+        const category = categoryBadge ? categoryBadge.textContent.trim().toLowerCase() : 'info';
+        const isRead = row.classList.contains('read');
         
         announcements.push({
             id: announcementId,
             title: title,
-            message: message,
-            type: type,
-            created_at: new Date().toISOString() // Approximate, since we don't have exact date from DOM
+            category: category,
+            type: category,
+            is_read: isRead,
+            created_at: new Date().toISOString() // Approximate
         });
         
         if (isRead && !readAnnouncements.includes(announcementId)) {
@@ -275,7 +275,7 @@ function parseExistingAnnouncements() {
     });
     
     localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
-    console.log(`✅ Parsed ${announcements.length} announcements from DOM`);
+    console.log(`✅ Parsed ${announcements.length} announcements from table rows`);
 }
 
 // Setup filter listeners
@@ -300,42 +300,66 @@ function setupFilterListeners() {
 function filterAnnouncements() {
     const categoryFilter = document.getElementById('categoryFilter')?.value || 'all';
     const statusFilter = document.getElementById('statusFilter')?.value || 'all';
-    const cards = document.querySelectorAll('.announcement-card');
+    const rows = document.querySelectorAll('tbody#announcementsTableBody tr');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
     
-    cards.forEach(card => {
-        const category = card.getAttribute('data-category');
-        const isRead = card.classList.contains('read');
+    let visibleCount = 0;
+    rows.forEach(row => {
+        if (row.classList.contains('empty-row')) return;
         
-        let showCard = true;
+        const categoryBadge = row.querySelector('.announcement-type');
+        const category = categoryBadge ? categoryBadge.textContent.trim().toLowerCase() : '';
+        const isRead = row.classList.contains('read');
+        
+        let showRow = true;
         
         if (categoryFilter !== 'all' && category !== categoryFilter) {
-            showCard = false;
+            showRow = false;
         }
         
         if (statusFilter === 'read' && !isRead) {
-            showCard = false;
+            showRow = false;
         } else if (statusFilter === 'unread' && isRead) {
-            showCard = false;
+            showRow = false;
         }
         
-        card.style.display = showCard ? 'flex' : 'none';
+        if (showRow) {
+            row.style.display = 'table-row';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
     });
+
+    // Toggle Load More button based on visible count (10 or more)
+    if (loadMoreContainer) {
+        loadMoreContainer.style.display = visibleCount >= 10 ? 'flex' : 'none';
+    }
 }
 
 function searchAnnouncements() {
     const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const cards = document.querySelectorAll('.announcement-card');
+    const rows = document.querySelectorAll('tbody#announcementsTableBody tr');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
     
-    cards.forEach(card => {
-        const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
-        const content = card.querySelector('.announcement-content p')?.textContent.toLowerCase() || '';
+    let visibleCount = 0;
+    rows.forEach(row => {
+        if (row.classList.contains('empty-row')) return;
         
-        if (title.includes(searchTerm) || content.includes(searchTerm)) {
-            card.style.display = 'flex';
+        const title = row.querySelector('.title-text')?.textContent.toLowerCase() || '';
+        
+        if (title.includes(searchTerm)) {
+            row.style.display = 'table-row';
+            visibleCount++;
         } else {
-            card.style.display = 'none';
+            row.style.display = 'none';
         }
     });
+
+    // Toggle Load More button based on visible count (10 or more)
+    if (loadMoreContainer) {
+        loadMoreContainer.style.display = visibleCount >= 10 ? 'flex' : 'none';
+    }
 }
 
 function markAsRead(announcementId, button) {
@@ -344,13 +368,44 @@ function markAsRead(announcementId, button) {
         localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
     }
     
-    const card = button.closest('.announcement-card');
-    card.classList.remove('unread');
-    card.classList.add('read');
-    button.style.display = 'none';
+    const row = button.closest('tr');
+    if (row) {
+        row.classList.remove('unread');
+        row.classList.add('read');
+        
+        const statusBadge = row.querySelector('.status-badge');
+        if (statusBadge) {
+            statusBadge.classList.remove('unread');
+            statusBadge.classList.add('read');
+            statusBadge.textContent = 'Read';
+        }
+    }
+    
+    button.remove();
     
     updateUnreadCount();
     showNotification('Announcement marked as read', 'success');
+}
+
+function viewAnnouncement(announcementId) {
+    const announcement = announcements.find(a => a.id === announcementId);
+    if (!announcement) return;
+    
+    // Create and show modal with details
+    showModernAlert({
+        title: announcement.title,
+        message: announcement.content || announcement.message || 'No content available.',
+        icon: 'info',
+        confirmText: 'Close',
+        showCancel: false
+    });
+    
+    // Mark as read if not already
+    if (!readAnnouncements.includes(announcementId)) {
+        const row = document.querySelector(`tr[data-id="${announcementId}"]`);
+        const markReadBtn = row?.querySelector('.action-btn.mark-read');
+        if (markReadBtn) markAsRead(announcementId, markReadBtn);
+    }
 }
 
 function markAllAsRead() {
@@ -362,12 +417,20 @@ function markAllAsRead() {
     
     localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
     
-    const cards = document.querySelectorAll('.announcement-card.unread');
-    cards.forEach(card => {
-        card.classList.remove('unread');
-        card.classList.add('read');
-        const button = card.querySelector('.btn-mark-read');
-        if (button) button.style.display = 'none';
+    const rows = document.querySelectorAll('tbody#announcementsTableBody tr.unread');
+    rows.forEach(row => {
+        row.classList.remove('unread');
+        row.classList.add('read');
+        
+        const statusBadge = row.querySelector('.status-badge');
+        if (statusBadge) {
+            statusBadge.classList.remove('unread');
+            statusBadge.classList.add('read');
+            statusBadge.textContent = 'Read';
+        }
+        
+        const markReadBtn = row.querySelector('.action-btn.mark-read');
+        if (markReadBtn) markReadBtn.remove();
     });
     
     updateUnreadCount();
@@ -375,7 +438,7 @@ function markAllAsRead() {
 }
 
 function updateUnreadCount() {
-    const unreadCount = document.querySelectorAll('.announcement-card.unread').length;
+    const unreadCount = document.querySelectorAll('tbody#announcementsTableBody tr.unread').length;
     const countElement = document.querySelector('.unread-count');
     if (countElement) {
         countElement.textContent = unreadCount;

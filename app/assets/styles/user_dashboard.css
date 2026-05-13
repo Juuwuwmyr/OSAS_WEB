@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
 
 /* ============================================================
    RESET & BASE
@@ -882,16 +882,22 @@ body.dark {
 .sd-card__actions { display: flex; gap: 6px; }
 .sd-icon-btn {
   width: 32px; height: 32px;
-  border-radius: var(--r-sm);
+  border-radius: 8px;
   border: 1px solid var(--border);
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--text-3);
   display: flex; align-items: center; justify-content: center;
   font-size: 16px;
   cursor: pointer;
   transition: all .2s var(--ease);
 }
-.sd-icon-btn:hover { background: var(--gold-light); color: var(--gold-dark); border-color: var(--gold); }
+.sd-icon-btn:hover { 
+  background: var(--gold-gradient, linear-gradient(135deg, #FFD700 0%, #FFA500 100%)); 
+  color: #fff; 
+  border-color: transparent; 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
 
 /* ============================================================
    VIOLATION SUMMARY (inside sd-card)
@@ -1012,26 +1018,39 @@ body.dark {
 .sd-badge--warning  { background: var(--red-light);   color: var(--red); }
 .sd-badge--info     { background: var(--blue-light);  color: var(--blue); }
 
+/* Action Buttons Layout */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 /* View button */
 .sd-view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: var(--r-md);
-  background: var(--gold-light);
-  color: var(--gold-dark);
-  font-size: .75rem;
-  font-weight: 600;
-  border: 1px solid rgba(245,197,24,.3);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: #666;
+  font-size: 16px;
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all .2s var(--ease);
+  padding: 0;
 }
 .sd-view-btn:hover {
-  background: var(--gold);
-  color: #000;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245,197,24,.3);
+  background: var(--gold-gradient, linear-gradient(135deg, #FFD700 0%, #FFA500 100%));
+  color: #fff;
+  transform: translateY(-2px);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.sd-view-btn i {
+  margin: 0;
 }
 
 /* ============================================================
@@ -1603,8 +1622,6 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
     top: 12px; right: 14px;
     order: 4;
   }
-  .sd-view-btn { padding: 5px 10px; font-size: .72rem; }
-  .sd-view-btn i { margin-right: 3px; }
 
   /* Announcements */
   .sd-announce-body { max-height: 260px; padding: 10px 14px; }

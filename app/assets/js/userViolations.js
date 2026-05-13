@@ -231,9 +231,11 @@ function renderViolationTable() {
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
                 <td data-label="Status"><span class="Violations-status-badge ${statusClass}">${statusText}</span></td>
                 <td data-label="Actions">
-                    <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
-                        <i class='bx bx-show'></i> View
-                    </button>
+                    <div class="action-buttons">
+                        <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
+                            <i class='bx bx-show'></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -274,9 +276,11 @@ function renderViolationTable() {
                         <span class="violation-list-id">${escapeHtml(studentIdCode)}</span>
                     </div>
                     <div class="violation-list-actions">
-                        <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
-                            <i class='bx bx-show'></i>
-                        </button>
+                        <div class="action-buttons">
+                            <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
+                                <i class='bx bx-show'></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="violation-list-badges">
