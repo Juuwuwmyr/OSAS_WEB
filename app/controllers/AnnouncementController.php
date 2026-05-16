@@ -95,6 +95,18 @@ class AnnouncementController extends Controller {
             ];
 
             $id = $this->model->create($data);
+
+            try {
+                require_once __DIR__ . '/../services/PushNotificationService.php';
+                (new PushNotificationService())->notifyAllStudents(
+                    ucfirst($type) . ' announcement: ' . $title,
+                    strlen($message) > 120 ? substr($message, 0, 117) . '...' : $message,
+                    ['type' => 'announcement', 'id' => (int) $id, 'page' => 'user-page/announcements', 'tag' => 'announcement-' . $id]
+                );
+            } catch (Throwable $e) {
+                error_log('Announcement push: ' . $e->getMessage());
+            }
+
             $this->success('Announcement created successfully!', ['id' => $id]);
         } catch (Exception $e) {
             $this->error('Failed to create announcement: ' . $e->getMessage());

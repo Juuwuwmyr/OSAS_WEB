@@ -349,6 +349,18 @@ class ViolationController extends Controller
                 // Don't fail the request, just log it
             }
 
+            try {
+                require_once __DIR__ . '/../services/PushNotificationService.php';
+                (new PushNotificationService())->notifyStudent(
+                    $studentId,
+                    'New violation recorded',
+                    'Case ' . $caseId . ' — open E-OSAS to view details.',
+                    ['type' => 'violation', 'id' => (int) $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-' . $id]
+                );
+            } catch (Throwable $e) {
+                error_log('Violation push: ' . $e->getMessage());
+            }
+
             $this->success('Violation recorded successfully', [
                 'id'      => $id,
                 'case_id' => $caseId

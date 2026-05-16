@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-05-08';
+const BUILD_DATE = '2026-05-17';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -40,7 +40,8 @@ const PRECACHE_ASSETS = [
   '/app/assets/js/announcement.js',
   '/app/assets/js/chatbot.js',
   '/app/assets/js/userViolations.js',
-  '/app/assets/js/userAnnouncements.js'
+  '/app/assets/js/userAnnouncements.js',
+  '/app/assets/js/push-notifications.js'
 ];
 
 // ── INSTALL ───────────────────────────────────────────────────────────────────
@@ -281,4 +282,31 @@ self.addEventListener('sync', event => {
 
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+self.addEventListener('push', event => {
+  let p = { title: 'E-OSAS', body: 'You have a new update.', icon: '/app/assets/img/default.png', tag: 'eosas', data: { page: 'user-page/user_dashcontent' } };
+  if (event.data) {
+    try {
+      const j = event.data.json();
+      p = { ...p, ...j, data: { ...p.data, ...(j.data || {}) } };
+    } catch (e) { p.body = event.data.text() || p.body; }
+  }
+  event.waitUntil(self.registration.showNotification(p.title, {
+    body: p.body, icon: p.icon || '/app/assets/img/default.png', badge: p.icon, tag: p.tag, data: p.data, vibrate: [180, 80, 180], renotify: true
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const page = event.notification.data?.page || 'user-page/user_dashcontent';
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) {
+      if (c.url.includes('user_dashboard')) {
+        c.postMessage({ type: 'PUSH_NAVIGATE', page });
+        return c.focus();
+      }
+    }
+    return clients.openWindow('/includes/user_dashboard.php?push_page=' + encodeURIComponent(page));
+  }));
 });

@@ -120,6 +120,7 @@ if (!$student_id) {
     <script src="<?= View::asset('js/chatbot.js') ?>"></script>
     <?php View::partial('logout_modal'); ?>
     <script src="<?= View::asset('js/pwa.js') ?>"></script>
+    <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>"></script>
 
     <div id="DownloadFormatModal" class="download-modal" style="display:none;">
         <div class="download-modal-overlay" onclick="closeDownloadModal()"></div>
