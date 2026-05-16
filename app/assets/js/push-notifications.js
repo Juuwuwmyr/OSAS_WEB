@@ -181,6 +181,64 @@
         document.body.appendChild(overlay);
     }
 
+    function showBlockedModal(mode) {
+        if (document.getElementById('eosas-push-overlay')) return;
+        injectStyles();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'eosas-push-overlay';
+        const modal = document.createElement('div');
+        modal.id = 'eosas-push-modal';
+
+        const title = document.createElement('h3');
+        title.textContent = 'Notifications are blocked';
+        const desc = document.createElement('p');
+        desc.innerHTML = 'You tapped <strong>Don\'t allow</strong>. To get campus alerts, turn notifications <strong>On</strong> in your phone settings for E-OSAS, then tap <strong>Try again</strong> below.';
+
+        const btns = document.createElement('div');
+        btns.className = 'eosas-push-btns';
+        const retryBtn = document.createElement('button');
+        retryBtn.id = 'eosas-push-enable';
+        retryBtn.textContent = 'Try again';
+        const laterBtn = document.createElement('button');
+        laterBtn.id = 'eosas-push-later';
+        laterBtn.textContent = 'Later';
+
+        const scope = mode === 'guest' ? 'announcements' : 'full';
+        const runRetry = async (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            retryBtn.disabled = true;
+            const perm = await Notification.requestPermission();
+            if (perm === 'granted') {
+                try {
+                    if (await subscribeWithScope(scope)) {
+                        if (mode === 'guest' && typeof window.showLatestAnnouncementNotifications === 'function') {
+                            await window.showLatestAnnouncementNotifications(true);
+                        }
+                        toast('Notifications enabled.', true);
+                        overlay.remove();
+                    }
+                } catch (err) {
+                    toast(err.message || 'Failed', false);
+                }
+            } else {
+                toast('Still blocked — enable in Settings → Apps → E-OSAS → Notifications', false);
+            }
+            retryBtn.disabled = false;
+        };
+        retryBtn.addEventListener('click', runRetry, { passive: false });
+        retryBtn.addEventListener('touchend', runRetry, { passive: false });
+        laterBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            overlay.remove();
+        });
+
+        btns.append(retryBtn, laterBtn);
+        modal.append(title, desc, btns);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    }
+
     function showEnableModal(mode) {
         if (!isInstalledPWA()) {
             showInstallFirstModal();
@@ -275,15 +333,15 @@
 
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
-            if (typeof window.showLatestAnnouncementNotifications === 'function') {
-                await window.showLatestAnnouncementNotifications(false);
-            }
             if (typeof window.startGuestAnnouncementWatcher === 'function') {
                 window.startGuestAnnouncementWatcher();
             }
             return;
         }
-        if (Notification.permission === 'denied') return;
+        if (Notification.permission === 'denied') {
+            setTimeout(() => showBlockedModal('guest'), 1200);
+            return;
+        }
         if (localStorage.getItem(GUEST_PROMPT)) return;
 
         setTimeout(() => showEnableModal('guest'), 1500);
@@ -309,7 +367,10 @@
             await syncStudentSubscription();
             return;
         }
-        if (Notification.permission === 'denied') return;
+        if (Notification.permission === 'denied') {
+            setTimeout(() => showBlockedModal('student'), 1200);
+            return;
+        }
         if (localStorage.getItem(STUDENT_PROMPT)) return;
 
         setTimeout(() => showEnableModal('student'), 1500);

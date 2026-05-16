@@ -48,21 +48,19 @@
         }
     }
 
-    /** Show up to 5 latest announcements as phone notifications. */
+    /** Only on first Enable — never replay when reopening the app. */
     async function showLatestBatch(force) {
         if (Notification.permission !== 'granted') return;
+        if (!force) return;
+        if (localStorage.getItem(SHOWN_KEY)) return;
+
+        localStorage.setItem(SHOWN_KEY, '1');
 
         const list = await fetchLatest(5);
         if (!list.length) {
-            if (force) {
-                await showViaServiceWorker('E-OSAS', 'No active announcements right now.', 'eosas-empty');
-            }
+            await showViaServiceWorker('E-OSAS', 'No active announcements right now.', 'eosas-empty');
             return;
         }
-
-        const batchKey = SHOWN_KEY + '_' + list.map(a => a.id).join('-');
-        if (!force && sessionStorage.getItem(batchKey)) return;
-        sessionStorage.setItem(batchKey, '1');
 
         for (let i = 0; i < list.length; i++) {
             const a = list[i];
@@ -79,6 +77,14 @@
         localStorage.setItem(LAST_ID_KEY, String(list[0].id));
     }
 
+    async function seedLastAnnouncementId() {
+        if (localStorage.getItem(LAST_ID_KEY)) return;
+        try {
+            const list = await fetchLatest(1);
+            if (list.length) localStorage.setItem(LAST_ID_KEY, String(list[0].id));
+        } catch (e) { /* ignore */ }
+    }
+
     async function checkNewAnnouncement() {
         if (Notification.permission !== 'granted' || !navigator.onLine) return;
         try {
@@ -86,7 +92,11 @@
             if (!list.length) return;
             const latest = list[0];
             const last = localStorage.getItem(LAST_ID_KEY);
-            if (last && String(latest.id) === String(last)) return;
+            if (!last) {
+                localStorage.setItem(LAST_ID_KEY, String(latest.id));
+                return;
+            }
+            if (String(latest.id) === String(last)) return;
 
             const body = (latest.message || '').replace(/<[^>]+>/g, '').trim();
             await showViaServiceWorker(
@@ -111,9 +121,11 @@
     function startGuestAnnouncementWatcher() {
         if (document.body.dataset.eosasPush !== 'guest') return;
         if (!isInstalledPWA()) return;
+        if (window._eosasAnnWatcherOn) return;
+        window._eosasAnnWatcherOn = true;
+
         if (Notification.permission === 'granted') {
-            showLatestBatch(false);
-            checkNewAnnouncement();
+            seedLastAnnouncementId().then(() => checkNewAnnouncement());
         }
         setInterval(checkNewAnnouncement, POLL_MS);
         document.addEventListener('visibilitychange', () => {
