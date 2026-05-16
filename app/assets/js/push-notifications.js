@@ -7,7 +7,16 @@
 
     const GUEST_PROMPT = 'eosas_guest_push_prompted';
     const STUDENT_PROMPT = 'eosas_student_push_prompted';
+    const INSTALL_PROMPT = 'eosas_install_prompted';
     const STYLE_ID = 'eosas-push-styles';
+
+    /** True when opened from home-screen installed app (not a browser tab). */
+    function isInstalledPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches
+            || window.matchMedia('(display-mode: fullscreen)').matches
+            || window.matchMedia('(display-mode: minimal-ui)').matches
+            || navigator.standalone === true;
+    }
 
     function projectRoot() {
         const p = location.pathname.split('/').filter(Boolean);
@@ -128,7 +137,55 @@
         }
     }
 
+    function showInstallFirstModal() {
+        if (document.getElementById('eosas-push-overlay')) return;
+        injectStyles();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'eosas-push-overlay';
+        const modal = document.createElement('div');
+        modal.id = 'eosas-push-modal';
+
+        const title = document.createElement('h3');
+        title.textContent = 'Install E-OSAS first';
+        const desc = document.createElement('p');
+        desc.innerHTML = 'To get campus alerts, <strong>install the app</strong> on your home screen. Open the app from there—then you can turn on notifications inside the app.';
+
+        const btns = document.createElement('div');
+        btns.className = 'eosas-push-btns';
+        const installBtn = document.createElement('button');
+        installBtn.id = 'eosas-push-enable';
+        installBtn.textContent = 'Install app';
+        const laterBtn = document.createElement('button');
+        laterBtn.id = 'eosas-push-later';
+        laterBtn.textContent = 'Not now';
+
+        installBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pwaBtn = document.getElementById('installPWA');
+            if (pwaBtn && pwaBtn.offsetParent !== null) {
+                pwaBtn.click();
+            } else {
+                toast('Use browser menu → Add to Home screen / Install app', false);
+            }
+        });
+        laterBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.setItem(INSTALL_PROMPT, '1');
+            overlay.remove();
+        });
+
+        btns.append(installBtn, laterBtn);
+        modal.append(title, desc, btns);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    }
+
     function showEnableModal(mode) {
+        if (!isInstalledPWA()) {
+            showInstallFirstModal();
+            return;
+        }
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
@@ -142,8 +199,8 @@
         title.textContent = isGuest ? 'Campus announcements' : 'Violation alerts';
         const desc = document.createElement('p');
         desc.innerHTML = isGuest
-            ? 'Get the <strong>5 latest campus announcements</strong> on your phone (no login). Tap Enable, then <strong>Allow</strong>. New posts will alert you automatically.'
-            : 'Also get alerts when <strong>you</strong> receive a violation (login required). Tap Enable, then <strong>Allow</strong>.';
+            ? 'Turn on <strong>campus announcements</strong> for this app. Tap Enable, then <strong>Allow</strong>.'
+            : 'Turn on <strong>violation alerts</strong> for your account. Tap Enable, then <strong>Allow</strong>.';
 
         const btns = document.createElement('div');
         btns.className = 'eosas-push-btns';
@@ -163,7 +220,7 @@
             yes.textContent = 'Please wait…';
             try {
                 if (await subscribeWithScope(scope)) {
-                    toast(isGuest ? 'Loading latest announcements…' : 'Violation alerts enabled.', true);
+                    toast(isGuest ? 'Announcements enabled.' : 'Violation alerts enabled.', true);
                     overlay.remove();
                     if (isGuest && typeof window.showLatestAnnouncementNotifications === 'function') {
                         await window.showLatestAnnouncementNotifications(true);
@@ -209,6 +266,13 @@
     async function initGuestPush() {
         if (!isGuestApp() || !('Notification' in window)) return;
 
+        if (!isInstalledPWA()) {
+            if (!localStorage.getItem(INSTALL_PROMPT)) {
+                setTimeout(showInstallFirstModal, 2500);
+            }
+            return;
+        }
+
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
             if (typeof window.showLatestAnnouncementNotifications === 'function') {
@@ -222,7 +286,7 @@
         if (Notification.permission === 'denied') return;
         if (localStorage.getItem(GUEST_PROMPT)) return;
 
-        setTimeout(() => showEnableModal('guest'), 2000);
+        setTimeout(() => showEnableModal('guest'), 1500);
     }
 
     async function initStudentPush() {
@@ -239,20 +303,23 @@
             }
         });
 
+        if (!isInstalledPWA()) return;
+
         if (Notification.permission === 'granted') {
             await syncStudentSubscription();
             return;
         }
         if (Notification.permission === 'denied') return;
+        if (localStorage.getItem(STUDENT_PROMPT)) return;
 
-        if (!localStorage.getItem(GUEST_PROMPT) && !localStorage.getItem(STUDENT_PROMPT)) {
-            setTimeout(() => showEnableModal('student'), 1500);
-        } else if (!localStorage.getItem(STUDENT_PROMPT)) {
-            setTimeout(() => showEnableModal('student'), 1500);
-        }
+        setTimeout(() => showEnableModal('student'), 1500);
     }
 
-    window.subscribeToPush = () => subscribeWithScope(isStudentApp() ? 'full' : 'announcements');
+    window.isInstalledPWA = isInstalledPWA;
+    window.subscribeToPush = () => {
+        if (!isInstalledPWA()) { showInstallFirstModal(); return Promise.resolve(false); }
+        return subscribeWithScope(isStudentApp() ? 'full' : 'announcements');
+    };
     window.upgradePushToStudent = upgradePushToStudent;
     window.showPushEnableModal = (guest) => showEnableModal(guest ? 'guest' : 'student');
     window.initPushNotifications = initStudentPush;

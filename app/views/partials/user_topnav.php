@@ -88,7 +88,7 @@ if (isset($student) && $student) {
           <a href="#" id="markAllRead">Mark all as read</a>
         </div>
         <p style="padding:8px 12px;margin:0;font-size:12px;border-bottom:1px solid rgba(0,0,0,.08);">
-          <a href="#" id="enablePhoneAlerts" style="color:#D4AF37;font-weight:600;">Enable phone alerts</a>
+          <a href="#" id="enablePhoneAlerts" style="color:#D4AF37;font-weight:600;">Enable alerts (in app)</a>
         </p>
         <div class="notif-list" id="notificationList">
           <div class="no-notifications">

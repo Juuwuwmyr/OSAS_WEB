@@ -229,14 +229,10 @@ document.addEventListener('click', async (e) => {
 });
 
 window.addEventListener('appinstalled', () => {
-    console.log('✅ PWA installed');
+    console.log('✅ PWA installed — open the app from your home screen to enable notifications');
     deferredPrompt = null;
+    localStorage.setItem('eosas_pwa_installed', '1');
     localStorage.removeItem('eosas_guest_push_prompted');
-    setTimeout(() => {
-        if (typeof window.showPushEnableModal === 'function') {
-            window.showPushEnableModal(true);
-        }
-    }, 1500);
 });
 
 // ── Online / Offline Status ───────────────────────────────────────────────────

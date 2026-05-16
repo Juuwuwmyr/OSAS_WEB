@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-05-20';
+const BUILD_DATE = '2026-05-21';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -297,29 +297,44 @@ self.addEventListener('push', event => {
   }));
 });
 
+function notificationTargetPath(data) {
+  const type = data.type || '';
+  const page = data.page || '';
+  if (type === 'violation' || (page && page.includes('violation'))) {
+    return '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page || 'user-page/my_violations');
+  }
+  if (page) {
+    return '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page);
+  }
+  return data.url || '/';
+}
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const data = event.notification.data || {};
-  const type = data.type || '';
-  const page = data.page || '';
+  const path = notificationTargetPath(data);
+  const targetUrl = new URL(path, self.registration.scope).href;
 
-  let url = '/';
-  if (type === 'violation' || page.includes('violation')) {
-    url = '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page || 'user-page/my_violations');
-  } else if (page) {
-    url = '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page);
-  }
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const sameOrigin = (c) => {
+      try { return new URL(c.url).origin === self.location.origin; } catch (e) { return false; }
+    };
 
-  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    for (const c of list) {
-      if (c.url.includes('user_dashboard') && page) {
-        c.postMessage({ type: 'PUSH_NAVIGATE', page });
-        return c.focus();
+    // Prefer an already-open E-OSAS window (installed PWA or tab) — focus + navigate into it
+    for (const client of allClients) {
+      if (!sameOrigin(client)) continue;
+      if ('focus' in client) await client.focus();
+      if (typeof client.navigate === 'function') {
+        try {
+          return await client.navigate(targetUrl);
+        } catch (e) { /* fall through */ }
       }
-      if (c.url.includes('e-osas') || c.url.includes('duckdns') || c.url.includes('index.php')) {
-        return c.focus();
-      }
+      client.postMessage({ type: 'PUSH_NAVIGATE', page: data.page || '', url: path });
+      return;
     }
-    return clients.openWindow(url);
-  }));
+
+    // No window open — openURL; with manifest scope this should launch the installed PWA on Android
+    return clients.openWindow(targetUrl);
+  })());
 });

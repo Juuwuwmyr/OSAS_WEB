@@ -101,8 +101,16 @@
         }
     }
 
+    function isInstalledPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches
+            || window.matchMedia('(display-mode: fullscreen)').matches
+            || navigator.standalone === true
+            || (typeof window.isInstalledPWA === 'function' && window.isInstalledPWA());
+    }
+
     function startGuestAnnouncementWatcher() {
         if (document.body.dataset.eosasPush !== 'guest') return;
+        if (!isInstalledPWA()) return;
         if (Notification.permission === 'granted') {
             showLatestBatch(false);
             checkNewAnnouncement();
