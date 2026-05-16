@@ -19,8 +19,9 @@ else
   php composer.phar install --no-dev --optimize-autoloader
 fi
 
-echo "==> Migration"
+echo "==> Migration + schema repair"
 php scripts/setup_push.php
+php scripts/fix_push_schema.php
 
 if [ ! -f app/config/push_config.local.php ]; then
   echo ""
