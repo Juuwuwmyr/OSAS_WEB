@@ -35,7 +35,7 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
     <div class="search-group">
       <i class='bx bx-search'></i>
-      <input type="text" id="announcementSearch" placeholder="Search announcements..." onkeyup="filterAnnouncements()">
+      <input type="text" id="announcementSearch" placeholder="Search announcements..." oninput="filterAnnouncements()">
     </div>
   </div>
 

@@ -48,6 +48,16 @@ try {
     // We don't need to capture output here since json() method exits
     switch ($action) {
         case 'get':
+            if ($method === 'GET') {
+                if (!empty($_GET['id'])) {
+                    $controller->show();
+                } else {
+                    $controller->index();
+                }
+            } else {
+                $controller->create();
+            }
+            break;
         case '':
             if ($method === 'GET') {
                 $controller->index();

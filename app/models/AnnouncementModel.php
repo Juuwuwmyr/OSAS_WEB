@@ -6,74 +6,134 @@ class AnnouncementModel extends Model {
     protected $primaryKey = 'id';
 
     /**
-     * Get all announcements with filters
+     * Build WHERE clause for admin list (filter + search).
      */
-    public function getFiltered($filter = 'all', $search = '') {
-        // Check if table exists
+    private function buildListWhere($filter = 'all', $search = '', &$params = [], &$types = '') {
+        $where = "deleted_at IS NULL";
+        if ($filter === 'active') {
+            $where .= " AND status = 'active'";
+        } elseif ($filter === 'archived') {
+            $where .= " AND status = 'archived'";
+        }
+        if ($search !== '') {
+            $where .= " AND (title LIKE ? OR message LIKE ?)";
+            $term = '%' . $search . '%';
+            $params[] = $term;
+            $params[] = $term;
+            $types .= 'ss';
+        }
+        return $where;
+    }
+
+    /**
+     * Count announcements matching filter/search.
+     */
+    public function countFiltered($filter = 'all', $search = '') {
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE '{$this->table}'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
-            // Table doesn't exist, return empty array
-            return [];
+            return 0;
         }
 
-        $query = "SELECT * FROM {$this->table} WHERE deleted_at IS NULL";
         $params = [];
-        $types = "";
-
-        // Filter by status
-        if ($filter === 'active') {
-            $query .= " AND status = 'active'";
-        } elseif ($filter === 'archived') {
-            $query .= " AND status = 'archived'";
-        }
-
-        // Search functionality
-        if (!empty($search)) {
-            $query .= " AND (title LIKE ? OR message LIKE ?)";
-            $searchTerm = "%{$search}%";
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
-            $types .= "ss";
-        }
-
-        $query .= " ORDER BY created_at DESC";
+        $types = '';
+        $where = $this->buildListWhere($filter, $search, $params, $types);
+        $query = "SELECT COUNT(*) AS cnt FROM {$this->table} WHERE {$where}";
 
         try {
             if (!empty($params)) {
                 $stmt = $this->conn->prepare($query);
-                if ($stmt) {
-                    $stmt->bind_param($types, ...$params);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $data = [];
-                    while ($row = $result->fetch_assoc()) {
-                        $data[] = $row;
-                    }
-                    $stmt->close();
-                    return $data;
-                } else {
-                    error_log("AnnouncementModel::getFiltered - Failed to prepare statement: " . $this->conn->error);
-                    return [];
+                if (!$stmt) {
+                    return 0;
                 }
-            } else {
-                $result = $this->conn->query($query);
-                if ($result === false) {
-                    error_log("AnnouncementModel::getFiltered - Query failed: " . $this->conn->error);
-                    return [];
-                }
-                $data = [];
-                while ($row = $result->fetch_assoc()) {
-                    $data[] = $row;
-                }
-                return $data;
+                $stmt->bind_param($types, ...$params);
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                return (int) ($row['cnt'] ?? 0);
             }
+            $result = $this->conn->query($query);
+            if ($result === false) {
+                return 0;
+            }
+            $row = $result->fetch_assoc();
+            return (int) ($row['cnt'] ?? 0);
         } catch (Throwable $e) {
-            error_log("AnnouncementModel::getFiltered error: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
+            error_log('AnnouncementModel::countFiltered: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Paginated list for admin table.
+     */
+    public function getPaginated($filter = 'all', $search = '', $page = 1, $limit = 10) {
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE '{$this->table}'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
             return [];
         }
 
-        return [];
+        $page = max(1, (int) $page);
+        $limit = max(1, min(100, (int) $limit));
+        $offset = ($page - 1) * $limit;
+
+        $params = [];
+        $types = '';
+        $where = $this->buildListWhere($filter, $search, $params, $types);
+        $query = "SELECT * FROM {$this->table} WHERE {$where} ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= 'ii';
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) {
+                error_log('AnnouncementModel::getPaginated prepare: ' . $this->conn->error);
+                return [];
+            }
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $data = [];
+            while ($row = $result->fetch_assoc()) {
+                $data[] = $row;
+            }
+            $stmt->close();
+            return $data;
+        } catch (Throwable $e) {
+            error_log('AnnouncementModel::getPaginated: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get all announcements with filters (no pagination — legacy / exports).
+     */
+    public function getFiltered($filter = 'all', $search = '') {
+        return $this->getPaginated($filter, $search, 1, 10000);
+    }
+
+    /**
+     * Get one announcement by id (admin edit).
+     */
+    public function getById($id) {
+        $id = (int) $id;
+        if ($id <= 0) {
+            return null;
+        }
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE '{$this->table}'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return null;
+        }
+        $query = "SELECT * FROM {$this->table} WHERE id = ? AND deleted_at IS NULL LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: null;
     }
 
     /**

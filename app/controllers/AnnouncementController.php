@@ -32,19 +32,60 @@ class AnnouncementController extends Controller {
     public function index() {
         try {
             $filter = $this->getGet('filter', 'all');
-            $search = $this->getGet('search', '');
-            
+            $search = trim($this->getGet('search', ''));
+            $page = max(1, (int) $this->getGet('page', 1));
+            $limit = (int) $this->getGet('limit', 0);
+
             if (!$this->model) {
                 $this->error('Model not initialized. Check database connection.', '', 500);
                 return;
             }
-            
+
+            // Admin list: paginated when page/limit sent; otherwise return full list (legacy).
+            if ($limit > 0) {
+                $limit = min(100, max(1, $limit));
+                $total = $this->model->countFiltered($filter, $search);
+                $pages = $total > 0 ? (int) ceil($total / $limit) : 1;
+                if ($page > $pages) {
+                    $page = $pages;
+                }
+                $announcements = $this->model->getPaginated($filter, $search, $page, $limit);
+                $this->success('Announcements retrieved successfully', [
+                    'announcements' => $announcements,
+                    'total' => $total,
+                    'page' => $page,
+                    'limit' => $limit,
+                    'pages' => $pages,
+                ]);
+                return;
+            }
+
             $announcements = $this->model->getFiltered($filter, $search);
             $this->success('Announcements retrieved successfully', $announcements);
         } catch (Throwable $e) {
             error_log("AnnouncementController::index error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             $this->error('Failed to retrieve announcements: ' . $e->getMessage(), '', 500);
+        }
+    }
+
+    public function show() {
+        try {
+            $id = (int) $this->getGet('id', 0);
+            if ($id <= 0) {
+                $this->error('Invalid announcement ID');
+            }
+            if (!$this->model) {
+                $this->error('Model not initialized.', '', 500);
+                return;
+            }
+            $row = $this->model->getById($id);
+            if (!$row) {
+                $this->error('Announcement not found', '', 404);
+            }
+            $this->success('Announcement retrieved', $row);
+        } catch (Throwable $e) {
+            $this->error('Failed to retrieve announcement: ' . $e->getMessage(), '', 500);
         }
     }
 

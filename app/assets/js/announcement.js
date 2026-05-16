@@ -1,129 +1,119 @@
 /**
- * Announcement Management Module
- * Handles CRUD operations for announcements
+ * Announcement Management Module — admin CRUD with server-side pagination.
  */
+(function (window) {
+    'use strict';
 
-// Define functions in global scope early to ensure availability
-(function(window) {
-    // API Base Path Detection
     function getAnnouncementAPIPath() {
         const p = window.location.pathname.split('/').filter(Boolean);
-        const d = ['app','api','includes','assets','public'];
-        return ((p.length===0||d.includes(p[0]))?'':'/'+p[0])+'/api/announcements.php';
+        const d = ['app', 'api', 'includes', 'assets', 'public'];
+        return ((p.length === 0 || d.includes(p[0])) ? '' : '/' + p[0]) + '/api/announcements.php';
     }
 
     const ANNOUNCEMENT_API = getAnnouncementAPIPath();
     let currentFilter = 'all';
     let announcements = [];
-
-    // Pagination state
     let currentPage = 1;
     let itemsPerPage = 10;
     let totalRecords = 0;
     let totalPages = 1;
+    let searchDebounce = null;
 
-    // Initialize Announcement Module
+    function isAnnouncementsPage() {
+        return !!document.getElementById('announcementsTableBody');
+    }
+
     function initAnnouncementModule() {
+        if (!isAnnouncementsPage()) return;
         console.log('📢 [Announcements] Initializing Module');
         ensurePaginationContainer();
         loadAnnouncements();
     }
 
-    // Load announcements from API
-    async function loadAnnouncements() {
-        try {
-            const tbody = document.getElementById('announcementsTableBody');
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;">
-                            <div class="loading-spinner"></div>
-                            <p>Loading announcements...</p>
-                        </td>
-                    </tr>
-                `;
-            }
+    function buildListUrl() {
+        const searchEl = document.getElementById('announcementSearch');
+        const search = searchEl ? searchEl.value.trim() : '';
+        let url = `${ANNOUNCEMENT_API}?action=get&filter=${encodeURIComponent(currentFilter)}&page=${currentPage}&limit=${itemsPerPage}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        return url;
+    }
 
-            const url = `${ANNOUNCEMENT_API}?filter=${currentFilter}`;
-            console.log('📢 [Announcements] Fetching from URL:', url);
-            
-            const response = await fetch(url);
-            console.log('📢 [Announcements] Response status:', response.status, response.statusText);
-            
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
+    async function loadAnnouncements() {
+        if (!isAnnouncementsPage()) return;
+
+        const tbody = document.getElementById('announcementsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px;">
+                        <div class="loading-spinner"></div>
+                        <p>Loading announcements...</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        try {
+            const response = await fetch(buildListUrl(), {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'application/json' }
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
                 const text = await response.text();
-                console.error('Non-JSON response received:', text.substring(0, 200));
-                throw new Error('Server returned non-JSON response. Check API configuration.');
+                throw new Error('Server returned non-JSON response. ' + text.substring(0, 120));
             }
-            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log('📢 [Announcements] API Response:', data);
-            
-            if (data.status === 'success') {
-                announcements = data.data || [];
-                renderAnnouncements();
-            } else {
+            if (data.status !== 'success') {
                 throw new Error(data.message || 'Failed to load announcements');
             }
+
+            const payload = data.data;
+            if (Array.isArray(payload)) {
+                const all = payload;
+                totalRecords = all.length;
+                totalPages = Math.max(1, Math.ceil(totalRecords / itemsPerPage));
+                if (currentPage > totalPages) currentPage = totalPages;
+                const start = (currentPage - 1) * itemsPerPage;
+                announcements = all.slice(start, start + itemsPerPage);
+            } else {
+                announcements = payload.announcements || [];
+                totalRecords = typeof payload.total === 'number' ? payload.total : announcements.length;
+                totalPages = typeof payload.pages === 'number' ? payload.pages : Math.max(1, Math.ceil(totalRecords / itemsPerPage));
+                currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
+            }
+
+            renderAnnouncements();
         } catch (error) {
             console.error('❌ [Announcements] Error loading:', error);
-            const tbody = document.getElementById('announcementsTableBody');
             if (tbody) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="5">
                             <div class="empty-state" style="color: #ef4444; text-align: center; padding: 40px;">
                                 <i class='bx bx-error-circle' style="font-size: 48px; margin-bottom: 10px;"></i>
-                                <p>Error loading announcements: ${error.message}</p>
-                                <p style="font-size: 12px; margin-top: 10px; color: var(--dark-grey);">
-                                    Check API connectivity and database tables.
-                                </p>
-                                <button onclick="loadAnnouncements()" class="btn-submit" style="margin-top: 15px;">Retry Connection</button>
+                                <p>Error loading announcements: ${escapeHtml(error.message)}</p>
+                                <button type="button" onclick="loadAnnouncements()" class="btn-submit" style="margin-top: 15px;">Retry</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }
+            renderAnnouncementsPagination();
         }
     }
 
-    // Render announcements table
     function renderAnnouncements() {
         const tbody = document.getElementById('announcementsTableBody');
         if (!tbody) return;
 
-        const searchTermEl = document.getElementById('announcementSearch');
-        const searchTerm = searchTermEl ? searchTermEl.value.toLowerCase().trim() : '';
-
-        let filtered = announcements;
-        if (searchTerm) {
-            filtered = announcements.filter(a => {
-                const title = (a.title || '').toLowerCase();
-                const msg = (a.message || '').toLowerCase();
-                return title.includes(searchTerm) || msg.includes(searchTerm);
-            });
-        }
-
-        // Filter by status if filter is not 'all'
-        if (currentFilter === 'active') {
-            filtered = filtered.filter(a => a.status === 'active');
-        } else if (currentFilter === 'archived') {
-            filtered = filtered.filter(a => a.status === 'archived');
-        }
-
-        // Pagination
-        totalRecords = filtered.length;
-        totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-        const start = (currentPage - 1) * itemsPerPage;
-        const pageItems = filtered.slice(start, start + itemsPerPage);
-
-        if (pageItems.length === 0) {
+        if (!announcements.length) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 40px;">
@@ -139,21 +129,22 @@
         }
 
         tbody.innerHTML = '';
-        pageItems.forEach(announcement => {
+        announcements.forEach((announcement) => {
             const row = document.createElement('tr');
             const typeClass = announcement.type || 'info';
             const statusClass = announcement.status === 'active' ? 'active' : 'archived';
             const statusText = announcement.status === 'active' ? 'Active' : 'Archived';
             const createdDate = formatDate(announcement.created_at);
+            const msg = announcement.message || '';
 
             row.innerHTML = `
                 <td data-label="Title">
                     <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
                     <br>
-                    <small style="color: var(--dark-grey); font-size: 11px;">${escapeHtml((announcement.message || '').substring(0, 60))}${(announcement.message || '').length > 60 ? '...' : ''}</small>
+                    <small style="color: var(--dark-grey); font-size: 11px;">${escapeHtml(msg.substring(0, 60))}${msg.length > 60 ? '...' : ''}</small>
                 </td>
                 <td data-label="Category">
-                    <span class="announcement-type ${typeClass}">${typeClass}</span>
+                    <span class="announcement-type ${typeClass}">${escapeHtml(typeClass)}</span>
                 </td>
                 <td data-label="Status">
                     <span class="status-badge ${statusClass}">${statusText}</span>
@@ -162,15 +153,9 @@
                 <td data-label="Actions">
                     <div class="action-buttons">
                         ${announcement.status === 'archived'
-                            ? `<button class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore">
-                                 <i class='bx bx-undo'></i>
-                               </button>`
-                            : `<button class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit">
-                                 <i class='bx bx-edit'></i>
-                               </button>
-                               <button class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive">
-                                 <i class='bx bx-archive'></i>
-                               </button>`
+                            ? `<button type="button" class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore"><i class='bx bx-undo'></i></button>`
+                            : `<button type="button" class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit"><i class='bx bx-edit'></i></button>
+                               <button type="button" class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive"><i class='bx bx-archive'></i></button>`
                         }
                     </div>
                 </td>
@@ -181,29 +166,79 @@
         renderAnnouncementsPagination();
     }
 
-    // Modal Functions
-    function openAddAnnouncementModal() {
-        console.log('🔔 [Announcements] Triggering open modal');
-        const modal = document.getElementById('announcementModal');
-        if (!modal) {
-            console.error('❌ [Announcements] Modal element NOT found!');
-            return;
+    function renderAnnouncementsPagination() {
+        const container = document.querySelector('#announcements-page .announcements-pagination');
+        if (!container) return;
+
+        const start = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, totalRecords);
+
+        let html = `<span class="announcements-page-info">Showing ${start}–${end} of ${totalRecords}</span>`;
+        html += `<div class="announcements-page-btns">`;
+        html += `<button type="button" class="announcement-page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="changeAnnouncementsPage(${currentPage - 1})"><i class='bx bx-chevron-left'></i></button>`;
+
+        const maxButtons = 7;
+        let startPage = Math.max(1, currentPage - 3);
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        startPage = Math.max(1, endPage - maxButtons + 1);
+
+        if (startPage > 1) {
+            html += `<button type="button" class="announcement-page-btn" onclick="changeAnnouncementsPage(1)">1</button>`;
+            if (startPage > 2) html += `<span class="announcements-page-ellipsis">…</span>`;
         }
-        
+
+        for (let p = startPage; p <= endPage; p++) {
+            html += `<button type="button" class="announcement-page-btn${p === currentPage ? ' active' : ''}" onclick="changeAnnouncementsPage(${p})">${p}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) html += `<span class="announcements-page-ellipsis">…</span>`;
+            html += `<button type="button" class="announcement-page-btn" onclick="changeAnnouncementsPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        html += `<button type="button" class="announcement-page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="changeAnnouncementsPage(${currentPage + 1})"><i class='bx bx-chevron-right'></i></button>`;
+        html += `</div>`;
+
+        container.innerHTML = html;
+        container.style.display = totalRecords > 0 ? 'flex' : 'none';
+    }
+
+    function changeAnnouncementsPage(page) {
+        page = parseInt(page, 10);
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        currentPage = page;
+        loadAnnouncements();
+        const table = document.getElementById('announcementsTable');
+        if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function ensurePaginationContainer() {
+        const wrapper = document.querySelector('#announcements-page .table-wrapper');
+        if (!wrapper) return;
+        let pagination = wrapper.querySelector('.announcements-pagination');
+        if (!pagination) {
+            pagination = document.createElement('div');
+            pagination.className = 'announcements-pagination';
+            wrapper.appendChild(pagination);
+        }
+    }
+
+    function openAddAnnouncementModal() {
+        const modal = document.getElementById('announcementModal');
+        if (!modal) return;
+
         const titleEl = document.getElementById('modalTitle');
         const subtitleEl = document.getElementById('modalSubtitle');
         if (titleEl) titleEl.textContent = 'Add New Announcement';
         if (subtitleEl) subtitleEl.textContent = 'Fill in the details below to publish a new announcement.';
-        
+
         const form = document.getElementById('announcementForm');
         if (form) form.reset();
-        
         const idEl = document.getElementById('announcementId');
         if (idEl) idEl.value = '';
-        
+
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
-        console.log('✅ [Announcements] Modal class "show" added');
     }
 
     function closeAnnouncementModal() {
@@ -213,44 +248,38 @@
         document.body.style.overflow = 'auto';
     }
 
-    function editAnnouncement(id) {
-        console.log('📝 [Announcements] Editing announcement ID:', id);
-        
-        // Use == for comparison to handle string vs number IDs
-        const announcement = announcements.find(a => a.id == id);
-        
+    async function fetchAnnouncementById(id) {
+        const found = announcements.find((a) => a.id == id);
+        if (found) return found;
+
+        const res = await fetch(`${ANNOUNCEMENT_API}?action=get&id=${id}`, {
+            credentials: 'same-origin',
+            cache: 'no-store'
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.data) return data.data;
+        return null;
+    }
+
+    async function editAnnouncement(id) {
+        const announcement = await fetchAnnouncementById(id);
         if (!announcement) {
-            console.error('❌ [Announcements] Announcement not found for ID:', id);
-            console.log('Available announcements:', announcements);
-            showNotification('Error: Announcement not found', 'error');
+            notify('Announcement not found', 'error');
             return;
         }
 
         const modal = document.getElementById('announcementModal');
-        if (!modal) {
-            console.error('❌ [Announcements] Modal element NOT found!');
-            return;
-        }
-        
-        const titleEl = document.getElementById('modalTitle');
-        const subtitleEl = document.getElementById('modalSubtitle');
-        if (titleEl) titleEl.textContent = 'Edit Announcement';
-        if (subtitleEl) subtitleEl.textContent = 'Modify the information below to update the announcement.';
-        
-        // Safely set form values
-        const idInput = document.getElementById('announcementId');
-        const titleInput = document.getElementById('announcementTitle');
-        const messageInput = document.getElementById('announcementMessage');
-        const typeInput = document.getElementById('announcementType');
-        
-        if (idInput) idInput.value = id;
-        if (titleInput) titleInput.value = announcement.title || '';
-        if (messageInput) messageInput.value = announcement.message || '';
-        if (typeInput) typeInput.value = announcement.type || 'info';
-        
+        if (!modal) return;
+
+        document.getElementById('modalTitle').textContent = 'Edit Announcement';
+        document.getElementById('modalSubtitle').textContent = 'Modify the information below to update the announcement.';
+        document.getElementById('announcementId').value = id;
+        document.getElementById('announcementTitle').value = announcement.title || '';
+        document.getElementById('announcementMessage').value = announcement.message || '';
+        document.getElementById('announcementType').value = announcement.type || 'info';
+
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
-        console.log('✅ [Announcements] Edit modal opened for:', announcement.title);
     }
 
     async function saveAnnouncement() {
@@ -260,7 +289,7 @@
         const type = document.getElementById('announcementType').value;
 
         if (!title || !message) {
-            showNotification('Title and message are required', 'error');
+            notify('Title and message are required', 'error');
             return;
         }
 
@@ -272,85 +301,72 @@
             formData.append('type', type);
             if (id) formData.append('id', id);
 
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-
+            const response = await fetch(url, { method: 'POST', body: formData, credentials: 'same-origin' });
             const data = await response.json();
             if (data.status === 'success') {
-                showNotification(id ? 'Updated successfully!' : 'Created successfully!', 'success');
+                notify(id ? 'Updated successfully!' : 'Created successfully!', 'success');
                 closeAnnouncementModal();
+                if (!id) currentPage = 1;
                 loadAnnouncements();
             } else {
                 throw new Error(data.message || 'Failed to save');
             }
         } catch (error) {
-            console.error('❌ [Announcements] Save error:', error);
-            showNotification('Error: ' + error.message, 'error');
+            notify('Error: ' + error.message, 'error');
         }
     }
 
     async function archiveAnnouncement(id) {
         if (!confirm('Archive this announcement?')) return;
         try {
-            const response = await fetch(`${ANNOUNCEMENT_API}?action=archive&id=${id}`, { method: 'POST' });
+            const response = await fetch(`${ANNOUNCEMENT_API}?action=archive&id=${id}`, { method: 'POST', credentials: 'same-origin' });
             const data = await response.json();
             if (data.status === 'success') {
-                showNotification('Archived successfully!', 'success');
+                notify('Archived successfully!', 'success');
                 loadAnnouncements();
             } else throw new Error(data.message);
-        } catch (error) { showNotification('Error: ' + error.message, 'error'); }
+        } catch (error) {
+            notify('Error: ' + error.message, 'error');
+        }
     }
 
     async function restoreAnnouncement(id) {
         try {
-            const response = await fetch(`${ANNOUNCEMENT_API}?action=restore&id=${id}`, { method: 'POST' });
+            const response = await fetch(`${ANNOUNCEMENT_API}?action=restore&id=${id}`, { method: 'POST', credentials: 'same-origin' });
             const data = await response.json();
             if (data.status === 'success') {
-                showNotification('Restored successfully!', 'success');
+                notify('Restored successfully!', 'success');
                 loadAnnouncements();
             } else throw new Error(data.message);
-        } catch (error) { showNotification('Error: ' + error.message, 'error'); }
-    }
-
-    async function deleteAnnouncement(id) {
-        if (!confirm('Delete permanently? This cannot be undone.')) return;
-        try {
-            const response = await fetch(`${ANNOUNCEMENT_API}?action=delete&id=${id}`, { method: 'POST' });
-            const data = await response.json();
-            if (data.status === 'success') {
-                showNotification('Deleted successfully!', 'success');
-                loadAnnouncements();
-            } else throw new Error(data.message);
-        } catch (error) { showNotification('Error: ' + error.message, 'error'); }
+        } catch (error) {
+            notify('Error: ' + error.message, 'error');
+        }
     }
 
     function setFilter(filter) {
         currentFilter = filter;
         currentPage = 1;
-        // Sync dropdown if it exists
         const dropdown = document.getElementById('announcementStatusFilter');
         if (dropdown) dropdown.value = filter;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.filter === filter);
-        });
         loadAnnouncements();
     }
 
     function filterAnnouncements() {
         currentPage = 1;
-        renderAnnouncements();
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => loadAnnouncements(), 350);
     }
 
     function formatDate(dateString) {
         if (!dateString) return 'N/A';
         try {
-            return new Date(dateString).toLocaleDateString('en-US', { 
+            return new Date(dateString).toLocaleDateString('en-US', {
                 year: 'numeric', month: 'short', day: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
-        } catch (e) { return dateString; }
+        } catch (e) {
+            return dateString;
+        }
     }
 
     function escapeHtml(text) {
@@ -359,56 +375,14 @@
         return div.innerHTML;
     }
 
-    function showNotification(message, type = 'info') {
+    function notify(message, type) {
         if (typeof window.showNotification === 'function') {
             window.showNotification(message, type);
-        } else alert(message);
-    }
-
-    function ensurePaginationContainer() {
-        const wrapper = document.querySelector('.table-wrapper');
-        if (!wrapper) return;
-        let pagination = document.querySelector('.announcements-pagination');
-        if (!pagination) {
-            pagination = document.createElement('div');
-            pagination.className = 'announcements-pagination';
-            wrapper.appendChild(pagination);
-            pagination.addEventListener('click', handleAnnouncementsPaginationClick);
+        } else {
+            alert(message);
         }
     }
 
-    function renderAnnouncementsPagination() {
-        const container = document.querySelector('.announcements-pagination');
-        if (!container) return;
-        container.innerHTML = '';
-        const makeBtn = (label, opts = {}) => {
-            const btn = document.createElement('button');
-            btn.className = 'announcement-page-btn' + (opts.active ? ' active' : '');
-            btn.textContent = label;
-            if (opts.disabled) btn.disabled = true;
-            if (opts.page) btn.dataset.page = String(opts.page);
-            if (opts.action) btn.dataset.action = opts.action;
-            return btn;
-        };
-        container.appendChild(makeBtn('‹', { disabled: currentPage === 1, action: 'prev' }));
-        for (let p = 1; p <= totalPages; p++) {
-            container.appendChild(makeBtn(String(p), { active: p === currentPage, page: p }));
-        }
-        container.appendChild(makeBtn('›', { disabled: currentPage === totalPages, action: 'next' }));
-    }
-
-    function handleAnnouncementsPaginationClick(e) {
-        const target = e.target.closest('button');
-        if (!target) return;
-        const action = target.dataset.action;
-        const pageAttr = target.dataset.page;
-        if (action === 'prev') { if (currentPage > 1) currentPage--; }
-        else if (action === 'next') { if (currentPage < totalPages) currentPage++; }
-        else if (pageAttr) currentPage = parseInt(pageAttr, 10);
-        renderAnnouncements();
-    }
-
-    // Assign to window object to make them globally accessible
     window.initAnnouncementModule = initAnnouncementModule;
     window.openAddAnnouncementModal = openAddAnnouncementModal;
     window.closeAnnouncementModal = closeAnnouncementModal;
@@ -416,16 +390,9 @@
     window.editAnnouncement = editAnnouncement;
     window.archiveAnnouncement = archiveAnnouncement;
     window.restoreAnnouncement = restoreAnnouncement;
-    window.deleteAnnouncement = deleteAnnouncement;
     window.setFilter = setFilter;
     window.filterAnnouncements = filterAnnouncements;
     window.loadAnnouncements = loadAnnouncements;
+    window.changeAnnouncementsPage = changeAnnouncementsPage;
 
 })(window);
-
-// Auto-initialize when DOM is ready (safe guard)
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAnnouncementModule);
-} else {
-    setTimeout(initAnnouncementModule, 300);
-}
