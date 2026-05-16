@@ -231,6 +231,12 @@ document.addEventListener('click', async (e) => {
 window.addEventListener('appinstalled', () => {
     console.log('✅ PWA installed');
     deferredPrompt = null;
+    localStorage.removeItem('eosas_guest_push_prompted');
+    setTimeout(() => {
+        if (typeof window.showPushEnableModal === 'function') {
+            window.showPushEnableModal(true);
+        }
+    }, 1500);
 });
 
 // ── Online / Offline Status ───────────────────────────────────────────────────

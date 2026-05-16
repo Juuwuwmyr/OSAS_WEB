@@ -142,7 +142,7 @@
         title.textContent = isGuest ? 'Campus announcements' : 'Violation alerts';
         const desc = document.createElement('p');
         desc.innerHTML = isGuest
-            ? 'Get <strong>OSAS announcements</strong> on your phone—even without logging in. Tap Enable, then <strong>Allow</strong>.'
+            ? 'Get the <strong>5 latest campus announcements</strong> on your phone (no login). Tap Enable, then <strong>Allow</strong>. New posts will alert you automatically.'
             : 'Also get alerts when <strong>you</strong> receive a violation (login required). Tap Enable, then <strong>Allow</strong>.';
 
         const btns = document.createElement('div');
@@ -163,8 +163,11 @@
             yes.textContent = 'Please wait…';
             try {
                 if (await subscribeWithScope(scope)) {
-                    toast(isGuest ? 'You will get campus announcements.' : 'Announcements + violation alerts enabled.', true);
+                    toast(isGuest ? 'Loading latest announcements…' : 'Violation alerts enabled.', true);
                     overlay.remove();
+                    if (isGuest && typeof window.showLatestAnnouncementNotifications === 'function') {
+                        await window.showLatestAnnouncementNotifications(true);
+                    }
                 }
             } catch (err) {
                 toast(err.message || 'Failed', false);
@@ -208,6 +211,12 @@
 
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
+            if (typeof window.showLatestAnnouncementNotifications === 'function') {
+                await window.showLatestAnnouncementNotifications(false);
+            }
+            if (typeof window.startGuestAnnouncementWatcher === 'function') {
+                window.startGuestAnnouncementWatcher();
+            }
             return;
         }
         if (Notification.permission === 'denied') return;
