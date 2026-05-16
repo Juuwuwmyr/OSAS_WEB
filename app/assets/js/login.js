@@ -313,6 +313,10 @@ function handleLoginFormSubmit(e) {
                     if (payload.studentIdCode) localStorage.setItem('student_id_code', payload.studentIdCode);
                 }
 
+                if (payload.role === 'user' && typeof window.upgradePushToStudent === 'function') {
+                    window.upgradePushToStudent().catch(() => {});
+                }
+
                 setTimeout(() => {
                     window.location.href = payload.role === 'admin'
                         ? './includes/dashboard.php'

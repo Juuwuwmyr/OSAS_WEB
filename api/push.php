@@ -19,6 +19,10 @@ try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
             $c->subscribe();
             break;
+        case 'upgrade':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
+            $c->upgrade();
+            break;
         case 'unsubscribe':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
             $c->unsubscribe();

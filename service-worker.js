@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-05-17';
+const BUILD_DATE = '2026-05-19';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -299,14 +299,27 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const page = event.notification.data?.page || 'user-page/user_dashcontent';
+  const data = event.notification.data || {};
+  const type = data.type || '';
+  const page = data.page || '';
+
+  let url = '/';
+  if (type === 'violation' || page.includes('violation')) {
+    url = '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page || 'user-page/my_violations');
+  } else if (page) {
+    url = '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page);
+  }
+
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const c of list) {
-      if (c.url.includes('user_dashboard')) {
+      if (c.url.includes('user_dashboard') && page) {
         c.postMessage({ type: 'PUSH_NAVIGATE', page });
         return c.focus();
       }
+      if (c.url.includes('e-osas') || c.url.includes('duckdns') || c.url.includes('index.php')) {
+        return c.focus();
+      }
     }
-    return clients.openWindow('/includes/user_dashboard.php?push_page=' + encodeURIComponent(page));
+    return clients.openWindow(url);
   }));
 });

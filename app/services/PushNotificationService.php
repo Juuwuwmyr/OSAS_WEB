@@ -21,7 +21,7 @@ class PushNotificationService
     public function notifyAllStudents($title, $body, array $data = [])
     {
         if (!$this->ready) return ['sent' => 0, 'skipped' => true];
-        return $this->sendToRows($this->model->getAllStudentSubscriptions(), $title, $body, $data);
+        return $this->sendToRows($this->model->getAnnouncementSubscriptions(), $title, $body, $data);
     }
 
     public function notifyStudent($studentId, $title, $body, array $data = [])

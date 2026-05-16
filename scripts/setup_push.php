@@ -20,6 +20,19 @@ if ($conn->errno) {
 $r = $conn->query("SHOW TABLES LIKE 'push_subscriptions'");
 echo ($r && $r->num_rows) ? "Table push_subscriptions: OK\n" : "Table missing\n";
 
+$col = $conn->query("SHOW COLUMNS FROM push_subscriptions LIKE 'scope'");
+if ($col && $col->num_rows === 0) {
+    $alter = @file_get_contents(__DIR__ . '/../migrations/alter_push_subscriptions_scope.sql');
+    if ($alter) {
+        foreach (array_filter(array_map('trim', explode(';', $alter))) as $stmt) {
+            if ($stmt !== '' && !str_starts_with($stmt, '--')) {
+                @$conn->query($stmt);
+            }
+        }
+        echo "Added scope column (guest announcements + student violations).\n";
+    }
+}
+
 $c = require __DIR__ . '/../app/config/push_config.php';
 echo !empty($c['enabled']) && !empty($c['vapid']['publicKey'])
     ? "Push VAPID: OK\n"

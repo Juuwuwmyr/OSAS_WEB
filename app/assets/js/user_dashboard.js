@@ -348,6 +348,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize notifications
   initializeNotifications();
 
+  const enableAlertsLink = document.getElementById('enablePhoneAlerts');
+  if (enableAlertsLink) {
+    enableAlertsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window.showPushEnableModal === 'function') window.showPushEnableModal();
+    });
+  }
+
   // Initialize theme state if theme.js is available
   if (typeof initializeTheme === 'function') {
     initializeTheme();

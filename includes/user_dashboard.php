@@ -89,7 +89,7 @@ if (!$student_id) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://js.puter.com/v2/"></script>
 </head>
-<body>
+<body data-eosas-push="student">
     <?php
     require_once __DIR__ . '/../app/models/StudentModel.php';
     $studentModel = new StudentModel();
@@ -121,6 +121,7 @@ if (!$student_id) {
     <?php View::partial('logout_modal'); ?>
     <script src="<?= View::asset('js/pwa.js') ?>"></script>
     <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= View::asset('js/realtimeAlerts.js') ?>?v=<?= time() ?>"></script>
 
     <div id="DownloadFormatModal" class="download-modal" style="display:none;">
         <div class="download-modal-overlay" onclick="closeDownloadModal()"></div>

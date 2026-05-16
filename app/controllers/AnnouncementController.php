@@ -101,7 +101,7 @@ class AnnouncementController extends Controller {
                 (new PushNotificationService())->notifyAllStudents(
                     ucfirst($type) . ' announcement: ' . $title,
                     strlen($message) > 120 ? substr($message, 0, 117) . '...' : $message,
-                    ['type' => 'announcement', 'id' => (int) $id, 'page' => 'user-page/announcements', 'tag' => 'announcement-' . $id]
+                    ['type' => 'announcement', 'id' => (int) $id, 'page' => 'user-page/announcements', 'tag' => 'announcement-' . $id, 'url' => '/']
                 );
             } catch (Throwable $e) {
                 error_log('Announcement push: ' . $e->getMessage());
