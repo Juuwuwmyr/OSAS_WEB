@@ -81,6 +81,22 @@ if (!indexExists($conn, $table, 'uq_endpoint_hash') && columnExists($conn, $tabl
     echo "  + index uq_endpoint_hash\n";
 }
 
+// Old FCM schema — these must allow NULL or Web Push INSERT fails
+$legacyNullable = [
+    'fcm_token'   => 'text NULL DEFAULT NULL',
+    'student_id'  => 'varchar(50) NULL DEFAULT NULL',
+    'device_type' => 'varchar(50) NULL DEFAULT NULL',
+];
+foreach ($legacyNullable as $col => $def) {
+    if (columnExists($conn, $table, $col)) {
+        if (@$conn->query("ALTER TABLE `{$table}` MODIFY `{$col}` {$def}")) {
+            echo "  relaxed legacy column: {$col}\n";
+        } else {
+            echo "  {$col}: " . $conn->error . "\n";
+        }
+    }
+}
+
 $required = ['endpoint_hash', 'endpoint', 'p256dh', 'auth', 'scope'];
 $missing = array_filter($required, fn($c) => !columnExists($conn, $table, $c));
 if (!empty($missing)) {
