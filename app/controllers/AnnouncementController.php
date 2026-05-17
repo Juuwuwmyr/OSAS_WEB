@@ -91,18 +91,36 @@ class AnnouncementController extends Controller {
 
     public function getActive() {
         try {
-            $limit = $this->getGet('limit', null);
+            $page = max(1, (int) $this->getGet('page', 1));
+            $limit = max(1, (int) $this->getGet('limit', 10));
+            $search = trim($this->getGet('search', ''));
+            $category = $this->getGet('category', 'all');
             
             if (!$this->model) {
                 $this->error('Model not initialized. Check database connection.', '', 500);
                 return;
             }
+
+            // Get total count for pagination
+            $total = $this->model->countFiltered('active', $search);
+            $pages = $total > 0 ? (int) ceil($total / $limit) : 1;
             
-            $announcements = $this->model->getActive($limit);
-            $this->success('Active announcements retrieved successfully', $announcements);
+            if ($page > $pages) {
+                $page = $pages;
+            }
+
+            // Get paginated active announcements
+            $announcements = $this->model->getPaginated('active', $search, $page, $limit);
+            
+            $this->success('Active announcements retrieved successfully', [
+                'announcements' => $announcements,
+                'total' => (int)$total,
+                'page' => (int)$page,
+                'limit' => (int)$limit,
+                'pages' => (int)$pages
+            ]);
         } catch (Throwable $e) {
             error_log("AnnouncementController::getActive error: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
             $this->error('Failed to retrieve active announcements: ' . $e->getMessage(), '', 500);
         }
     }
