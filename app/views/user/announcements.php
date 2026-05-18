@@ -5,20 +5,28 @@ require_once __DIR__ . '/../../core/View.php';
 ?>
 <!-- Announcements Page -->
 <div id="announcements-page">
-    <div class="announcements-head-title">
-        <div class="left">
+    <!-- Header Card -->
+    <div class="announcements-header-card">
+        <div class="announcements-head-title">
+            <div class="left">
             <h1>Announcements</h1>
             <p class="announcements-subtitle">Stay updated with the latest news and information</p>
+            <nav class="announcements-breadcrumb">
+                <a href="#">Dashboard</a>
+                <i class='bx bx-chevron-right'></i>
+                <span>Announcements</span>
+            </nav>
         </div>
-        <div class="announcement-actions">
-            <button class="btn-mark-all-read" onclick="markAllAsRead()">
-                <i class='bx bxs-check-circle'></i>
-                <span>Mark All Read</span>
-            </button>
-            <button class="btn-refresh" onclick="refreshAnnouncements()">
-                <i class='bx bx-refresh'></i>
-                <span>Refresh</span>
-            </button>
+            <div class="announcement-actions">
+                <button class="btn-mark-all-read" onclick="markAllAsRead()">
+                    <i class='bx bxs-check-circle'></i>
+                    <span>Mark All Read</span>
+                </button>
+                <button class="btn-refresh" onclick="refreshAnnouncements()">
+                    <i class='bx bx-refresh'></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
         </div>
     </div>
   
