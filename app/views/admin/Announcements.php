@@ -16,13 +16,19 @@ require_once __DIR__ . '/../../core/View.php';
                 </nav>
             </div>
             <div class="announcement-actions">
+                <div class="announcement-btn-group">
+                    <button class="btn-export" onclick="exportAnnouncements()">
+                        <i class='bx bx-download'></i>
+                        <span>Export</span>
+                    </button>
+                    <button class="btn-refresh" onclick="loadAnnouncements()">
+                        <i class='bx bx-refresh'></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
                 <button class="btn-add-announcement" onclick="openAddAnnouncementModal()">
                     <i class='bx bx-plus'></i>
                     <span>Add Announcement</span>
-                </button>
-                <button class="btn-refresh" onclick="loadAnnouncements()">
-                    <i class='bx bx-refresh'></i>
-                    <span>Refresh</span>
                 </button>
             </div>
         </div>

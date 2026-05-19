@@ -478,6 +478,64 @@
         if (activeBtn) setViewMode(activeBtn.dataset.view);
     }
 
+    async function exportAnnouncements() {
+        try {
+            notify('Preparing export...', 'info');
+            const searchEl = document.getElementById('announcementSearch');
+            const search = searchEl ? searchEl.value.trim() : '';
+            
+            let url = `${ANNOUNCEMENT_API}?action=get&filter=${encodeURIComponent(currentFilter)}&category=${encodeURIComponent(currentCategoryFilter)}&page=1&limit=10000`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            
+            const response = await fetch(url, { credentials: 'same-origin' });
+            const data = await response.json();
+            
+            if (data.status !== 'success') throw new Error(data.message || 'Failed to fetch data for export');
+            
+            let records = [];
+            if (Array.isArray(data.data)) {
+                records = data.data;
+            } else if (data.data && Array.isArray(data.data.announcements)) {
+                records = data.data.announcements;
+            }
+
+            if (records.length === 0) {
+                notify('No records found to export.', 'warning');
+                return;
+            }
+
+            const headers = ['Title', 'Message', 'Category', 'Audience', 'Status', 'Date Published'];
+            const csvRows = [headers.join(',')];
+
+            records.forEach(item => {
+                const row = [
+                    `"${(item.title || '').replace(/"/g, '""')}"`,
+                    `"${(item.message || '').replace(/"/g, '""')}"`,
+                    `"${(item.category || '').replace(/"/g, '""')}"`,
+                    `"${(item.audience || '').replace(/"/g, '""')}"`,
+                    `"${(item.status || '').replace(/"/g, '""')}"`,
+                    `"${item.published_at ? formatDate(item.published_at) : 'N/A'}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const dlUrl = URL.createObjectURL(blob);
+            link.setAttribute("href", dlUrl);
+            link.setAttribute("download", `Announcements_Export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            notify('Export completed successfully!', 'success');
+        } catch (error) {
+            console.error(error);
+            notify('Export failed: ' + error.message, 'error');
+        }
+    }
+
     window.initAnnouncementModule = initAnnouncementModule;
     window.openAddAnnouncementModal = openAddAnnouncementModal;
     window.closeAnnouncementModal = closeAnnouncementModal;
@@ -485,6 +543,7 @@
     window.editAnnouncement = editAnnouncement;
     window.archiveAnnouncement = archiveAnnouncement;
     window.restoreAnnouncement = restoreAnnouncement;
+    window.exportAnnouncements = exportAnnouncements;
     window.setFilter = setFilter;
     window.setCategoryFilter = setCategoryFilter;
     window.filterAnnouncements = filterAnnouncements;

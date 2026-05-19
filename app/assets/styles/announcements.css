@@ -81,42 +81,63 @@
 /* Action Buttons Header */
 #announcements-page.admin-side .announcement-actions {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
+}
+
+#announcements-page.admin-side .announcement-btn-group {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border: 1.5px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    background: white;
 }
 
 #announcements-page.admin-side .btn-add-announcement,
-#announcements-page.admin-side .btn-refresh {
+#announcements-page.admin-side .btn-refresh,
+#announcements-page.admin-side .btn-export {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
-    border-radius: 9999px;
-    font-size: 11px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 11.5px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     border: none;
 }
 
-#announcements-page.admin-side .btn-add-announcement {
-    background: var(--gold);
-    color: #333;
-    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.3);
+#announcements-page.admin-side .btn-export {
+    background: #1db982;
+    color: white;
 }
 
-#announcements-page.admin-side .btn-add-announcement:hover {
-    background: #ffb300;
-    transform: translateY(-1px);
+#announcements-page.admin-side .btn-export:hover {
+    background: #159a6a;
 }
 
 #announcements-page.admin-side .btn-refresh {
-    background: white;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: #4285f4;
+    color: white;
 }
 
 #announcements-page.admin-side .btn-refresh:hover {
-    background: #f8fafc;
+    background: #3367d6;
+}
+
+#announcements-page.admin-side .btn-add-announcement {
+    background: #fbbf24;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 18px;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+#announcements-page.admin-side .btn-add-announcement:hover {
+    background: #f59e0b;
+    transform: translateY(-1px);
 }
 
 /* Table Card with Integrated Header */
@@ -297,12 +318,12 @@
 }
 
 #announcements-page.admin-side .title-cell strong {
-    font-size: 12px;
+    font-size: 11px;
     color: #1e293b;
 }
 
 #announcements-page.admin-side .title-cell small {
-    font-size: 10px;
+    font-size: 9.5px;
     color: #64748b;
 }
 
@@ -425,6 +446,10 @@
 }
 
 #announcements-page.admin-side .stat-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
     font-size: 11px;
     color: #475569;
 }
@@ -708,7 +733,7 @@
 }
 
 .stat-label {
-  font-size: 0.62rem !important;
+  font-size: 0.65rem !important;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -716,25 +741,25 @@
 }
 
 .stat-value {
-  font-size: 0.88rem !important;
+  font-size: 0.65rem !important;
   font-weight: 700;
   color: #374151 !important;
 }
 
 .info-text,
 #announcementsPageInfo {
-  font-size: 0.7rem !important;
+  font-size: 0.65rem !important;
   color: #9ca3af !important;
 }
 
 /* ── Smaller category and status badges ── */
 #announcements-page .announcement-type,
 #announcements-page .status-badge {
-  font-size: 0.62rem !important;
-  padding: 3px 9px !important;
+  font-size: 0.55rem !important;
+  padding: 2px 8px !important;
   border-radius: 99px !important;
   font-weight: 700 !important;
-  letter-spacing: 0.4px !important;
+  letter-spacing: 0.3px !important;
 }
 
 #announcements-page .status-badge::before {
@@ -767,14 +792,14 @@
 }
 
 .grid-card-title {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
     margin: 0;
 }
 
 .grid-card-desc {
-    font-size: 11px;
+    font-size: 10px;
     color: #64748b;
     margin-top: 4px;
     line-height: 1.4;
@@ -813,14 +838,14 @@
 }
 
 .list-item-title {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
     margin: 0;
 }
 
 .list-item-desc {
-    font-size: 11px;
+    font-size: 10px;
     color: #64748b;
     margin: 0;
 }
