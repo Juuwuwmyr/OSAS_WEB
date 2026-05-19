@@ -3,8 +3,9 @@ require_once __DIR__ . '/../../core/View.php';
 // Start session if not started
 @session_start();
 ?>
+<link rel="stylesheet" href="<?= View::asset('styles/user_announcements.css') ?>">
 <!-- Announcements Page -->
-<div id="announcements-page">
+<div id="announcements-page" class="user-side">
     <!-- Header Card -->
     <div class="announcements-header-card">
         <div class="announcements-head-title">

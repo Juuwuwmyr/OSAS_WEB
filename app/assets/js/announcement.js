@@ -12,6 +12,7 @@
 
     const ANNOUNCEMENT_API = getAnnouncementAPIPath();
     let currentFilter = 'all';
+    let currentCategoryFilter = 'all';
     let announcements = [];
     let currentPage = 1;
     let itemsPerPage = 10;
@@ -27,13 +28,14 @@
         if (!isAnnouncementsPage()) return;
         console.log('📢 [Announcements] Initializing Module');
         ensurePaginationContainer();
+        initViewToggles();
         loadAnnouncements();
     }
 
     function buildListUrl() {
         const searchEl = document.getElementById('announcementSearch');
         const search = searchEl ? searchEl.value.trim() : '';
-        let url = `${ANNOUNCEMENT_API}?action=get&filter=${encodeURIComponent(currentFilter)}&page=${currentPage}&limit=${itemsPerPage}`;
+        let url = `${ANNOUNCEMENT_API}?action=get&filter=${encodeURIComponent(currentFilter)}&category=${encodeURIComponent(currentCategoryFilter)}&page=${currentPage}&limit=${itemsPerPage}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
         return url;
     }
@@ -89,6 +91,9 @@
                 currentPage = typeof payload.page === 'number' ? payload.page : currentPage;
             }
 
+            const totalCountEl = document.getElementById('totalCount');
+            if (totalCountEl) totalCountEl.textContent = totalRecords;
+
             renderAnnouncements();
         } catch (error) {
             console.error('❌ [Announcements] Error loading:', error);
@@ -111,10 +116,13 @@
 
     function renderAnnouncements() {
         const tbody = document.getElementById('announcementsTableBody');
+        const gridBody = document.getElementById('announcementsGridBody');
+        const listBody = document.getElementById('announcementsListBody');
+        
         if (!tbody) return;
 
         if (!announcements.length) {
-            tbody.innerHTML = `
+            const emptyTr = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 40px;">
                         <div class="empty-state">
@@ -124,61 +132,118 @@
                     </td>
                 </tr>
             `;
+            const emptyDiv = `
+                <div style="text-align: center; padding: 40px; width: 100%; grid-column: 1 / -1;">
+                    <div class="empty-state">
+                        <i class='bx bx-info-circle' style="font-size: 48px; color: var(--dark-grey); margin-bottom: 10px;"></i>
+                        <p>No announcements found</p>
+                    </div>
+                </div>
+            `;
+            if (tbody) tbody.innerHTML = emptyTr;
+            if (gridBody) gridBody.innerHTML = emptyDiv;
+            if (listBody) listBody.innerHTML = emptyDiv;
             renderAnnouncementsPagination();
             return;
         }
 
-        tbody.innerHTML = '';
+        let tableHtml = '';
+        let gridHtml = '';
+        let listHtml = '';
+
         announcements.forEach((announcement) => {
-            const row = document.createElement('tr');
             const typeClass = announcement.type || 'info';
             const statusClass = announcement.status === 'active' ? 'active' : 'archived';
             const statusText = announcement.status === 'active' ? 'Active' : 'Archived';
             const createdDate = formatDate(announcement.created_at);
             const msg = announcement.message || '';
+            const actionBtns = announcement.status === 'archived'
+                ? `<button type="button" class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore"><i class='bx bx-undo'></i></button>`
+                : `<button type="button" class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit"><i class='bx bx-edit'></i></button>
+                   <button type="button" class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive"><i class='bx bx-archive'></i></button>`;
 
-            row.innerHTML = `
-                <td data-label="Title">
-                    <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
-                    <br>
-                    <small style="color: var(--dark-grey); font-size: 11px;">${escapeHtml(msg.substring(0, 60))}${msg.length > 60 ? '...' : ''}</small>
-                </td>
-                <td data-label="Category">
-                    <span class="announcement-type ${typeClass}">${escapeHtml(typeClass)}</span>
-                </td>
-                <td data-label="Status">
-                    <span class="status-badge ${statusClass}">${statusText}</span>
-                </td>
-                <td data-label="Date">${createdDate}</td>
-                <td data-label="Actions">
-                    <div class="action-buttons">
-                        ${announcement.status === 'archived'
-                            ? `<button type="button" class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore"><i class='bx bx-undo'></i></button>`
-                            : `<button type="button" class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit"><i class='bx bx-edit'></i></button>
-                               <button type="button" class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive"><i class='bx bx-archive'></i></button>`
-                        }
-                    </div>
-                </td>
+            tableHtml += `
+                <tr>
+                    <td data-label="Title">
+                        <div class="title-cell">
+                            <strong>${escapeHtml(announcement.title || 'Untitled')}</strong>
+                            <small>${escapeHtml(msg.substring(0, 80))}${msg.length > 80 ? '...' : ''}</small>
+                        </div>
+                    </td>
+                    <td data-label="Category">
+                        <span class="announcement-type ${typeClass}">${escapeHtml(typeClass)}</span>
+                    </td>
+                    <td data-label="Status">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </td>
+                    <td data-label="Date" style="white-space: nowrap;">${createdDate}</td>
+                    <td data-label="Actions">
+                        <div class="action-buttons">${actionBtns}</div>
+                    </td>
+                </tr>
             `;
-            tbody.appendChild(row);
+
+            gridHtml += `
+                <div class="grid-card">
+                    <div class="grid-card-header">
+                        <h4 class="grid-card-title">${escapeHtml(announcement.title || 'Untitled')}</h4>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <p class="grid-card-desc">${escapeHtml(msg.substring(0, 100))}${msg.length > 100 ? '...' : ''}</p>
+                    <div class="grid-card-footer">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="announcement-type ${typeClass}">${escapeHtml(typeClass)}</span>
+                            <small style="color: #64748b; font-size: 10px;">${createdDate}</small>
+                        </div>
+                        <div class="action-buttons">${actionBtns}</div>
+                    </div>
+                </div>
+            `;
+
+            listHtml += `
+                <div class="list-item">
+                    <div class="list-item-main">
+                        <h4 class="list-item-title">${escapeHtml(announcement.title || 'Untitled')}</h4>
+                        <p class="list-item-desc">${escapeHtml(msg.substring(0, 120))}${msg.length > 120 ? '...' : ''}</p>
+                    </div>
+                    <div class="list-item-meta">
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <span class="announcement-type ${typeClass}">${escapeHtml(typeClass)}</span>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                            <small style="color: #64748b; font-size: 10px;">${createdDate}</small>
+                        </div>
+                        <div class="action-buttons" style="margin-left: 8px;">${actionBtns}</div>
+                    </div>
+                </div>
+            `;
         });
+
+        if (tbody) tbody.innerHTML = tableHtml;
+        if (gridBody) gridBody.innerHTML = gridHtml;
+        if (listBody) listBody.innerHTML = listHtml;
 
         renderAnnouncementsPagination();
     }
 
     function renderAnnouncementsPagination() {
-        const container = document.querySelector('#announcements-page .announcements-pagination');
-        if (!container) return;
+        const info = document.getElementById('announcementsPageInfo');
+        const btns = document.getElementById('announcementsPagination');
+        const container = document.querySelector('.table-footer');
+        
+        if (!info || !btns) return;
 
         const start = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
         const end = Math.min(currentPage * itemsPerPage, totalRecords);
 
-        let html = `<span class="announcements-page-info">Showing ${start}–${end} of ${totalRecords}</span>`;
-        html += `<div class="announcements-page-btns">`;
+        // Update info text
+        info.textContent = `Showing ${start}–${end} of ${totalRecords} announcements`;
+
+        // Generate buttons
+        let html = '';
         html += `<button type="button" class="announcement-page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="changeAnnouncementsPage(${currentPage - 1})"><i class='bx bx-chevron-left'></i></button>`;
 
-        const maxButtons = 7;
-        let startPage = Math.max(1, currentPage - 3);
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, startPage + maxButtons - 1);
         startPage = Math.max(1, endPage - maxButtons + 1);
 
@@ -197,10 +262,9 @@
         }
 
         html += `<button type="button" class="announcement-page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="changeAnnouncementsPage(${currentPage + 1})"><i class='bx bx-chevron-right'></i></button>`;
-        html += `</div>`;
 
-        container.innerHTML = html;
-        container.style.display = totalRecords > 0 ? 'flex' : 'none';
+        btns.innerHTML = html;
+        if (container) container.style.display = totalRecords > 0 ? 'flex' : 'none';
     }
 
     function changeAnnouncementsPage(page) {
@@ -208,19 +272,14 @@
         if (page < 1 || page > totalPages || page === currentPage) return;
         currentPage = page;
         loadAnnouncements();
-        const table = document.getElementById('announcementsTable');
-        if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Smooth scroll to top of table
+        const card = document.querySelector('.content-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function ensurePaginationContainer() {
-        const wrapper = document.querySelector('#announcements-page .table-wrapper');
-        if (!wrapper) return;
-        let pagination = wrapper.querySelector('.announcements-pagination');
-        if (!pagination) {
-            pagination = document.createElement('div');
-            pagination.className = 'announcements-pagination';
-            wrapper.appendChild(pagination);
-        }
+        // No longer needed as we use the containers from PHP
+        return;
     }
 
     function openAddAnnouncementModal() {
@@ -351,6 +410,14 @@
         loadAnnouncements();
     }
 
+    function setCategoryFilter(category) {
+        currentCategoryFilter = category;
+        currentPage = 1;
+        const dropdown = document.getElementById('announcementCategoryFilter');
+        if (dropdown) dropdown.value = category;
+        loadAnnouncements();
+    }
+
     function filterAnnouncements() {
         currentPage = 1;
         clearTimeout(searchDebounce);
@@ -383,6 +450,34 @@
         }
     }
 
+    let currentViewMode = 'table';
+
+    function setViewMode(mode) {
+        currentViewMode = mode;
+        const tableView = document.getElementById('announcementsTableView');
+        const gridView = document.getElementById('announcementsGridView');
+        const listView = document.getElementById('announcementsListView');
+        
+        if (tableView) tableView.style.display = mode === 'table' ? 'block' : 'none';
+        if (gridView) gridView.style.display = mode === 'grid' ? 'block' : 'none';
+        if (listView) listView.style.display = mode === 'list' ? 'block' : 'none';
+
+        document.querySelectorAll('.view-btn[data-view]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === mode);
+        });
+    }
+
+    function initViewToggles() {
+        document.querySelectorAll('.view-btn[data-view]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                setViewMode(this.dataset.view);
+            });
+        });
+        // Default based on active button in HTML
+        const activeBtn = document.querySelector('.view-btn.active[data-view]');
+        if (activeBtn) setViewMode(activeBtn.dataset.view);
+    }
+
     window.initAnnouncementModule = initAnnouncementModule;
     window.openAddAnnouncementModal = openAddAnnouncementModal;
     window.closeAnnouncementModal = closeAnnouncementModal;
@@ -391,6 +486,7 @@
     window.archiveAnnouncement = archiveAnnouncement;
     window.restoreAnnouncement = restoreAnnouncement;
     window.setFilter = setFilter;
+    window.setCategoryFilter = setCategoryFilter;
     window.filterAnnouncements = filterAnnouncements;
     window.loadAnnouncements = loadAnnouncements;
     window.changeAnnouncementsPage = changeAnnouncementsPage;
