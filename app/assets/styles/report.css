@@ -2694,3 +2694,23 @@ input[type="checkbox"]:checked + .toggle-label::after {
   height: 32px !important;
   font-size: 15px !important;
 }
+
+/* ── Match button sizes to violation/announcement pages ── */
+#Reports-page .Reports-btn,
+#Reports-page .Reports-btn.outline,
+#Reports-page .Reports-btn.outline.small,
+#Reports-page .Reports-btn.primary {
+  padding: 6px 12px !important;
+  font-size: 10.5px !important;
+  border-radius: 6px !important;
+  height: auto !important;
+}
+
+#Reports-page .Reports-btn i {
+  font-size: 13px !important;
+}
+
+#Reports-page .Reports-button-group {
+  padding: 3px !important;
+  gap: 3px !important;
+}

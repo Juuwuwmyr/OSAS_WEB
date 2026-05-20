@@ -855,3 +855,38 @@
     align-items: center;
     gap: 16px;
 }
+
+/* ── Button group border — matches Reports page ── */
+.announcement-btn-group {
+  border: 1.5px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  padding: 4px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* ── Normalize announcement button sizes to match violation buttons ── */
+#announcements-page .btn-add-announcement,
+#announcements-page .btn-refresh,
+#announcements-page .btn-export,
+#announcements-page.admin-side .btn-add-announcement,
+#announcements-page.admin-side .btn-refresh,
+#announcements-page.admin-side .btn-export {
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+}
+
+#announcements-page .btn-add-announcement i,
+#announcements-page .btn-refresh i,
+#announcements-page .btn-export i,
+#announcements-page.admin-side .btn-add-announcement i,
+#announcements-page.admin-side .btn-refresh i,
+#announcements-page.admin-side .btn-export i {
+  font-size: 14px !important;
+}

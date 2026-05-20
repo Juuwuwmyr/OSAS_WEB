@@ -26,10 +26,12 @@ require_once __DIR__ . '/../../core/View.php';
                         <span>Refresh</span>
                     </button>
                 </div>
-                <button class="btn-add-announcement" onclick="openAddAnnouncementModal()">
-                    <i class='bx bx-plus'></i>
-                    <span>Add Announcement</span>
-                </button>
+                <div class="announcement-btn-group">
+                    <button class="btn-add-announcement" onclick="openAddAnnouncementModal()">
+                        <i class='bx bx-plus'></i>
+                        <span>Add Announcement</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

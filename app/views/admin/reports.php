@@ -31,18 +31,20 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Reports-header-actions">
       <div class="Reports-button-group">
-        <button id="btnExportReports" class="Reports-btn outline small">
-          <i class='bx bx-download'></i>
+        <button id="btnExportReports" class="Reports-btn outline small" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
+          <i class='bx bx-download' style="font-size:14px;"></i>
           <span>Export</span>
         </button>
-        <button id="btnRefreshReports" class="Reports-btn outline small">
-          <i class='bx bx-refresh'></i>
+        <button id="btnRefreshReports" class="Reports-btn outline small" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
+          <i class='bx bx-refresh' style="font-size:14px;"></i>
           <span>Refresh</span>
         </button>
       </div>
-      <button id="btnGenerateReports" class="Reports-btn primary">
-        <i class='bx bx-plus'></i> Generate Report
-      </button>
+      <div class="Reports-button-group">
+        <button id="btnGenerateReports" class="Reports-btn primary" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
+          <i class='bx bx-plus' style="font-size:14px;"></i> Generate Report
+        </button>
+      </div>
     </div>
   </div>
 
