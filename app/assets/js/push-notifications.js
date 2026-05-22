@@ -162,47 +162,8 @@
     }
 
     function showInstallFirstModal() {
-        if (document.getElementById('eosas-push-overlay')) return;
-        injectStyles();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'eosas-push-overlay';
-        const modal = document.createElement('div');
-        modal.id = 'eosas-push-modal';
-
-        const title = document.createElement('h3');
-        title.textContent = 'Install E-OSAS first';
-        const desc = document.createElement('p');
-        desc.innerHTML = 'To get campus alerts, <strong>install the app</strong> on your home screen. Open the app from there—then you can turn on notifications inside the app.';
-
-        const btns = document.createElement('div');
-        btns.className = 'eosas-push-btns';
-        const installBtn = document.createElement('button');
-        installBtn.id = 'eosas-push-enable';
-        installBtn.textContent = 'Install app';
-        const laterBtn = document.createElement('button');
-        laterBtn.id = 'eosas-push-later';
-        laterBtn.textContent = 'Not now';
-
-        installBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const pwaBtn = document.getElementById('installPWA');
-            if (pwaBtn && pwaBtn.offsetParent !== null) {
-                pwaBtn.click();
-            } else {
-                toast('Use browser menu → Add to Home screen / Install app', false);
-            }
-        });
-        laterBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            localStorage.setItem(INSTALL_PROMPT, '1');
-            overlay.remove();
-        });
-
-        btns.append(installBtn, laterBtn);
-        modal.append(title, desc, btns);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
+        // Disabled by request: Remove install first popup
+        return;
     }
 
     function showBlockedModal(mode) {
@@ -266,10 +227,7 @@
     }
 
     function showEnableModal(mode) {
-        if (!isInstalledPWA()) {
-            showInstallFirstModal();
-            return;
-        }
+        if (!isInstalledPWA()) return;
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
@@ -360,12 +318,7 @@
     async function initGuestPush() {
         if (!isGuestApp() || !('Notification' in window)) return;
 
-        if (!isInstalledPWA()) {
-            if (!localStorage.getItem(INSTALL_PROMPT)) {
-                setTimeout(showInstallFirstModal, 2500);
-            }
-            return;
-        }
+        if (!isInstalledPWA()) return;
 
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
@@ -378,7 +331,7 @@
             setTimeout(() => showBlockedModal('guest'), 1200);
             return;
         }
-        if (localStorage.getItem(GUEST_PROMPT) && localStorage.getItem('eosas_pwa_installed') !== '1') return;
+        if (localStorage.getItem(GUEST_PROMPT)) return;
 
         setTimeout(() => showEnableModal('guest'), 800);
     }
@@ -407,7 +360,7 @@
             setTimeout(() => showBlockedModal('student'), 1200);
             return;
         }
-        if (localStorage.getItem(STUDENT_PROMPT) && localStorage.getItem('eosas_pwa_installed') !== '1') return;
+        if (localStorage.getItem(STUDENT_PROMPT)) return;
 
         setTimeout(() => showEnableModal('student'), 800);
     }

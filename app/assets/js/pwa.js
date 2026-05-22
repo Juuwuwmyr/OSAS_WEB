@@ -35,32 +35,8 @@ if ('serviceWorker' in navigator) {
 }
 
 function showUpdateToast(newSW) {
-    let toast = document.getElementById('sw-update-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'sw-update-toast';
-        toast.style.cssText = `
-            position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-            z-index:999999;background:#1e293b;color:#fff;
-            padding:10px 16px;border-radius:12px;font-size:12px;font-weight:600;
-            display:flex;align-items:center;gap:10px;
-            box-shadow:0 4px 20px rgba(0,0,0,0.3);white-space:nowrap;
-        `;
-        document.body.appendChild(toast);
-    }
-    toast.innerHTML = `
-        <span>🔄 Update available</span>
-        <button onclick="applyUpdate()" style="
-            background:#D4AF37;color:#000;border:none;padding:4px 12px;
-            border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
-            Reload
-        </button>
-        <button onclick="document.getElementById('sw-update-toast').style.display='none'" style="
-            background:rgba(255,255,255,0.1);color:#fff;border:none;
-            width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;">✕</button>
-    `;
-    toast.style.display = 'flex';
-    window._pendingSW = newSW;
+    // Disabled by request: Remove update available popup
+    return;
 }
 
 window.applyUpdate = function() {
@@ -229,18 +205,12 @@ document.addEventListener('click', async (e) => {
 });
 
 window.addEventListener('appinstalled', () => {
-    console.log('✅ PWA installed — open from home screen, then enable notifications');
+    console.log('✅ PWA installed');
     deferredPrompt = null;
     localStorage.setItem('eosas_pwa_installed', '1');
     localStorage.removeItem('eosas_guest_push_prompted');
     localStorage.removeItem('eosas_student_push_prompted');
     localStorage.removeItem('eosas_install_prompted');
-
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#1e293b;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)';
-    toast.innerHTML = '<strong>App installed!</strong><br>Open it from your home screen, then tap <b>Enable notifications</b>.';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 8000);
 
     setTimeout(() => {
         if (typeof window.initGuestPush === 'function') window.initGuestPush();
