@@ -68,7 +68,7 @@ body.dark #departmentModal .close-btn:hover {
 /* ========================================= */
 #department-page {
   padding: 12px;
-  min-height: calc(100vh - 56px);
+  min-height: 0;
   font-family: var(--poppins);
   background: var(--grey);
   color: var(--dark);
