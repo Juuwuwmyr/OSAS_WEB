@@ -192,14 +192,16 @@ body.dark {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-#btnRefreshViolations {
-  background: #3b82f6;
-  color: #ffffff;
-  border: none;
+#btnRefreshViolations,
+#refreshViolationsBtn {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
-#btnRefreshViolations:hover {
-  background: #2563eb;
+#btnRefreshViolations:hover,
+#refreshViolationsBtn:hover {
+  background: #2563eb !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
@@ -259,13 +261,13 @@ body.dark {
 }
 
 #btnMonthlyReset {
-  background: #6366f1 !important;
+  background: var(--red, #DB504A) !important;
   color: #ffffff !important;
   border: none !important;
 }
 
 #btnMonthlyReset:hover {
-  background: #4f46e5 !important;
+  background: #b71c1c !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
