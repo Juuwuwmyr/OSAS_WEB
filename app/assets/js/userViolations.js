@@ -472,8 +472,8 @@ function viewViolationDetails(id) {
     updateSlipStatusUI(id);
 
     // --- Violation Details Grid (Match Admin style) ---
-    // In user view, "userViolations" is already filtered for this student
-    let studentViolations = [...userViolations];
+    // Use all violations (including archived) for complete history
+    let studentViolations = [...(allUserViolations || userViolations)];
     
     // Sort violations by date descending
     studentViolations.sort((a, b) => {
@@ -593,7 +593,7 @@ function viewViolationDetails(id) {
     // --- History Timeline (Match Admin Deduplication) ---
     const timelineEl = document.getElementById('detailTimeline');
     if (timelineEl) {
-        let studentHistory = [...userViolations];
+        let studentHistory = [...(allUserViolations || userViolations)];
         
         // Deduplicate history for timeline
         const seenHistory = new Set();

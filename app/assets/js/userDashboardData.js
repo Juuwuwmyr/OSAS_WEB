@@ -355,9 +355,9 @@ class UserDashboardData {
             return;
         }
 
-        const sorted = [...this.violations]
+        const sorted = [...this.allViolations || this.violations]
             .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
-            .slice(0, 10);
+            .slice(0, 5);
 
         const getIcon = (label) => {
             const lower = (label || '').toLowerCase();

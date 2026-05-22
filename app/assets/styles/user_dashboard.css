@@ -1957,10 +1957,10 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   position: relative;
   background: var(--surface);
   border-radius: var(--r-lg);
-  padding: 16px 18px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   border: 1px solid var(--border);
   border-left: 4px solid var(--gold);
   box-shadow: var(--shadow-sm);
@@ -1971,12 +1971,12 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .uv-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
 .uv-stat__icon {
-  width: 44px; height: 44px;
-  border-radius: 10px;
+  width: 36px; height: 36px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   color: var(--dark);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
+  font-size: 17px;
   flex-shrink: 0;
   box-shadow: 0 4px 10px rgba(255,215,0,.3);
 }
@@ -1985,7 +1985,7 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   min-width: 0;
 }
 .uv-stat__lbl {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 500;
   color: var(--text-3);
   line-height: 1.2;
@@ -1995,7 +1995,7 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 }
 .uv-stat__val {
   font-family: var(--poppins);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
@@ -2030,8 +2030,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .uv-card__icon-badge {
   width: 34px; height: 34px;
   border-radius: var(--r-sm);
-  background: rgba(99,102,241,.1);
-  color: #6366F1;
+  background: rgba(255,215,0,.15);
+  color: var(--gold);
   display: flex; align-items: center; justify-content: center;
   font-size: 17px;
   flex-shrink: 0;
@@ -2185,6 +2185,10 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   .uv-card__controls > .uv-select:nth-of-type(2) {
     grid-column: 2;
     grid-row: 2;
+  }
+  .uv-card__controls > .uv-select:nth-of-type(3) {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   /* Card layout on mobile */
