@@ -12,10 +12,36 @@
 
     /** True when opened from home-screen installed app (not a browser tab). */
     function isInstalledPWA() {
-        return window.matchMedia('(display-mode: standalone)').matches
-            || window.matchMedia('(display-mode: fullscreen)').matches
-            || window.matchMedia('(display-mode: minimal-ui)').matches
-            || navigator.standalone === true;
+        if (navigator.standalone === true) return true;
+        const modes = ['standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'];
+        for (let i = 0; i < modes.length; i++) {
+            if (window.matchMedia('(display-mode: ' + modes[i] + ')').matches) return true;
+        }
+        // Some Android PWAs still report "browser" — treat as installed if not in a normal tab
+        if (localStorage.getItem('eosas_pwa_installed') === '1'
+            && !window.matchMedia('(display-mode: browser)').matches) {
+            return true;
+        }
+        return false;
+    }
+
+    /** Request OS permission in the same user gesture (required on mobile). */
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) return 'unsupported';
+        if (Notification.permission === 'granted') return 'granted';
+        if (Notification.permission === 'denied') return 'denied';
+        try {
+            return await Notification.requestPermission();
+        } catch (e) {
+            console.warn('requestPermission:', e);
+            return Notification.permission;
+        }
+    }
+
+    async function subscribeAfterPermission(scope) {
+        const sub = await getOrCreateSubscription();
+        await saveSubscription(sub, scope);
+        return true;
     }
 
     function projectRoot() {
@@ -105,14 +131,12 @@
             toast('Use Chrome and install the app for alerts.', false);
             return false;
         }
-        const perm = await Notification.requestPermission();
+        const perm = await requestNotificationPermission();
         if (perm !== 'granted') {
             toast('Tap Allow on the next screen, or enable in phone Settings.', false);
             return false;
         }
-        const sub = await getOrCreateSubscription();
-        await saveSubscription(sub, scope);
-        return true;
+        return subscribeAfterPermission(scope);
     }
 
     async function upgradePushToStudent() {
@@ -208,16 +232,18 @@
         const runRetry = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
             retryBtn.disabled = true;
-            const perm = await Notification.requestPermission();
+            const perm = await requestNotificationPermission();
             if (perm === 'granted') {
                 try {
-                    if (await subscribeWithScope(scope)) {
-                        if (mode === 'guest' && typeof window.showLatestAnnouncementNotifications === 'function') {
-                            await window.showLatestAnnouncementNotifications(true);
-                        }
-                        toast('Notifications enabled.', true);
-                        overlay.remove();
+                    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                        throw new Error('Push not supported in this browser');
                     }
+                    await subscribeAfterPermission(scope);
+                    if (mode === 'guest' && typeof window.showLatestAnnouncementNotifications === 'function') {
+                        await window.showLatestAnnouncementNotifications(true);
+                    }
+                    toast('Notifications enabled.', true);
+                    overlay.remove();
                 } catch (err) {
                     toast(err.message || 'Failed', false);
                 }
@@ -277,12 +303,22 @@
             yes.disabled = true;
             yes.textContent = 'Please wait…';
             try {
-                if (await subscribeWithScope(scope)) {
-                    toast(isGuest ? 'Announcements enabled.' : 'Violation alerts enabled.', true);
-                    overlay.remove();
-                    if (isGuest && typeof window.showLatestAnnouncementNotifications === 'function') {
-                        await window.showLatestAnnouncementNotifications(true);
-                    }
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    toast('Use Chrome and install the app for alerts.', false);
+                    return;
+                }
+                const perm = await requestNotificationPermission();
+                if (perm !== 'granted') {
+                    toast(perm === 'denied'
+                        ? 'Blocked — enable in Settings → Apps → E-OSAS → Notifications'
+                        : 'Tap Allow on the next screen.', false);
+                    return;
+                }
+                await subscribeAfterPermission(scope);
+                toast(isGuest ? 'Announcements enabled.' : 'Violation alerts enabled.', true);
+                overlay.remove();
+                if (isGuest && typeof window.showLatestAnnouncementNotifications === 'function') {
+                    await window.showLatestAnnouncementNotifications(true);
                 }
             } catch (err) {
                 toast(err.message || 'Failed', false);
@@ -342,9 +378,9 @@
             setTimeout(() => showBlockedModal('guest'), 1200);
             return;
         }
-        if (localStorage.getItem(GUEST_PROMPT)) return;
+        if (localStorage.getItem(GUEST_PROMPT) && localStorage.getItem('eosas_pwa_installed') !== '1') return;
 
-        setTimeout(() => showEnableModal('guest'), 1500);
+        setTimeout(() => showEnableModal('guest'), 800);
     }
 
     async function initStudentPush() {
@@ -371,9 +407,14 @@
             setTimeout(() => showBlockedModal('student'), 1200);
             return;
         }
-        if (localStorage.getItem(STUDENT_PROMPT)) return;
+        if (localStorage.getItem(STUDENT_PROMPT) && localStorage.getItem('eosas_pwa_installed') !== '1') return;
 
-        setTimeout(() => showEnableModal('student'), 1500);
+        setTimeout(() => showEnableModal('student'), 800);
+    }
+
+    function maybePromptForPush() {
+        if (isStudentApp()) initStudentPush();
+        else if (isGuestApp()) initGuestPush();
     }
 
     window.isInstalledPWA = isInstalledPWA;
@@ -387,9 +428,13 @@
     window.initGuestPush = initGuestPush;
 
     function boot() {
-        if (isStudentApp()) initStudentPush();
-        else if (isGuestApp()) initGuestPush();
+        maybePromptForPush();
     }
 
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
+
+    window.addEventListener('pageshow', () => { setTimeout(maybePromptForPush, 400); });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') setTimeout(maybePromptForPush, 400);
+    });
 })();

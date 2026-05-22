@@ -229,10 +229,23 @@ document.addEventListener('click', async (e) => {
 });
 
 window.addEventListener('appinstalled', () => {
-    console.log('✅ PWA installed — open the app from your home screen to enable notifications');
+    console.log('✅ PWA installed — open from home screen, then enable notifications');
     deferredPrompt = null;
     localStorage.setItem('eosas_pwa_installed', '1');
     localStorage.removeItem('eosas_guest_push_prompted');
+    localStorage.removeItem('eosas_student_push_prompted');
+    localStorage.removeItem('eosas_install_prompted');
+
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#1e293b;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)';
+    toast.innerHTML = '<strong>App installed!</strong><br>Open it from your home screen, then tap <b>Enable notifications</b>.';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 8000);
+
+    setTimeout(() => {
+        if (typeof window.initGuestPush === 'function') window.initGuestPush();
+        if (typeof window.initPushNotifications === 'function') window.initPushNotifications();
+    }, 500);
 });
 
 // ── Online / Offline Status ───────────────────────────────────────────────────
