@@ -179,9 +179,11 @@ class UserDashboardData {
                 throw new Error(data.message || 'Error loading announcements');
             }
 
-            // Handle different response formats
-            this.announcements = data.data || data.announcements || [];
-            
+            const annPayload = data.data;
+            this.announcements = Array.isArray(annPayload)
+                ? annPayload
+                : (annPayload && Array.isArray(annPayload.announcements) ? annPayload.announcements : (data.announcements || []));
+
             if (Array.isArray(this.announcements)) {
                 console.log('✅ Loaded', this.announcements.length, 'announcements');
             } else {
