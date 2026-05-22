@@ -448,7 +448,8 @@ input:checked + .slider .sun-icon { opacity: .3; }
     overflow-y: auto !important;
   }
   #main-content { padding: 16px !important; }
-  .student-dash { padding: 0 !important; }
+  #content main { padding: 0 !important; }
+  .student-dash, .uv-page { padding: 0 !important; }
 }
 
 @media (max-width: 480px) {

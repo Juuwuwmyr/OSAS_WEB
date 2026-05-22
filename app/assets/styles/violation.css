@@ -59,7 +59,10 @@ body.dark {
 /* ========================================= */
 
 #Violations-page {
-  padding: 16px;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
   min-height: calc(100vh - 56px);
   font-family: var(--poppins);
   background: var(--grey);
