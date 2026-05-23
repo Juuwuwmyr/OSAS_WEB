@@ -28,7 +28,27 @@ class Chatbot {
             this.attachEventListeners();
             // Pre-fetch database context
             this.fetchDatabaseContext();
+            // Pre-authenticate Puter.js silently
+            this.initPuterAuth();
         });
+    }
+
+    /**
+     * Initialize Puter.js authentication silently
+     */
+    async initPuterAuth() {
+        try {
+            if (typeof puter !== 'undefined' && puter.auth) {
+                const isSignedIn = await puter.auth.isSignedIn();
+                if (!isSignedIn) {
+                    console.log('Puter.js: User not signed in, AI will prompt on first use');
+                } else {
+                    console.log('Puter.js: User already authenticated');
+                }
+            }
+        } catch (e) {
+            console.warn('Puter.js auth check failed:', e);
+        }
     }
 
     waitForBoxicons() {
@@ -714,142 +734,74 @@ class Chatbot {
         this.showLoading();
 
         try {
-            // Check if Puter.js is available
-            if (typeof puter === 'undefined' || !puter.ai) {
-                throw new Error('Puter.js is not loaded. Please check if the script is included.');
-            }
-
-            // Fetch or use cached database context
-            const dbContext = await this.fetchDatabaseContext();
-
-            // Determine user role
-            const currentPath = window.location.pathname;
-            const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
-
-            // Build conversation context for Puter.js
-            let conversationContext = "You are OSAS Bot, a helpful AI assistant for the OSAS (Office of Student Affairs System). ";
-            
-            if (userRole === 'user') {
-                conversationContext += "You are currently assisting a STUDENT. Your access is RESTRICTED. ";
-                conversationContext += "Do NOT provide specific details about other students, their violations, or detailed administrative reports. ";
-                conversationContext += "Focus on general system information, public announcements, and helping the student with their own needs. ";
-                conversationContext += "If asked for sensitive data you don't have, politely explain that you don't have access to that information for privacy and security reasons.\n";
-            } else {
-                conversationContext += "You are currently assisting an ADMIN. You have full access to the system information provided below. ";
-                conversationContext += "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
-            }
-            
-            conversationContext += "Be friendly, professional, and concise in your responses.\n";
-            conversationContext += "You have access to the system's database information to answer questions accurately.\n";
-            
-            if (userRole === 'admin') {
-                conversationContext += "You can answer questions about:\n";
-                conversationContext += "- Student information, statistics, and management\n";
-                conversationContext += "- Department and section details\n";
-                conversationContext += "- Violation records and statistics\n";
-                conversationContext += "- Announcements (titles, content, audience, status, dates)\n";
-                conversationContext += "- Reports (types, descriptions, status, generation dates)\n";
-            } else {
-                conversationContext += "You can answer questions about:\n";
-                conversationContext += "- General system navigation and features\n";
-                conversationContext += "- Department and section details\n";
-                conversationContext += "- Public announcements and events\n";
-            }
-            
-            conversationContext += "- System navigation and features\n\n";
-            conversationContext += "IMPORTANT SYSTEM INFORMATION:\n";
-            conversationContext += "- System Owner/Administrator/Head: Cedrick H. Almarez\n";
-            conversationContext += "- Always remember and acknowledge this when asked about system ownership, administration, or leadership.\n\n";
-            
-            // Add database context if available
-            if (dbContext) {
-                conversationContext += this.formatDatabaseContext(dbContext);
-            }
-            
-            // Add conversation history (last 5 messages for context)
-            if (this.conversationHistory.length > 1) {
-                conversationContext += "\nPREVIOUS CONVERSATION:\n";
-                this.conversationHistory.slice(-5).forEach(msg => {
-                    if (msg.role === 'user') {
-                        conversationContext += `User: ${msg.content}\n`;
-                    } else if (msg.role === 'assistant') {
-                        conversationContext += `Assistant: ${msg.content}\n`;
-                    }
-                });
-                conversationContext += "\n";
-            }
-            
-            // Add current user message
-            conversationContext += `User: ${message}\nAssistant:`;
-
-            // Use Puter.js AI chat (takes a string prompt)
-            const response = await puter.ai.chat(conversationContext, {
-                model: 'gpt-4o-mini' // Options: 'gpt-4o-mini', 'gpt-4o', 'gpt-5.2-chat', etc.
-            });
-
-            // Log the response for debugging
-            console.log('Puter.js response type:', typeof response);
-            console.log('Puter.js response:', response);
-
-            // Puter.js may return different formats - extract the text properly
             let responseText = '';
-            
-            if (typeof response === 'string') {
-                // Direct string response
-                responseText = response;
-            } else if (typeof response === 'object' && response !== null) {
-                // Object response - try different possible properties
-                if (response.content && typeof response.content === 'string') {
-                    responseText = response.content;
-                } else if (response.text && typeof response.text === 'string') {
-                    responseText = response.text;
-                } else if (response.message && typeof response.message === 'string') {
-                    responseText = response.message;
-                } else if (response.response && typeof response.response === 'string') {
-                    responseText = response.response;
-                } else if (response.choices && Array.isArray(response.choices) && response.choices.length > 0) {
-                    // OpenAI-like format
-                    const choice = response.choices[0];
-                    if (choice.message && choice.message.content) {
-                        responseText = choice.message.content;
-                    } else if (choice.text) {
-                        responseText = choice.text;
-                    } else if (choice.delta && choice.delta.content) {
-                        responseText = choice.delta.content;
+
+            // Try server-side API first
+            try {
+                const serverRes = await fetch(this.apiBase + 'chatbot.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        message: message,
+                        history: this.conversationHistory.slice(-10)
+                    })
+                });
+
+                if (serverRes.ok) {
+                    const serverData = await serverRes.json();
+                    if (serverData.success && serverData.response) {
+                        responseText = serverData.response;
                     }
-                } else if (response.data && typeof response.data === 'string') {
-                    responseText = response.data;
-                } else if (response.result && typeof response.result === 'string') {
-                    responseText = response.result;
-                } else {
-                    // If it's an object with nested content, try to extract
-                    const stringified = JSON.stringify(response);
-                    console.warn('Unexpected Puter.js response format. Full response:', stringified);
-                    
-                    // Try to find any string value in the object
-                    const findStringValue = (obj) => {
-                        for (let key in obj) {
-                            if (typeof obj[key] === 'string' && obj[key].length > 10) {
-                                return obj[key];
-                            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                                const found = findStringValue(obj[key]);
-                                if (found) return found;
-                            }
-                        }
-                        return null;
-                    };
-                    
-                    const foundText = findStringValue(response);
-                    responseText = foundText || 'Sorry, I received an unexpected response format.';
                 }
-            } else {
-                // Fallback for any other type
-                responseText = String(response);
+            } catch (serverErr) {
+                console.warn('Server API failed, trying Puter.js:', serverErr);
+            }
+
+            // Fallback to Puter.js if server failed
+            if (!responseText && typeof puter !== 'undefined' && puter.ai) {
+                // Fetch or use cached database context
+                const dbContext = await this.fetchDatabaseContext();
+                const currentPath = window.location.pathname;
+                const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
+
+                let conversationContext = "You are OSAS Bot, a helpful AI assistant for the OSAS (Office of Student Affairs System). ";
+                conversationContext += "Be friendly, professional, and concise in your responses.\n";
+                
+                if (dbContext) {
+                    conversationContext += this.formatDatabaseContext(dbContext);
+                }
+                
+                if (this.conversationHistory.length > 1) {
+                    conversationContext += "\nPREVIOUS CONVERSATION:\n";
+                    this.conversationHistory.slice(-5).forEach(msg => {
+                        if (msg.role === 'user') conversationContext += `User: ${msg.content}\n`;
+                        else if (msg.role === 'assistant') conversationContext += `Assistant: ${msg.content}\n`;
+                    });
+                }
+                
+                conversationContext += `\nUser: ${message}\nAssistant:`;
+
+                const puterResponse = await puter.ai.chat(conversationContext, { model: 'gpt-4o-mini' });
+                
+                if (typeof puterResponse === 'string') {
+                    responseText = puterResponse;
+                } else if (puterResponse && puterResponse.message && puterResponse.message.content) {
+                    responseText = puterResponse.message.content;
+                } else if (puterResponse && puterResponse.content) {
+                    responseText = puterResponse.content;
+                } else if (puterResponse && puterResponse.text) {
+                    responseText = puterResponse.text;
+                }
+            }
+
+            if (!responseText) {
+                throw new Error('Unable to get a response. Please try again later.');
             }
             
             // Ensure we have a valid string
             if (!responseText || responseText.trim().length === 0) {
-                throw new Error('Empty response from Puter.js');
+                throw new Error('Empty response from server');
             }
             
             // Trim the response
