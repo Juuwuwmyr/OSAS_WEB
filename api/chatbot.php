@@ -71,9 +71,12 @@ $user_id = $_SESSION['user_id'] ?? null;
 $user_role = $_SESSION['role'] ?? null;
 
 // Build system prompt with optional database context
-$system_prompt = "You are a helpful assistant for the OSAS (Office of Student Affairs System). ";
-$system_prompt .= "You help users with questions about students, departments, sections, violations, and reports. ";
-$system_prompt .= "Be friendly, professional, and concise in your responses.";
+$system_prompt = "You are OSAS Bot, a helpful assistant for the E-OSAS (Electronic Office of Student Affairs System). ";
+$system_prompt .= "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
+$system_prompt .= "Be friendly, professional, and concise in your responses. ";
+$system_prompt .= "IMPORTANT: Only answer using the ACTUAL DATA provided below. NEVER make up or invent student names, violation IDs, or any data. ";
+$system_prompt .= "If you don't have the information in the context below, say 'I don't have that specific information right now.' ";
+$system_prompt .= "System Owner/Administrator: Cedrick H. Almarez.";
 
 // Optionally add database context
 if (USE_DATABASE_CONTEXT && $conn && !$conn->connect_error) {
@@ -136,46 +139,144 @@ function getDatabaseContext($conn, $user_id, $user_role) {
         $stats = [];
         
         // Count students
-        $result = $conn->query("SELECT COUNT(*) as count FROM students WHERE deleted_at IS NULL");
+        $result = @$conn->query("SELECT COUNT(*) as count FROM students");
         if ($result) {
             $row = $result->fetch_assoc();
-            $stats['students'] = $row['count'] ?? 0;
+            $stats['total_students'] = $row['count'] ?? 0;
         }
         
         // Count departments
-        $result = $conn->query("SELECT COUNT(*) as count FROM departments WHERE deleted_at IS NULL");
+        $result = @$conn->query("SELECT COUNT(*) as count FROM departments");
         if ($result) {
             $row = $result->fetch_assoc();
-            $stats['departments'] = $row['count'] ?? 0;
+            $stats['total_departments'] = $row['count'] ?? 0;
         }
         
-        // Count violations
-        $result = $conn->query("SELECT COUNT(*) as count FROM violations WHERE deleted_at IS NULL");
+        // Count active violations (this month)
+        $result = @$conn->query("SELECT COUNT(*) as count FROM violations WHERE is_archived = 0");
         if ($result) {
             $row = $result->fetch_assoc();
-            $stats['violations'] = $row['count'] ?? 0;
+            $stats['active_violations'] = $row['count'] ?? 0;
+        }
+
+        // Count all-time violations
+        $result = @$conn->query("SELECT COUNT(*) as count FROM violations");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            $stats['total_violations_all_time'] = $row['count'] ?? 0;
         }
         
-        if (!empty($stats)) {
-            $context[] = "System Statistics: " . json_encode($stats);
+        $context[] = "SYSTEM STATISTICS: " . json_encode($stats);
+
+        // Get departments list
+        $result = @$conn->query("SELECT department_code, department_name FROM departments ORDER BY department_name");
+        if ($result && $result->num_rows > 0) {
+            $depts = [];
+            while ($row = $result->fetch_assoc()) {
+                $depts[] = $row['department_name'] . " (" . $row['department_code'] . ")";
+            }
+            $context[] = "DEPARTMENTS: " . implode(', ', $depts);
         }
-        
+
+        // Get sections list
+        $result = @$conn->query("SELECT s.section_name, s.section_code, d.department_code FROM sections s LEFT JOIN departments d ON s.department_id = d.id ORDER BY s.section_name LIMIT 30");
+        if ($result && $result->num_rows > 0) {
+            $sections = [];
+            while ($row = $result->fetch_assoc()) {
+                $sections[] = $row['section_name'] . " (" . ($row['department_code'] ?? '') . ")";
+            }
+            $context[] = "SECTIONS: " . implode(', ', $sections);
+        }
+
+        // Get recent violations with student info (actual data)
+        $result = @$conn->query("
+            SELECT v.id, v.case_id, v.student_id, v.violation_date, v.status,
+                   CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
+                   s.department,
+                   vt.name as violation_type,
+                   vl.name as violation_level
+            FROM violations v
+            LEFT JOIN students s ON v.student_id = s.student_id
+            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+            LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
+            WHERE v.is_archived = 0
+            ORDER BY v.created_at DESC
+            LIMIT 20
+        ");
+        if ($result && $result->num_rows > 0) {
+            $violations = [];
+            while ($row = $result->fetch_assoc()) {
+                $violations[] = "Case " . ($row['case_id'] ?? $row['id']) . ": " . trim($row['student_name']) . 
+                    " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') . 
+                    ") - Type: " . ($row['violation_type'] ?? 'Unknown') . 
+                    ", Level: " . ($row['violation_level'] ?? 'Unknown') . 
+                    ", Status: " . ($row['status'] ?? 'pending') . 
+                    ", Date: " . ($row['violation_date'] ?? 'N/A');
+            }
+            $context[] = "RECENT VIOLATIONS (actual records):\n" . implode("\n", $violations);
+        }
+
+        // Get violation type counts
+        $result = @$conn->query("
+            SELECT vt.name as type_name, COUNT(*) as count 
+            FROM violations v 
+            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id 
+            WHERE v.is_archived = 0 
+            GROUP BY vt.name 
+            ORDER BY count DESC
+        ");
+        if ($result && $result->num_rows > 0) {
+            $typeCounts = [];
+            while ($row = $result->fetch_assoc()) {
+                $typeCounts[] = ($row['type_name'] ?? 'Unknown') . ": " . $row['count'];
+            }
+            $context[] = "VIOLATION COUNTS BY TYPE (this month): " . implode(', ', $typeCounts);
+        }
+
+        // Get recent announcements
+        $result = @$conn->query("SELECT title, message, type, created_at FROM announcements WHERE status = 'active' ORDER BY created_at DESC LIMIT 5");
+        if ($result && $result->num_rows > 0) {
+            $announcements = [];
+            while ($row = $result->fetch_assoc()) {
+                $announcements[] = "\"" . $row['title'] . "\" (Type: " . ($row['type'] ?? 'general') . ", Date: " . $row['created_at'] . ")";
+            }
+            $context[] = "ACTIVE ANNOUNCEMENTS: " . implode('; ', $announcements);
+        }
+
         // Add user-specific context if logged in
         if ($user_id && $user_role) {
             $context[] = "Current user role: " . $user_role;
             
             if ($user_role === 'user') {
-                // Get user's violation count
-                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM violations WHERE student_id = ? AND deleted_at IS NULL");
-                if ($stmt) {
-                    $stmt->bind_param("i", $user_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($result) {
-                        $row = $result->fetch_assoc();
-                        $context[] = "User has " . ($row['count'] ?? 0) . " violations";
+                $studentId = $_SESSION['student_id_code'] ?? '';
+                if ($studentId) {
+                    // Get user's own violations
+                    $stmt = $conn->prepare("
+                        SELECT v.case_id, v.violation_date, v.status, vt.name as violation_type, vl.name as violation_level
+                        FROM violations v
+                        LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                        LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
+                        WHERE v.student_id = ?
+                        ORDER BY v.created_at DESC
+                        LIMIT 10
+                    ");
+                    if ($stmt) {
+                        $stmt->bind_param("s", $studentId);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        if ($result && $result->num_rows > 0) {
+                            $myViolations = [];
+                            while ($row = $result->fetch_assoc()) {
+                                $myViolations[] = "Case " . ($row['case_id'] ?? '') . ": " . ($row['violation_type'] ?? 'Unknown') . 
+                                    " (" . ($row['violation_level'] ?? '') . ") - Status: " . ($row['status'] ?? 'pending') . 
+                                    ", Date: " . ($row['violation_date'] ?? 'N/A');
+                            }
+                            $context[] = "YOUR VIOLATIONS (Student ID: $studentId):\n" . implode("\n", $myViolations);
+                        } else {
+                            $context[] = "You (Student ID: $studentId) have no violations recorded.";
+                        }
+                        $stmt->close();
                     }
-                    $stmt->close();
                 }
             }
         }
