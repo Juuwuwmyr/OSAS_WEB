@@ -25,6 +25,17 @@ function initViolationsModule() {
         console.log('🔗 API Base Path:', API_BASE);
         console.log('🌐 Full API URL will be:', window.location.origin + API_BASE + 'violations.php');
 
+        /** Map removed location values for edit / legacy records */
+        const LEGACY_LOCATION_MAP = { gate_1: 'campus', gate_2: 'campus', cafeteria: 'canteen' };
+        function mapViolationLocation(loc) {
+            if (!loc) return 'campus';
+            return LEGACY_LOCATION_MAP[loc] || loc;
+        }
+        function setDefaultViolationLocation() {
+            const el = document.getElementById('violationLocation');
+            if (el) el.value = 'campus';
+        }
+
         // Helper function to convert relative image paths to absolute URLs
         function getImageUrl(imagePath, fallbackName = 'Student') {
             if (!imagePath || imagePath.trim() === '') {
@@ -2669,7 +2680,7 @@ function initViolationsModule() {
                     // Set other fields
                     document.getElementById('violationDate').value = violation.dateReported;
                     document.getElementById('violationTime').value = violation.violationTime || '08:15';
-                    document.getElementById('violationLocation').value = violation.location;
+                    document.getElementById('violationLocation').value = mapViolationLocation(violation.location);
                     
                     const reportedByInput = document.getElementById('reportedBy');
                     if (reportedByInput) {
@@ -2695,6 +2706,7 @@ function initViolationsModule() {
                 }
                 if (form) {
                     form.reset();
+                    setDefaultViolationLocation();
                     populateAdminName();
                     
                     // Clear any previous levels and type selection
@@ -2733,7 +2745,7 @@ function initViolationsModule() {
                         const timeInput = document.getElementById('violationTime');
                         if (timeInput && !timeInput.value) timeInput.value = timeStr;
 
-                        // Also populate admin name after reset
+                        setDefaultViolationLocation();
                         populateAdminName();
                     }, 50);
                 }
@@ -2747,6 +2759,10 @@ function initViolationsModule() {
 
                 // Reset notes counter
                 updateNotesCounter(0);
+            }
+
+            if (!editId) {
+                setDefaultViolationLocation();
             }
 
             // Reset form validation state and progress
@@ -3085,6 +3101,7 @@ function initViolationsModule() {
             // Reset form if exists
             const form = document.getElementById('ViolationRecordForm');
             if (form) form.reset();
+            setDefaultViolationLocation();
             
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
@@ -4963,8 +4980,8 @@ function initViolationsModule() {
                     dateReported: '2024-02-15',
                     violationTime: '08:15:00',
                     dateTime: 'Feb 15, 2024 • 08:15 AM',
-                    location: 'gate_1',
-                    locationLabel: 'Main Gate 1',
+                    location: 'campus',
+                    locationLabel: 'Campus',
                     reportedBy: 'Officer Maria Santos',
                     status: 'warning',
                     statusLabel: 'Warning',

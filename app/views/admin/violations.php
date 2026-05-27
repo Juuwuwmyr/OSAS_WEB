@@ -380,12 +380,10 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="Violations-form-group">
             <label for="violationLocation">Location</label>
             <select id="violationLocation" name="violationLocation">
-              <option value="">Select location</option>
-              <option value="gate_1">Main Gate 1</option>
-              <option value="gate_2">Gate 2</option>
+              <option value="campus" selected>Campus</option>
+              <option value="canteen">Canteen</option>
               <option value="classroom">Classroom</option>
               <option value="library">Library</option>
-              <option value="cafeteria">Cafeteria</option>
               <option value="gym">Gymnasium</option>
               <option value="others">Others</option>
             </select>
