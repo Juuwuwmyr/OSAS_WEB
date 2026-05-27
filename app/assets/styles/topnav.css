@@ -1706,7 +1706,7 @@ body.dark .tn-dropdown-role { color: #9ca3af !important; }
 #switch-mode-top:checked + .tn-pill-track .tn-pill-thumb { transform: translateX(20px) !important; }
 
 .nav-notifications .notification-btn { width: 34px !important; height: 34px !important; border-radius: 10px !important; font-size: 17px !important; }
-.nav-notifications .notification-badge { width: 15px !important; height: 15px !important; font-size: 8px !important; top: 2px !important; right: 2px !important; }
+.nav-notifications .notification-badge { min-width: 18px !important; height: 18px !important; width: auto !important; font-size: 9px !important; top: -4px !important; right: -4px !important; border-radius: 50% !important; padding: 0 4px !important; display: flex !important; align-items: center !important; justify-content: center !important; line-height: 1 !important; }
 
 .tn-user-pill        { padding: 4px 10px 4px 4px !important; gap: 6px !important; border-radius: 30px !important; }
 .tn-avatar-ring      { width: 26px !important; height: 26px !important; }
