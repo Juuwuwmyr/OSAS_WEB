@@ -1713,3 +1713,60 @@ body.dark .tn-dropdown-role { color: #9ca3af !important; }
 .tn-avatar-img       { width: 22px !important; height: 22px !important; }
 .tn-user-name        { font-size: 0.7rem !important; max-width: 100px !important; }
 .tn-chevron          { font-size: 14px !important; }
+
+/* ─── Notification modal responsive ─── */
+@media (max-width: 480px) {
+  .nav-notifications .notif-modal {
+    position: fixed;
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: 100vw;
+    border-radius: 14px;
+  }
+
+  .nav-notifications .notif-modal-body {
+    max-height: 50vh;
+  }
+
+  .nav-notifications .notif-item {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .nav-notifications .notif-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-notifications .notif-name {
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  .nav-notifications .notif-desc {
+    font-size: 0.6rem;
+  }
+
+  .nav-notifications .notif-manage-btn {
+    padding: 4px 8px;
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .nav-notifications .notif-modal {
+    left: 4px;
+    right: 4px;
+    top: 56px;
+    border-radius: 12px;
+  }
+
+  .nav-notifications .notif-name {
+    max-width: 110px;
+  }
+}
