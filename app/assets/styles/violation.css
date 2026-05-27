@@ -1101,8 +1101,8 @@ body.dark {
   bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--dark);
-  color: var(--light);
+  background: var(--gold);
+  color: #333;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 11px;
@@ -1115,6 +1115,12 @@ body.dark {
 
 .Violations-action-btn:hover::after {
   opacity: 1;
+}
+
+/* Hide tooltip if no data-tooltip attribute content */
+.Violations-action-btn:not([data-tooltip])::after,
+.Violations-action-btn[data-tooltip=""]::after {
+  display: none;
 }
 
 /* ========================================= */

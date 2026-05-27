@@ -3032,7 +3032,7 @@ function initViolationsModule() {
 
             // Update action buttons visibility based on status
             const detailResolveBtn = document.getElementById('detailResolveBtn');
-            const detailEscalateBtn = document.getElementById('detailEscalateBtn');
+            const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
             const detailSlipStatus = document.getElementById('detailSlipStatus');
             const detailApproveSlipBtn = document.getElementById('detailApproveSlipBtn');
             const detailDenySlipBtn = document.getElementById('detailDenySlipBtn');
@@ -3053,12 +3053,9 @@ function initViolationsModule() {
                 }
             }
 
-            if (detailEscalateBtn) {
-                if (violation.status === 'disciplinary' || violation.status === 'resolved') {
-                    detailEscalateBtn.style.display = 'none';
-                } else {
-                    detailEscalateBtn.style.display = 'inline-flex';
-                }
+            // Print Slip is always visible
+            if (detailPrintSlipBtn) {
+                detailPrintSlipBtn.style.display = 'inline-flex';
             }
 
             if (detailSlipStatus) {
@@ -3402,7 +3399,7 @@ function initViolationsModule() {
         const detailEditBtn = document.getElementById('detailEditBtn');
         const detailRecordNewBtn = document.getElementById('detailRecordNewBtn');
         const detailResolveBtn = document.getElementById('detailResolveBtn');
-        const detailEscalateBtn = document.getElementById('detailEscalateBtn');
+        const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
         const detailPrintBtn = document.getElementById('detailPrintBtn');
         const detailEntranceBtn = document.getElementById('detailEntranceBtn');
 
@@ -3482,8 +3479,8 @@ function initViolationsModule() {
             });
         }
 
-        if (detailEscalateBtn) {
-            detailEscalateBtn.addEventListener('click', async function() {
+        if (detailPrintSlipBtn) {
+            detailPrintSlipBtn.addEventListener('click', function() {
                 const violationId = detailsModal.dataset.viewingId;
                 if (!violationId) {
                     showNotification('No violation selected', 'error');
@@ -3496,16 +3493,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                if (confirm(`Escalate violation ${violation.caseId} to disciplinary action?`)) {
-                    try {
-                        await updateViolation(violationId, { status: 'disciplinary' });
-                        showNotification('Violation escalated to disciplinary!', 'success');
-                        closeDetailsModal();
-                    } catch (error) {
-                        console.error('Error escalating violation:', error);
-                        showNotification('Failed to escalate violation. Please try again.', 'error');
-                    }
-                }
+                printEntranceSlip(violation);
             });
         }
 

@@ -555,8 +555,8 @@ require_once __DIR__ . '/../../core/View.php';
           <button class="Violations-action-btn resolve" id="detailResolveBtn" title="Mark Resolved">
             <i class='bx bx-check'></i> Mark Resolved
           </button>
-          <button class="Violations-action-btn escalate" id="detailEscalateBtn" title="Escalate">
-            <i class='bx bx-alarm'></i> Escalate
+          <button class="Violations-action-btn print" id="detailPrintSlipBtn" title="Print Entrance Slip" style="background: #f59e0b; color: white;">
+            <i class='bx bx-file'></i> Print Slip
           </button>
           <button class="Violations-action-btn resolve" id="detailApproveSlipBtn" title="Approve Slip Download">
             <i class='bx bx-check-shield'></i> Approve Slip
