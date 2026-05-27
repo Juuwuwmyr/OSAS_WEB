@@ -1808,13 +1808,13 @@ body.dark {
 /* Enhanced Form Controls */
 .Violations-form-row {
   display: grid;
-  grid-template-columns: 1fr; /* Changed to single column for better fit */
-  gap: 20px;
-  margin-bottom: 0;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .Violations-form-group {
-  margin-bottom: 0;
+  margin-bottom: 14px;
   position: relative;
 }
 
