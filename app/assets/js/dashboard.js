@@ -260,10 +260,12 @@ function loadContent(page) {
     }
 
     // Show loading state
+    const pageName = page.replace('admin_page/', '').replace(/_/g, ' ');
+    const displayName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
     mainContent.innerHTML = `
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Loading ${page.replace('admin_page/', '').replace(/_/g, ' ')}...</p>
+      <p>Loading ${displayName}...</p>
     </div>
   `;
 
@@ -277,17 +279,24 @@ function loadContent(page) {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 50px;
+        padding: 80px 20px;
         text-align: center;
+        font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .loading-state p {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #666;
+        letter-spacing: 0.2px;
+        margin-top: 16px;
       }
       .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #ffb84fff;
+        border: 3px solid #f0f0f0;
+        border-top: 3px solid #FFD700;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
+        width: 40px;
+        height: 40px;
+        animation: spin 0.8s linear infinite;
       }
       @keyframes spin {
         0% { transform: rotate(0deg); }
