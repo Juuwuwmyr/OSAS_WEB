@@ -3026,6 +3026,7 @@ function initViolationsModule() {
             }
             
             detailsModal.dataset.viewingId = violationId;
+            detailsModal.dataset.viewingStudentId = violation.studentId || '';
             detailsModal.classList.add('active');
             document.body.style.overflow = 'hidden';
 
@@ -3127,6 +3128,7 @@ function initViolationsModule() {
             detailsModal.classList.remove('active');
             document.body.style.overflow = 'auto';
             delete detailsModal.dataset.viewingId;
+            delete detailsModal.dataset.viewingStudentId;
         }
 
         // ========== EVENT HANDLERS ==========
@@ -3398,6 +3400,7 @@ function initViolationsModule() {
 
         // Detail modal action buttons
         const detailEditBtn = document.getElementById('detailEditBtn');
+        const detailRecordNewBtn = document.getElementById('detailRecordNewBtn');
         const detailResolveBtn = document.getElementById('detailResolveBtn');
         const detailEscalateBtn = document.getElementById('detailEscalateBtn');
         const detailPrintBtn = document.getElementById('detailPrintBtn');
@@ -3409,6 +3412,28 @@ function initViolationsModule() {
                 if (violationId) {
                     closeDetailsModal();
                     openRecordModal(parseInt(violationId));
+                }
+            });
+        }
+
+        if (detailRecordNewBtn) {
+            detailRecordNewBtn.addEventListener('click', function() {
+                const studentId = detailsModal.dataset.viewingStudentId || '';
+                closeDetailsModal();
+                openRecordModal(); // open as new (no editId)
+                // Pre-fill student search and trigger lookup
+                if (studentId) {
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('studentSearch');
+                        if (searchInput) {
+                            searchInput.value = studentId;
+                            // Trigger the search button click to populate student card
+                            const searchBtn = document.getElementById('searchStudentBtn');
+                            if (searchBtn) {
+                                searchBtn.click();
+                            }
+                        }
+                    }, 150);
                 }
             });
         }
