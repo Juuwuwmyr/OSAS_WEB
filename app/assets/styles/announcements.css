@@ -673,6 +673,20 @@
     transform: translateY(-1px);
 }
 
+#announcements-page.admin-side .btn-submit.is-loading,
+#announcements-page.admin-side .btn-submit:disabled,
+#announcements-page.admin-side .btn-cancel:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none;
+}
+
+#announcements-page.admin-side .btn-submit .bx-spin {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
 /* Loading Spinner */
 #announcements-page.admin-side .loading-spinner {
     margin: 0 auto 12px auto;
