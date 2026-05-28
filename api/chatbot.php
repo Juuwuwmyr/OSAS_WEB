@@ -528,23 +528,66 @@ function callOpenAI($messages) {
 }
 
 /**
- * Call Groq API (FREE - Very Fast!)
+ * Call Groq API (FREE - Very Fast!) with automatic key rotation on rate limit
  */
 function callGroqAPI($messages) {
     if (!function_exists('curl_init')) {
         return ['success' => false, 'error' => 'CURL is not enabled on this server.'];
     }
     
+    // Build list of all available API keys (primary + backups)
+    $allKeys = [AI_API_KEY];
+    if (defined('AI_API_KEYS_BACKUP')) {
+        $backupKeys = @unserialize(AI_API_KEYS_BACKUP);
+        if (is_array($backupKeys)) {
+            foreach ($backupKeys as $key) {
+                if (!empty($key) && strlen($key) > 10) {
+                    $allKeys[] = $key;
+                }
+            }
+        }
+    }
+    
+    $lastError = '';
+    
+    // Try each key until one works
+    foreach ($allKeys as $apiKey) {
+        $result = callGroqWithKey($messages, $apiKey);
+        
+        if ($result['success']) {
+            return $result;
+        }
+        
+        $lastError = $result['error'] ?? 'Unknown error';
+        
+        // Only retry with next key if it's a rate limit error (429)
+        $isRateLimit = (isset($result['http_code']) && $result['http_code'] === 429) 
+                    || stripos($lastError, 'rate limit') !== false;
+        
+        if (!$isRateLimit) {
+            return $result;
+        }
+        
+        error_log("Groq rate limited on key ending ..." . substr($apiKey, -6) . ", trying next key...");
+    }
+    
+    return ['success' => false, 'error' => 'All API keys rate limited. Please wait a moment and try again.'];
+}
+
+/**
+ * Make a single Groq API call with a specific key
+ */
+function callGroqWithKey($messages, $apiKey) {
     $ch = curl_init(AI_API_URL);
     if (!$ch) {
-        return ['success' => false, 'error' => 'Failed to initialize CURL'];
+        return ['success' => false, 'error' => 'Failed to initialize CURL', 'http_code' => 0];
     }
     
     $data = [
         'model' => AI_MODEL,
         'messages' => $messages,
         'temperature' => 0.7,
-        'max_tokens' => 500
+        'max_tokens' => 300
     ];
     
     $verify_ssl = defined('VERIFY_SSL_CERTIFICATE') ? VERIFY_SSL_CERTIFICATE : false;
@@ -555,7 +598,7 @@ function callGroqAPI($messages) {
         CURLOPT_POSTFIELDS => json_encode($data),
         CURLOPT_HTTPHEADER => [
             'Content-Type: application/json',
-            'Authorization: Bearer ' . AI_API_KEY
+            'Authorization: Bearer ' . $apiKey
         ],
         CURLOPT_TIMEOUT => 30,
         CURLOPT_SSL_VERIFYPEER => $verify_ssl,
@@ -568,13 +611,13 @@ function callGroqAPI($messages) {
     curl_close($ch);
     
     if ($curl_error) {
-        return ['success' => false, 'error' => 'Connection error: ' . $curl_error];
+        return ['success' => false, 'error' => 'Connection error: ' . $curl_error, 'http_code' => 0];
     }
     
     if ($http_code !== 200) {
         $error_data = json_decode($response, true);
         $error_message = isset($error_data['error']['message']) ? $error_data['error']['message'] : 'API request failed with code ' . $http_code;
-        return ['success' => false, 'error' => $error_message];
+        return ['success' => false, 'error' => $error_message, 'http_code' => $http_code];
     }
     
     $data = json_decode($response, true);
@@ -585,7 +628,7 @@ function callGroqAPI($messages) {
         ];
     }
     
-    return ['success' => false, 'error' => 'Invalid API response format'];
+    return ['success' => false, 'error' => 'Invalid API response format', 'http_code' => $http_code];
 }
 
 /**

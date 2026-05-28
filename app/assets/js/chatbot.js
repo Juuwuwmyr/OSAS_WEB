@@ -876,7 +876,7 @@ HOW-TO FOR ADMINS:
         try {
             let responseText = '';
 
-            // Try server-side API first
+            // Call server-side API (Groq with key rotation)
             try {
                 const serverRes = await fetch(this.apiBase + 'chatbot.php', {
                     method: 'POST',
@@ -888,23 +888,32 @@ HOW-TO FOR ADMINS:
                     })
                 });
 
-                if (serverRes.ok) {
-                    const serverData = await serverRes.json();
-                    if (serverData.success && serverData.response) {
-                        responseText = serverData.response;
-                    }
+                const rawText = await serverRes.text();
+                let serverData;
+                try {
+                    serverData = JSON.parse(rawText);
+                } catch (parseErr) {
+                    console.error('Non-JSON response:', rawText.substring(0, 300));
+                    throw new Error('Server error. Check PHP logs.');
                 }
-            } catch (serverErr) {
-                console.warn('Server API failed:', serverErr);
+
+                if (serverData.success && serverData.response) {
+                    responseText = serverData.response;
+                } else if (serverData.error) {
+                    throw new Error(serverData.error);
+                } else {
+                    throw new Error('Unexpected server response.');
+                }
+            } catch (fetchErr) {
+                if (fetchErr instanceof TypeError) {
+                    throw new Error('Network error — cannot reach server.');
+                }
+                throw fetchErr;
             }
 
-            if (!responseText) {
-                throw new Error('Unable to get a response. Please try again later.');
-            }
-            
             // Ensure we have a valid string
             if (!responseText || responseText.trim().length === 0) {
-                throw new Error('Empty response from server');
+                throw new Error('Empty response from server.');
             }
             
             // Trim the response
@@ -921,12 +930,11 @@ HOW-TO FOR ADMINS:
 
         } catch (error) {
             console.error('Chatbot error:', error);
-            let errorMessage = 'Sorry, I\'m having trouble connecting.';
+            let errorMessage = error.message || 'Something went wrong. Please try again.';
             
-            if (error.message) {
-                errorMessage = 'Error: ' + error.message;
-            } else if (error instanceof TypeError && error.message.includes('fetch')) {
-                errorMessage = 'Network error. Please check your internet connection.';
+            // Make rate limit errors more user-friendly
+            if (errorMessage.toLowerCase().includes('rate limit')) {
+                errorMessage = 'I\'m a bit busy right now. Please wait a few seconds and try again.';
             }
             
             this.addMessage('bot', errorMessage);
