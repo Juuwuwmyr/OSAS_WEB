@@ -78,5 +78,6 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>
+  <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>"></script>
 </body>
 </html>

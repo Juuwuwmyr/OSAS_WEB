@@ -98,7 +98,7 @@ class PushSubscriptionModel extends Model
         return $this->query(
             "SELECT ps.endpoint, ps.p256dh, ps.auth FROM push_subscriptions ps
              INNER JOIN users u ON u.id = ps.user_id
-             WHERE ps.scope = 'full' AND u.role = 'user' AND u.is_active = 1
+             WHERE u.role = 'user' AND u.is_active = 1
                AND BINARY u.student_id = BINARY ?
              LIMIT 20",
             [$studentId]
