@@ -89,7 +89,7 @@ if (!$student_id) {
     <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>?v=<?= time() ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://js.puter.com/v2/"></script>
+  
 </head>
 <body data-eosas-push="student">
     <?php

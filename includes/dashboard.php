@@ -48,7 +48,7 @@ if ($_SESSION['role'] !== 'admin') {
   <link rel="stylesheet" href="<?= View::asset('styles/students.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>?v=<?= time() ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://js.puter.com/v2/"></script>
+
 </head>
 <body>
   <?php View::partial('admin_topnav'); ?>

@@ -7,7 +7,7 @@ class Chatbot {
     constructor() {
         this.isOpen = false;
         this.conversationHistory = [];
-        this.usePuter = true; // Using Puter.js for AI responses
+        this.useGroq = true; // Using Groq for AI responses
         this.databaseContext = null; // Cached database context
         this.contextLastFetched = null; // Timestamp of last fetch
         this.contextCacheTime = 5 * 60 * 1000; // Cache for 5 minutes
@@ -28,28 +28,11 @@ class Chatbot {
             this.attachEventListeners();
             // Pre-fetch database context
             this.fetchDatabaseContext();
-            // Pre-authenticate Puter.js silently
-            this.initPuterAuth();
+
         });
     }
 
-    /**
-     * Initialize Puter.js authentication silently
-     */
-    async initPuterAuth() {
-        try {
-            if (typeof puter !== 'undefined' && puter.auth) {
-                const isSignedIn = await puter.auth.isSignedIn();
-                if (!isSignedIn) {
-                    console.log('Puter.js: User not signed in, AI will prompt on first use');
-                } else {
-                    console.log('Puter.js: User already authenticated');
-                }
-            }
-        } catch (e) {
-            console.warn('Puter.js auth check failed:', e);
-        }
-    }
+
 
     waitForBoxicons() {
         return new Promise((resolve) => {
@@ -912,43 +895,7 @@ HOW-TO FOR ADMINS:
                     }
                 }
             } catch (serverErr) {
-                console.warn('Server API failed, trying Puter.js:', serverErr);
-            }
-
-            // Fallback to Puter.js if server failed
-            if (!responseText && typeof puter !== 'undefined' && puter.ai) {
-                // Fetch or use cached database context
-                const dbContext = await this.fetchDatabaseContext();
-                const currentPath = window.location.pathname;
-                const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
-
-                let conversationContext = this.buildAdvancedSystemPrompt(userRole);
-                
-                if (dbContext) {
-                    conversationContext += this.formatDatabaseContext(dbContext);
-                }
-                
-                if (this.conversationHistory.length > 1) {
-                    conversationContext += "\n\nPREVIOUS CONVERSATION:\n";
-                    this.conversationHistory.slice(-8).forEach(msg => {
-                        if (msg.role === 'user') conversationContext += `User: ${msg.content}\n`;
-                        else if (msg.role === 'assistant') conversationContext += `Assistant: ${msg.content}\n`;
-                    });
-                }
-                
-                conversationContext += `\nUser: ${message}\nAssistant:`;
-
-                const puterResponse = await puter.ai.chat(conversationContext, { model: 'gpt-4o-mini' });
-                
-                if (typeof puterResponse === 'string') {
-                    responseText = puterResponse;
-                } else if (puterResponse && puterResponse.message && puterResponse.message.content) {
-                    responseText = puterResponse.message.content;
-                } else if (puterResponse && puterResponse.content) {
-                    responseText = puterResponse.content;
-                } else if (puterResponse && puterResponse.text) {
-                    responseText = puterResponse.text;
-                }
+                console.warn('Server API failed:', serverErr);
             }
 
             if (!responseText) {
