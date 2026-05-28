@@ -18,8 +18,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     exit;
 }
 
-// Wrong role
-if ($_SESSION['role'] !== 'admin') {
+// Wrong role — only admin and staff roles can access admin dashboard
+if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
     $dest = $_SESSION['role'] === 'user' ? 'includes/user_dashboard.php' : 'index.php';
     header('Location: ' . View::url($dest));
     exit;

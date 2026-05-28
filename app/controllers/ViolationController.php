@@ -217,7 +217,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 
@@ -437,7 +437,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 
@@ -490,7 +490,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 

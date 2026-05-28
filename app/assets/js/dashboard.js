@@ -88,32 +88,13 @@ function updateActiveNavItem(page) {
 // Privilege Check Helper
 function isMainAdmin() {
     const sessionStr = localStorage.getItem('userSession');
-    if (!sessionStr) {
-        console.log('❌ No userSession found in localStorage');
-        return false;
-    }
+    if (!sessionStr) return false;
     try {
         const session = JSON.parse(sessionStr);
-        // Debug: Log the session to help identify the user
-        console.log('🔍 Checking privileges for session user:', session);
-        
-        // Check both session.username (from new login.js) and session.name (as fallback)
-        const mainAdmins = ['admin_demo', 'adminOsas@colegio.edu', 'adminOsas'];
-        
-        // If session.username is available, check it
-        if (session.username && mainAdmins.includes(session.username)) {
-            return true;
-        }
-        
-        // If session.name is available and matches, check it (as a fallback)
-        if (session.name && mainAdmins.includes(session.name)) {
-            return true;
-        }
-        
-        console.log('⚠️ User is not recognized as a Main Admin');
-        return false;
+        // Only 'admin' role gets full settings access
+        // OSAS Staff gets dashboard access but limited settings
+        return session.role === 'admin';
     } catch (e) {
-        console.error('❌ Error parsing session in isMainAdmin:', e);
         return false;
     }
 }
@@ -751,8 +732,8 @@ function createSettingsModal() {
                                     <option value="admin">Admin</option>
                                     <option value="OSAS Staff">OSAS Staff</option>
                                     <option value="CSC Officer">CSC Officer</option>
+                                    <option value="Officer">Officer</option>
                                     <option value="Faculty Member">Faculty Member</option>
-                                    <option value="Student">Student</option>
                                 </select>
                             </div>
                             <div class="settings-form-group">

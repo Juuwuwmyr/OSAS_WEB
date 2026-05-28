@@ -22,7 +22,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE
 }
 
 if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === 'admin') {
+    if (in_array($_SESSION['role'], ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
         header('Location: ' . $prefix . '/includes/dashboard.php');
         exit;
     } elseif ($_SESSION['role'] === 'user') {
