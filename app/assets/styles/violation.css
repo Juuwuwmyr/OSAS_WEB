@@ -5066,3 +5066,49 @@ body.dark {
   width: 32px !important;
   height: 32px !important;
 }
+
+
+/* ── Dark mode: Student info card fix ── */
+body.dark .violation-student-info-card,
+body.dark .violation-student-info-card.detailed,
+body.dark .violation-student-info-card.selected,
+body.dark #ViolationDetailsModal .violation-student-info-card {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+
+body.dark .violation-details-grid,
+body.dark #ViolationDetailsModal .violation-details-grid {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+
+body.dark .violation-notes-section,
+body.dark #ViolationDetailsModal .violation-notes-section {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+
+body.dark .case-header,
+body.dark #ViolationDetailsModal .case-header {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+
+body.dark #ViolationDetailsModal .vd-table tbody tr {
+  background: #1a1a1a !important;
+}
+
+body.dark #ViolationDetailsModal .vd-table tbody tr:hover {
+  background: #222 !important;
+}
+
+body.dark #ViolationDetailsModal .vd-table thead th {
+  background: #111 !important;
+  color: #94a3b8 !important;
+}
+
+body.dark #ViolationDetailsModal .timeline-content {
+  background: #222 !important;
+  border-color: #2A2A2A !important;
+}
