@@ -390,6 +390,21 @@ class ViolationController extends Controller
                     $pushBody,
                     ['type' => 'violation', 'id' => (int) $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-' . $id]
                 );
+                
+                // Notify head admin about the new violation (so they know who recorded it)
+                $currentUserId = $_SESSION['user_id'] ?? null;
+                $recordedBy = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Staff';
+                $studentFullName = trim(($student[0]['first_name'] ?? '') . ' ' . ($student[0]['last_name'] ?? ''));
+                
+                $adminTitle = '📝 New Violation Recorded';
+                $adminBody = "{$recordedBy} recorded a \"{$typeName}\" ({$levelName}) violation for {$studentFullName} ({$studentId}).";
+                
+                (new PushNotificationService())->notifyAdmins(
+                    $adminTitle,
+                    $adminBody,
+                    ['type' => 'admin_violation', 'id' => (int) $id, 'page' => 'violations', 'tag' => 'admin-violation-' . $id],
+                    $currentUserId // exclude the admin who recorded it (they already know)
+                );
             } catch (Throwable $e) {
                 error_log('Violation push: ' . $e->getMessage());
             }

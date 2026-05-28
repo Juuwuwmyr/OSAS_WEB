@@ -105,6 +105,26 @@ class PushSubscriptionModel extends Model
         );
     }
 
+    /** Get head admin subscriptions (highest hierarchy) for notifications */
+    public function getAdminSubscriptions($excludeUserId = null)
+    {
+        if ($excludeUserId !== null) {
+            return $this->query(
+                "SELECT ps.endpoint, ps.p256dh, ps.auth FROM push_subscriptions ps
+                 INNER JOIN users u ON u.id = ps.user_id
+                 WHERE u.role = 'admin' AND u.is_active = 1 AND u.id != ?
+                 LIMIT 20",
+                [$excludeUserId]
+            );
+        }
+        return $this->query(
+            "SELECT ps.endpoint, ps.p256dh, ps.auth FROM push_subscriptions ps
+             INNER JOIN users u ON u.id = ps.user_id
+             WHERE u.role = 'admin' AND u.is_active = 1
+             LIMIT 20"
+        );
+    }
+
     public function deleteByEndpoint($endpoint)
     {
         $this->removeByEndpoint($endpoint, null);
