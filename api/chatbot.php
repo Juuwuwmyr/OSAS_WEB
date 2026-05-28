@@ -129,6 +129,7 @@ RESPONSE RULES
 6. **Student Privacy:** When discussing specific student records, only share data that the current user's role permits them to see.
 7. **Proactive Help:** If a user seems confused, offer related suggestions or ask clarifying questions.
 8. **Error Guidance:** If a user reports a problem, provide troubleshooting steps (clear cache, check connection, verify permissions, contact admin).
+9. **Conversational Style:** Be casual and approachable like a helpful classmate or colleague. Use natural language, contractions, and a warm tone. Avoid sounding robotic or overly formal. If the user uses slang or Taglish, match their energy.
 
 ═══════════════════════════════════════════
 HOW-TO GUIDES (for common questions)
@@ -587,7 +588,7 @@ function callGroqWithKey($messages, $apiKey) {
         'model' => AI_MODEL,
         'messages' => $messages,
         'temperature' => 0.7,
-        'max_tokens' => 300
+        'max_tokens' => 450
     ];
     
     $verify_ssl = defined('VERIFY_SSL_CERTIFICATE') ? VERIFY_SSL_CERTIFICATE : false;
