@@ -4503,7 +4503,11 @@ function initViolationsModule() {
                 localStorage.setItem('violationsViewMode', viewMode);
                 viewToggleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                renderViolations();
+                if (currentView === 'requests') {
+                    loadSlipRequests();
+                } else {
+                    renderViolations();
+                }
             });
         });
         // Set initial active state from saved preference
@@ -4606,43 +4610,112 @@ function initViolationsModule() {
 
         function renderSlipRequestsTable(requests) {
             const tbody = document.getElementById('slipRequestsTableBody');
-            if (!tbody) return;
+            const gridView = document.getElementById('slipRequestsGridView');
+            const gridBody = document.getElementById('slipRequestsGridBody');
+            const listView = document.getElementById('slipRequestsListView');
+            const tableView = document.getElementById('slipRequestsTableView');
+            
+            if (!tbody || !gridBody || !listView || !tableView) return;
+
+            // Show/hide based on viewMode
+            tableView.style.display = viewMode === 'table' ? '' : 'none';
+            gridView.style.display = viewMode === 'grid' ? '' : 'none';
+            listView.style.display = viewMode === 'list' ? '' : 'none';
 
             if (!requests || requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#999; font-size:12px;">No slip requests found.</td></tr>';
+                const emptyMsg = '<div style="text-align:center; padding:30px; color:#999; font-size:12px;">No slip requests found.</div>';
+                tbody.innerHTML = `<tr><td colspan="6">${emptyMsg}</td></tr>`;
+                gridBody.innerHTML = emptyMsg;
+                listView.innerHTML = emptyMsg;
                 return;
             }
 
+            // Table view
             tbody.innerHTML = requests.map(req => {
                 const status = req.status || 'pending';
                 const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const actionsHtml = status === 'pending' ? `
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                        <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>
+                    </div>` : `<span style="color:#aaa; font-size:10px;">—</span>`;
 
-                let actionsHtml = '';
-                if (status === 'pending') {
-                    actionsHtml = `
-                        <div style="display:flex; gap:5px; align-items:center;">
-                            <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve">
-                                <i class='bx bx-check'></i>
-                            </button>
-                            <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny">
-                                <i class='bx bx-x'></i>
-                            </button>
+                return `<tr>
+                    <td>${req.first_name || ''} ${req.last_name || ''}</td>
+                    <td>${req.student_id || ''}</td>
+                    <td>${new Date(req.request_date).toLocaleString()}</td>
+                    <td>${req.requested_by_name || 'System'}</td>
+                    <td><span class="slip-status-badge ${status}">${statusLabel}</span></td>
+                    <td>${actionsHtml}</td>
+                </tr>`;
+            }).join('');
+
+            // Grid view
+            gridBody.innerHTML = requests.map(req => {
+                const status = req.status || 'pending';
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const statusClass = status === 'approved' ? 'resolved' : status === 'denied' ? 'disciplinary' : 'warning';
+                const actionsHtml = status === 'pending' ? `
+                    <div class="violation-card-actions">
+                        <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                        <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>
+                    </div>` : '';
+
+                return `<div class="violation-card ${statusClass}">
+                    <div class="violation-card-header">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-card-avatar">
+                        <div class="violation-card-name-block">
+                            <span class="violation-card-name">${req.first_name || ''} ${req.last_name || ''}</span>
+                            <span class="violation-card-id">${req.student_id || ''}</span>
                         </div>
-                    `;
-                } else {
-                    actionsHtml = `<span style="color:#aaa; font-size:10px;">—</span>`;
-                }
+                    </div>
+                    <div class="violation-card-body">
+                        <div class="violation-card-meta">
+                            <div class="violation-card-meta-item">
+                                <span class="violation-card-meta-label">Type</span>
+                                <span class="violation-type-badge" style="font-size:9px;padding:2px 7px;">Slip Request</span>
+                            </div>
+                            <div class="violation-card-meta-item">
+                                <span class="violation-card-meta-label">Date</span>
+                                <span style="font-size:10px;color:var(--dark);">${new Date(req.request_date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="violation-card-footer">
+                        <span class="Violations-status-badge ${statusClass}">${statusLabel}</span>
+                        ${actionsHtml}
+                    </div>
+                </div>`;
+            }).join('');
 
-                return `
-                    <tr>
-                        <td>${req.first_name} ${req.last_name}</td>
-                        <td>${req.student_id}</td>
-                        <td>${new Date(req.request_date).toLocaleString()}</td>
-                        <td>${req.requested_by_name || 'System'}</td>
-                        <td><span class="slip-status-badge ${status}">${statusLabel}</span></td>
-                        <td>${actionsHtml}</td>
-                    </tr>
-                `;
+            // List view
+            listView.innerHTML = requests.map(req => {
+                const status = req.status || 'pending';
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const statusClass = status === 'approved' ? 'resolved' : status === 'denied' ? 'disciplinary' : 'warning';
+                const actionsHtml = status === 'pending' ? `
+                    <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                    <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>` : '';
+
+                return `<div class="violation-list-item ${statusClass}" data-id="${req.id}">
+                    <div class="violation-list-top">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-list-avatar">
+                        <div class="violation-list-name-block">
+                            <span class="violation-list-name">${req.first_name || ''} ${req.last_name || ''}</span>
+                            <span class="violation-list-id">${req.student_id || ''}</span>
+                        </div>
+                        <div class="violation-list-actions">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                    <div class="violation-list-badges">
+                        <span class="violation-type-badge" style="font-size:9px;padding:2px 7px;">Slip Request</span>
+                        <span class="slip-status-badge ${status}" style="font-size:9px;padding:2px 7px;">${statusLabel}</span>
+                        <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
+                            <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${new Date(req.request_date).toLocaleDateString()}
+                        </span>
+                    </div>
+                </div>`;
             }).join('');
         }
 

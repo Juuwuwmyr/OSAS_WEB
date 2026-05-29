@@ -4955,7 +4955,7 @@ body.dark {
 }
 
 /* Status badges in slip requests */
-#slipRequestsTable .slip-status-badge {
+.slip-status-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
@@ -4967,26 +4967,26 @@ body.dark {
   border: 1.5px solid transparent;
 }
 
-#slipRequestsTable .slip-status-badge.pending {
+.slip-status-badge.pending {
   background: rgba(255,152,0,.15);
   color: #e65100;
   border-color: rgba(255,152,0,.3);
 }
 
-#slipRequestsTable .slip-status-badge.approved {
+.slip-status-badge.approved {
   background: rgba(76,175,80,.15);
   color: #1b5e20;
   border-color: rgba(76,175,80,.3);
 }
 
-#slipRequestsTable .slip-status-badge.denied {
+.slip-status-badge.denied {
   background: rgba(244,67,54,.15);
   color: #b71c1c;
   border-color: rgba(244,67,54,.3);
 }
 
 /* Action buttons in slip requests */
-#slipRequestsTable .slip-action-btn {
+.slip-action-btn {
   width: 28px;
   height: 28px;
   border-radius: 6px;
@@ -5001,24 +5001,24 @@ body.dark {
   color: var(--dark);
 }
 
-#slipRequestsTable .slip-action-btn.approve {
+.slip-action-btn.approve {
   background: rgba(76,175,80,.1);
   color: #1b5e20;
   border-color: rgba(76,175,80,.3);
 }
 
-#slipRequestsTable .slip-action-btn.approve:hover {
+.slip-action-btn.approve:hover {
   background: #4caf50;
   color: #fff;
 }
 
-#slipRequestsTable .slip-action-btn.deny {
+.slip-action-btn.deny {
   background: rgba(244,67,54,.1);
   color: #b71c1c;
   border-color: rgba(244,67,54,.3);
 }
 
-#slipRequestsTable .slip-action-btn.deny:hover {
+.slip-action-btn.deny:hover {
   background: #f44336;
   color: #fff;
 }

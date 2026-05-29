@@ -269,23 +269,28 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
 
-    <!-- Slip Requests Table (Initially Hidden) -->
-    <div class="Violations-table-container" id="slipRequestsContainer" style="display: none;">
-      <table class="Violations-table" id="slipRequestsTable">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Student ID</th>
-            <th>Request Date</th>
-            <th>Requested By</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="slipRequestsTableBody">
-          <!-- Data will be loaded dynamically -->
-        </tbody>
-      </table>
+    <!-- Slip Requests (Initially Hidden) -->
+    <div id="slipRequestsContainer" style="display: none;">
+      <div class="Violations-table-container" id="slipRequestsTableView">
+        <table class="Violations-table" id="slipRequestsTable">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Student ID</th>
+              <th>Request Date</th>
+              <th>Requested By</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="slipRequestsTableBody">
+          </tbody>
+        </table>
+      </div>
+      <div class="Violations-grid-container" id="slipRequestsGridView" style="display:none;">
+        <div class="Violations-grid" id="slipRequestsGridBody"></div>
+      </div>
+      <div id="slipRequestsListView" style="display:none;"></div>
     </div>
   </div>
 
