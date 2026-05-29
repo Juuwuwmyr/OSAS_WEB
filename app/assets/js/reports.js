@@ -497,6 +497,10 @@ function initReportsModule() {
                                         <p class="report-card-id">${report.studentId}</p>
                                     </div>
                                 </div>
+                                <div style="display:flex;gap:5px;flex-wrap:wrap;margin:8px 0;">
+                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${report.department}</span>
+                                    <span class="yearlevel-badge" style="font-size:9px;padding:2px 6px;min-width:auto;">Year ${report.yearlevel || 'N/A'}</span>
+                                </div>
                                 <div class="report-card-divider"></div>
                                 <div class="report-card-counts">
                                     <div class="report-card-count-item">
@@ -516,13 +520,9 @@ function initReportsModule() {
                                         <span class="report-card-count-value ${totalClass}">${report.totalViolations}</span>
                                     </div>
                                 </div>
-                                <div style="display:flex;gap:5px;flex-wrap:wrap;">
-                                    <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 6px;">${report.department}</span>
-                                    <span class="yearlevel-badge" style="font-size:9px;padding:2px 6px;min-width:auto;">${report.yearlevel || 'N/A'}</span>
-                                </div>
                             </div>
                             <div class="report-card-footer">
-                                <span style="font-size:9px;color:var(--dark-grey);">Total: <strong>${report.totalViolations}</strong></span>
+                                <span style="font-size:9px;color:var(--dark-grey);font-weight:600;">${getReportPeriodLabel(report)}</span>
                                 <div class="report-card-actions">${actionBtns(report.id)}</div>
                             </div>
                         </div>`;
@@ -1462,7 +1462,7 @@ function initReportsModule() {
             let startY = 67;
 
             // Table
-            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total"];
+            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Period", "Uniform", "Footwear", "No ID", "Total"];
             const tableRows = [];
 
             reportsData.forEach(report => {
@@ -1471,6 +1471,7 @@ function initReportsModule() {
                     report.studentName,
                     report.department,
                     report.section,
+                    getReportPeriodLabel(report),
                     report.uniformCount + '/5',
                     report.footwearCount + '/5',
                     report.noIdCount + '/5',
@@ -1752,7 +1753,7 @@ function initReportsModule() {
             // Table Header with modern styling
             const tableHeader = new TableRow({
                 children: [
-                    "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total"
+                    "Student ID", "Name", "Dept", "Section", "Period", "Uniform", "Footwear", "No ID", "Total"
                 ].map(text => new TableCell({
                     children: [new Paragraph({ 
                         children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
@@ -1778,6 +1779,7 @@ function initReportsModule() {
                         report.studentName,
                         report.department,
                         report.section,
+                        getReportPeriodLabel(report),
                         report.uniformCount + '/5',
                         report.footwearCount + '/5',
                         report.noIdCount + '/5',
@@ -1887,18 +1889,19 @@ function initReportsModule() {
                                     </center>
                                 </td>
                             </tr>` : ''}
-                            <tr><td colspan="9" class="title" align="center" style="text-align: center;">VIOLATION ANALYSIS REPORT</td></tr>
-                            <tr><td colspan="9" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
-                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
-                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Reported by: ${getCurrentAdminName()}</td></tr>
-                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Total Records: ${reportsData.length}</td></tr>
-                            <tr><td colspan="9" style="height: 20px;"></td></tr>
+                            <tr><td colspan="10" class="title" align="center" style="text-align: center;">VIOLATION ANALYSIS REPORT</td></tr>
+                            <tr><td colspan="10" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="10" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="10" class="stats" align="center" style="text-align: center;">Reported by: ${getCurrentAdminName()}</td></tr>
+                            <tr><td colspan="10" class="stats" align="center" style="text-align: center;">Total Records: ${reportsData.length}</td></tr>
+                            <tr><td colspan="10" style="height: 20px;"></td></tr>
                             <tr class="data-table">
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Report ID</th>
                                 <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Period</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Uniform</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Footwear</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">No ID</th>
@@ -1914,6 +1917,7 @@ function initReportsModule() {
                             <td>${report.studentName || ''}</td>
                             <td>${report.department || ''}</td>
                             <td>${report.section || ''}</td>
+                            <td>${getReportPeriodLabel(report)}</td>
                             <td align="center">${(report.uniformCount || 0) + '/5'}</td>
                             <td align="center">${(report.footwearCount || 0) + '/5'}</td>
                             <td align="center">${(report.noIdCount || 0) + '/5'}</td>

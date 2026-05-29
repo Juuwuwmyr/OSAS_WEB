@@ -1151,7 +1151,7 @@ body.dark {
 }
 
 /* Add tooltips for action buttons */
-.Reports-action-btn::after {
+.Reports-action-btn[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
   bottom: -30px;
@@ -1169,7 +1169,7 @@ body.dark {
   z-index: 1000;
 }
 
-.Reports-action-btn:hover::after {
+.Reports-action-btn[data-tooltip]:hover::after {
   opacity: 1;
 }
 
