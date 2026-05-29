@@ -739,34 +739,34 @@ function initReportsModule() {
                 statsGrid.innerHTML = `
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class='bx bx-t-shirt'></i>
+                            <i class='bx bxs-t-shirt'></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-title">Uniform Violations</span>
-                            <span class="stat-value">${report.uniformCount}</span>
+                            <span class="stat-value">${report.uniformCount}/5</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class='bx bx-walk'></i>
+                            <i class='bx bxs-shopping-bag-alt'></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-title">Footwear Violations</span>
-                            <span class="stat-value">${report.footwearCount}</span>
+                            <span class="stat-value">${report.footwearCount}/5</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class='bx bx-id-card'></i>
+                            <i class='bx bxs-id-card'></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-title">No ID Violations</span>
-                            <span class="stat-value">${report.noIdCount}</span>
+                            <span class="stat-value">${report.noIdCount}/5</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class='bx bx-bar-chart-alt'></i>
+                            <i class='bx bxs-bar-chart-alt-2'></i>
                         </div>
                         <div class="stat-content">
                             <span class="stat-title">Total Violations</span>
