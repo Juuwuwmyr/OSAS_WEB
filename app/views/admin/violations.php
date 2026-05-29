@@ -170,6 +170,16 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-filter-alt'></i>
         </button>
 
+        <!-- Display Mode Toggle: Latest per student vs All records -->
+        <div class="Violations-view-toggle" id="displayModeToggle">
+          <button class="Violations-display-btn active" data-display="latest" title="Latest per student">
+            <i class='bx bx-user'></i>
+          </button>
+          <button class="Violations-display-btn" data-display="all" title="All violations (full history)">
+            <i class='bx bx-history'></i>
+          </button>
+        </div>
+
         <!-- View Toggle -->
         <div class="Violations-view-toggle">
           <button class="Violations-view-btn" data-view="table" title="Table View">

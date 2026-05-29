@@ -132,6 +132,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
+        let displayMode     = 'latest'; // 'latest' = one per student, 'all' = full history
         let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
@@ -2137,10 +2138,10 @@ function initViolationsModule() {
 
             console.log('🔍 Filter values:', { currentSearchTerm, currentDept, currentMonth, currentDateFrom, currentDateTo, currentView });
 
-            // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
+            // LOGIC CHANGE: Show only latest violation per student or all based on displayMode
             let sourceViolations = violations;
             
-            if (!currentSearchTerm && currentView === 'current') {
+            if (displayMode === 'latest' && !currentSearchTerm && currentView === 'current') {
                 const uniqueStudentMap = new Map();
                 violations.forEach(v => {
                     // Violations are sorted by date DESC from backend, so first encounter is latest
@@ -4508,6 +4509,18 @@ function initViolationsModule() {
         // Set initial active state from saved preference
         viewToggleBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === viewMode);
+        });
+
+        // 12c. DISPLAY MODE TOGGLE (Latest per student vs All history)
+        const displayToggleBtns = document.querySelectorAll('.Violations-display-btn');
+        displayToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                displayMode = btn.dataset.display;
+                displayToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPage = 1;
+                renderViolations();
+            });
         });
 
         // Delegate clicks on grid and list views to the existing action handler
