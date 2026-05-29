@@ -415,7 +415,9 @@ function formatTime(timeStr) {
 }
 
 function viewViolationDetails(id) {
-    const v = allUserViolations.find(x => x.id == id) || userViolations.find(x => x.id == id);
+    const v = allUserViolations.find(x => x.id == id) || userViolations.find(x => x.id == id) 
+           || (window.allUserViolations || []).find(x => x.id == id) 
+           || (window.userViolations || []).find(x => x.id == id);
     if (!v) return;
     currentViolationId = id;
 

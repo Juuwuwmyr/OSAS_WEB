@@ -974,41 +974,100 @@ body.dark {
 }
 
 /* ============================================================
-   RECENT VIOLATIONS TABLE
+   RECENT VIOLATIONS LIST (Card Style)
    ============================================================ */
-.sd-table-wrap {
-  overflow-x: auto;
-  padding: 0 0 4px;
+.sd-violations-list {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
 }
-.sd-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.sd-table thead th {
-  padding: 10px 20px;
-  font-size: .7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .6px;
+.sd-violations-empty {
+  text-align: center;
+  padding: 40px 20px;
   color: var(--text-3);
+}
+.sd-violations-empty i {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 8px;
+  opacity: .4;
+}
+.sd-violations-empty p {
+  font-size: .85rem;
+}
+
+.sd-violation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  text-align: left;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  transition: all .2s var(--ease);
+  cursor: pointer;
+}
+.sd-violation-item:hover {
+  border-color: var(--gold);
+  background: var(--gold-light);
+  transform: translateX(3px);
+}
+
+.sd-violation-item__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.sd-violation-item__icon--uniform  { background: rgba(239, 68, 68, .12); color: #ef4444; }
+.sd-violation-item__icon--footwear { background: rgba(245, 158, 11, .12); color: #f59e0b; }
+.sd-violation-item__icon--id       { background: rgba(59, 130, 246, .12); color: #3b82f6; }
+.sd-violation-item__icon--default  { background: var(--gold-light); color: var(--gold-dark); }
+
+.sd-violation-item__details {
+  flex: 1;
+  min-width: 0;
+}
+.sd-violation-item__details h4 {
+  font-size: .83rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.sd-table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background .15s;
+.sd-violation-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.sd-table tbody tr:last-child { border-bottom: none; }
-.sd-table tbody tr:hover { background: var(--surface-2); }
-.sd-table tbody td {
-  padding: 13px 20px;
-  font-size: .82rem;
-  color: var(--text-2);
-  vertical-align: middle;
+.sd-violation-item__date {
+  font-size: .7rem;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-.sd-table tbody td:first-child { color: var(--text-3); font-size: .78rem; }
+.sd-violation-item__date i {
+  font-size: .75rem;
+}
+.sd-violation-item__action {
+  flex-shrink: 0;
+}
+.sd-violation-item__action .sd-view-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
 
 /* Status badges */
 .sd-badge {
@@ -1483,7 +1542,8 @@ body.dark .sd-hero {
 }
 body.dark .sd-stat { background: var(--surface); }
 body.dark .sd-card { background: var(--surface); }
-body.dark .sd-table thead th { background: var(--surface-2); }
+body.dark .sd-violation-item { background: #1a1a1a; border-color: #2A2A2A; }
+body.dark .sd-violation-item:hover { background: rgba(245,197,24,.08); border-color: var(--gold); }
 body.dark .violation-type,
 body.dark .announcement-item,
 body.dark .sd-tip,
@@ -1611,45 +1671,10 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   .violation-details h4 { font-size: .8rem; }
   .violation-bar-wrap { width: 50px; }
 
-  /* Table â€” card layout on mobile */
-  .sd-table thead { display: none; }
-  .sd-table tbody tr {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    position: relative;
-  }
-  .sd-table tbody td {
-    padding: 0;
-    font-size: .8rem;
-    border: none;
-  }
-  /* Date â€” small muted label */
-  .sd-table tbody td:nth-child(1) {
-    font-size: .7rem;
-    color: var(--text-3);
-    order: 3;
-    margin-top: 4px;
-  }
-  /* Type â€” main label, bold */
-  .sd-table tbody td:nth-child(2) {
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--text);
-    order: 1;
-  }
-  /* Status badge */
-  .sd-table tbody td:nth-child(3) {
-    order: 2;
-  }
-  /* View button â€” absolute top-right */
-  .sd-table tbody td:nth-child(4) {
-    position: absolute;
-    top: 12px; right: 14px;
-    order: 4;
-  }
+  /* Table â€” Violations list - card layout on mobile */
+  .sd-violation-item { padding: 10px 12px; }
+  .sd-violation-item__icon { width: 30px; height: 30px; font-size: 15px; }
+  .sd-violation-item__details h4 { font-size: .78rem; }
 
   /* Announcements */
   .sd-announce-body { max-height: 260px; padding: 10px 14px; }
@@ -1856,8 +1881,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .violation-details h4   { font-size: 0.78rem !important; }
 .violation-details p    { font-size: 0.68rem !important; }
 
-.sd-table thead th      { font-size: 0.62rem !important; padding: 8px 16px !important; }
-.sd-table tbody td      { font-size: 0.75rem !important; padding: 10px 16px !important; }
+.sd-violation-item__details h4 { font-size: 0.75rem !important; }
+.sd-violation-item__date { font-size: 0.62rem !important; }
 
 .announcement-details h4 { font-size: 0.75rem !important; }
 .announcement-details p  { font-size: 0.68rem !important; }
@@ -1874,8 +1899,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .sd-hero__dl-btn { font-size: 0.68rem !important; padding: 7px 12px !important; }
 .sd-ring__pct { font-size: 0.82rem !important; }
 .violation-count { font-size: 1rem !important; }
-.sd-table thead th { font-size: 0.58rem !important; }
-.sd-table tbody td { font-size: 0.7rem !important; }
+.sd-violation-item__details h4 { font-size: 0.7rem !important; }
+.sd-violation-item__date { font-size: 0.58rem !important; }
 
 /* ============================================================
    MY VIOLATIONS PAGE  (uv-* namespace)

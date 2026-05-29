@@ -281,7 +281,7 @@
 
 /* List View */
 #announcements-page.user-side .announcements-list-view {
-    padding: 8px 16px;
+    padding: 16px 20px;
 }
 
 #announcements-page.user-side .ann-list-item {
@@ -302,7 +302,7 @@
 }
 
 #announcements-page.user-side .ann-list-item.unread {
-    border-left: 3px solid #d4af37;
+    font-weight: 500;
 }
 
 #announcements-page.user-side .ann-list-left {
