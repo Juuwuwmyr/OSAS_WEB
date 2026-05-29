@@ -1311,6 +1311,7 @@ body.dark #announcements-page.admin-side .page-btn.active {
 
 body.dark #announcements-page.admin-side .table-footer {
     border-top-color: var(--border, #2A2A2A);
+    background: var(--grey, #0F0F0F);
 }
 
 body.dark #announcements-page.admin-side .page-info {

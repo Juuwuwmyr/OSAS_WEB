@@ -1917,10 +1917,10 @@ function initReportsModule() {
                             <td>${report.studentName || ''}</td>
                             <td>${report.department || ''}</td>
                             <td>${report.section || ''}</td>
-                            <td>${getReportPeriodLabel(report)}</td>
-                            <td align="center">${(report.uniformCount || 0) + '/5'}</td>
-                            <td align="center">${(report.footwearCount || 0) + '/5'}</td>
-                            <td align="center">${(report.noIdCount || 0) + '/5'}</td>
+                            <td style="mso-number-format:'\@';">${getReportPeriodLabel(report)}</td>
+                            <td align="center" style="mso-number-format:'\@';">${(report.uniformCount || 0) + '/5'}</td>
+                            <td align="center" style="mso-number-format:'\@';">${(report.footwearCount || 0) + '/5'}</td>
+                            <td align="center" style="mso-number-format:'\@';">${(report.noIdCount || 0) + '/5'}</td>
                             <td align="center"><b>${report.totalViolations || 0}</b></td>
                         </tr>
                     `;

@@ -815,3 +815,61 @@ body.dark #announcements-page.user-side .empty-state {
 body.dark #announcements-page.user-side .empty-state i {
     color: #475569 !important;
 }
+
+/* List/Grid items */
+body.dark #announcements-page.user-side .ann-list-item {
+    background: #1a1a1a !important;
+    border-color: #2A2A2A !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark #announcements-page.user-side .ann-list-item:hover {
+    border-color: var(--gold) !important;
+    background: rgba(212, 175, 55, 0.05) !important;
+}
+
+body.dark #announcements-page.user-side .ann-list-item .ann-title,
+body.dark #announcements-page.user-side .ann-list-item .ann-list-title,
+body.dark #announcements-page.user-side .ann-list-title {
+    color: #f1f5f9 !important;
+}
+
+body.dark #announcements-page.user-side .ann-list-item .ann-meta,
+body.dark #announcements-page.user-side .ann-list-item .ann-time,
+body.dark #announcements-page.user-side .ann-list-item .ann-list-meta {
+    color: #94a3b8 !important;
+}
+
+body.dark #announcements-page.user-side .ann-grid-item {
+    background: #1a1a1a !important;
+    border-color: #2A2A2A !important;
+}
+
+body.dark #announcements-page.user-side .ann-grid-item:hover {
+    border-color: var(--gold) !important;
+}
+
+body.dark #announcements-page.user-side .ann-grid-item .ann-title {
+    color: #f1f5f9 !important;
+}
+
+body.dark #announcements-page.user-side .announcements-view-toggle {
+    background: #0f0f0f !important;
+    border-color: #2A2A2A !important;
+}
+
+body.dark #announcements-page.user-side .table-header {
+    border-bottom-color: #2A2A2A !important;
+}
+
+body.dark #announcements-page.user-side .announcements-view-toggle .ann-view-btn {
+    background: #1a1a1a !important;
+    border-color: #2A2A2A !important;
+    color: #94a3b8 !important;
+}
+
+body.dark #announcements-page.user-side .announcements-view-toggle .ann-view-btn.active {
+    background: var(--gold) !important;
+    color: #000 !important;
+    border-color: var(--gold) !important;
+}
