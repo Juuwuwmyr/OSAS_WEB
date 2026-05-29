@@ -727,15 +727,21 @@ function initReportsModule() {
             const timelineEl = detailsModal.querySelector('.timeline');
             if (timelineEl) {
                 if (report.history && report.history.length > 0) {
-                    timelineEl.innerHTML = report.history.map(item => `
+                    timelineEl.innerHTML = report.history.map(item => {
+                        const dateTime = item.time ? `${item.date} • ${item.time}` : item.date;
+                        const locationHtml = item.location ? `<span class="timeline-location">Reported at ${item.location}</span>` : '';
+                        const reportedByHtml = item.reportedBy ? `<span class="timeline-location">By: ${item.reportedBy}</span>` : '';
+                        return `
                         <div class="timeline-item">
-                            <div class="timeline-date">${item.date}</div>
+                            <div class="timeline-date">${dateTime}</div>
                             <div class="timeline-content">
                                 <span class="timeline-title">${item.title}</span>
-                                <span class="timeline-desc">${item.desc}</span>
+                                ${locationHtml}
+                                ${reportedByHtml}
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 } else {
                     timelineEl.innerHTML = '<div class="timeline-item"><div class="timeline-content">No violation history available</div></div>';
                 }
