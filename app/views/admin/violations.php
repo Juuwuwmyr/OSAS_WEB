@@ -67,7 +67,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-check-circle'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Resolved</h3>
+        <h3 class="Violations-stat-title">Permitted</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
       </div>
@@ -78,7 +78,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Pending</h3>
+        <h3 class="Violations-stat-title">Warning</h3>
         <div class="Violations-stat-value" id="pendingViolations">0</div>
         <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
@@ -154,13 +154,25 @@ require_once __DIR__ . '/../../core/View.php';
             <option value="all">All Departments</option>
             <!-- Departments will be loaded via JS -->
           </select>
+
+          <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
+            <option value="all">All Years</option>
+            <?php
+            $currentYear = (int)date('Y');
+            for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
+                $selected = ($y == $currentYear) ? 'selected' : '';
+                echo "<option value='$y' $selected>$y</option>";
+            }
+            ?>
+          </select>
           
-          <select id="ArchiveMonthFilter" class="Violations-filter-select">
+          <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
             <option value="all">All Months</option>
             <?php
             for ($i = 1; $i <= 12; $i++) {
-                $month = date('F', mktime(0, 0, 0, $i, 1));
-                echo "<option value='$i'>$month</option>";
+                $month = date('M', mktime(0, 0, 0, $i, 1));
+                $selected = ($i == date('n')) ? 'selected' : '';
+                echo "<option value='$i' $selected>$month</option>";
             }
             ?>
           </select>

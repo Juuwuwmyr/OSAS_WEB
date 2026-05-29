@@ -2126,12 +2126,14 @@ function initViolationsModule() {
             // Get archive filters if in archive view
             const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
             const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+            const archiveYearFilter = document.getElementById('ArchiveYearFilter');
             const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
             const archiveDateToFilter = document.getElementById('ArchiveDateTo');
             const archiveSearchInput = document.getElementById('searchViolationArchive');
 
             const currentDept = currentView === 'current' ? deptValue : (archiveDeptFilter ? archiveDeptFilter.value : 'all');
             const currentMonth = currentView === 'archive' && archiveMonthFilter ? archiveMonthFilter.value : 'all';
+            const currentYear = currentView === 'archive' && archiveYearFilter ? archiveYearFilter.value : 'all';
             const currentDateFrom = currentView === 'current' ? dateFromValue : (archiveDateFromFilter ? archiveDateFromFilter.value : '');
             const currentDateTo = currentView === 'current' ? dateToValue : (archiveDateToFilter ? archiveDateToFilter.value : '');
             const currentSearchTerm = currentView === 'current' ? searchTerm : (archiveSearchInput ? archiveSearchInput.value.toLowerCase() : searchTerm);
@@ -2180,6 +2182,20 @@ function initViolationsModule() {
                     }
                 }
 
+                // Year filtering for archive
+                let matchesYear = true;
+                if (currentYear !== 'all') {
+                    const violationDateStr = v.dateReported || v.violationDate;
+                    if (violationDateStr) {
+                        const violationDate = new Date(violationDateStr);
+                        if (violationDate.getFullYear().toString() !== currentYear) {
+                            matchesYear = false;
+                        }
+                    } else {
+                        matchesYear = false;
+                    }
+                }
+
                 // Date filtering logic
                 let matchesDate = true;
                 if (currentDateFrom || currentDateTo) {
@@ -2204,7 +2220,7 @@ function initViolationsModule() {
                     }
                 }
 
-                return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth;
+                return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth && matchesYear;
             });
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
@@ -2449,7 +2465,7 @@ function initViolationsModule() {
 
         function updateStats() {
             const total = violations.length;
-            const resolved = violations.filter(v => v.status === 'resolved').length;
+            const resolved = violations.filter(v => v.status === 'permitted').length;
             
             // Apply Warning 3 -> Disciplinary logic for counts
             const disciplinary = violations.filter(v => {
@@ -4485,12 +4501,14 @@ function initViolationsModule() {
         // Archive filters
         const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
         const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+        const archiveYearFilter = document.getElementById('ArchiveYearFilter');
         const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
         const archiveDateToFilter = document.getElementById('ArchiveDateTo');
         const archiveSearchInput = document.getElementById('searchViolationArchive');
 
         if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveMonthFilter) archiveMonthFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveYearFilter) archiveYearFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveSearchInput) archiveSearchInput.addEventListener('input', () => { currentPage = 1; renderViolations(); });
