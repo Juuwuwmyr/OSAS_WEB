@@ -101,6 +101,69 @@ function initReportsModule() {
             return 'none';
         }
 
+        function getReportPeriodLabel(report) {
+            if (report.periodStart) {
+                const d = new Date(report.periodStart);
+                return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }
+            if (report.lastUpdated) {
+                const d = new Date(report.lastUpdated);
+                return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }
+            return 'N/A';
+        }
+
+        function getStatusBreakdown(report) {
+            // Show current level per type as X/5 + status label
+            // Levels: Permitted 1=1, Permitted 2=2, Warning 1=3, Warning 2=4, Warning 3/Disciplinary=5
+            const typeLevels = { uniform: 0, footwear: 0, id: 0 };
+
+            if (report.history && report.history.length > 0) {
+                report.history.forEach(h => {
+                    const title = (h.title || '').toLowerCase();
+                    
+                    let type = null;
+                    if (title.includes('uniform')) type = 'uniform';
+                    else if (title.includes('footwear') || title.includes('shoe')) type = 'footwear';
+                    else if (title.includes('id') || title.includes('no id')) type = 'id';
+                    if (!type) return;
+
+                    let level = 0;
+                    if (title.includes('permitted 1')) level = 1;
+                    else if (title.includes('permitted 2')) level = 2;
+                    else if (title.includes('warning 1')) level = 3;
+                    else if (title.includes('warning 2')) level = 4;
+                    else if (title.includes('warning 3') || title.includes('disciplinary')) level = 5;
+                    else if (title.includes('permitted')) level = 1;
+                    else if (title.includes('warning')) level = 3;
+                    
+                    if (level > typeLevels[type]) typeLevels[type] = level;
+                });
+            } else {
+                if (report.uniformCount > 0) typeLevels.uniform = Math.min(report.uniformCount, 5);
+                if (report.footwearCount > 0) typeLevels.footwear = Math.min(report.footwearCount, 5);
+                if (report.noIdCount > 0) typeLevels.id = Math.min(report.noIdCount, 5);
+            }
+
+            const typeLabels = { uniform: 'Uniform', footwear: 'Footwear', id: 'No ID' };
+            let parts = [];
+            
+            for (const [type, level] of Object.entries(typeLevels)) {
+                if (level === 0) continue;
+                let badgeClass, statusLabel;
+                if (level >= 5) { badgeClass = 'disciplinary'; statusLabel = 'DISCIPLINARY'; }
+                else if (level >= 3) { badgeClass = 'warning'; statusLabel = 'WARNING'; }
+                else { badgeClass = 'permitted'; statusLabel = 'PERMITTED'; }
+                
+                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${typeLabels[type]}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${statusLabel}</strong>`);
+            }
+            
+            if (parts.length === 0) {
+                return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
+            }
+            return parts.join(' ');
+        }
+
         function getCurrentAdminName() {
             const sessionStr = localStorage.getItem('userSession');
             if (!sessionStr) return 'Admin';
@@ -244,7 +307,7 @@ function initReportsModule() {
                 
                 if (reports.length === 0) {
                     if (tableBody) {
-                        tableBody.innerHTML = `<tr><td colspan="10">
+                        tableBody.innerHTML = `<tr><td colspan="9">
                             <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 24px;text-align:center;">
                                 <div style="width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,0.08);border:1.5px solid rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:center;">
                                     <i class='bx bx-bar-chart-alt-2' style="font-size:24px;color:#D4AF37;"></i>
@@ -272,7 +335,7 @@ function initReportsModule() {
                 console.error('❌ Error loading reports:', error);
                 console.error('Error details:', error.stack);
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #e74c3c;">
+                    tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #e74c3c;">
                         <div style="margin-bottom: 10px;">❌ Error loading reports: ${error.message}</div>
                         <div style="font-size: 0.9em; color: #666;">Check browser console for details</div>
                     </td></tr>`;
@@ -360,7 +423,7 @@ function initReportsModule() {
 
             // ── TABLE VIEW ──────────────────────────────────────────────────
             if (filteredReports.length === 0 && reports.length > 0) {
-                tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:#666;">No reports match the current filters.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#666;">No reports match the current filters.</td></tr>`;
             } else {
                 tableBody.innerHTML = pageItems.map(report => {
                     const deptClass    = getDepartmentClass(report.deptCode);
@@ -391,19 +454,16 @@ function initReportsModule() {
                             <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
                         </td>
                         <td class="violation-count uniform" data-label="Uniform">
-                            <div class="count-badge ${uniformClass}">${report.uniformCount}</div>
+                            <div class="count-badge ${uniformClass}">${report.uniformCount}/5</div>
                         </td>
                         <td class="violation-count footwear" data-label="Footwear">
-                            <div class="count-badge ${footwearClass}">${report.footwearCount}</div>
+                            <div class="count-badge ${footwearClass}">${report.footwearCount}/5</div>
                         </td>
                         <td class="violation-count no-id" data-label="No ID">
-                            <div class="count-badge ${noIdClass}">${report.noIdCount}</div>
+                            <div class="count-badge ${noIdClass}">${report.noIdCount}/5</div>
                         </td>
                         <td class="total-violations" data-label="Total">
                             <div class="total-badge ${totalClass}">${report.totalViolations}</div>
-                        </td>
-                        <td data-label="Status">
-                            <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
                         </td>
                         <td data-label="Actions">
                             <div class="Reports-action-buttons">${actionBtns(report.id)}</div>
@@ -441,15 +501,15 @@ function initReportsModule() {
                                 <div class="report-card-counts">
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">Uniform</span>
-                                        <span class="report-card-count-value ${uniformClass}">${report.uniformCount}</span>
+                                        <span class="report-card-count-value ${uniformClass}">${report.uniformCount}/5</span>
                                     </div>
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">Footwear</span>
-                                        <span class="report-card-count-value ${footwearClass}">${report.footwearCount}</span>
+                                        <span class="report-card-count-value ${footwearClass}">${report.footwearCount}/5</span>
                                     </div>
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">No ID</span>
-                                        <span class="report-card-count-value ${noIdClass}">${report.noIdCount}</span>
+                                        <span class="report-card-count-value ${noIdClass}">${report.noIdCount}/5</span>
                                     </div>
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">Total</span>
@@ -462,7 +522,7 @@ function initReportsModule() {
                                 </div>
                             </div>
                             <div class="report-card-footer">
-                                <span class="Reports-status-badge ${statusClass}">${report.statusLabel}</span>
+                                <span style="font-size:9px;color:var(--dark-grey);">Total: <strong>${report.totalViolations}</strong></span>
                                 <div class="report-card-actions">${actionBtns(report.id)}</div>
                             </div>
                         </div>`;
@@ -483,6 +543,8 @@ function initReportsModule() {
                         const footwearClass= getCountBadgeClass(report.footwearCount);
                         const noIdClass    = getCountBadgeClass(report.noIdCount);
                         const totalClass   = getCountBadgeClass(report.totalViolations);
+                        const statusBreakdown = getStatusBreakdown(report);
+                        const periodLabel = getReportPeriodLabel(report);
                         return `
                         <div class="report-list-item ${report.status}" data-id="${report.id}">
                             <div class="report-list-top">
@@ -497,18 +559,9 @@ function initReportsModule() {
                             <div class="report-list-badges">
                                 <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;">${report.department}</span>
                                 <span class="yearlevel-badge" style="font-size:9px;padding:2px 7px;min-width:auto;">${report.yearlevel || 'N/A'}</span>
-                                <span style="font-size:9px;color:var(--dark-grey);">
-                                    Uniform: <strong class="${uniformClass === 'none' ? '' : 'count-badge ' + uniformClass}" style="font-size:9px;padding:1px 5px;">${report.uniformCount}</strong>
-                                </span>
-                                <span style="font-size:9px;color:var(--dark-grey);">
-                                    Footwear: <strong class="${footwearClass === 'none' ? '' : 'count-badge ' + footwearClass}" style="font-size:9px;padding:1px 5px;">${report.footwearCount}</strong>
-                                </span>
-                                <span style="font-size:9px;color:var(--dark-grey);">
-                                    No ID: <strong class="${noIdClass === 'none' ? '' : 'count-badge ' + noIdClass}" style="font-size:9px;padding:1px 5px;">${report.noIdCount}</strong>
-                                </span>
-                                <span class="Reports-status-badge ${statusClass}" style="font-size:9px;">
-                                    Total: ${report.totalViolations} · ${report.statusLabel}
-                                </span>
+                                <span style="font-size:9px;padding:2px 7px;background:rgba(100,116,139,.1);color:#64748b;border-radius:4px;font-weight:600;"><i class='bx bx-calendar' style="vertical-align:middle;font-size:10px;"></i> ${periodLabel}</span>
+                                ${statusBreakdown}
+                                <span class="Reports-status-badge ${statusClass}" style="font-size:9px;">Total: ${report.totalViolations}</span>
                             </div>
                         </div>`;
                     }).join('');
@@ -1409,7 +1462,7 @@ function initReportsModule() {
             let startY = 67;
 
             // Table
-            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"];
+            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total"];
             const tableRows = [];
 
             reportsData.forEach(report => {
@@ -1418,11 +1471,10 @@ function initReportsModule() {
                     report.studentName,
                     report.department,
                     report.section,
-                    report.uniformCount,
-                    report.footwearCount,
-                    report.noIdCount,
-                    report.totalViolations,
-                    report.statusLabel
+                    report.uniformCount + '/5',
+                    report.footwearCount + '/5',
+                    report.noIdCount + '/5',
+                    report.totalViolations
                 ];
                 tableRows.push(reportData);
             });
@@ -1700,7 +1752,7 @@ function initReportsModule() {
             // Table Header with modern styling
             const tableHeader = new TableRow({
                 children: [
-                    "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"
+                    "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total"
                 ].map(text => new TableCell({
                     children: [new Paragraph({ 
                         children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
@@ -1726,11 +1778,10 @@ function initReportsModule() {
                         report.studentName,
                         report.department,
                         report.section,
-                        String(report.uniformCount),
-                        String(report.footwearCount),
-                        String(report.noIdCount),
-                        String(report.totalViolations),
-                        report.statusLabel
+                        report.uniformCount + '/5',
+                        report.footwearCount + '/5',
+                        report.noIdCount + '/5',
+                        String(report.totalViolations)
                     ].map(text => new TableCell({
                         children: [new Paragraph({ 
                             children: [new TextRun({ text: text || "", size: 18 })],
@@ -1863,9 +1914,9 @@ function initReportsModule() {
                             <td>${report.studentName || ''}</td>
                             <td>${report.department || ''}</td>
                             <td>${report.section || ''}</td>
-                            <td align="center">${report.uniformCount || 0}</td>
-                            <td align="center">${report.footwearCount || 0}</td>
-                            <td align="center">${report.noIdCount || 0}</td>
+                            <td align="center">${(report.uniformCount || 0) + '/5'}</td>
+                            <td align="center">${(report.footwearCount || 0) + '/5'}</td>
+                            <td align="center">${(report.noIdCount || 0) + '/5'}</td>
                             <td align="center"><b>${report.totalViolations || 0}</b></td>
                         </tr>
                     `;

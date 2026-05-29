@@ -281,11 +281,6 @@ require_once __DIR__ . '/../../core/View.php';
             </th>
             <th>
               <div class="Reports-table-header-content">
-                <span>Status</span>
-              </div>
-            </th>
-            <th>
-              <div class="Reports-table-header-content">
                 <span>Actions</span>
               </div>
             </th>

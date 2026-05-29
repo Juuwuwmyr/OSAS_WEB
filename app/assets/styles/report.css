@@ -2064,6 +2064,13 @@ input[type="checkbox"]:checked + .toggle-label::after {
   color: var(--dark-grey);
 }
 
+.timeline-location {
+  display: block;
+  font-size: 12px;
+  color: var(--dark-grey);
+  margin-top: 2px;
+}
+
 /* Recommendations */
 .recommendations-list {
   display: flex;
