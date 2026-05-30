@@ -36,11 +36,24 @@ function initViolationsModule() {
             if (el) el.value = 'campus';
         }
 
+        // Helper function to generate a local initials avatar as SVG data URI (works offline)
+        function getInitialsAvatar(name, size = 80) {
+            const cleanName = (name || 'Student').trim();
+            const parts = cleanName.split(/\s+/);
+            const initials = parts.length > 1
+                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                : (parts[0][0] || 'S').toUpperCase();
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" rx="${size/2}" fill="%23ffd700"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-size="${size * 0.4}" font-weight="bold" fill="%23333">${initials}</text></svg>`;
+            return `data:image/svg+xml,${svg}`;
+        }
+        // Expose globally for inline onerror handlers
+        window.getInitialsAvatar = getInitialsAvatar;
+
         // Helper function to convert relative image paths to absolute URLs
         function getImageUrl(imagePath, fallbackName = 'Student') {
             if (!imagePath || imagePath.trim() === '') {
-                // Return a default avatar with the name
-                return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=ffd700&color=333&size=80`;
+                // Return a local SVG initials avatar (works offline)
+                return getInitialsAvatar(fallbackName);
             }
             
             // If it's already a full URL (http/https or data:), return as-is
@@ -1976,7 +1989,7 @@ function initViolationsModule() {
                 <div class="student-profile-image">
                     <img src="${studentImageUrl}"
                          alt="${fullName}"
-                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80'">
+                         onerror="this.src=getInitialsAvatar('${fullName.replace(/'/g, "\\'")}', 80)">
                 </div>
                 <div class="student-profile-info">
                     <h3>${fullName}</h3>
@@ -2293,7 +2306,7 @@ function initViolationsModule() {
                         <div class="violation-student-info">
                             <div class="violation-student-image">
                                 <img src="${v.studentImage}" alt="${v.studentName}" class="student-avatar"
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=32'">
+                                     onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 32)">
                             </div>
                             <div class="violation-student-name">
                                 <strong>${v.studentName}</strong>
@@ -2362,7 +2375,7 @@ function initViolationsModule() {
                             <div class="violation-card-body">
                                 <div class="violation-card-student">
                                     <img src="${v.studentImage}" alt="${v.studentName}" class="violation-card-avatar"
-                                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=44'">
+                                         onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 44)">
                                     <div class="violation-card-student-info">
                                         <p class="violation-card-name">${v.studentName}</p>
                                         <p class="violation-card-id">${v.studentId}</p>
@@ -2425,7 +2438,7 @@ function initViolationsModule() {
                         <div class="violation-list-item ${displayStatus}" data-id="${v.id}">
                             <div class="violation-list-top">
                                 <img src="${v.studentImage}" alt="${v.studentName}" class="violation-list-avatar"
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=36'">
+                                     onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 36)">
                                 <div class="violation-list-name-block">
                                     <span class="violation-list-name">${v.studentName}</span>
                                     <span class="violation-list-id">${v.studentId}</span>
@@ -2589,7 +2602,7 @@ function initViolationsModule() {
                         modalStudentImage.src = violation.studentImage;
                         modalStudentImage.onerror = function() {
                             this.onerror = null;
-                            this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(violation.studentName)}&background=ffd700&color=333&size=80`;
+                            this.src = getInitialsAvatar(violation.studentName, 80);
                         };
                     }
                     document.getElementById('modalStudentDept').textContent = violation.studentDept;
@@ -3283,7 +3296,7 @@ function initViolationsModule() {
                 img.src = imageUrl;
                 img.onerror = function() {
                     this.onerror = null;
-                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80`;
+                    this.src = getInitialsAvatar(fullName, 80);
                 };
                 document.getElementById('modalStudentDept').textContent      = department;
                 document.getElementById('modalStudentSection').textContent   = section;
@@ -4681,7 +4694,7 @@ function initViolationsModule() {
 
                 return `<div class="violation-card ${statusClass}">
                     <div class="violation-card-header">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-card-avatar">
+                        <img src="${getInitialsAvatar((req.first_name || '') + ' ' + (req.last_name || ''), 36)}" alt="" class="violation-card-avatar">
                         <div class="violation-card-name-block">
                             <span class="violation-card-name">${req.first_name || ''} ${req.last_name || ''}</span>
                             <span class="violation-card-id">${req.student_id || ''}</span>
@@ -4717,7 +4730,7 @@ function initViolationsModule() {
 
                 return `<div class="violation-list-item ${statusClass}" data-id="${req.id}">
                     <div class="violation-list-top">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-list-avatar">
+                        <img src="${getInitialsAvatar((req.first_name || '') + ' ' + (req.last_name || ''), 36)}" alt="" class="violation-list-avatar">
                         <div class="violation-list-name-block">
                             <span class="violation-list-name">${req.first_name || ''} ${req.last_name || ''}</span>
                             <span class="violation-list-id">${req.student_id || ''}</span>
@@ -5084,7 +5097,7 @@ function initViolationsModule() {
                     caseId: 'VIOL-2024-001',
                     studentId: '2024-001',
                     studentName: 'John Doe',
-                    studentImage: 'https://ui-avatars.com/api/?name=John+Doe&background=ffd700&color=333&size=40',
+                    studentImage: getInitialsAvatar('John Doe', 40),
                     studentDept: 'BSIT',
                     studentSection: 'BSIT-1A',
                     studentContact: '+63 912 345 6789',
@@ -5118,7 +5131,7 @@ function initViolationsModule() {
                     contact: '+63 912 345 6789',
                     department: 'BSIT',
                     section: 'BSIT-1A',
-                    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=ffd700&color=333&size=80'
+                    avatar: getInitialsAvatar('John Doe', 80)
                 }
             ];
             renderViolations();
