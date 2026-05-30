@@ -158,14 +158,23 @@ function initViolationsModule() {
         let selectedFiles   = [];
 
         function getCurrentAdminName() {
+            // Try localStorage session first
             const sessionStr = localStorage.getItem('userSession');
-            if (!sessionStr) return 'Admin';
-            try {
-                const session = JSON.parse(sessionStr);
-                return session.full_name || session.name || session.username || 'Admin';
-            } catch (e) {
-                return 'Admin';
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    // Only use full_name/name if it doesn't look like an email
+                    const name = session.full_name || session.name || '';
+                    if (name && !name.includes('@')) return name;
+                } catch (e) {}
             }
+            // Fallback: try cookie
+            const cookieName = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('full_name='));
+            if (cookieName) {
+                const val = decodeURIComponent(cookieName.split('=')[1]);
+                if (val && !val.includes('@')) return val;
+            }
+            return 'Admin';
         }
 
         // Student data will be loaded dynamically
@@ -2590,18 +2599,10 @@ function initViolationsModule() {
             const populateAdminName = () => {
                 const reportedByInput = document.getElementById('reportedBy');
                 if (reportedByInput) {
-                    const sessionStr = localStorage.getItem('userSession');
-                    if (sessionStr) {
-                        try {
-                            const session = JSON.parse(sessionStr);
-                            // Prioritize full_name, then name, then username
-                            const adminName = session.full_name || session.name || session.username || '';
-                            reportedByInput.value = adminName;
-                            console.log('👤 Auto-populated reporter:', adminName);
-                        } catch (e) {
-                            console.error('Error parsing session for reporter:', e);
-                        }
-                    }
+                    // Use getCurrentAdminName which handles email fallback properly
+                    const adminName = getCurrentAdminName();
+                    reportedByInput.value = adminName;
+                    console.log('👤 Auto-populated reporter:', adminName);
                 }
             };
             
@@ -4282,9 +4283,21 @@ function initViolationsModule() {
                 if (sessionStr) {
                     try {
                         const session = JSON.parse(sessionStr);
-                        enforcedAdminName = session.full_name || session.name || session.username || reportedBy;
+                        const name = session.full_name || session.name || '';
+                        // Only use if it's a real name (not an email)
+                        if (name && !name.includes('@')) {
+                            enforcedAdminName = name;
+                        }
                     } catch (e) {
                         console.error('Error parsing session for reporter enforcement:', e);
+                    }
+                }
+                // Fallback: check cookie if still looks like email
+                if (!enforcedAdminName || enforcedAdminName.includes('@')) {
+                    const cookieName = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('full_name='));
+                    if (cookieName) {
+                        const val = decodeURIComponent(cookieName.split('=')[1]);
+                        if (val && !val.includes('@')) enforcedAdminName = val;
                     }
                 }
                 
