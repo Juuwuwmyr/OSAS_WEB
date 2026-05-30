@@ -306,6 +306,25 @@ input:checked + .slider .sun-icon { opacity: .3; }
   object-fit: cover;
   border: 2px solid var(--gold);
 }
+
+/* Initials-based avatar */
+.user-avatar-initials {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFD700;
+  color: #1a1a1a;
+  font-size: 0.65rem;
+  font-weight: 400;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+  border: 2px solid var(--gold);
+  letter-spacing: 0.5px;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
 .user-name {
   font-size: .8rem;
   font-weight: 600;
@@ -472,4 +491,5 @@ body.dark .nav-link:hover { background: var(--gold-light); color: var(--gold); }
 .nav-link i      { font-size: 0.95rem !important; }
 .user-name       { font-size: 0.68rem !important; }
 .user-avatar img { width: 22px !important; height: 22px !important; }
+.user-avatar-initials { width: 22px !important; height: 22px !important; font-size: 0.55rem !important; }
 .user-avatar     { padding: 3px 8px 3px 3px !important; gap: 5px !important; }

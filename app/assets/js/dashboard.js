@@ -604,6 +604,17 @@ function createSettingsModal() {
     const defaultAvatar = resolvePath('assets/img/default.png');
     const userAvatar = resolvePath('assets/img/default.png');
     
+    // Generate initials from session name
+    let sessionName = 'Admin';
+    try {
+        const storedSession = JSON.parse(localStorage.getItem('userSession') || '{}');
+        sessionName = storedSession.full_name || storedSession.name || storedSession.username || 'Admin';
+    } catch(e) {}
+    const nameParts = sessionName.trim().split(/\s+/);
+    const userInitials = nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+        : nameParts[0][0].toUpperCase();
+    
     // Check privileges
     const isMain = isMainAdmin();
 
@@ -656,7 +667,7 @@ function createSettingsModal() {
                         <!-- Profile Header -->
                         <div class="settings-profile-header">
                             <div class="profile-upload-container">
-                                <img id="profileImagePreview" class="profile-image-preview" src="${userAvatar}" onerror="this.src='${defaultAvatar}'" alt="Profile Picture">
+                                <span id="profileImagePreview" class="profile-initials-avatar">${userInitials}</span>
                                 <label for="profilePictureInput" class="profile-upload-button">
                                     <i class='bx bx-camera'></i>
                                 </label>
@@ -1235,7 +1246,17 @@ async function loadUserProfile() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    profileImagePreview.src = e.target.result;
+                    // Swap initials span for an img if needed
+                    if (profileImagePreview.tagName === 'SPAN') {
+                        const img = document.createElement('img');
+                        img.id = 'profileImagePreview';
+                        img.className = 'profile-image-preview';
+                        img.alt = 'Profile Picture';
+                        img.src = e.target.result;
+                        profileImagePreview.replaceWith(img);
+                    } else {
+                        profileImagePreview.src = e.target.result;
+                    }
                 }
                 reader.readAsDataURL(file);
             }
@@ -1260,11 +1281,16 @@ async function loadUserProfile() {
             // Update profile image preview if exists
             if (data.data.profile.profile_picture && profileImagePreview) {
                 const fullPath = resolvePath(data.data.profile.profile_picture);
-                // Add timestamp to prevent caching issues
-                profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
-            } else if (profileImagePreview) {
-                 // Set default to school logo if no profile picture
-                 profileImagePreview.src = resolvePath('assets/img/default.png');
+                if (profileImagePreview.tagName === 'SPAN') {
+                    const img = document.createElement('img');
+                    img.id = 'profileImagePreview';
+                    img.className = 'profile-image-preview';
+                    img.alt = 'Profile Picture';
+                    img.src = fullPath + '?t=' + new Date().getTime();
+                    profileImagePreview.replaceWith(img);
+                } else {
+                    profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+                }
             }
         }
     } catch (error) {
@@ -1337,10 +1363,31 @@ async function submitProfileForm() {
                      profileDisplayName.textContent = data.data.full_name || data.data.username;
                  }
 
+                 // Update initials avatar in settings modal
+                 const updatedName = data.data.full_name || data.data.username || 'Admin';
+                 const updatedParts = updatedName.trim().split(/\s+/);
+                 const updatedInitials = updatedParts.length > 1
+                     ? (updatedParts[0][0] + updatedParts[updatedParts.length - 1][0]).toUpperCase()
+                     : updatedParts[0][0].toUpperCase();
+                 const initialsEl = document.getElementById('profileImagePreview');
+                 if (initialsEl && initialsEl.classList.contains('profile-initials-avatar')) {
+                     initialsEl.textContent = updatedInitials;
+                 }
+
                  // Update the top navigation username if present
                  const navUsername = document.querySelector('.nav-user-menu .user-name');
                  if (navUsername) {
                      navUsername.textContent = data.data.full_name || data.data.username;
+                 }
+
+                 // Update top nav initials
+                 const navInitials = document.querySelector('.tn-avatar-initials');
+                 if (navInitials) {
+                     navInitials.textContent = updatedInitials;
+                 }
+                 const dropdownInitials = document.querySelector('.tn-dropdown-avatar-initials');
+                 if (dropdownInitials) {
+                     dropdownInitials.textContent = updatedInitials;
                  }
             }
             
@@ -1348,16 +1395,49 @@ async function submitProfileForm() {
             if (data.data && data.data.profile_picture) {
                 const profilePics = document.querySelectorAll('.profile-photo, .user-avatar img, .nav-profile-photo');
                 const fullPath = resolvePath(data.data.profile_picture);
+                const cacheBust = fullPath + '?t=' + new Date().getTime();
                 
                 profilePics.forEach(img => {
-                    // Add timestamp to bust cache
-                    img.src = fullPath + '?t=' + new Date().getTime();
+                    img.src = cacheBust;
                 });
                 
-                // Also update preview
-                const preview = document.getElementById('profileImagePreview');
-                if (preview) {
-                    preview.src = fullPath + '?t=' + new Date().getTime();
+                // Also update preview (may be a span with initials)
+                let preview = document.getElementById('profileImagePreview');
+                if (preview && preview.tagName === 'SPAN') {
+                    const img = document.createElement('img');
+                    img.id = 'profileImagePreview';
+                    img.className = 'profile-image-preview';
+                    img.alt = 'Profile Picture';
+                    img.src = cacheBust;
+                    preview.replaceWith(img);
+                } else if (preview) {
+                    preview.src = cacheBust;
+                }
+
+                // Update topnav avatar: swap initials for image
+                const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
+                if (tnInitials) {
+                    const tnImg = document.createElement('img');
+                    tnImg.src = cacheBust;
+                    tnImg.alt = 'Avatar';
+                    tnImg.className = 'tn-avatar-img';
+                    tnInitials.replaceWith(tnImg);
+                } else {
+                    const tnImg = document.querySelector('.tn-avatar-ring .tn-avatar-img');
+                    if (tnImg) tnImg.src = cacheBust;
+                }
+
+                // Update dropdown avatar
+                const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
+                if (ddInitials) {
+                    const ddImg = document.createElement('img');
+                    ddImg.src = cacheBust;
+                    ddImg.alt = 'Avatar';
+                    ddImg.className = 'tn-dropdown-avatar';
+                    ddInitials.replaceWith(ddImg);
+                } else {
+                    const ddImg = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar');
+                    if (ddImg) ddImg.src = cacheBust;
                 }
             }
         } else {
