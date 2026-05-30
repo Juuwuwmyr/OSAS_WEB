@@ -2642,6 +2642,9 @@ async function loadArchivedAccounts() {
                             <button type="button" class="settings-action-btn" onclick="restoreUser(${user.id}, '${user.username}')" title="Restore User">
                                 <i class='bx bx-undo'></i>
                             </button>
+                            <button type="button" class="settings-action-btn delete" onclick="permanentDeleteUser(${user.id}, '${user.username}')" title="Permanently Delete">
+                                <i class='bx bx-trash'></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -2694,6 +2697,40 @@ async function restoreUser(id, username) {
         }
     } catch (error) {
         console.error('Error restoring user:', error);
+        alert('Network error');
+    }
+}
+
+async function permanentDeleteUser(id, username) {
+    const confirmed = await showModernAlert({
+        title: 'Permanently Delete Account',
+        message: `Are you sure you want to permanently delete "${username}"? This action cannot be undone and all associated data will be removed.`,
+        icon: 'warning',
+        confirmText: 'Yes, Delete Permanently'
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/users.php?action=permanentDelete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification(`User "${username}" has been permanently deleted.`, 'success');
+            }
+            loadArchivedAccounts();
+        } else {
+            alert(data.message || 'Failed to delete user.');
+        }
+    } catch (error) {
+        console.error('Error permanently deleting user:', error);
         alert('Network error');
     }
 }

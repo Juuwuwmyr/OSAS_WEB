@@ -122,6 +122,14 @@
     min-width: 150px;
 }
 
+#announcements-page.user-side .search-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
 #announcements-page.user-side .search-group i {
     position: absolute;
     left: 12px;
@@ -180,7 +188,7 @@
     padding: 3px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    margin-left: auto;
+    flex-shrink: 0;
 }
 
 #announcements-page.user-side .ann-view-btn {
@@ -664,12 +672,15 @@
     #announcements-page.user-side .search-group {
         width: 100%;
         max-width: 100%;
+    }
+
+    #announcements-page.user-side .search-toggle-group {
+        width: 100%;
         order: -1;
     }
 
     #announcements-page.user-side .announcements-view-toggle {
-        margin-left: auto;
-        margin-right: auto;
+        flex-shrink: 0;
     }
 
     #announcements-page.user-side .announcements-pagination {

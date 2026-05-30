@@ -50,14 +50,16 @@ require_once __DIR__ . '/../../core/View.php';
                 <option value="read">Read</option>
             </select>
         </div>
-        <div class="search-group">
-            <i class='bx bx-search'></i>
-            <input type="text" id="searchInput" placeholder="Search announcements...">
-        </div>
-        <div class="announcements-view-toggle">
-            <button class="ann-view-btn" data-view="table" title="Table View"><i class='bx bx-table'></i></button>
-            <button class="ann-view-btn" data-view="grid" title="Grid View"><i class='bx bx-grid-alt'></i></button>
-            <button class="ann-view-btn active" data-view="list" title="List View"><i class='bx bx-list-ul'></i></button>
+        <div class="search-toggle-group">
+            <div class="search-group">
+                <i class='bx bx-search'></i>
+                <input type="text" id="searchInput" placeholder="Search announcements...">
+            </div>
+            <div class="announcements-view-toggle">
+                <button class="ann-view-btn" data-view="table" title="Table View"><i class='bx bx-table'></i></button>
+                <button class="ann-view-btn" data-view="grid" title="Grid View"><i class='bx bx-grid-alt'></i></button>
+                <button class="ann-view-btn active" data-view="list" title="List View"><i class='bx bx-list-ul'></i></button>
+            </div>
         </div>
     </div>
   
