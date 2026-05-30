@@ -4185,10 +4185,22 @@ function initViolationsModule() {
             if (!fileInput) return;
 
             // Browse button click
-            if (browseBtn) browseBtn.addEventListener('click', () => fileInput.click());
+            if (browseBtn) browseBtn.addEventListener('click', () => {
+                if (!navigator.onLine) {
+                    showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                    return;
+                }
+                fileInput.click();
+            });
             // Clicking anywhere on dropzone also opens file picker
             if (dropzone) dropzone.addEventListener('click', e => {
-                if (e.target !== browseBtn) fileInput.click();
+                if (e.target !== browseBtn) {
+                    if (!navigator.onLine) {
+                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                        return;
+                    }
+                    fileInput.click();
+                }
             });
 
             // Drag & drop
@@ -4198,11 +4210,20 @@ function initViolationsModule() {
                 dropzone.addEventListener('drop', e => {
                     e.preventDefault();
                     dropzone.classList.remove('dragover');
+                    if (!navigator.onLine) {
+                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                        return;
+                    }
                     addFiles(e.dataTransfer.files);
                 });
             }
 
             fileInput.addEventListener('change', function() {
+                if (!navigator.onLine) {
+                    showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                    this.value = '';
+                    return;
+                }
                 addFiles(this.files);
                 this.value = '';
             });
