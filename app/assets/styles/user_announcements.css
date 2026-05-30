@@ -667,6 +667,11 @@
         order: -1;
     }
 
+    #announcements-page.user-side .announcements-view-toggle {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     #announcements-page.user-side .announcements-pagination {
         flex-direction: column;
         gap: 16px;
