@@ -412,11 +412,12 @@ function fetchAndUpdateUserTopnavAvatar() {
         const avatarPath = resolveUserPath(data.data.profile.profile_picture) + '?t=' + Date.now();
 
         // Update user topnav avatar: swap initials for image
-        const initials = document.querySelector('.user-avatar .user-avatar-initials');
+        const initials = document.querySelector('.user-avatar-ring .user-avatar-initials');
         if (initials && initials.style.display !== 'none') {
           const img = document.createElement('img');
           img.src = avatarPath;
           img.alt = 'User Avatar';
+          img.className = 'user-avatar-img';
           img.onerror = function() { this.remove(); if(initials) initials.style.display='flex'; };
           initials.style.display = 'none';
           initials.parentNode.insertBefore(img, initials);
@@ -1634,8 +1635,20 @@ async function submitUserSettingsProfile() {
         } else if (preview) {
           preview.src = fullPath;
         }
-        const topnavAvatar = document.querySelector('.nav-user-menu .user-avatar img');
-        if (topnavAvatar) topnavAvatar.src = fullPath;
+
+        // Update topnav avatar: swap initials for image
+        const topnavInitials = document.querySelector('.user-avatar-ring .user-avatar-initials');
+        if (topnavInitials) {
+          const tnImg = document.createElement('img');
+          tnImg.src = fullPath;
+          tnImg.alt = 'User Avatar';
+          tnImg.className = 'user-avatar-img';
+          topnavInitials.replaceWith(tnImg);
+        } else {
+          const topnavImg = document.querySelector('.user-avatar-ring .user-avatar-img');
+          if (topnavImg) topnavImg.src = fullPath;
+        }
+
         const sidebarAvatar = document.getElementById('sidebarProfileImage');
         if (sidebarAvatar) sidebarAvatar.src = fullPath;
       }

@@ -13,14 +13,19 @@ if (isset($student) && $student) {
     if (!empty($fullName)) {
         $username = $fullName;
     }
-    // Check for avatar
+    // Check for avatar (ignore generated ui-avatars URLs and default.png)
     if (!empty($student['avatar'])) {
-        if (filter_var($student['avatar'], FILTER_VALIDATE_URL)) {
-            $userImage = $student['avatar'];
-        } else {
-            $userImage = View::asset($student['avatar']);
+        $avatar = $student['avatar'];
+        $isGenerated = (strpos($avatar, 'ui-avatars.com') !== false);
+        $isDefault = (strpos($avatar, 'default.png') !== false);
+        if (!$isGenerated && !$isDefault) {
+            if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+                $userImage = $avatar;
+            } else {
+                $userImage = View::asset($avatar);
+            }
+            $hasProfilePic = true;
         }
-        $hasProfilePic = true;
     }
 }
 
@@ -117,13 +122,15 @@ if (count($nameParts) > 1) {
     <!-- User Menu -->
     <div class="nav-user-menu">
       <div class="user-avatar">
-        <?php if ($hasProfilePic): ?>
-          <img src="<?= $userImage ?>" alt="User Avatar"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-          <span class="user-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
-        <?php else: ?>
-          <span class="user-avatar-initials"><?= htmlspecialchars($initials) ?></span>
-        <?php endif; ?>
+        <span class="user-avatar-ring">
+          <?php if ($hasProfilePic): ?>
+            <img src="<?= $userImage ?>" alt="User Avatar" class="user-avatar-img"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <span class="user-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+          <?php else: ?>
+            <span class="user-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+          <?php endif; ?>
+        </span>
         <span class="user-name"><?= htmlspecialchars($username) ?></span>
         <i class='bx bx-chevron-down'></i>
       </div>
