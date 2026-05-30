@@ -2300,6 +2300,10 @@ function initViolationsModule() {
             function getDisplayStatus(v) {
                 let displayStatus = v.status;
                 let displayStatusLabel = v.statusLabel;
+                // Don't override pending status — keep "Pending Sync" for offline violations
+                if (displayStatus === 'pending') {
+                    return { displayStatus, displayStatusLabel: displayStatusLabel || 'Pending Sync' };
+                }
                 const ll = (v.violationLevelLabel || '').toLowerCase();
                 if ((ll.includes('warning 3') || ll.includes('3rd')) && displayStatus !== 'resolved') {
                     displayStatus = 'disciplinary';
