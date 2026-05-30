@@ -788,7 +788,7 @@ function initViolationsModule() {
             const violationTypeId = parseInt(violationTypeInput.value);
 
             // 3. Filter violations for this student and type
-            // Note: violations array contains history
+            // Include both synced and pending/offline violations for level progression
             const studentHistory = violations.filter(v => 
                 v.studentId === studentId && 
                 (v.violationType == violationTypeId)
@@ -814,7 +814,7 @@ function initViolationsModule() {
                 const typeId = parseInt(input.value);
                 
                 // 3. Find history for this student and type
-                // Use the global violations array
+                // Include both synced and pending violations for badge display
                 const history = violations.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
@@ -883,12 +883,21 @@ function initViolationsModule() {
                 if (matchingHistory.length > 0) {
                     const latest = matchingHistory[0];
                     const latestDate = latest.dateReported || latest.violationDate;
+                    const isPending = latest.status === 'pending' || String(latest.id).startsWith('TEMP-');
                     
-                    // Mark as recorded and disabled
-                    input.disabled = true;
-                    if (optionContainer) {
-                        optionContainer.classList.add('recorded', 'disabled');
-                        optionContainer.classList.remove('active'); // Deselect if active
+                    // Only disable if it's a synced (confirmed) violation, not pending
+                    if (!isPending) {
+                        input.disabled = true;
+                        if (optionContainer) {
+                            optionContainer.classList.add('recorded', 'disabled');
+                            optionContainer.classList.remove('active');
+                        }
+                    } else {
+                        // Pending: mark visually but don't disable
+                        if (optionContainer) {
+                            optionContainer.classList.add('recorded');
+                            optionContainer.classList.remove('disabled');
+                        }
                     }
 
                     // Add Badge
@@ -896,8 +905,12 @@ function initViolationsModule() {
                     if (label) {
                         const badge = document.createElement('span');
                         badge.className = 'violation-history-badge';
-                        badge.innerHTML = `<i class='bx bx-history'></i> Recorded (${matchingHistory.length})`;
-                        badge.title = `Last recorded: ${latestDate}`;
+                        badge.innerHTML = isPending 
+                            ? `<i class='bx bx-time'></i> Pending Sync`
+                            : `<i class='bx bx-history'></i> Recorded (${matchingHistory.length})`;
+                        badge.title = isPending 
+                            ? 'Recorded offline - pending sync'
+                            : `Last recorded: ${latestDate}`;
                         
                         // Append to the title
                         const titleSpan = label.querySelector('.level-title');
