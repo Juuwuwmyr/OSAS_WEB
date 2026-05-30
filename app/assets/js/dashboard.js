@@ -1672,7 +1672,20 @@ async function submitAdminForm() {
         console.log('Create Admin Response:', text); // Debug response
 
         if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}: ${text}`);
+            // Try to parse the error response for a user-friendly message
+            let errorMessage = 'Something went wrong. Please try again.';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // If not JSON, use a generic message
+                console.error('Raw server error:', text);
+            }
+            alertBox.className = 'settings-alert error';
+            alertBox.textContent = errorMessage;
+            return;
         }
 
         let payload;
@@ -1680,7 +1693,6 @@ async function submitAdminForm() {
             payload = JSON.parse(text);
         } catch (error) {
             console.error('Failed to parse create admin response', error);
-            console.error('Response text:', text);
             alertBox.className = 'settings-alert error';
             alertBox.textContent = 'Server returned an invalid response.';
             return;
@@ -1712,7 +1724,7 @@ async function submitAdminForm() {
         }
 
         alertBox.className = 'settings-alert error';
-        alertBox.textContent = 'Network error: ' + (error.message || 'Unknown error');
+        alertBox.textContent = 'A network error occurred. Please check your connection and try again.';
     } finally {
         submitButton.disabled = false;
     }
@@ -1736,7 +1748,17 @@ async function deleteAdmin(id, username) {
         console.log('Archive Admin Response:', text); // Debug response
 
         if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}: ${text}`);
+            let errorMessage = 'Something went wrong. Please try again.';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                console.error('Raw server error:', text);
+            }
+            alert(errorMessage);
+            return;
         }
 
         let payload;
@@ -1744,7 +1766,7 @@ async function deleteAdmin(id, username) {
             payload = JSON.parse(text);
         } catch (e) {
             console.error('Invalid JSON:', text);
-            alert('Server error: Invalid JSON response');
+            alert('Server returned an invalid response.');
             return;
         }
 
@@ -1785,7 +1807,7 @@ async function deleteAdmin(id, username) {
             // This is likely a false positive in the UI flow, suppress alert if operation succeeded
             return;
         }
-        alert('Network error: ' + (error.message || 'Unknown error'));
+        alert('A network error occurred. Please check your connection and try again.');
     }
 }
 
