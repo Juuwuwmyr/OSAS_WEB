@@ -602,7 +602,7 @@ function createSettingsModal() {
     overlay.id = 'settingsModalOverlay';
     overlay.className = 'settings-modal-overlay';
     const defaultAvatar = resolvePath('assets/img/default.png');
-    const userAvatar = resolvePath('assets/img/user.jpg');
+    const userAvatar = resolvePath('assets/img/default.png');
     
     // Check privileges
     const isMain = isMainAdmin();
@@ -1263,8 +1263,8 @@ async function loadUserProfile() {
                 // Add timestamp to prevent caching issues
                 profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
             } else if (profileImagePreview) {
-                 // Set default if no profile picture
-                 profileImagePreview.src = resolvePath('assets/img/user.jpg');
+                 // Set default to school logo if no profile picture
+                 profileImagePreview.src = resolvePath('assets/img/default.png');
             }
         }
     } catch (error) {
