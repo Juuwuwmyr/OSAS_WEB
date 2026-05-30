@@ -145,7 +145,52 @@ function checkAuthentication() {
     if (s) {
         try { updateUserInfo(JSON.parse(s)); } catch(e) {}
     }
+    // Also fetch fresh profile data to ensure topnav avatar is up to date
+    fetchAndUpdateTopnavAvatar();
     return true;
+}
+
+// Fetch profile picture from API and update topnav avatar
+function fetchAndUpdateTopnavAvatar() {
+    fetch(getAPIBase() + 'users.php?action=profile')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
+                const avatarPath = resolvePath(data.data.profile.profile_picture);
+                
+                // Update topnav pill avatar
+                const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
+                if (tnInitials && tnInitials.style.display !== 'none') {
+                    const tnImg = document.createElement('img');
+                    tnImg.src = avatarPath + '?t=' + Date.now();
+                    tnImg.alt = 'Avatar';
+                    tnImg.className = 'tn-avatar-img';
+                    tnImg.onerror = function() { this.remove(); if(tnInitials) tnInitials.style.display='flex'; };
+                    tnInitials.style.display = 'none';
+                    tnInitials.parentNode.insertBefore(tnImg, tnInitials);
+                }
+
+                // Update dropdown avatar
+                const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
+                if (ddInitials && ddInitials.style.display !== 'none') {
+                    const ddImg = document.createElement('img');
+                    ddImg.src = avatarPath + '?t=' + Date.now();
+                    ddImg.alt = 'Avatar';
+                    ddImg.className = 'tn-dropdown-avatar';
+                    ddImg.onerror = function() { this.remove(); if(ddInitials) ddInitials.style.display='flex'; };
+                    ddInitials.style.display = 'none';
+                    ddInitials.parentNode.insertBefore(ddImg, ddInitials);
+                }
+
+                // Also update localStorage so next load is instant
+                try {
+                    const stored = JSON.parse(localStorage.getItem('userSession') || '{}');
+                    stored.profile_picture = data.data.profile.profile_picture;
+                    localStorage.setItem('userSession', JSON.stringify(stored));
+                } catch(e) {}
+            }
+        })
+        .catch(() => {}); // Silently fail if offline
 }
 
 // Enhanced user info update

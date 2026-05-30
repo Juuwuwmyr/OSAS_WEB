@@ -398,7 +398,39 @@ function checkAuthentication() {
   if (s) {
     try { const session = JSON.parse(s); updateUserInfo(session); return session; } catch(e) {}
   }
+  // Fetch fresh profile data to update topnav avatar
+  fetchAndUpdateUserTopnavAvatar();
   return { role: 'user' };
+}
+
+// Fetch profile picture from API and update user topnav avatar
+function fetchAndUpdateUserTopnavAvatar() {
+  fetch(getAPIBase() + 'users.php?action=profile')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
+        const avatarPath = resolveUserPath(data.data.profile.profile_picture) + '?t=' + Date.now();
+
+        // Update user topnav avatar: swap initials for image
+        const initials = document.querySelector('.user-avatar .user-avatar-initials');
+        if (initials && initials.style.display !== 'none') {
+          const img = document.createElement('img');
+          img.src = avatarPath;
+          img.alt = 'User Avatar';
+          img.onerror = function() { this.remove(); if(initials) initials.style.display='flex'; };
+          initials.style.display = 'none';
+          initials.parentNode.insertBefore(img, initials);
+        }
+
+        // Also update localStorage so next load is instant
+        try {
+          const stored = JSON.parse(localStorage.getItem('userSession') || '{}');
+          stored.profile_picture = data.data.profile.profile_picture;
+          localStorage.setItem('userSession', JSON.stringify(stored));
+        } catch(e) {}
+      }
+    })
+    .catch(() => {}); // Silently fail if offline
 }
 
 function redirectToLogin() {
