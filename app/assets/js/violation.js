@@ -1083,7 +1083,9 @@ function initViolationsModule() {
                         studentId:           studentId,
                         studentName:         student ? `${student.firstName} ${student.lastName}` : (formData.get('studentName') || 'Unknown'),
                         studentImage:        student ? student.avatar : '',
+                        violationType:       vtypeId,
                         violationTypeLabel:  vtype ? vtype.name : (formData.get('violationTypeName') || 'Pending Sync'),
+                        violationLevel:      vlevelId,
                         violationLevelLabel: vlevelLabel || formData.get('violationLevelName') || '—',
                         department:          formData.get('department') || student?.department || 'N/A',
                         section:             student?.section || formData.get('section') || 'N/A',
@@ -1115,8 +1117,10 @@ function initViolationsModule() {
                     
                     // Close modal
                     if (recordModal) {
-                        recordModal.style.display = 'none';
+                        recordModal.classList.remove('active');
+                        recordModal.style.display = '';
                         if (recordOverlay) recordOverlay.style.display = 'none';
+                        document.body.style.overflow = '';
                     }
                     
                     return { status: 'offline', data: offlineViolation };
@@ -2551,6 +2555,7 @@ function initViolationsModule() {
         
         function openRecordModal(editId = null) {
             console.log('🎯 Opening record modal...');
+            recordModal.style.display = '';  // Clear any inline display:none
             recordModal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
