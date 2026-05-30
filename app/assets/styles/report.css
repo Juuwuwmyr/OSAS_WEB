@@ -2762,8 +2762,15 @@ input[type="checkbox"]:checked + .toggle-label::after {
 
 /* MOBILE: Disable modal animations for instant popup */
 @media (max-width: 768px) {
-  .report-modal, .report-modal-panel, .report-modal-overlay {
+  .Reports-modal,
+  .Reports-modal-container,
+  .Reports-modal-overlay,
+  #ExportReportsModal,
+  #ExportReportsModal .Reports-modal-container,
+  #GenerateReportModal .Reports-modal-container,
+  #ViewReportModal .Reports-modal-container {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
 }

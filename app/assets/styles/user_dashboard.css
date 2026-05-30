@@ -2295,23 +2295,29 @@ body.dark .Violations-modal-container .vd-table tbody td {
   /* Kill transitions/animations on modals only (not alerts/toasts) */
   .download-modal-container,
   .download-modal,
+  .modal,
+  .modal .modal-container,
+  .modal.active .modal-container,
   #ViolationRecordModal,
   #ViolationDetailsModal,
   #ViolationModalOverlay,
+  .Violations-modal,
+  .Violations-modal-container,
   .Violations-modal-panel,
   .Violations-details-panel,
-  .dept-modal,
-  .section-modal,
-  .student-modal,
-  .report-modal,
+  .sections-modal,
+  .sections-modal-container,
+  .Students-modal,
+  .Students-modal-container,
+  .Reports-modal,
+  .Reports-modal-container,
   .announcement-modal,
   .announcement-modal-panel,
   .settings-modal,
-  .settings-modal-overlay,
-  .uv-violation-modal,
-  .uv-modal-panel {
+  .settings-modal-overlay {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
 
   /* Ensure modals appear instantly when active */

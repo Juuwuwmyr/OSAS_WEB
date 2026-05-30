@@ -1976,8 +1976,10 @@ body.dark {
 
 /* MOBILE: Disable modal animations for instant popup */
 @media (max-width: 768px) {
-  .student-modal, .student-modal-panel, .student-modal-overlay {
+  .Students-modal, .Students-modal-container, .Students-modal-overlay,
+  .Students-modal.active .Students-modal-container {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
 }

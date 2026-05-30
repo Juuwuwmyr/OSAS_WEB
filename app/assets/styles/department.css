@@ -1653,8 +1653,11 @@ body.dark #departmentModal .close-btn:hover {
 
 /* MOBILE: Disable modal animations for instant popup */
 @media (max-width: 768px) {
-  .dept-modal, .dept-modal-panel, .dept-modal-overlay {
+  .modal, .modal .modal-container, .modal.active .modal-container,
+  #departmentModal, #departmentModal .modal-container,
+  #ExportDepartmentsModal, #ExportDepartmentsModal .modal-container {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
 }

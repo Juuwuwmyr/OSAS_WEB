@@ -5181,11 +5181,17 @@ body.dark #ViolationDetailsModal .timeline-content {
   #ViolationRecordModal,
   #ViolationDetailsModal,
   #ViolationModalOverlay,
+  #ExportViolationsModal,
+  .Violations-modal,
+  .Violations-modal-container,
+  .Violations-modal-overlay,
   .Violations-modal-panel,
-  .Violations-details-panel {
+  .Violations-details-panel,
+  #ViolationRecordModal .Violations-modal-container,
+  #ViolationDetailsModal .Violations-modal-container,
+  #ExportViolationsModal .Violations-modal-container {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
-
-  @keyframes modalSlideIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
 }

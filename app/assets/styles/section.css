@@ -1536,8 +1536,10 @@ body.dark {
 
 /* MOBILE: Disable modal animations for instant popup */
 @media (max-width: 768px) {
-  .section-modal, .section-modal-panel, .section-modal-overlay {
+  .sections-modal, .sections-modal-container, #sectionsModal,
+  #sectionsModal .sections-modal-container {
     transition: none !important;
     animation: none !important;
+    animation-duration: 0s !important;
   }
 }
