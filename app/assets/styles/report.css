@@ -2758,3 +2758,12 @@ input[type="checkbox"]:checked + .toggle-label::after {
   padding: 3px !important;
   gap: 3px !important;
 }
+
+
+/* MOBILE: Disable modal animations for instant popup */
+@media (max-width: 768px) {
+  .report-modal, .report-modal-panel, .report-modal-overlay {
+    transition: none !important;
+    animation: none !important;
+  }
+}

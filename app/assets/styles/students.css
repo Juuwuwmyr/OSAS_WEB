@@ -1972,3 +1972,12 @@ body.dark {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+/* MOBILE: Disable modal animations for instant popup */
+@media (max-width: 768px) {
+  .student-modal, .student-modal-panel, .student-modal-overlay {
+    transition: none !important;
+    animation: none !important;
+  }
+}

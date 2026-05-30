@@ -5172,3 +5172,20 @@ body.dark #ViolationDetailsModal .timeline-content {
   background: #222 !important;
   border-color: #2A2A2A !important;
 }
+
+
+/* ============================================================
+   MOBILE: Disable modal animations for instant popup (performance)
+   ============================================================ */
+@media (max-width: 768px) {
+  #ViolationRecordModal,
+  #ViolationDetailsModal,
+  #ViolationModalOverlay,
+  .Violations-modal-panel,
+  .Violations-details-panel {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  @keyframes modalSlideIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
+}
