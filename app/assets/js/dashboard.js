@@ -1324,7 +1324,7 @@ async function loadUserProfile() {
             }
             
             // Update profile image preview if exists
-            if (data.data.profile.profile_picture && profileImagePreview) {
+            if (data.data.profile.profile_picture && data.data.profile.profile_picture.trim() !== '' && profileImagePreview) {
                 const fullPath = resolvePath(data.data.profile.profile_picture);
                 if (profileImagePreview.tagName === 'SPAN') {
                     const img = document.createElement('img');
@@ -1332,10 +1332,43 @@ async function loadUserProfile() {
                     img.className = 'profile-image-preview';
                     img.alt = 'Profile Picture';
                     img.src = fullPath + '?t=' + new Date().getTime();
+                    // If image fails to load, revert to initials
+                    img.onerror = function() {
+                        const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                        const parts = displayName.trim().split(/\s+/);
+                        const initials = parts.length > 1 
+                            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                            : parts[0][0].toUpperCase();
+                        const span = document.createElement('span');
+                        span.id = 'profileImagePreview';
+                        span.className = 'profile-initials-avatar';
+                        span.textContent = initials;
+                        img.replaceWith(span);
+                    };
                     profileImagePreview.replaceWith(img);
                 } else {
                     profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+                    profileImagePreview.onerror = function() {
+                        const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                        const parts = displayName.trim().split(/\s+/);
+                        const initials = parts.length > 1 
+                            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                            : parts[0][0].toUpperCase();
+                        const span = document.createElement('span');
+                        span.id = 'profileImagePreview';
+                        span.className = 'profile-initials-avatar';
+                        span.textContent = initials;
+                        profileImagePreview.replaceWith(span);
+                    };
                 }
+            } else if (profileImagePreview && profileImagePreview.tagName === 'SPAN') {
+                // No profile picture — update initials with actual name from API
+                const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                const parts = displayName.trim().split(/\s+/);
+                const initials = parts.length > 1 
+                    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                    : parts[0][0].toUpperCase();
+                profileImagePreview.textContent = initials;
             }
         }
     } catch (error) {
