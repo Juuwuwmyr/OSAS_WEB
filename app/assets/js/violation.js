@@ -3578,40 +3578,64 @@ function initViolationsModule() {
 
                 const violation = violations.find(v => v.id == violationId);
                 if (violation) {
-                    // Print violation details
+                    // Print violation details with proper header
+                    const headerImgPath = API_BASE.replace('/api/', '/app/assets/headers/header.png');
                     const printContent = `
                         <html>
                             <head>
                                 <title>Violation Report - ${violation.caseId}</title>
                                 <style>
-                                    body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                                    h1 { color: #333; margin-bottom: 20px; }
-                                    .report-section { margin-bottom: 30px; }
-                                    .report-label { font-weight: 600; color: #666; }
-                                    .report-value { margin-left: 10px; }
-                                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                                    th { background-color: #f8f9fa; font-weight: 600; }
+                                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                                    body { font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif; margin: 0; padding: 30px 40px; color: #1e293b; font-size: 13px; }
+                                    .report-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; }
+                                    .report-header img { max-width: 100%; height: auto; max-height: 100px; margin-bottom: 8px; }
+                                    .report-header h1 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 8px 0 4px; letter-spacing: -0.02em; }
+                                    .report-header p { font-size: 11px; color: #64748b; }
+                                    .report-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; color: #64748b; }
+                                    .report-body { margin-bottom: 24px; }
+                                    .report-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                                    .report-table tr { border-bottom: 1px solid #e2e8f0; }
+                                    .report-table td { padding: 10px 12px; vertical-align: top; }
+                                    .report-table td:first-child { font-weight: 600; color: #475569; width: 160px; white-space: nowrap; }
+                                    .report-table td:last-child { color: #1e293b; }
+                                    .report-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
+                                    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+                                    .badge-warning { background: #fef3c7; color: #d97706; }
+                                    .badge-danger { background: #fee2e2; color: #dc2626; }
+                                    .badge-success { background: #dcfce7; color: #16a34a; }
+                                    .badge-info { background: #e0f2fe; color: #0284c7; }
+                                    @media print { body { padding: 20px 30px; } }
                                 </style>
                             </head>
                             <body>
-                                <h1>Violation Report</h1>
-                                <div class="report-section">
-                                    <div><span class="report-label">Case ID:</span> <span class="report-value">${violation.caseId}</span></div>
-                                    <div><span class="report-label">Student ID:</span> <span class="report-value">${violation.studentId}</span></div>
-                                    <div><span class="report-label">Student Name:</span> <span class="report-value">${violation.studentName}</span></div>
-                                    <div><span class="report-label">Section:</span> <span class="report-value">${violation.section}</span></div>
-                                    <div><span class="report-label">Year Level:</span> <span class="report-value">${violation.studentYearlevel || 'N/A'}</span></div>
-                                    <div><span class="report-label">Violation Type:</span> <span class="report-value">${violation.violationTypeLabel}</span></div>
-                                    <div><span class="report-label">Level:</span> <span class="report-value">${violation.violationLevelLabel}</span></div>
-                                    <div><span class="report-label">Date & Time:</span> <span class="report-value">${violation.dateTime}</span></div>
-                                    <div><span class="report-label">Location:</span> <span class="report-value">${violation.locationLabel}</span></div>
-                                    <div><span class="report-label">Reported By:</span> <span class="report-value">${violation.reportedBy}</span></div>
-                                    <div><span class="report-label">Status:</span> <span class="report-value">${violation.statusLabel}</span></div>
-                                    <div><span class="report-label">Notes:</span> <span class="report-value">${violation.notes || 'N/A'}</span></div>
+                                <div class="report-header">
+                                    <img src="${headerImgPath}" alt="Header" onerror="this.style.display='none'">
+                                    <h1>Violation Report</h1>
+                                    <p>Office of Student Affairs and Services</p>
                                 </div>
-                                <div style="margin-top: 40px; color: #666; font-size: 12px;">
-                                    Generated on: ${new Date().toLocaleString()}
+                                <div class="report-meta">
+                                    <span>Case ID: <strong>${violation.caseId}</strong></span>
+                                    <span>Generated: ${new Date().toLocaleString()}</span>
+                                </div>
+                                <div class="report-body">
+                                    <table class="report-table">
+                                        <tr><td>Student ID</td><td>${violation.studentId}</td></tr>
+                                        <tr><td>Student Name</td><td>${violation.studentName}</td></tr>
+                                        <tr><td>Department</td><td>${violation.department || 'N/A'}</td></tr>
+                                        <tr><td>Section</td><td>${violation.section}</td></tr>
+                                        <tr><td>Year Level</td><td>${violation.studentYearlevel || 'N/A'}</td></tr>
+                                        <tr><td>Violation Type</td><td>${violation.violationTypeLabel}</td></tr>
+                                        <tr><td>Level</td><td>${violation.violationLevelLabel}</td></tr>
+                                        <tr><td>Date & Time</td><td>${violation.dateTime}</td></tr>
+                                        <tr><td>Location</td><td>${violation.locationLabel}</td></tr>
+                                        <tr><td>Reported By</td><td>${violation.reportedBy}</td></tr>
+                                        <tr><td>Status</td><td><span class="badge ${violation.status === 'resolved' ? 'badge-success' : violation.status === 'disciplinary' ? 'badge-danger' : 'badge-warning'}">${violation.statusLabel}</span></td></tr>
+                                        <tr><td>Notes</td><td>${violation.notes || 'N/A'}</td></tr>
+                                    </table>
+                                </div>
+                                <div class="report-footer">
+                                    <span>E-OSAS System — Violation Report</span>
+                                    <span>Printed by: ${getCurrentAdminName()}</span>
                                 </div>
                             </body>
                         </html>
