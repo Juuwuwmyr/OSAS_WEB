@@ -43,7 +43,7 @@ function initViolationsModule() {
             const initials = parts.length > 1
                 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
                 : (parts[0][0] || 'S').toUpperCase();
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" rx="${size/2}" fill="%23ffd700"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-size="${size * 0.4}" font-weight="bold" fill="%23333">${initials}</text></svg>`;
+            const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'%3E%3Crect width='${size}' height='${size}' rx='${size/2}' fill='%23ffd700'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='${size * 0.4}' font-weight='bold' fill='%23333'%3E${initials}%3C/text%3E%3C/svg%3E`;
             return `data:image/svg+xml,${svg}`;
         }
         // Expose globally for inline onerror handlers
