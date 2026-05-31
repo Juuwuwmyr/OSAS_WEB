@@ -2414,3 +2414,42 @@ body.dark .Violations-modal-container .vd-table tbody td {
     font-size: 12px;
   }
 }
+
+/* Dark mode — pagination */
+body.dark .uv-table-footer {
+  border-top-color: #2A2A2A;
+}
+
+body.dark .uv-pagination-btn {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+  color: #ccc;
+}
+
+body.dark .uv-pagination-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+body.dark .uv-pagination-btn.active {
+  background: var(--gold);
+  color: #1a1a1a;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+body.dark .uv-pagination-btn:disabled {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+  color: #555;
+  opacity: 0.6;
+}
+
+body.dark .uv-pagination-info {
+  color: #64748b;
+}
+
+body.dark .uv-pagination-info span {
+  color: #ccc;
+}
