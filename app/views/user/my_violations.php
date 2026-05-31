@@ -130,6 +130,21 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
 
+    <!-- Grid View -->
+    <div id="uvGridView" style="display:none;">
+      <div id="violationsGridBody" style="padding: 12px 16px; display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+      </div>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="uv-table-footer">
+      <div class="uv-pagination-info">
+        Showing <span id="uvShowingStart">0</span>–<span id="uvShowingEnd">0</span> of <span id="uvTotalFiltered">0</span> records
+      </div>
+      <div class="uv-pagination" id="uvPagination">
+      </div>
+    </div>
+
   </div><!-- /uv-card -->
 
   <!-- ── DETAILS MODAL ── -->
