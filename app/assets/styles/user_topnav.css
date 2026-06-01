@@ -105,7 +105,7 @@ body.dark .nav-title { color: var(--gold); }
   gap: 7px;
   padding: 7px 14px;
   border-radius: 10px;
-  color: var(--text-2);
+  color: #888;
   text-decoration: none;
   font-weight: 500;
   font-size: .82rem;
@@ -113,7 +113,7 @@ body.dark .nav-title { color: var(--gold); }
   white-space: nowrap;
   position: relative;
 }
-.nav-link i { font-size: 1.1rem; }
+.nav-link i { font-size: 1.1rem; color: #888; }
 .nav-link:hover {
   background: var(--gold-light);
   color: var(--gold-dark);
@@ -126,6 +126,7 @@ body.dark .nav-title { color: var(--gold); }
   border-radius: 0;
   box-shadow: none;
 }
+.nav-item.active .nav-link i { color: var(--gold); }
 
 /* ── User Section ── */
 .nav-user {
@@ -528,8 +529,10 @@ body.dark .user-avatar-img { border-color: #2a2a2a; }
 #main-content, #content main { font-size: 13px; }
 
 
-body.dark .nav-link { color: var(--text-2); }
+body.dark .nav-link { color: #888; }
+body.dark .nav-link i { color: #888; }
 body.dark .nav-link:hover { background: var(--gold-light); color: var(--gold); }
+body.dark .nav-link:hover i { color: var(--gold); }
 
 /* ── Topnav font scale-down ── */
 .nav-title       { font-size: 0.78rem !important; }
