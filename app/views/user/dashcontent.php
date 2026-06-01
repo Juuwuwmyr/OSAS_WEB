@@ -156,7 +156,7 @@ require_once __DIR__ . '/../../core/View.php';
             </div>
           </div>
           <div class="sd-tip">
-            <div class="sd-tip__icon"><i class='bx bxs-shopping-bag-alt'></i></div>
+            <div class="sd-tip__icon"><i class='fas fa-shoe-prints'></i></div>
             <div class="sd-tip__body">
               <h4>Appropriate Footwear</h4>
               <p>School-approved shoes only. Keep them clean and in good repair.</p>

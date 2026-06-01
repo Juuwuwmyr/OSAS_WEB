@@ -300,12 +300,12 @@ class UserDashboardData {
 
         const getIcon = (label) => {
             const lower = label.toLowerCase();
-            if (lower.includes('uniform')) return 'bxs-t-shirt';
-            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shopping-bag-alt';
-            if (lower.includes('id')) return 'bxs-id-card';
-            if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
-            if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
-            return 'bxs-error-circle';
+            if (lower.includes('uniform')) return { prefix: 'bx', icon: 'bxs-t-shirt' };
+            if (lower.includes('footwear') || lower.includes('shoe')) return { prefix: 'fas', icon: 'fa-shoe-prints' };
+            if (lower.includes('id')) return { prefix: 'bx', icon: 'bxs-id-card' };
+            if (lower.includes('hair') || lower.includes('cut')) return { prefix: 'bx', icon: 'bxs-face' };
+            if (lower.includes('conduct') || lower.includes('behavior')) return { prefix: 'bx', icon: 'bxs-user-x' };
+            return { prefix: 'bx', icon: 'bxs-error-circle' };
         };
 
         const getColorByType = (label) => {
@@ -328,10 +328,11 @@ class UserDashboardData {
         container.innerHTML = sortedTypes.map(([label, count], i) => {
             const c = getColorByType(label);
             const pct = Math.round((count / maxCount) * 100);
+            const iconData = getIcon(label);
             return `
                 <div class="violation-type">
                     <div class="violation-icon" style="background:${c.bg}; color:${c.color};">
-                        <i class='bx ${getIcon(label)}'></i>
+                        <i class='${iconData.prefix} ${iconData.icon}'></i>
                     </div>
                     <div class="violation-details" style="flex:1;">
                         <h4>${this.escapeHtml(label)}</h4>
@@ -364,12 +365,12 @@ class UserDashboardData {
 
         const getIcon = (label) => {
             const lower = (label || '').toLowerCase();
-            if (lower.includes('uniform')) return 'bxs-t-shirt';
-            if (lower.includes('footwear') || lower.includes('shoe')) return 'bxs-shopping-bag-alt';
-            if (lower.includes('id')) return 'bxs-id-card';
-            if (lower.includes('hair') || lower.includes('cut')) return 'bxs-face';
-            if (lower.includes('conduct') || lower.includes('behavior')) return 'bxs-user-x';
-            return 'bxs-info-circle';
+            if (lower.includes('uniform')) return { prefix: 'bx', icon: 'bxs-t-shirt' };
+            if (lower.includes('footwear') || lower.includes('shoe')) return { prefix: 'fas', icon: 'fa-shoe-prints' };
+            if (lower.includes('id')) return { prefix: 'bx', icon: 'bxs-id-card' };
+            if (lower.includes('hair') || lower.includes('cut')) return { prefix: 'bx', icon: 'bxs-face' };
+            if (lower.includes('conduct') || lower.includes('behavior')) return { prefix: 'bx', icon: 'bxs-user-x' };
+            return { prefix: 'bx', icon: 'bxs-info-circle' };
         };
 
         const getIconColor = (label) => {
@@ -403,11 +404,12 @@ class UserDashboardData {
             }
 
             const iconType = getIconColor(typeLabel);
+            const iconData = getIcon(typeLabel);
 
             return `
                 <div class="sd-violation-item" onclick="viewViolationDetails(${v.id || v.violation_id})">
                     <div class="sd-violation-item__icon sd-violation-item__icon--${iconType}">
-                        <i class='bx ${getIcon(typeLabel)}'></i>
+                        <i class='${iconData.prefix} ${iconData.icon}'></i>
                     </div>
                     <div class="sd-violation-item__details">
                         <h4>${this.escapeHtml(this.formatViolationType(typeLabel))}</h4>

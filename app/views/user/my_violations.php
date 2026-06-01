@@ -40,7 +40,7 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
     <div class="uv-stat">
-      <div class="uv-stat__icon"><i class='bx bxs-shopping-bag-alt'></i></div>
+      <div class="uv-stat__icon"><i class='fas fa-shoe-prints'></i></div>
       <div class="uv-stat__body">
         <span class="uv-stat__lbl">Footwear <small>(this month)</small></span>
         <span class="uv-stat__val" id="statFootwear">0</span>

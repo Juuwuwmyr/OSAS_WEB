@@ -1027,9 +1027,9 @@ body.dark {
   font-size: 18px;
   flex-shrink: 0;
 }
-.sd-violation-item__icon--uniform  { background: rgba(239, 68, 68, .12); color: #ef4444; }
-.sd-violation-item__icon--footwear { background: rgba(245, 158, 11, .12); color: #f59e0b; }
-.sd-violation-item__icon--id       { background: rgba(59, 130, 246, .12); color: #3b82f6; }
+.sd-violation-item__icon--uniform  { background: rgba(212, 175, 55, .12); color: #D4AF37; }
+.sd-violation-item__icon--footwear { background: rgba(212, 175, 55, .12); color: #D4AF37; }
+.sd-violation-item__icon--id       { background: rgba(212, 175, 55, .12); color: #D4AF37; }
 .sd-violation-item__icon--default  { background: var(--gold-light); color: var(--gold-dark); }
 
 .sd-violation-item__details {
