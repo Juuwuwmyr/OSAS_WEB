@@ -162,6 +162,50 @@ HOW-TO GUIDES (for common questions)
 
 PROMPT;
 
+// Add role-specific restrictions to the system prompt
+if ($user_role === 'user') {
+    $system_prompt .= <<<STUDENT_RULES
+
+═══════════════════════════════════════════
+STUDENT USER — STRICT PRIVACY RESTRICTIONS
+═══════════════════════════════════════════
+You are currently talking to a STUDENT. You MUST follow these rules without exception:
+
+1. **NEVER reveal other students' violation records, names, IDs, or any personal data.**
+2. **NEVER answer questions about how many violations another student has.**
+3. **NEVER compare violation counts between students.**
+4. **NEVER reveal system-wide violation statistics broken down by student.**
+5. **NEVER reveal the total number of students enrolled in the system.**
+6. **NEVER reveal how many students are in a specific department or section.**
+7. **NEVER list all departments, sections, or organizational structure details.**
+8. **ONLY discuss the current student's OWN violations (provided in context below).**
+9. If asked about other students' records or system headcounts, respond: "That information is only available to OSAS staff. I can only help you with your own records and general system guidance."
+10. You may explain policies, procedures, violation types/levels, and how to navigate the system — but always in the context of the student's own situation.
+11. You may tell the student their own violation count, status, and details.
+
+STUDENT_RULES;
+} else {
+    // Admin / OSAS Staff / CSC Officer / Officer / Faculty Member
+    $system_prompt .= <<<STAFF_RULES
+
+═══════════════════════════════════════════
+STAFF / ADMIN — FULL ACCESS CONTEXT
+═══════════════════════════════════════════
+You are currently talking to an authorized OSAS staff member or administrator (role: {$user_role}).
+You have FULL access to all system data provided in the context below, including:
+- Complete student records and headcounts per department
+- All violation records, case details, and status breakdowns
+- Top offenders and violation trends (this month vs last month)
+- Department and section structure
+- All announcements
+- Logged-in staff identity
+
+Use this data freely and accurately to answer any administrative query.
+Always cite specific numbers and records from the context when available.
+
+STAFF_RULES;
+}
+
 
 // Optionally add database context
 if (USE_DATABASE_CONTEXT && $conn && !$conn->connect_error) {
@@ -218,107 +262,105 @@ try {
  */
 function getDatabaseContext($conn, $user_id, $user_role) {
     $context = [];
-    
+    $isStudent = ($user_role === 'user');
+
     try {
-        // Get basic stats
+        // ── General stats (safe for all roles) ──
         $stats = [];
-        
-        // Count students
-        $result = @$conn->query("SELECT COUNT(*) as count FROM students");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_students'] = $row['count'] ?? 0;
-        }
-        
-        // Count departments
-        $result = @$conn->query("SELECT COUNT(*) as count FROM departments");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_departments'] = $row['count'] ?? 0;
-        }
-        
-        // Count active violations (this month)
-        $result = @$conn->query("SELECT COUNT(*) as count FROM violations WHERE is_archived = 0");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['active_violations'] = $row['count'] ?? 0;
+
+        // Students only see department/section counts, not total student headcount
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT COUNT(*) as count FROM students");
+            if ($result) { $stats['total_students'] = $result->fetch_assoc()['count'] ?? 0; }
         }
 
-        // Count all-time violations
-        $result = @$conn->query("SELECT COUNT(*) as count FROM violations");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_violations_all_time'] = $row['count'] ?? 0;
+        $result = @$conn->query("SELECT COUNT(*) as count FROM departments");
+        if ($result) { $stats['total_departments'] = $result->fetch_assoc()['count'] ?? 0; }
+
+        // Students only see total counts, not per-student breakdowns
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT COUNT(*) as count FROM violations WHERE is_archived = 0");
+            if ($result) { $stats['active_violations'] = $result->fetch_assoc()['count'] ?? 0; }
+
+            $result = @$conn->query("SELECT COUNT(*) as count FROM violations");
+            if ($result) { $stats['total_violations_all_time'] = $result->fetch_assoc()['count'] ?? 0; }
         }
-        
+
         $context[] = "SYSTEM STATISTICS: " . json_encode($stats);
 
-        // Get departments list
+        // ── Departments (safe for all, but students only see names not full list) ──
         $result = @$conn->query("SELECT department_code, department_name FROM departments ORDER BY department_name");
         if ($result && $result->num_rows > 0) {
             $depts = [];
             while ($row = $result->fetch_assoc()) {
                 $depts[] = $row['department_name'] . " (" . $row['department_code'] . ")";
             }
-            $context[] = "DEPARTMENTS: " . implode(', ', $depts);
-        }
-
-        // Get sections list
-        $result = @$conn->query("SELECT s.section_name, s.section_code, d.department_code FROM sections s LEFT JOIN departments d ON s.department_id = d.id ORDER BY s.section_name LIMIT 30");
-        if ($result && $result->num_rows > 0) {
-            $sections = [];
-            while ($row = $result->fetch_assoc()) {
-                $sections[] = $row['section_name'] . " (" . ($row['department_code'] ?? '') . ")";
+            if (!$isStudent) {
+                $context[] = "DEPARTMENTS: " . implode(', ', $depts);
             }
-            $context[] = "SECTIONS: " . implode(', ', $sections);
+            // Students only know their own department exists, not the full list
         }
 
-        // Get recent violations with student info (actual data)
-        $result = @$conn->query("
-            SELECT v.id, v.case_id, v.student_id, v.violation_date, v.status,
-                   CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
-                   s.department,
-                   vt.name as violation_type,
-                   vl.name as violation_level
-            FROM violations v
-            LEFT JOIN students s ON v.student_id = s.student_id
-            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
-            LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
-            WHERE v.is_archived = 0
-            ORDER BY v.created_at DESC
-            LIMIT 20
-        ");
-        if ($result && $result->num_rows > 0) {
-            $violations = [];
-            while ($row = $result->fetch_assoc()) {
-                $violations[] = "Case " . ($row['case_id'] ?? $row['id']) . ": " . trim($row['student_name']) . 
-                    " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') . 
-                    ") - Type: " . ($row['violation_type'] ?? 'Unknown') . 
-                    ", Level: " . ($row['violation_level'] ?? 'Unknown') . 
-                    ", Status: " . ($row['status'] ?? 'pending') . 
-                    ", Date: " . ($row['violation_date'] ?? 'N/A');
+        // ── Sections — admin/staff only ──
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT s.section_name, s.section_code, d.department_code FROM sections s LEFT JOIN departments d ON s.department_id = d.id ORDER BY s.section_name LIMIT 30");
+            if ($result && $result->num_rows > 0) {
+                $sections = [];
+                while ($row = $result->fetch_assoc()) {
+                    $sections[] = $row['section_name'] . " (" . ($row['department_code'] ?? '') . ")";
+                }
+                $context[] = "SECTIONS: " . implode(', ', $sections);
             }
-            $context[] = "RECENT VIOLATIONS (actual records):\n" . implode("\n", $violations);
         }
 
-        // Get violation type counts
-        $result = @$conn->query("
-            SELECT vt.name as type_name, COUNT(*) as count 
-            FROM violations v 
-            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id 
-            WHERE v.is_archived = 0 
-            GROUP BY vt.name 
-            ORDER BY count DESC
-        ");
-        if ($result && $result->num_rows > 0) {
-            $typeCounts = [];
-            while ($row = $result->fetch_assoc()) {
-                $typeCounts[] = ($row['type_name'] ?? 'Unknown') . ": " . $row['count'];
+        // ── Recent violations — ADMIN/STAFF ONLY ──
+        if (!$isStudent) {
+            $result = @$conn->query("
+                SELECT v.id, v.case_id, v.student_id, v.violation_date, v.status,
+                       CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
+                       s.department,
+                       vt.name as violation_type,
+                       vl.name as violation_level
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
+                WHERE v.is_archived = 0
+                ORDER BY v.created_at DESC
+                LIMIT 20
+            ");
+            if ($result && $result->num_rows > 0) {
+                $violations = [];
+                while ($row = $result->fetch_assoc()) {
+                    $violations[] = "Case " . ($row['case_id'] ?? $row['id']) . ": " . trim($row['student_name']) .
+                        " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') .
+                        ") - Type: " . ($row['violation_type'] ?? 'Unknown') .
+                        ", Level: " . ($row['violation_level'] ?? 'Unknown') .
+                        ", Status: " . ($row['status'] ?? 'pending') .
+                        ", Date: " . ($row['violation_date'] ?? 'N/A');
+                }
+                $context[] = "RECENT VIOLATIONS (actual records):\n" . implode("\n", $violations);
             }
-            $context[] = "VIOLATION COUNTS BY TYPE (this month): " . implode(', ', $typeCounts);
+
+            // Violation type counts — admin only
+            $result = @$conn->query("
+                SELECT vt.name as type_name, COUNT(*) as count
+                FROM violations v
+                LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                WHERE v.is_archived = 0
+                GROUP BY vt.name
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $typeCounts = [];
+                while ($row = $result->fetch_assoc()) {
+                    $typeCounts[] = ($row['type_name'] ?? 'Unknown') . ": " . $row['count'];
+                }
+                $context[] = "VIOLATION COUNTS BY TYPE (this month): " . implode(', ', $typeCounts);
+            }
         }
 
-        // Get recent announcements
+        // ── Announcements (safe for all) ──
         $result = @$conn->query("SELECT title, message, type, created_at FROM announcements WHERE status = 'active' ORDER BY created_at DESC LIMIT 5");
         if ($result && $result->num_rows > 0) {
             $announcements = [];
@@ -328,16 +370,130 @@ function getDatabaseContext($conn, $user_id, $user_role) {
             $context[] = "ACTIVE ANNOUNCEMENTS: " . implode('; ', $announcements);
         }
 
-        // Add user-specific context if logged in
+        // ── Extended admin/staff-only context ──
+        if (!$isStudent) {
+
+            // Students per department
+            $result = @$conn->query("
+                SELECT d.department_name, d.department_code, COUNT(s.id) as student_count
+                FROM departments d
+                LEFT JOIN students s ON s.department = d.department_code
+                GROUP BY d.id, d.department_name, d.department_code
+                ORDER BY student_count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $deptCounts = [];
+                while ($row = $result->fetch_assoc()) {
+                    $deptCounts[] = $row['department_name'] . " (" . $row['department_code'] . "): " . $row['student_count'] . " students";
+                }
+                $context[] = "STUDENTS PER DEPARTMENT:\n" . implode("\n", $deptCounts);
+            }
+
+            // Violation status breakdown
+            $result = @$conn->query("
+                SELECT status, COUNT(*) as count
+                FROM violations
+                WHERE is_archived = 0
+                GROUP BY status
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $statusBreakdown = [];
+                while ($row = $result->fetch_assoc()) {
+                    $statusBreakdown[] = ucfirst($row['status']) . ": " . $row['count'];
+                }
+                $context[] = "VIOLATIONS BY STATUS (active): " . implode(', ', $statusBreakdown);
+            }
+
+            // Violations per department
+            $result = @$conn->query("
+                SELECT s.department, COUNT(v.id) as count
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                WHERE v.is_archived = 0
+                GROUP BY s.department
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $deptViolations = [];
+                while ($row = $result->fetch_assoc()) {
+                    $deptViolations[] = ($row['department'] ?? 'Unknown') . ": " . $row['count'];
+                }
+                $context[] = "VIOLATIONS PER DEPARTMENT (active): " . implode(', ', $deptViolations);
+            }
+
+            // Top 5 students with most violations
+            $result = @$conn->query("
+                SELECT v.student_id,
+                       CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
+                       s.department, COUNT(v.id) as violation_count
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                GROUP BY v.student_id, student_name, s.department
+                ORDER BY violation_count DESC
+                LIMIT 5
+            ");
+            if ($result && $result->num_rows > 0) {
+                $topOffenders = [];
+                while ($row = $result->fetch_assoc()) {
+                    $topOffenders[] = trim($row['student_name']) . " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') . ") — " . $row['violation_count'] . " violation(s)";
+                }
+                $context[] = "TOP STUDENTS BY VIOLATION COUNT:\n" . implode("\n", $topOffenders);
+            }
+
+            // Violations this month vs last month
+            $result = @$conn->query("
+                SELECT
+                    SUM(CASE WHEN MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW()) THEN 1 ELSE 0 END) as this_month,
+                    SUM(CASE WHEN MONTH(created_at) = MONTH(NOW() - INTERVAL 1 MONTH) AND YEAR(created_at) = YEAR(NOW() - INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as last_month
+                FROM violations
+            ");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $context[] = "VIOLATIONS THIS MONTH: " . ($row['this_month'] ?? 0) . " | LAST MONTH: " . ($row['last_month'] ?? 0);
+            }
+
+            // Recent students added
+            $result = @$conn->query("
+                SELECT student_id, CONCAT(first_name, ' ', last_name) as name, department, section, created_at
+                FROM students
+                ORDER BY created_at DESC
+                LIMIT 5
+            ");
+            if ($result && $result->num_rows > 0) {
+                $recentStudents = [];
+                while ($row = $result->fetch_assoc()) {
+                    $recentStudents[] = trim($row['name']) . " (ID: " . $row['student_id'] . ", " . ($row['department'] ?? '') . " - " . ($row['section'] ?? '') . ")";
+                }
+                $context[] = "RECENTLY ADDED STUDENTS:\n" . implode("\n", $recentStudents);
+            }
+
+            // Logged-in staff info
+            if ($user_id) {
+                $stmt = $conn->prepare("SELECT full_name, role, email FROM users WHERE id = ? LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param("i", $user_id);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    if ($res && $row = $res->fetch_assoc()) {
+                        $context[] = "LOGGED-IN STAFF: " . ($row['full_name'] ?? 'Unknown') . " | Role: " . ($row['role'] ?? $user_role) . " | Email: " . ($row['email'] ?? 'N/A');
+                    }
+                    $stmt->close();
+                }
+            }
+        }
+
+        // ── User-specific context ──
         if ($user_id && $user_role) {
             $context[] = "Current user role: " . $user_role;
-            
-            if ($user_role === 'user') {
+
+            if ($isStudent) {
                 $studentId = $_SESSION['student_id_code'] ?? '';
                 if ($studentId) {
-                    // Get user's own violations
+                    // Only fetch THIS student's own violations
                     $stmt = $conn->prepare("
-                        SELECT v.case_id, v.violation_date, v.status, vt.name as violation_type, vl.name as violation_level
+                        SELECT v.case_id, v.violation_date, v.status,
+                               vt.name as violation_type, vl.name as violation_level
                         FROM violations v
                         LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
                         LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
@@ -352,24 +508,28 @@ function getDatabaseContext($conn, $user_id, $user_role) {
                         if ($result && $result->num_rows > 0) {
                             $myViolations = [];
                             while ($row = $result->fetch_assoc()) {
-                                $myViolations[] = "Case " . ($row['case_id'] ?? '') . ": " . ($row['violation_type'] ?? 'Unknown') . 
-                                    " (" . ($row['violation_level'] ?? '') . ") - Status: " . ($row['status'] ?? 'pending') . 
+                                $myViolations[] = "Case " . ($row['case_id'] ?? '') . ": " .
+                                    ($row['violation_type'] ?? 'Unknown') .
+                                    " (" . ($row['violation_level'] ?? '') . ")" .
+                                    " - Status: " . ($row['status'] ?? 'pending') .
                                     ", Date: " . ($row['violation_date'] ?? 'N/A');
                             }
-                            $context[] = "YOUR VIOLATIONS (Student ID: $studentId):\n" . implode("\n", $myViolations);
+                            $context[] = "YOUR OWN VIOLATIONS (Student ID: $studentId):\n" . implode("\n", $myViolations);
                         } else {
                             $context[] = "You (Student ID: $studentId) have no violations recorded.";
                         }
                         $stmt->close();
                     }
                 }
+                // Explicitly tell the AI NOT to reveal other students' data
+                $context[] = "PRIVACY NOTICE: The above is the ONLY student data available. Do NOT reveal any other student's records.";
             }
         }
-        
+
     } catch (Exception $e) {
         error_log("Error getting database context: " . $e->getMessage());
     }
-    
+
     return implode("\n", $context);
 }
 
