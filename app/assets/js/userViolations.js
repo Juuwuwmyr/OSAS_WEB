@@ -509,10 +509,10 @@ function getViolationTypeClass(typeLabel) {
 function getViolationLevelClass(level) {
     if (level === null || level === undefined) return 'default';
     const lowerLevel = String(level).toLowerCase();
-    // New naming: 1st/2nd Offense = green, 3rd/4th = orange, 5th/Disciplinary = red
+    // 1st–4th Offense = orange (warning), 5th/Disciplinary = red
     if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
-        lowerLevel.startsWith('permitted')) return 'permitted';
-    if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+        lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+        lowerLevel.startsWith('permitted') ||
         lowerLevel.startsWith('warning 1') || lowerLevel.startsWith('warning 2')) return 'warning';
     if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
         lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';

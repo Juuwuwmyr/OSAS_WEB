@@ -739,8 +739,10 @@ function initViolationsModule() {
                 // Determine style class based on name/level
                 let styleClass = 'level-warning';
                 const nameLower = level.name.toLowerCase();
-                if (nameLower.includes('permitted')) styleClass = 'level-permitted';
-                else if (nameLower.includes('disciplinary')) styleClass = 'level-disciplinary';
+                // 1st–4th offense = orange (warning), 5th/disciplinary = red
+                if (nameLower.includes('disciplinary')) styleClass = 'level-disciplinary';
+                else if (nameLower.includes('5th offense') || nameLower.includes('warning 3')) styleClass = 'level-disciplinary';
+                // all other offenses stay orange (level-warning is default)
 
                 div.className = `violation-level-option ${styleClass}`;
                 
@@ -847,8 +849,7 @@ function initViolationsModule() {
                     // Determine class based on level name
                     let statusClass = 'warning';
                     const nameLower = levelName.toLowerCase();
-                    if (nameLower.includes('permitted')) statusClass = 'permitted';
-                    else if (nameLower.includes('disciplinary')) statusClass = 'disciplinary';
+                    if (nameLower.includes('disciplinary') || nameLower.includes('5th offense') || nameLower.includes('warning 3')) statusClass = 'disciplinary';
                     
                     badge.className = `violation-type-badge-overlay ${statusClass}`;
                     badge.textContent = levelName;
@@ -1440,10 +1441,10 @@ function initViolationsModule() {
         function getViolationLevelClass(level) {
             if (level === null || level === undefined) return 'default';
             const lowerLevel = String(level).toLowerCase();
-            // New naming: 1st/2nd Offense = green, 3rd/4th = orange, 5th = red, Disciplinary = red
+            // 1st–4th Offense = orange (warning), 5th/Disciplinary = red
             if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
-                lowerLevel.startsWith('permitted')) return 'permitted';
-            if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+                lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+                lowerLevel.startsWith('permitted') ||
                 lowerLevel.startsWith('warning 1') || lowerLevel.startsWith('warning 2')) return 'warning';
             if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
                 lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
