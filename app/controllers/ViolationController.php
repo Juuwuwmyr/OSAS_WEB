@@ -367,19 +367,22 @@ class ViolationController extends Controller
                 $studentFirstName = $student[0]['first_name'] ?? 'Student';
                 $levelLower = strtolower($levelName);
                 
-                if (strpos($levelLower, 'permitted') !== false) {
-                    // First time — gentle reminder
+                if (strpos($levelLower, '1st offense') !== false || strpos($levelLower, 'permitted') !== false) {
+                    // First offense — gentle reminder
                     $pushTitle = 'Dress Code Reminder';
-                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\". This is just a reminder — please follow the proper dress code next time.";
-                } elseif (strpos($levelLower, 'warning 1') !== false || strpos($levelLower, '1st') !== false) {
-                    $pushTitle = 'Warning 1 — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 1st warning for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
-                } elseif (strpos($levelLower, 'warning 2') !== false || strpos($levelLower, '2nd') !== false) {
-                    $pushTitle = 'Warning 2 — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 2nd warning for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
-                } elseif (strpos($levelLower, 'warning 3') !== false || strpos($levelLower, '3rd') !== false) {
-                    $pushTitle = 'Warning 3 — Disciplinary Action Required';
-                    $pushBody = "Hi {$studentFirstName}, you've reached your 3rd warning for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
+                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\" (1st Offense). This is just a reminder — please follow the proper dress code next time.";
+                } elseif (strpos($levelLower, '2nd offense') !== false) {
+                    $pushTitle = '2nd Offense — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 2nd offense for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
+                } elseif (strpos($levelLower, '3rd offense') !== false || strpos($levelLower, 'warning 1') !== false) {
+                    $pushTitle = '3rd Offense — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 3rd offense for \"{$typeName}\". Please comply immediately to avoid escalation.";
+                } elseif (strpos($levelLower, '4th offense') !== false || strpos($levelLower, 'warning 2') !== false) {
+                    $pushTitle = '4th Offense — Final Warning';
+                    $pushBody = "Hi {$studentFirstName}, this is your 4th offense for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
+                } elseif (strpos($levelLower, '5th offense') !== false || strpos($levelLower, 'warning 3') !== false) {
+                    $pushTitle = '5th Offense — Disciplinary Action Required';
+                    $pushBody = "Hi {$studentFirstName}, you've reached your 5th offense for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
                 } elseif (strpos($levelLower, 'disciplinary') !== false) {
                     $pushTitle = 'Disciplinary Notice';
                     $pushBody = "Hi {$studentFirstName}, a disciplinary action has been recorded for repeated \"{$typeName}\" violations. Please report to the Office of Student Affairs immediately.";

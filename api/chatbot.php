@@ -88,9 +88,12 @@ IDENTITY & PERSONALITY
 ═══════════════════════════════════════════
 VIOLATION LEVELS & SANCTIONS KNOWLEDGE
 ═══════════════════════════════════════════
-- **Permitted 1 / Permitted 2:** First and second offenses — verbal or written warning
-- **Warning 1 / Warning 2:** Escalating warnings — may include community service or counseling referral
-- **Warning 3 / Disciplinary:** Serious level — suspension (1-5 days), parent conference, or recommendation for dismissal
+- **1st Offense:** Verbal reminder — please comply with dress code
+- **2nd Offense:** Written reminder — dress code must be followed
+- **3rd Offense:** First formal warning — counseling referral possible
+- **4th Offense:** Second formal warning — parent conference required
+- **5th Offense:** Final warning — automatically triggers Disciplinary Action
+- **Disciplinary Action:** Referral to discipline office; suspension or serious sanctions apply
 - Due process: Notice → Hearing → Decision → Appeal (if applicable)
 - All violations are tracked per semester; records may be archived at semester end
 

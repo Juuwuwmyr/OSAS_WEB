@@ -310,9 +310,12 @@ CORE CAPABILITIES:
 8. Troubleshooting — Help with common issues (login problems, data not showing, etc.)
 
 VIOLATION LEVELS & SANCTIONS:
-- Minor Offense (Level 1): 1st = verbal warning; 2nd = written warning; 3rd = community service/counseling
-- Major Offense (Level 2): 1st = suspension 1-3 days; 2nd = suspension 3-5 days + parent conference; 3rd = dismissal recommendation
-- Serious Offense (Level 3): Immediate suspension pending investigation; may lead to expulsion
+- 1st Offense: Verbal reminder — please comply with dress code
+- 2nd Offense: Written reminder — dress code must be followed
+- 3rd Offense: First formal warning — counseling referral possible
+- 4th Offense: Second formal warning — parent conference required
+- 5th Offense: Final warning — automatically triggers Disciplinary Action
+- Disciplinary Action: Referral to discipline office; suspension or serious sanctions apply
 - Due process: Notice → Hearing → Decision → Appeal (if applicable)
 - Records tracked per semester; may be archived at semester end
 
@@ -640,7 +643,7 @@ HOW-TO FOR ADMINS:
                 prompts: [
                     { title: 'Violation Stats', desc: 'Current violation overview', text: 'Show me the current violation statistics — how many active violations, by type and level.' },
                     { title: 'Record a Violation', desc: 'Step-by-step guide', text: 'How do I record a new student violation? Walk me through the process.' },
-                    { title: 'Violation Levels', desc: 'Minor, Major, Serious explained', text: 'Explain the different violation levels (Minor, Major, Serious) and their corresponding sanctions.' },
+                    { title: 'Violation Levels', desc: '1st–5th Offense explained', text: 'Explain the different violation levels (1st to 5th Offense and Disciplinary Action) and their corresponding sanctions.' },
                     { title: 'Due Process', desc: 'Discipline procedure', text: 'What is the due process for student discipline? Explain the steps from notice to resolution.' },
                     { title: 'Entrance Slip', desc: 'How entrance slips work', text: 'How does the entrance slip system work? When is it generated and what does the student do with it?' },
                     { title: 'Resolve Violations', desc: 'Closing a case', text: 'How do I resolve or close a violation case? What are the possible statuses?' }
@@ -692,7 +695,7 @@ HOW-TO FOR ADMINS:
                 title: 'Understanding Violations',
                 icon: 'bx-shield-x',
                 prompts: [
-                    { title: 'Violation Levels', desc: 'Minor, Major, Serious', text: 'Explain the different violation levels and what sanctions I might face for each.' },
+                    { title: 'Violation Levels', desc: '1st to 5th Offense', text: 'Explain the different violation levels (1st to 5th Offense) and what sanctions I might face for each. What happens at the 5th offense?' },
                     { title: 'Due Process', desc: 'Your rights', text: 'What is my right to due process if I receive a violation? Can I appeal?' },
                     { title: 'Entrance Slip', desc: 'What to do with it', text: 'I received an entrance slip. What do I do with it and who do I show it to?' },
                     { title: 'Sanctions', desc: 'What happens next', text: 'What are the possible sanctions for violations and how do they escalate with repeated offenses?' },

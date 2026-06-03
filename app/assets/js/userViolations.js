@@ -280,7 +280,7 @@ function renderViolationTable() {
         
         const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
         const levelVal = String(level).toLowerCase();
-        const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+        const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
        
         let statusClass = 'warning';
         let statusText = 'Pending';
@@ -326,7 +326,7 @@ function renderViolationTable() {
             const status = (v.status || 'pending').toLowerCase();
             const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
             const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
 
             let statusClass = 'warning';
             let statusText = 'Pending';
@@ -381,7 +381,7 @@ function renderViolationTable() {
             const status = (v.status || 'pending').toLowerCase();
             const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
             const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
 
             let statusClass = 'warning';
             let statusText = 'Pending';
@@ -508,11 +508,14 @@ function getViolationTypeClass(typeLabel) {
 
 function getViolationLevelClass(level) {
     if (level === null || level === undefined) return 'default';
-    const levelStr = String(level);
-    const lowerLevel = levelStr.toLowerCase();
-    if (lowerLevel.startsWith('permitted')) return 'permitted';
-    if (lowerLevel.startsWith('warning')) return 'warning';
-    if (lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
+    const lowerLevel = String(level).toLowerCase();
+    // New naming: 1st/2nd Offense = green, 3rd/4th = orange, 5th/Disciplinary = red
+    if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
+        lowerLevel.startsWith('permitted')) return 'permitted';
+    if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+        lowerLevel.startsWith('warning 1') || lowerLevel.startsWith('warning 2')) return 'warning';
+    if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
+        lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
     return 'default';
 }
 
@@ -574,7 +577,7 @@ function viewViolationDetails(id) {
     let displayStatusLabel = v.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'Unknown');
 
     const levelLabel = (v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
-    const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('disciplinary');
+    const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense') || levelLabel.includes('disciplinary');
 
     if (displayStatus === 'resolved') {
         displayStatusLabel = 'Resolved';
@@ -677,7 +680,7 @@ function viewViolationDetails(id) {
         let itemStatusLabel = sv.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
         
         const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
-        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('disciplinary');
+        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('5th offense') || svLevelLabel.includes('disciplinary');
         
         if (itemStatus === 'resolved') {
             itemStatusLabel = 'Resolved';
@@ -780,7 +783,7 @@ function viewViolationDetails(id) {
                 
                 let itemStatus = (h.status || '').toLowerCase();
                 const hlLabel = hLevel.toLowerCase();
-                const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('disciplinary');
+                const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('5th offense') || hlLabel.includes('disciplinary');
                 
                 let statusHtml = '';
                 if (itemStatus === 'resolved' || itemStatus === 'permitted') {
