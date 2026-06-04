@@ -147,12 +147,14 @@ class UserDashboardData {
         // Current month stats (from active violations only)
         this.stats.activeViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            return status === 'warning';
+            const level = (v.violation_level_name || v.violationLevelLabel || '').toLowerCase();
+            return status === 'disciplinary' || status === 'warning' ||
+                   level.includes('5th offense') || level.includes('warning 3') || level.includes('3rd');
         }).length;
 
         this.stats.resolvedViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            return status === 'permitted' || status === 'resolved';
+            return status === 'resolved' || status === 'permitted';
         }).length;
 
         this.stats.violationTypes = {};
