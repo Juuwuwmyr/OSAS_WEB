@@ -160,8 +160,10 @@ function initReportsModule() {
             for (const [type, level] of Object.entries(typeLevels)) {
                 if (level === 0) continue;
                 let badgeClass;
-                if (level >= 5)  { badgeClass = 'disciplinary'; }
-                else             { badgeClass = 'warning'; }  // 1st–4th = orange
+                // 1st & 2nd = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
+                if (level <= 2)      { badgeClass = 'permitted'; }
+                else if (level <= 4) { badgeClass = 'warning'; }
+                else                 { badgeClass = 'disciplinary'; }
                 const offenseLabel = level >= 5 ? 'DISCIPLINARY' : (offenseLabels[level] || level) + ' OFFENSE';
                 parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${typeLabels[type]}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
             }

@@ -67,7 +67,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-check-circle'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Resolved</h3>
+        <h3 class="Violations-stat-title">Permitted</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
       </div>

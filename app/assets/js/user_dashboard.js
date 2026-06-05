@@ -368,6 +368,30 @@ function initializeNotifications() {
   
   // Initial check for notifications
   setTimeout(loadNotifications, 1000);
+
+  // Expose for external refresh (realtime alerts can call these)
+  window.refreshNotificationDropdown = loadNotifications;
+  window.refreshNotificationBadge = function() {
+    // Re-fetch and update badge silently without rendering the list
+    const apiBase = getAPIBase();
+    Promise.all([
+      fetch(apiBase + 'violations.php', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] })),
+      fetch(apiBase + 'violations.php?action=my_slip_requests', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] }))
+    ]).then(([vData, srData]) => {
+      const violations = vData.data || vData.violations || [];
+      const slipRequests = (srData.data || []).filter(sr => sr.status === 'approved' || sr.status === 'denied');
+      const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+      const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+      let unread = 0;
+      violations.forEach(v => {
+        if (!readNotifs.includes('v-' + v.id) && !seenNotifs.includes('v-' + v.id) && v.is_read != 1) unread++;
+      });
+      slipRequests.forEach(sr => {
+        if (!readNotifs.includes('sr-' + sr.id) && !seenNotifs.includes('sr-' + sr.id)) unread++;
+      });
+      if (notifBadge) notifBadge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : '0';
+    }).catch(() => {});
+  };
 }
 
 // ===============================
