@@ -77,21 +77,21 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Violations-stat-icon">
         <i class='bx bx-user-voice'></i>
       </div>
-      <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Disciplinary</h3>
-        <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
-        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
+          <div class="Violations-stat-content">
+        <h3 class="Violations-stat-title">Warning</h3>
+        <div class="Violations-stat-value" id="pendingViolations">0</div>
+        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
     </div>
 
     <div class="Violations-stat-card">
       <div class="Violations-stat-icon">
-        <i class='bx bx-calendar-week'></i>
+        <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">This Week</h3>
-        <div class="Violations-stat-value" id="pendingViolations">0</div>
-        <div class="Violations-stat-percentage" id="pendingViolationsPct">new this week</div>
+        <h3 class="Violations-stat-title">Disciplinary</h3>
+        <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
+        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
       </div>
     </div>
   </div>

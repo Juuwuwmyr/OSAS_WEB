@@ -2525,14 +2525,11 @@ function initViolationsModule() {
                 return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense');
             }).length;
 
-            // This Week = violations recorded in the last 7 days
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            // Warning = violations with warning status (3rd & 4th offense, active)
             const pending = violations.filter(v => {
-                const dateStr = v.dateReported || v.violation_date || v.created_at || '';
-                if (!dateStr) return false;
-                const d = new Date(dateStr.replace(/\//g, '-'));
-                return d >= oneWeekAgo;
+                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) return false;
+                return v.status === 'warning';
             }).length;
             
             const totalEl = document.getElementById('totalViolations');
@@ -2561,21 +2558,26 @@ function initViolationsModule() {
             if (pendingEl)      _acu(pendingEl, pending);
             if (disciplinaryEl) _acu(disciplinaryEl, disciplinary);
 
+            // Calculate percentages based on total violations
             const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
             const disciplinaryPct = total > 0 ? Math.round((disciplinary / total) * 100) : 0;
-            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}% of total`;
-            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}% of total`;
+            const warningPct = total > 0 ? Math.round((pending / total) * 100) : 0;
+            
+            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}%`;
+            if (pendingPctEl) pendingPctEl.textContent = `${warningPct}%`;
+            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}%`;
 
-            // Show actual date range for This Week card
-            const now = new Date();
-            const weekStart = new Date();
-            weekStart.setDate(now.getDate() - 7);
-            const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            if (pendingPctEl) pendingPctEl.textContent = `${fmt(weekStart)} – ${fmt(now)}`;
-
-            // Update "+X this week" on Total Violations card
+            // Update "+X this week" on Total Violations card dynamically
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const thisWeekCount = violations.filter(v => {
+                const dateStr = v.dateReported || v.violation_date || v.created_at || '';
+                if (!dateStr) return false;
+                const d = new Date(dateStr.replace(/\//g, '-'));
+                return d >= oneWeekAgo;
+            }).length;
             const weekEl = document.getElementById('totalViolationsWeek');
-            if (weekEl) weekEl.textContent = `+${pending} this week`;
+            if (weekEl) weekEl.textContent = `+${thisWeekCount} this week`;
         }
 
         function updateCounts(filteredViolations) {
