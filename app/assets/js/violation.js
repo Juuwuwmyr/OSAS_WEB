@@ -641,13 +641,281 @@ function initViolationsModule() {
                 const data = await response.json();
                 if (data.status === 'success') {
                     violationTypes = data.data;
+                    _cache.violationTypes = violationTypes;
                     console.log('✅ Loaded violation types:', violationTypes);
                     renderViolationTypes();
+                    if (document.getElementById('ViolationTypesManageModal')?.classList.contains('active')) {
+                        renderManageTypesList();
+                        renderManageLevelsList(selectedManageTypeId);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error loading violation types:', error);
                 showNotification('Failed to load violation types', 'error');
             }
+        }
+
+        let selectedManageTypeId = null;
+
+        function getViolationTypeIcon(nameLower) {
+            if (nameLower.includes('uniform')) return 'bx-t-shirt';
+            if (nameLower.includes('footwear') || nameLower.includes('shoe')) return 'bx-walk';
+            if (nameLower.includes('id')) return 'bx-id-card';
+            if (nameLower.includes('misconduct') || nameLower.includes('behavior')) return 'bx-error';
+            return 'bx-error-circle';
+        }
+
+        function openViolationTypesManageModal() {
+            const modal = document.getElementById('ViolationTypesManageModal');
+            if (!modal) return;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
+            renderManageTypesList();
+            renderManageLevelsList(selectedManageTypeId);
+        }
+
+        function closeViolationTypesManageModal() {
+            const modal = document.getElementById('ViolationTypesManageModal');
+            if (!modal) return;
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function renderManageTypesList() {
+            const list = document.getElementById('vtManageTypesList');
+            const countEl = document.getElementById('vtManageTypeCount');
+            if (!list) return;
+
+            if (countEl) countEl.textContent = String(violationTypes.length);
+
+            if (!violationTypes.length) {
+                list.innerHTML = '<p class="vt-manage-empty">No violation types yet. Add one below.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            violationTypes.forEach(type => {
+                const item = document.createElement('div');
+                item.className = 'vt-manage-item' + (String(type.id) === String(selectedManageTypeId) ? ' active' : '');
+                item.dataset.typeId = type.id;
+                item.innerHTML = `
+                    <div class="vt-manage-item-info">
+                        <span class="vt-manage-item-name">${escapeHtml(type.name)}</span>
+                    </div>
+                    <button type="button" class="vt-manage-item-delete" title="Delete type" data-delete-type="${type.id}">
+                        <i class='bx bx-trash'></i>
+                    </button>
+                `;
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('[data-delete-type]')) return;
+                    selectedManageTypeId = type.id;
+                    renderManageTypesList();
+                    renderManageLevelsList(type.id);
+                });
+                const deleteBtn = item.querySelector('[data-delete-type]');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteViolationType(type.id, type.name);
+                    });
+                }
+                list.appendChild(item);
+            });
+        }
+
+        function renderManageLevelsList(typeId) {
+            const list = document.getElementById('vtManageLevelsList');
+            const countEl = document.getElementById('vtManageLevelCount');
+            const titleEl = document.getElementById('vtManageLevelsTitle');
+            const addForm = document.getElementById('vtAddLevelForm');
+            if (!list) return;
+
+            if (!typeId) {
+                if (countEl) countEl.textContent = '0';
+                if (titleEl) titleEl.textContent = 'Offense Levels';
+                if (addForm) addForm.style.display = 'none';
+                list.innerHTML = '<p class="vt-manage-empty">Select a violation type to view its levels</p>';
+                return;
+            }
+
+            const type = violationTypes.find(t => String(t.id) === String(typeId));
+            if (!type) {
+                list.innerHTML = '<p class="vt-manage-empty">Type not found</p>';
+                return;
+            }
+
+            const levels = type.levels || [];
+            if (countEl) countEl.textContent = String(levels.length);
+            if (titleEl) titleEl.textContent = `Levels — ${type.name}`;
+            if (addForm) addForm.style.display = 'flex';
+
+            if (!levels.length) {
+                list.innerHTML = '<p class="vt-manage-empty">No levels defined. Add one below.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            levels.forEach(level => {
+                const item = document.createElement('div');
+                item.className = 'vt-manage-item';
+                item.innerHTML = `
+                    <span class="vt-manage-item-order">#${level.level_order || '-'}</span>
+                    <div class="vt-manage-item-info">
+                        <span class="vt-manage-item-name">${escapeHtml(level.name)}</span>
+                    </div>
+                    <button type="button" class="vt-manage-item-delete" title="Delete level" data-delete-level="${level.id}">
+                        <i class='bx bx-trash'></i>
+                    </button>
+                `;
+                const deleteBtn = item.querySelector('[data-delete-level]');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteViolationLevel(level.id, level.name, typeId);
+                    });
+                }
+                list.appendChild(item);
+            });
+        }
+
+        async function addViolationTypeFromManage() {
+            const nameInput = document.getElementById('vtNewTypeName');
+            if (!nameInput) return;
+
+            const name = nameInput.value.trim();
+            if (!name) {
+                showNotification('Please enter a violation type name', 'warning');
+                nameInput.focus();
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE + 'violations.php?action=create_type', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to create violation type');
+                }
+
+                nameInput.value = '';
+                showNotification('Violation type added with default offense levels', 'success');
+                selectedManageTypeId = data.data.id;
+                await loadViolationTypes();
+            } catch (error) {
+                console.error('Error creating violation type:', error);
+                showNotification(error.message || 'Failed to add violation type', 'error');
+            }
+        }
+
+        async function deleteViolationType(typeId, typeName) {
+            const confirmed = typeof window.showModernAlert === 'function'
+                ? await window.showModernAlert({
+                    title: 'Delete Violation Type',
+                    message: `Delete "${typeName}" and all its levels? This cannot be undone.`,
+                    icon: 'warning',
+                    confirmText: 'Delete'
+                })
+                : confirm(`Delete "${typeName}" and all its levels?`);
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=delete_type&id=${typeId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to delete violation type');
+                }
+
+                showNotification('Violation type deleted', 'success');
+                if (String(selectedManageTypeId) === String(typeId)) {
+                    selectedManageTypeId = null;
+                }
+                await loadViolationTypes();
+                renderManageTypesList();
+                if (!selectedManageTypeId && violationTypes.length > 0) {
+                    selectedManageTypeId = violationTypes[0].id;
+                }
+                renderManageLevelsList(selectedManageTypeId);
+            } catch (error) {
+                console.error('Error deleting violation type:', error);
+                showNotification(error.message || 'Failed to delete violation type', 'error');
+            }
+        }
+
+        async function addViolationLevelFromManage() {
+            const nameInput = document.getElementById('vtNewLevelName');
+            if (!nameInput || !selectedManageTypeId) return;
+
+            const name = nameInput.value.trim();
+            if (!name) {
+                showNotification('Please enter a level name', 'warning');
+                nameInput.focus();
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE + 'violations.php?action=create_level', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        violation_type_id: selectedManageTypeId,
+                        name
+                    })
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to create violation level');
+                }
+
+                nameInput.value = '';
+                showNotification('Violation level added', 'success');
+                await loadViolationTypes();
+            } catch (error) {
+                console.error('Error creating violation level:', error);
+                showNotification(error.message || 'Failed to add violation level', 'error');
+            }
+        }
+
+        async function deleteViolationLevel(levelId, levelName, typeId) {
+            const confirmed = typeof window.showModernAlert === 'function'
+                ? await window.showModernAlert({
+                    title: 'Delete Violation Level',
+                    message: `Delete level "${levelName}"?`,
+                    icon: 'warning',
+                    confirmText: 'Delete'
+                })
+                : confirm(`Delete level "${levelName}"?`);
+
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=delete_level&id=${levelId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to delete violation level');
+                }
+
+                showNotification('Violation level deleted', 'success');
+                await loadViolationTypes();
+                renderManageLevelsList(typeId || selectedManageTypeId);
+            } catch (error) {
+                console.error('Error deleting violation level:', error);
+                showNotification(error.message || 'Failed to delete violation level', 'error');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
         }
 
         function renderViolationTypes() {
@@ -658,37 +926,23 @@ function initViolationsModule() {
             
             violationTypes.forEach(type => {
                 const nameLower = type.name.toLowerCase();
-                
-                // Filter: Only show Uniform, Footwear, and ID
-                const isAllowed = nameLower.includes('uniform') || 
-                                  nameLower.includes('footwear') || 
-                                  nameLower.includes('shoe') || 
-                                  nameLower.includes('id');
-                
-                if (!isAllowed) return;
-
                 const card = document.createElement('div');
                 card.className = 'violation-type-card';
                 card.dataset.violation = type.id;
                 
-                // Choose icon based on name (simple logic)
-                let icon = 'bx-error-circle';
-                if (nameLower.includes('uniform')) icon = 'bx-t-shirt';
-                else if (nameLower.includes('footwear')) icon = 'bx-walk';
-                else if (nameLower.includes('id')) icon = 'bx-id-card';
+                const icon = getViolationTypeIcon(nameLower);
                 
                 card.innerHTML = `
                     <input type="radio" id="type_${type.id}" name="violationType" value="${type.id}">
                     <label for="type_${type.id}">
                         <i class='bx ${icon}'></i>
-                        <span>${type.name}</span>
+                        <span>${escapeHtml(type.name)}</span>
                     </label>
                 `;
                 
                 container.appendChild(card);
             });
 
-            // Add "Add" button as requested
             const addCard = document.createElement('div');
             addCard.className = 'violation-type-card';
             addCard.style.border = '2px dashed #ccc';
@@ -700,25 +954,17 @@ function initViolationsModule() {
             `;
             addCard.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Placeholder for now
-                if (typeof showNotification === 'function') {
-                    showNotification('Add Violation Type feature coming soon!', 'info');
-                } else {
-                    alert('Add Violation Type feature coming soon!');
-                }
+                openViolationTypesManageModal();
             });
             container.appendChild(addCard);
 
-            // Event delegation for type selection
-            container.addEventListener('change', (e) => {
+            container.onchange = (e) => {
                 if (e.target.name === 'violationType') {
-                    // Update visual selection state of cards
                     document.querySelectorAll('.violation-type-card').forEach(c => c.classList.remove('active'));
                     e.target.closest('.violation-type-card').classList.add('active');
-                    
                     renderViolationLevels(e.target.value);
                 }
-            });
+            };
         }
 
         function renderViolationLevels(typeId) {
@@ -753,7 +999,6 @@ function initViolationsModule() {
                     <input type="radio" id="level_${level.id}" name="violationLevel" value="${level.id}">
                     <label for="level_${level.id}" class="${styleClass}">
                         <span class="level-title">${level.name}</span>
-                        <span class="level-desc">${level.description || ''}</span>
                     </label>
                 `;
                 
@@ -3438,6 +3683,35 @@ function initViolationsModule() {
                     document.body.style.overflow = 'auto';
                 }
             });
+        }
+
+        // Violation types & levels management modal
+        const vtManageModal = document.getElementById('ViolationTypesManageModal');
+        const closeVtManageBtn = document.getElementById('closeViolationTypesManageModal');
+        const cancelVtManageBtn = document.getElementById('cancelViolationTypesManageModal');
+        const vtManageOverlay = document.getElementById('ViolationTypesManageOverlay');
+        const vtAddTypeBtn = document.getElementById('vtAddTypeBtn');
+        const vtAddLevelBtn = document.getElementById('vtAddLevelBtn');
+
+        if (closeVtManageBtn) closeVtManageBtn.addEventListener('click', closeViolationTypesManageModal);
+        if (cancelVtManageBtn) cancelVtManageBtn.addEventListener('click', closeViolationTypesManageModal);
+        if (vtManageOverlay) vtManageOverlay.addEventListener('click', closeViolationTypesManageModal);
+        if (vtAddTypeBtn) vtAddTypeBtn.addEventListener('click', addViolationTypeFromManage);
+        if (vtAddLevelBtn) vtAddLevelBtn.addEventListener('click', addViolationLevelFromManage);
+
+        if (vtManageModal) {
+            const vtNewTypeName = document.getElementById('vtNewTypeName');
+            const vtNewLevelName = document.getElementById('vtNewLevelName');
+            if (vtNewTypeName) {
+                vtNewTypeName.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); addViolationTypeFromManage(); }
+                });
+            }
+            if (vtNewLevelName) {
+                vtNewLevelName.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); addViolationLevelFromManage(); }
+                });
+            }
         }
 
         // Export format buttons

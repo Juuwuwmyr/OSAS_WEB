@@ -56,6 +56,36 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'create_type') {
+            $this->create_type();
+            return;
+        }
+
+        if ($action === 'update_type') {
+            $this->update_type();
+            return;
+        }
+
+        if ($action === 'delete_type') {
+            $this->delete_type();
+            return;
+        }
+
+        if ($action === 'create_level') {
+            $this->create_level();
+            return;
+        }
+
+        if ($action === 'update_level') {
+            $this->update_level();
+            return;
+        }
+
+        if ($action === 'delete_level') {
+            $this->delete_level();
+            return;
+        }
+
         if ($action === 'get_slip_data') {
             $this->get_slip_data();
             return;
@@ -526,8 +556,6 @@ class ViolationController extends Controller
             $types = $this->model->getViolationTypes();
             $result = [];
             
-            // If types are returned as assoc array with 'id' key (single row) or array of arrays
-            // Check structure of getViolationTypes return
             if ($types && count($types) > 0) {
                 foreach ($types as $type) {
                     $levels = $this->model->getViolationLevels($type['id']);
@@ -540,6 +568,161 @@ class ViolationController extends Controller
         } catch (Exception $e) {
             error_log("Error getting types: " . $e->getMessage());
             $this->error('Failed to retrieve violation types: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Parse JSON or form input for type/level management
+     */
+    private function getManagementInput() {
+        $input = $_POST;
+        if (empty($input)) {
+            $jsonInput = json_decode(file_get_contents('php://input'), true);
+            if ($jsonInput) {
+                $input = $jsonInput;
+            }
+        }
+        return $input;
+    }
+
+    private function create_type() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $input = $this->getManagementInput();
+        $name = $this->sanitize($input['name'] ?? '');
+        $description = $this->sanitize($input['description'] ?? '');
+
+        try {
+            $typeId = $this->model->createViolationType($name, $description);
+            $levels = $this->model->getViolationLevels($typeId);
+            $this->success('Violation type created successfully', [
+                'id' => $typeId,
+                'name' => $name,
+                'description' => $description,
+                'levels' => $levels
+            ]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function update_type() {
+        $this->requireAdmin();
+        if (!in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT'], true)) {
+            $this->error('Invalid request method');
+        }
+
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        $name = $this->sanitize($input['name'] ?? '');
+        $description = $this->sanitize($input['description'] ?? '');
+
+        if ($id <= 0 || $name === '') {
+            $this->error('Type ID and name are required');
+        }
+
+        try {
+            $this->model->updateViolationType($id, $name, $description);
+            $this->success('Violation type updated successfully', [
+                'id' => $id,
+                'name' => $name,
+                'description' => $description
+            ]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function delete_type() {
+        $this->requireAdmin();
+
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        if ($id <= 0) {
+            $this->error('Type ID is required');
+        }
+
+        try {
+            $this->model->deleteViolationType($id);
+            $this->success('Violation type deleted successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function create_level() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $input = $this->getManagementInput();
+        $typeId = (int)($input['violation_type_id'] ?? $input['typeId'] ?? 0);
+        $name = $this->sanitize($input['name'] ?? '');
+        $description = $this->sanitize($input['description'] ?? '');
+        $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
+
+        if ($typeId <= 0) {
+            $this->error('Violation type ID is required');
+        }
+
+        try {
+            $levelId = $this->model->createViolationLevel($typeId, $name, $description, $levelOrder);
+            $levels = $this->model->getViolationLevels($typeId);
+            $level = null;
+            foreach ($levels as $l) {
+                if ((int)$l['id'] === $levelId) {
+                    $level = $l;
+                    break;
+                }
+            }
+            $this->success('Violation level created successfully', $level ?: ['id' => $levelId]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function update_level() {
+        $this->requireAdmin();
+        if (!in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT'], true)) {
+            $this->error('Invalid request method');
+        }
+
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        $name = $this->sanitize($input['name'] ?? '');
+        $description = $this->sanitize($input['description'] ?? '');
+        $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
+
+        if ($id <= 0 || $name === '') {
+            $this->error('Level ID and name are required');
+        }
+
+        try {
+            $this->model->updateViolationLevel($id, $name, $description, $levelOrder);
+            $this->success('Violation level updated successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function delete_level() {
+        $this->requireAdmin();
+
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        if ($id <= 0) {
+            $this->error('Level ID is required');
+        }
+
+        try {
+            $this->model->deleteViolationLevel($id);
+            $this->success('Violation level deleted successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
         }
     }
 

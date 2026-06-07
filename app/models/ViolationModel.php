@@ -517,10 +517,6 @@ class ViolationModel extends Model {
      * Get violation levels by type
      */
     public function getViolationLevels($typeId) {
-        // This method relies on the base Model::query method which returns an array
-        // We need to implement query() in Model.php or use prepare/execute here
-        // Since Model.php as I read earlier didn't have query(), I should implement it properly using prepare
-        
         $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("i", $typeId);
@@ -535,6 +531,218 @@ class ViolationModel extends Model {
         return $levels;
     }
 
+    /**
+     * Default offense levels for a new violation type
+     */
+    private function getDefaultLevelTemplates() {
+        return [
+            ['1st Offense', 'First offense', 1],
+            ['2nd Offense', 'Second offense', 2],
+            ['3rd Offense', 'Third offense', 3],
+            ['4th Offense', 'Fourth offense', 4],
+            ['5th Offense', 'Fifth offense — triggers disciplinary action', 5],
+        ];
+    }
+
+    /**
+     * Create a violation type with default levels
+     */
+    public function createViolationType($name, $description = '') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Violation type name is required');
+        }
+
+        $existing = $this->query(
+            "SELECT id FROM violation_types WHERE LOWER(name) = LOWER(?)",
+            [$name]
+        );
+        if (!empty($existing)) {
+            throw new Exception('A violation type with this name already exists');
+        }
+
+        $stmt = $this->conn->prepare(
+            "INSERT INTO violation_types (name, description, created_at) VALUES (?, ?, NOW())"
+        );
+        $stmt->bind_param("ss", $name, $description);
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to create violation type: ' . $error);
+        }
+        $typeId = (int)$stmt->insert_id;
+        $stmt->close();
+
+        foreach ($this->getDefaultLevelTemplates() as [$levelName, $levelDesc, $order]) {
+            $this->createViolationLevel($typeId, $levelName, $levelDesc, $order);
+        }
+
+        return $typeId;
+    }
+
+    /**
+     * Update a violation type
+     */
+    public function updateViolationType($id, $name, $description = '') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Violation type name is required');
+        }
+
+        $existing = $this->query(
+            "SELECT id FROM violation_types WHERE LOWER(name) = LOWER(?) AND id != ?",
+            [$name, $id]
+        );
+        if (!empty($existing)) {
+            throw new Exception('A violation type with this name already exists');
+        }
+
+        $stmt = $this->conn->prepare(
+            "UPDATE violation_types SET name = ?, description = ?, updated_at = NOW() WHERE id = ?"
+        );
+        $stmt->bind_param("ssi", $name, $description, $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete a violation type (blocked if referenced by violations)
+     */
+    public function deleteViolationType($id) {
+        $count = $this->countViolationsByType($id);
+        if ($count > 0) {
+            throw new Exception("Cannot delete: {$count} violation record(s) use this type");
+        }
+
+        $stmt = $this->conn->prepare("DELETE FROM violation_types WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        if (!$success) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to delete violation type: ' . $error);
+        }
+        $stmt->close();
+        return true;
+    }
+
+    /**
+     * Create a violation level
+     */
+    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null) {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Level name is required');
+        }
+
+        if ($levelOrder === null) {
+            $rows = $this->query(
+                "SELECT COALESCE(MAX(level_order), 0) + 1 AS next_order FROM violation_levels WHERE violation_type_id = ?",
+                [$typeId]
+            );
+            $levelOrder = (int)($rows[0]['next_order'] ?? 1);
+        }
+
+        $stmt = $this->conn->prepare(
+            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, created_at)
+             VALUES (?, ?, ?, ?, NOW())"
+        );
+        $stmt->bind_param("iiss", $typeId, $levelOrder, $name, $description);
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to create violation level: ' . $error);
+        }
+        $levelId = (int)$stmt->insert_id;
+        $stmt->close();
+        return $levelId;
+    }
+
+    /**
+     * Update a violation level
+     */
+    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null) {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Level name is required');
+        }
+
+        if ($levelOrder !== null) {
+            $stmt = $this->conn->prepare(
+                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, updated_at = NOW() WHERE id = ?"
+            );
+            $stmt->bind_param("ssii", $name, $description, $levelOrder, $id);
+        } else {
+            $stmt = $this->conn->prepare(
+                "UPDATE violation_levels SET name = ?, description = ?, updated_at = NOW() WHERE id = ?"
+            );
+            $stmt->bind_param("ssi", $name, $description, $id);
+        }
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete a violation level (blocked if referenced by violations)
+     */
+    public function deleteViolationLevel($id) {
+        $count = $this->countViolationsByLevel($id);
+        if ($count > 0) {
+            throw new Exception("Cannot delete: {$count} violation record(s) use this level");
+        }
+
+        $typeRows = $this->query(
+            "SELECT violation_type_id FROM violation_levels WHERE id = ?",
+            [$id]
+        );
+        if (empty($typeRows)) {
+            throw new Exception('Violation level not found');
+        }
+        $typeId = (int)$typeRows[0]['violation_type_id'];
+
+        $levelCount = $this->query(
+            "SELECT COUNT(*) AS cnt FROM violation_levels WHERE violation_type_id = ?",
+            [$typeId]
+        );
+        if ((int)($levelCount[0]['cnt'] ?? 0) <= 1) {
+            throw new Exception('Each violation type must have at least one level');
+        }
+
+        $stmt = $this->conn->prepare("DELETE FROM violation_levels WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        if (!$success) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to delete violation level: ' . $error);
+        }
+        $stmt->close();
+        return true;
+    }
+
+    /**
+     * Count violations using a type
+     */
+    public function countViolationsByType($typeId) {
+        $rows = $this->query(
+            "SELECT COUNT(*) AS cnt FROM violations WHERE violation_type_id = ?",
+            [$typeId]
+        );
+        return (int)($rows[0]['cnt'] ?? 0);
+    }
+
+    /**
+     * Count violations using a level
+     */
+    public function countViolationsByLevel($levelId) {
+        $rows = $this->query(
+            "SELECT COUNT(*) AS cnt FROM violations WHERE violation_level_id = ?",
+            [$levelId]
+        );
+        return (int)($rows[0]['cnt'] ?? 0);
+    }
 
     /**
      * Count total violations

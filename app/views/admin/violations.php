@@ -610,6 +610,63 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
   </div>
 
+  <!-- MANAGE VIOLATION TYPES & LEVELS MODAL -->
+  <div id="ViolationTypesManageModal" class="Violations-modal">
+    <div class="Violations-modal-overlay" id="ViolationTypesManageOverlay"></div>
+    <div class="Violations-modal-container vt-manage-modal">
+      <div class="Violations-modal-header">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class='bx bx-list-plus' style="font-size:28px;color:#d4af37;"></i>
+        </div>
+        <div style="flex:1;">
+          <h2 style="margin:0;font-size:1.05rem;font-weight:700;color:#1a1a1a;display:block;">Manage Violation Types &amp; Levels</h2>
+          <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">Add, edit, or remove violation types and their offense levels.</p>
+        </div>
+        <button class="Violations-close-btn" id="closeViolationTypesManageModal" type="button">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <div class="vt-manage-body">
+        <div class="vt-manage-column">
+          <div class="vt-manage-column-header">
+            <h3>Violation Types</h3>
+            <span class="vt-manage-count" id="vtManageTypeCount">0</span>
+          </div>
+          <div class="vt-manage-list" id="vtManageTypesList">
+            <p class="vt-manage-empty">Loading types...</p>
+          </div>
+          <div class="vt-manage-add-form">
+            <input type="text" id="vtNewTypeName" placeholder="New violation type name..." maxlength="255">
+            <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddTypeBtn">
+              <i class='bx bx-plus'></i> Add Type
+            </button>
+          </div>
+        </div>
+
+        <div class="vt-manage-column">
+          <div class="vt-manage-column-header">
+            <h3 id="vtManageLevelsTitle">Offense Levels</h3>
+            <span class="vt-manage-count" id="vtManageLevelCount">0</span>
+          </div>
+          <div class="vt-manage-list" id="vtManageLevelsList">
+            <p class="vt-manage-empty">Select a violation type to view its levels</p>
+          </div>
+          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none;">
+            <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
+            <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
+              <i class='bx bx-plus'></i> Add Level
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="Violations-form-actions vt-manage-actions">
+        <button type="button" class="Violations-btn-outline" id="cancelViolationTypesManageModal">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Empty State -->
   <div class="Violations-empty-state" id="ViolationsEmptyState" style="display: none;">
     <div class="empty-state-inner">
