@@ -28,7 +28,11 @@ try {
         case 'POST':
             // Check for action in query string even for POST
             $action = $_GET['action'] ?? '';
-            if (in_array($action, ['archive', 'request_slip', 'approve_slip', 'deny_slip'], true)) {
+            if (in_array($action, [
+                'archive', 'request_slip', 'approve_slip', 'deny_slip',
+                'create_type', 'update_type', 'delete_type',
+                'create_level', 'update_level', 'delete_level'
+            ], true)) {
                 $controller->index();
             } else {
                 $controller->create();
@@ -36,11 +40,21 @@ try {
             break;
 
         case 'PUT':
-            $controller->update();
+            $action = $_GET['action'] ?? '';
+            if (in_array($action, ['update_type', 'update_level'], true)) {
+                $controller->index();
+            } else {
+                $controller->update();
+            }
             break;
 
         case 'DELETE':
-            $controller->delete();
+            $action = $_GET['action'] ?? '';
+            if (in_array($action, ['delete_type', 'delete_level'], true)) {
+                $controller->index();
+            } else {
+                $controller->delete();
+            }
             break;
 
         default:
