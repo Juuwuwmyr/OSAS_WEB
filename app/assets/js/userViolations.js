@@ -6,6 +6,7 @@ const API_BASE = (function(){ const p=window.location.pathname.split('/').filter
 let studentId = null;
 let userViolations = [];
 let allUserViolations = []; // includes archived
+let userViolationTypes = [];
 let currentViolationId = null;
 let uvViewMode = 'list'; // default view
 
@@ -76,7 +77,113 @@ async function initUserViolations() {
         });
     }
 
+    await loadUserViolationTypes();
     await loadUserViolations();
+}
+
+function getUserTypeIcon(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('uniform')) return 'bxs-t-shirt';
+    if (n.includes('footwear') || n.includes('shoe')) return 'bx-walk';
+    if (n.includes('id')) return 'bxs-id-card';
+    if (n.includes('misconduct') || n.includes('behavior')) return 'bx-error';
+    return 'bx-error-circle';
+}
+
+async function loadUserViolationTypes() {
+    try {
+        const response = await fetch(`${API_BASE}violations.php?action=types`);
+        const data = await response.json();
+        if (data.status === 'success' && Array.isArray(data.data)) {
+            userViolationTypes = data.data.map(type => ({
+                id: type.id,
+                name: type.type_name || type.name
+            }));
+        } else {
+            throw new Error('Invalid types response');
+        }
+    } catch (error) {
+        console.warn('Could not load violation types, using defaults:', error);
+        userViolationTypes = [
+            { id: 'uniform', name: 'Improper Uniform' },
+            { id: 'footwear', name: 'Improper Footwear' },
+            { id: 'no_id', name: 'No ID' }
+        ];
+    }
+
+    populateUserViolationFilter();
+    renderUserTypeStatCards();
+}
+
+function populateUserViolationFilter() {
+    const filter = document.getElementById('violationFilter');
+    if (!filter) return;
+
+    const current = filter.value || 'all';
+    filter.innerHTML = '<option value="all">All Types</option>';
+    userViolationTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type.id;
+        option.textContent = type.name;
+        filter.appendChild(option);
+    });
+    if ([...filter.options].some(opt => opt.value === current)) {
+        filter.value = current;
+    }
+}
+
+function getUserViolationTypeId(violation) {
+    return String(violation.violationType || violation.violation_type_id || '');
+}
+
+function countUserViolationsByType(type, violations) {
+    const typeId = String(type.id);
+    const typeName = (type.name || '').toLowerCase();
+
+    return violations.filter(v => {
+        const vTypeId = getUserViolationTypeId(v);
+        if (vTypeId && vTypeId === typeId) return true;
+
+        const label = String(v.violationTypeLabel || v.violation_type_name || '').toLowerCase();
+        if (!label) return false;
+        if (typeName.includes('uniform')) return label.includes('uniform');
+        if (typeName.includes('footwear') || typeName.includes('shoe')) return label.includes('footwear') || label.includes('shoe');
+        if (typeName.includes('id')) return label.includes('id') || label.includes('no id');
+        return label === typeName || label.includes(typeName);
+    }).length;
+}
+
+function renderUserTypeStatCards() {
+    const container = document.getElementById('uvTypeStatsContainer');
+    if (!container) return;
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const thisMonthViolations = userViolations.filter(v => {
+        const dateStr = v.created_at || v.violation_date || v.date || '';
+        const d = new Date(String(dateStr).replace(/\//g, '-'));
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    if (!userViolationTypes.length) {
+        container.innerHTML = '<p class="uv-stats-loading">No violation types found</p>';
+        return;
+    }
+
+    container.innerHTML = userViolationTypes.map(type => {
+        const count = countUserViolationsByType(type, thisMonthViolations);
+        const icon = getUserTypeIcon(type.name);
+        const label = type.name.length > 22 ? `${type.name.slice(0, 20)}…` : type.name;
+        return `
+        <div class="uv-stat" title="${type.name}">
+            <div class="uv-stat__icon"><i class='bx ${icon}'></i></div>
+            <div class="uv-stat__body">
+                <span class="uv-stat__lbl">${label} <small>(this month)</small></span>
+                <span class="uv-stat__val">${count}</span>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 /*********************************************************
@@ -152,44 +259,10 @@ async function loadUserViolations() {
  * STATS
  *********************************************************/
 function updateViolationStats() {
-    // All-time total (active + archived)
     const allTimeTotal = allUserViolations.length;
-
-    // Current month violations only (active, non-archived)
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const thisMonthViolations = userViolations.filter(v => {
-        const dateStr = v.created_at || v.violation_date || v.date || '';
-        const d = new Date(dateStr.replace(/\//g, '-'));
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const countByType = (type) => {
-        return thisMonthViolations.filter(v => {
-            const violationType = String(v.violationTypeLabel || v.violation_type_name || '').toLowerCase();
-            
-            if (type === 'uniform') {
-                return violationType.includes('uniform');
-            } else if (type === 'footwear') {
-                return violationType.includes('footwear') || violationType.includes('shoe');
-            } else if (type === 'id') {
-                return violationType.includes('id') || violationType.includes('no id');
-            }
-            return false;
-        }).length;
-    };
-
-    const setStat = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-    };
-
-    setStat('statTotal', allTimeTotal);
-    setStat('statUniform', countByType('uniform'));
-    setStat('statFootwear', countByType('footwear'));
-    setStat('statId', countByType('id'));
+    const statTotal = document.getElementById('statTotal');
+    if (statTotal) statTotal.textContent = allTimeTotal;
+    renderUserTypeStatCards();
 }
 
 /*********************************************************
@@ -223,15 +296,20 @@ function renderViolationTable() {
         const rawType = String(v.violationTypeLabel || v.violation_type_name || v.violation_type || '').toLowerCase();
         let matchesType = typeFilter === 'all';
         if (!matchesType) {
-            const filterKey = typeFilter.toLowerCase();
-            if (filterKey === 'improper_uniform') {
-                matchesType = rawType.includes('uniform');
-            } else if (filterKey === 'improper_footwear') {
-                matchesType = rawType.includes('footwear') || rawType.includes('shoe');
-            } else if (filterKey === 'no_id') {
-                matchesType = rawType.includes('id') || rawType.includes('no_id') || rawType.includes('no id');
+            const selectedType = userViolationTypes.find(t => String(t.id) === String(typeFilter));
+            if (selectedType) {
+                matchesType = countUserViolationsByType(selectedType, [v]) > 0;
             } else {
-                matchesType = rawType.includes(filterKey.replace('improper_', '').replace('_', ' '));
+                const filterKey = String(typeFilter).toLowerCase();
+                if (filterKey === 'improper_uniform') {
+                    matchesType = rawType.includes('uniform');
+                } else if (filterKey === 'improper_footwear') {
+                    matchesType = rawType.includes('footwear') || rawType.includes('shoe');
+                } else if (filterKey === 'no_id') {
+                    matchesType = rawType.includes('id') || rawType.includes('no_id') || rawType.includes('no id');
+                } else {
+                    matchesType = rawType.includes(filterKey.replace('improper_', '').replace('_', ' '));
+                }
             }
         }
 
