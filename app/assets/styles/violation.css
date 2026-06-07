@@ -314,9 +314,31 @@ body.dark {
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
 }
 
-/* ========================================= */
-/*              STATS CARDS                 */
-/* ========================================= */
+.vt-manage-item.archived {
+  opacity: 0.7;
+  background-color: #f3f4f6;
+  border-left: 3px solid #9ca3af;
+}
+
+.vt-manage-item.archived .vt-manage-item-name {
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
+.vt-manage-item-restore {
+  background: none;
+  border: none;
+  color: #10b981;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.vt-manage-item-restore:hover {
+  background-color: #dcfce7;
+  color: #059669;
+}
 
 .Violations-stats-overview {
   display: grid;

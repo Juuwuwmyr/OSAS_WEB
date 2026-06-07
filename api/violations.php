@@ -30,8 +30,9 @@ try {
             $action = $_GET['action'] ?? '';
             if (in_array($action, [
                 'archive', 'request_slip', 'approve_slip', 'deny_slip',
-                'create_type', 'update_type', 'delete_type',
-                'create_level', 'update_level', 'delete_level'
+                'create_type', 'update_type', 'delete_type', 'restore_type',
+                'create_level', 'update_level', 'delete_level', 'restore_level',
+                'mark_as_read', 'mark_all_read'
             ], true)) {
                 $controller->index();
             } else {

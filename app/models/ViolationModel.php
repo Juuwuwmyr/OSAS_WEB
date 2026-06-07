@@ -63,6 +63,18 @@ class ViolationModel extends Model {
             @$this->conn->query("ALTER TABLE violations ADD COLUMN is_read TINYINT(1) DEFAULT 0");
             @$this->conn->query("ALTER TABLE violations ADD INDEX idx_is_read (is_read)");
         }
+
+        // Auto-fix: Check status column in violation_types and violation_levels
+        $vtStatusCheck = @$this->conn->query("SHOW COLUMNS FROM violation_types LIKE 'status'");
+        if ($vtStatusCheck === false || $vtStatusCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violation_types ADD COLUMN status ENUM('active', 'archived') DEFAULT 'active'");
+            @$this->conn->query("ALTER TABLE violation_types ADD INDEX idx_vt_status (status)");
+        }
+        $vlStatusCheck = @$this->conn->query("SHOW COLUMNS FROM violation_levels LIKE 'status'");
+        if ($vlStatusCheck === false || $vlStatusCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violation_levels ADD COLUMN status ENUM('active', 'archived') DEFAULT 'active'");
+            @$this->conn->query("ALTER TABLE violation_levels ADD INDEX idx_vl_status (status)");
+        }
         
         // First, check if there are any violations at all (without JOIN)
         $countQuery = "SELECT COUNT(*) as total FROM violations WHERE is_archived = ?";
@@ -509,15 +521,17 @@ class ViolationModel extends Model {
     /**
      * Get all violation types
      */
-    public function getViolationTypes() {
-        return $this->query("SELECT * FROM violation_types ORDER BY name ASC");
+    public function getViolationTypes($includeArchived = false) {
+        $where = $includeArchived ? "" : " WHERE status = 'active'";
+        return $this->query("SELECT * FROM violation_types $where ORDER BY name ASC");
     }
 
     /**
      * Get violation levels by type
      */
-    public function getViolationLevels($typeId) {
-        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC";
+    public function getViolationLevels($typeId, $includeArchived = false) {
+        $where = $includeArchived ? "" : " AND status = 'active'";
+        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? $where ORDER BY level_order ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("i", $typeId);
         $stmt->execute();
@@ -607,24 +621,28 @@ class ViolationModel extends Model {
     }
 
     /**
-     * Delete a violation type (blocked if referenced by violations)
+     * Delete a violation type
+     * If historical records exist, mark as 'archived'.
+     * If no records exist, fully delete from database.
      */
     public function deleteViolationType($id) {
         $count = $this->countViolationsByType($id);
+        
         if ($count > 0) {
-            throw new Exception("Cannot delete: {$count} violation record(s) use this type");
-        }
-
-        $stmt = $this->conn->prepare("DELETE FROM violation_types WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $success = $stmt->execute();
-        if (!$success) {
-            $error = $stmt->error;
+            // ARCHIVE if history exists
+            $stmt = $this->conn->prepare("UPDATE violation_types SET status = 'archived' WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
             $stmt->close();
-            throw new Exception('Failed to delete violation type: ' . $error);
+            return $success;
+        } else {
+            // HARD DELETE if no history
+            $stmt = $this->conn->prepare("DELETE FROM violation_types WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
         }
-        $stmt->close();
-        return true;
     }
 
     /**
@@ -685,41 +703,50 @@ class ViolationModel extends Model {
     }
 
     /**
-     * Delete a violation level (blocked if referenced by violations)
+     * Delete a violation level
+     * If historical records exist, mark as 'archived'.
+     * If no records exist, fully delete from database.
      */
     public function deleteViolationLevel($id) {
         $count = $this->countViolationsByLevel($id);
+        
         if ($count > 0) {
-            throw new Exception("Cannot delete: {$count} violation record(s) use this level");
+            // ARCHIVE if history exists
+            $stmt = $this->conn->prepare("UPDATE violation_levels SET status = 'archived' WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
+        } else {
+            // HARD DELETE if no history
+            $stmt = $this->conn->prepare("DELETE FROM violation_levels WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
         }
+    }
 
-        $typeRows = $this->query(
-            "SELECT violation_type_id FROM violation_levels WHERE id = ?",
-            [$id]
-        );
-        if (empty($typeRows)) {
-            throw new Exception('Violation level not found');
-        }
-        $typeId = (int)$typeRows[0]['violation_type_id'];
-
-        $levelCount = $this->query(
-            "SELECT COUNT(*) AS cnt FROM violation_levels WHERE violation_type_id = ?",
-            [$typeId]
-        );
-        if ((int)($levelCount[0]['cnt'] ?? 0) <= 1) {
-            throw new Exception('Each violation type must have at least one level');
-        }
-
-        $stmt = $this->conn->prepare("DELETE FROM violation_levels WHERE id = ?");
+    /**
+     * Restore a violation type from archive
+     */
+    public function restoreViolationType($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_types SET status = 'active' WHERE id = ?");
         $stmt->bind_param("i", $id);
         $success = $stmt->execute();
-        if (!$success) {
-            $error = $stmt->error;
-            $stmt->close();
-            throw new Exception('Failed to delete violation level: ' . $error);
-        }
         $stmt->close();
-        return true;
+        return $success;
+    }
+
+    /**
+     * Restore a violation level from archive
+     */
+    public function restoreViolationLevel($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_levels SET status = 'active' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
     }
 
     /**

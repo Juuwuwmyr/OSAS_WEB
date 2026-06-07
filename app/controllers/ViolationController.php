@@ -86,6 +86,16 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'restore_type') {
+            $this->restore_type();
+            return;
+        }
+
+        if ($action === 'restore_level') {
+            $this->restore_level();
+            return;
+        }
+
         if ($action === 'get_slip_data') {
             $this->get_slip_data();
             return;
@@ -553,12 +563,13 @@ class ViolationController extends Controller
      */
     private function get_types() {
         try {
-            $types = $this->model->getViolationTypes();
+            $includeArchived = $this->getGet('include_archived', '0') === '1';
+            $types = $this->model->getViolationTypes($includeArchived);
             $result = [];
             
             if ($types && count($types) > 0) {
                 foreach ($types as $type) {
-                    $levels = $this->model->getViolationLevels($type['id']);
+                    $levels = $this->model->getViolationLevels($type['id'], $includeArchived);
                     $type['levels'] = $levels;
                     $result[] = $type;
                 }
@@ -721,6 +732,34 @@ class ViolationController extends Controller
         try {
             $this->model->deleteViolationLevel($id);
             $this->success('Violation level deleted successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function restore_type() {
+        $this->requireAdmin();
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        if ($id <= 0) $this->error('Type ID is required');
+
+        try {
+            $this->model->restoreViolationType($id);
+            $this->success('Violation type restored successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function restore_level() {
+        $this->requireAdmin();
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        if ($id <= 0) $this->error('Level ID is required');
+
+        try {
+            $this->model->restoreViolationLevel($id);
+            $this->success('Violation level restored successfully');
         } catch (Exception $e) {
             $this->error($e->getMessage());
         }

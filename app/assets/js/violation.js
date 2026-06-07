@@ -632,16 +632,20 @@ function initViolationsModule() {
             }
         }
 
-        async function loadViolationTypes() {
+        async function loadViolationTypes(includeArchived = false) {
             try {
                 console.log('🔄 Loading violation types...');
-                const response = await fetch(API_BASE + 'violations.php?action=types');
+                const url = API_BASE + 'violations.php?action=types' + (includeArchived ? '&include_archived=1' : '');
+                const response = await fetch(url);
                 if (!response.ok) throw new Error('Failed to load types');
                 
                 const data = await response.json();
                 if (data.status === 'success') {
                     violationTypes = data.data;
-                    _cache.violationTypes = violationTypes;
+                    // Only cache active ones for general use
+                    if (!includeArchived) {
+                        _cache.violationTypes = violationTypes;
+                    }
                     console.log('✅ Loaded violation types:', violationTypes);
                     renderViolationTypes();
                     if (document.getElementById('ViolationTypesManageModal')?.classList.contains('active')) {
@@ -665,11 +669,21 @@ function initViolationsModule() {
             return 'bx-error-circle';
         }
 
-        function openViolationTypesManageModal() {
+        async function openViolationTypesManageModal() {
+            // CHECK ONLINE STATUS
+            if (!navigator.onLine) {
+                showNotification("Please check your internet connection. Internet requires to manage violation types and levels.", 'error');
+                return;
+            }
+
             const modal = document.getElementById('ViolationTypesManageModal');
             if (!modal) return;
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Reload including archived for management
+            await loadViolationTypes(true);
+            
             selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
@@ -696,28 +710,49 @@ function initViolationsModule() {
 
             list.innerHTML = '';
             violationTypes.forEach(type => {
+                const isArchived = type.status === 'archived';
                 const item = document.createElement('div');
-                item.className = 'vt-manage-item' + (String(type.id) === String(selectedManageTypeId) ? ' active' : '');
+                item.className = 'vt-manage-item' + 
+                    (String(type.id) === String(selectedManageTypeId) ? ' active' : '') +
+                    (isArchived ? ' archived' : '');
+                
                 item.dataset.typeId = type.id;
                 item.innerHTML = `
                     <div class="vt-manage-item-info">
-                        <span class="vt-manage-item-name">${escapeHtml(type.name)}</span>
+                        <span class="vt-manage-item-name">${escapeHtml(type.name)} ${isArchived ? '<small>(Archived)</small>' : ''}</span>
                     </div>
-                    <button type="button" class="vt-manage-item-delete" title="Delete type" data-delete-type="${type.id}">
-                        <i class='bx bx-trash'></i>
-                    </button>
+                    <div class="vt-manage-item-actions">
+                        ${isArchived ? `
+                            <button type="button" class="vt-manage-item-restore" title="Restore type" data-restore-type="${type.id}">
+                                <i class='bx bx-undo'></i>
+                            </button>
+                        ` : `
+                            <button type="button" class="vt-manage-item-delete" title="Delete type" data-delete-type="${type.id}">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        `}
+                    </div>
                 `;
                 item.addEventListener('click', (e) => {
-                    if (e.target.closest('[data-delete-type]')) return;
+                    if (e.target.closest('[data-delete-type]') || e.target.closest('[data-restore-type]')) return;
                     selectedManageTypeId = type.id;
                     renderManageTypesList();
                     renderManageLevelsList(type.id);
                 });
+
                 const deleteBtn = item.querySelector('[data-delete-type]');
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteViolationType(type.id, type.name);
+                    });
+                }
+
+                const restoreBtn = item.querySelector('[data-restore-type]');
+                if (restoreBtn) {
+                    restoreBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        restoreViolationType(type.id, type.name);
                     });
                 }
                 list.appendChild(item);
@@ -757,22 +792,39 @@ function initViolationsModule() {
 
             list.innerHTML = '';
             levels.forEach(level => {
+                const isArchived = level.status === 'archived';
                 const item = document.createElement('div');
-                item.className = 'vt-manage-item';
+                item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
                 item.innerHTML = `
                     <span class="vt-manage-item-order">#${level.level_order || '-'}</span>
                     <div class="vt-manage-item-info">
-                        <span class="vt-manage-item-name">${escapeHtml(level.name)}</span>
+                        <span class="vt-manage-item-name">${escapeHtml(level.name)} ${isArchived ? '<small>(Archived)</small>' : ''}</span>
                     </div>
-                    <button type="button" class="vt-manage-item-delete" title="Delete level" data-delete-level="${level.id}">
-                        <i class='bx bx-trash'></i>
-                    </button>
+                    <div class="vt-manage-item-actions">
+                        ${isArchived ? `
+                            <button type="button" class="vt-manage-item-restore" title="Restore level" data-restore-level="${level.id}">
+                                <i class='bx bx-undo'></i>
+                            </button>
+                        ` : `
+                            <button type="button" class="vt-manage-item-delete" title="Delete level" data-delete-level="${level.id}">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        `}
+                    </div>
                 `;
                 const deleteBtn = item.querySelector('[data-delete-level]');
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteViolationLevel(level.id, level.name, typeId);
+                    });
+                }
+
+                const restoreBtn = item.querySelector('[data-restore-level]');
+                if (restoreBtn) {
+                    restoreBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        restoreViolationLevel(level.id, level.name, typeId);
                     });
                 }
                 list.appendChild(item);
@@ -782,6 +834,12 @@ function initViolationsModule() {
         async function addViolationTypeFromManage() {
             const nameInput = document.getElementById('vtNewTypeName');
             if (!nameInput) return;
+
+            // CHECK ONLINE STATUS
+            if (!navigator.onLine) {
+                showNotification("Internet connection required to add new violation types.", 'error');
+                return;
+            }
 
             const name = nameInput.value.trim();
             if (!name) {
@@ -815,7 +873,7 @@ function initViolationsModule() {
             const confirmed = typeof window.showModernAlert === 'function'
                 ? await window.showModernAlert({
                     title: 'Delete Violation Type',
-                    message: `Delete "${typeName}" and all its levels? This cannot be undone.`,
+                    message: `Delete "${typeName}" and all its levels? If it has history, it will be archived.`,
                     icon: 'warning',
                     confirmText: 'Delete'
                 })
@@ -832,25 +890,41 @@ function initViolationsModule() {
                     throw new Error(data.message || 'Failed to delete violation type');
                 }
 
-                showNotification('Violation type deleted', 'success');
-                if (String(selectedManageTypeId) === String(typeId)) {
-                    selectedManageTypeId = null;
-                }
-                await loadViolationTypes();
-                renderManageTypesList();
-                if (!selectedManageTypeId && violationTypes.length > 0) {
-                    selectedManageTypeId = violationTypes[0].id;
-                }
-                renderManageLevelsList(selectedManageTypeId);
+                showNotification('Violation type removed', 'success');
+                await loadViolationTypes(true); // Reload including archived
             } catch (error) {
                 console.error('Error deleting violation type:', error);
                 showNotification(error.message || 'Failed to delete violation type', 'error');
             }
         }
 
+        async function restoreViolationType(typeId, typeName) {
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=restore_type&id=${typeId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to restore violation type');
+                }
+
+                showNotification('Violation type restored', 'success');
+                await loadViolationTypes(true);
+            } catch (error) {
+                console.error('Error restoring violation type:', error);
+                showNotification(error.message || 'Failed to restore violation type', 'error');
+            }
+        }
+
         async function addViolationLevelFromManage() {
             const nameInput = document.getElementById('vtNewLevelName');
             if (!nameInput || !selectedManageTypeId) return;
+
+            // CHECK ONLINE STATUS
+            if (!navigator.onLine) {
+                showNotification("Internet connection required to add new violation levels.", 'error');
+                return;
+            }
 
             const name = nameInput.value.trim();
             if (!name) {
@@ -886,7 +960,7 @@ function initViolationsModule() {
             const confirmed = typeof window.showModernAlert === 'function'
                 ? await window.showModernAlert({
                     title: 'Delete Violation Level',
-                    message: `Delete level "${levelName}"?`,
+                    message: `Delete level "${levelName}"? If it has history, it will be archived.`,
                     icon: 'warning',
                     confirmText: 'Delete'
                 })
@@ -903,12 +977,29 @@ function initViolationsModule() {
                     throw new Error(data.message || 'Failed to delete violation level');
                 }
 
-                showNotification('Violation level deleted', 'success');
-                await loadViolationTypes();
-                renderManageLevelsList(typeId || selectedManageTypeId);
+                showNotification('Violation level removed', 'success');
+                await loadViolationTypes(true); // Reload including archived
             } catch (error) {
                 console.error('Error deleting violation level:', error);
                 showNotification(error.message || 'Failed to delete violation level', 'error');
+            }
+        }
+
+        async function restoreViolationLevel(levelId, levelName, typeId) {
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=restore_level&id=${levelId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to restore violation level');
+                }
+
+                showNotification('Violation level restored', 'success');
+                await loadViolationTypes(true);
+            } catch (error) {
+                console.error('Error restoring violation level:', error);
+                showNotification(error.message || 'Failed to restore violation level', 'error');
             }
         }
 
