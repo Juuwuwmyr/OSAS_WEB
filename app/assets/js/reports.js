@@ -77,13 +77,14 @@ function initReportsModule() {
 
         // ========== HELPER FUNCTIONS ==========
         
-        function getTypeIcon(name) {
+        function getTypeIcon(name, solid = false) {
             const n = (name || '').toLowerCase();
-            if (n.includes('uniform')) return 'bx-t-shirt';
-            if (n.includes('footwear') || n.includes('shoe')) return 'bx-walk';
-            if (n.includes('id')) return 'bx-id-card';
-            if (n.includes('misconduct') || n.includes('behavior')) return 'bx-error';
-            return 'bx-error-circle';
+            const prefix = solid ? 'bxs-' : 'bx-';
+            if (n.includes('uniform')) return prefix + 't-shirt';
+            if (n.includes('footwear') || n.includes('shoe')) return prefix + 'walk';
+            if (n.includes('id')) return prefix + 'id-card';
+            if (n.includes('misconduct') || n.includes('behavior')) return prefix + 'error';
+            return prefix + 'error-circle';
         }
 
         function getReportTypeCount(report, typeId) {
@@ -126,7 +127,7 @@ function initReportsModule() {
             }
 
             container.innerHTML = stats.map(typeStat => {
-                const icon = getTypeIcon(typeStat.name);
+                const icon = getTypeIcon(typeStat.name, true);
                 const label = typeStat.name.length > 24 ? `${typeStat.name.slice(0, 22)}…` : typeStat.name;
                 return `
                 <div class="Reports-stat-card" title="${typeStat.name}">
@@ -831,34 +832,58 @@ function initReportsModule() {
             // Populate violation statistics
             const statsGrid = detailsModal.querySelector('.stats-grid');
             if (statsGrid) {
-                statsGrid.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-t-shirt'></i>
+                let statsHtml = '';
+                
+                // Dynamically add cards for each violation type
+                if (reportViolationTypes && reportViolationTypes.length > 0) {
+                    reportViolationTypes.forEach(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        // Only show if count > 0 or it's one of the main types the user expects
+                        const isMainType = ['uniform', 'footwear', 'shoe', 'id'].some(kw => type.name.toLowerCase().includes(kw));
+                        
+                        if (count > 0 || isMainType) {
+                            statsHtml += `
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class='bx ${getTypeIcon(type.name, true)}'></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <span class="stat-title">${type.name}</span>
+                                        <span class="stat-value">${count}/5</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    // Fallback to basic types if global list is unavailable
+                    statsHtml += `
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-t-shirt'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">Uniform Violations</span>
+                                <span class="stat-value">${report.uniformCount}/5</span>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <span class="stat-title">Uniform Violations</span>
-                            <span class="stat-value">${report.uniformCount}/5</span>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-walk'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">Footwear Violations</span>
+                                <span class="stat-value">${report.footwearCount}/5</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-shopping-bag-alt'></i>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-id-card'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">No ID Violations</span>
+                                <span class="stat-value">${report.noIdCount}/5</span>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <span class="stat-title">Footwear Violations</span>
-                            <span class="stat-value">${report.footwearCount}/5</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-id-card'></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-title">No ID Violations</span>
-                            <span class="stat-value">${report.noIdCount}/5</span>
-                        </div>
-                    </div>
+                    `;
+                }
+
+                // Add Total Violations card at the end
+                statsHtml += `
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class='bx bxs-bar-chart-alt-2'></i>
@@ -869,6 +894,8 @@ function initReportsModule() {
                         </div>
                     </div>
                 `;
+                
+                statsGrid.innerHTML = statsHtml;
             }
             
             // Populate timeline
