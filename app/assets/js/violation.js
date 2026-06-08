@@ -788,7 +788,10 @@ function initViolationsModule() {
                     showNotification('Status updated', 'success');
                     await loadViolationStatuses(true);
                     renderManageStatusesList();
-                    renderManageLevelsList(selectedManageTypeId);
+                    // Update levels to refresh their dropdown choices
+                    if (selectedManageTypeId) renderManageLevelsList(selectedManageTypeId);
+                    // Also refresh the main violations view if visible
+                    if (violations.length > 0) renderViolations();
                 } else throw new Error(data.message);
             } catch (error) {
                 showNotification(error.message, 'error');
@@ -1363,8 +1366,11 @@ function initViolationsModule() {
                 }
 
                 showNotification('Level updated successfully', 'success');
-                await loadViolationTypes();
+                await loadViolationTypes(true); // Load with true to keep management view updated
                 renderManageLevelsList(typeId);
+                // Also refresh main list if it exists
+                if (typeof renderViolations === 'function') renderViolations();
+                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
                 console.error('Error updating level:', error);
                 showNotification(error.message || 'Failed to update level', 'error');
@@ -1420,8 +1426,10 @@ function initViolationsModule() {
                 initNewLevelColorPresets();
                 
                 showNotification('Violation level added', 'success');
-                await loadViolationTypes();
+                await loadViolationTypes(true);
                 renderManageLevelsList(selectedManageTypeId);
+                if (typeof renderViolations === 'function') renderViolations();
+                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
                 console.error('Error creating violation level:', error);
                 showNotification(error.message || 'Failed to add violation level', 'error');
@@ -1453,6 +1461,8 @@ function initViolationsModule() {
 
                 showNotification('Violation level removed', 'success');
                 await loadViolationTypes(true); // Reload including archived
+                if (typeof renderViolations === 'function') renderViolations();
+                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
                 console.error('Error deleting violation level:', error);
                 showNotification(error.message || 'Failed to delete violation level', 'error');
@@ -1471,6 +1481,8 @@ function initViolationsModule() {
 
                 showNotification('Violation level restored', 'success');
                 await loadViolationTypes(true);
+                if (typeof renderViolations === 'function') renderViolations();
+                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
                 console.error('Error restoring violation level:', error);
                 showNotification(error.message || 'Failed to restore violation level', 'error');
