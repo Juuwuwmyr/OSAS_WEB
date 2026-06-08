@@ -458,6 +458,7 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Action Buttons -->
         <div class="Violations-form-actions">
+          <input type="hidden" id="violationStatus" name="status" value="warning">
           <button type="button" class="Violations-btn-outline" id="cancelRecordModal">Cancel</button>
           <button type="button" class="Violations-btn-outline entrance-btn" id="modalEntranceBtn" style="display: none;">
             <i class='bx bx-receipt'></i> Entrance Slip
@@ -630,30 +631,62 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="vt-manage-body">
         <div class="vt-manage-column">
           <div class="vt-manage-column-header">
-            <h3>Violation Types</h3>
-            <span class="vt-manage-count" id="vtManageTypeCount">0</span>
+            <h3 id="vtManageLeftTitle">Violation Types</h3>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <span class="vt-manage-count" id="vtManageTypeCount" style="margin: 0;">0</span>
+              <button type="button" class="vt-toggle-view-btn" id="vtToggleStatusesBtn" title="Manage global statuses">
+                <i class='bx bx-cog'></i>
+              </button>
+            </div>
           </div>
-          <div class="vt-manage-list" id="vtManageTypesList">
-            <p class="vt-manage-empty">Loading types...</p>
+          <div id="vtManageTypesContainer">
+            <div class="vt-manage-list" id="vtManageTypesList">
+              <p class="vt-manage-empty">Loading types...</p>
+            </div>
+            <div class="vt-manage-add-form">
+              <input type="text" id="vtNewTypeName" placeholder="New violation type name..." maxlength="255">
+              <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddTypeBtn">
+                <i class='bx bx-plus'></i> Add Type
+              </button>
+            </div>
           </div>
-          <div class="vt-manage-add-form">
-            <input type="text" id="vtNewTypeName" placeholder="New violation type name..." maxlength="255">
-            <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddTypeBtn">
-              <i class='bx bx-plus'></i> Add Type
-            </button>
+          <div id="vtManageStatusesContainer" style="display: none;">
+            <div class="vt-manage-list" id="vtManageStatusesList">
+              <p class="vt-manage-empty">Loading statuses...</p>
+            </div>
+            <div class="vt-manage-add-form" style="flex-direction: column; gap: 10px;">
+              <input type="text" id="vtNewStatusName" placeholder="New status name (e.g. Expulsion)..." maxlength="100">
+              <div class="vt-color-presets" id="vtNewStatusColorPresets" style="display: flex; gap: 6px; justify-content: center; padding: 5px; background: #f8f9fa; border-radius: 6px;">
+                <!-- Colors will be added by JS -->
+              </div>
+              <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddStatusBtn">
+                <i class='bx bx-plus'></i> Add Status
+              </button>
+            </div>
           </div>
         </div>
 
         <div class="vt-manage-column">
           <div class="vt-manage-column-header">
             <h3 id="vtManageLevelsTitle">Offense Levels</h3>
-            <span class="vt-manage-count" id="vtManageLevelCount">0</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="vt-manage-count" id="vtManageLevelCount">0</span>
+              <button type="button" class="vt-save-all-btn" id="vtSaveAllLevelsBtn" style="display: none;">
+                Save All
+              </button>
+            </div>
           </div>
           <div class="vt-manage-list" id="vtManageLevelsList">
             <p class="vt-manage-empty">Select a violation type to view its levels</p>
           </div>
-          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none;">
+          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 10px;">
             <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
+            <select id="vtNewLevelStatus" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px;">
+              <!-- Will be populated by JS -->
+            </select>
+            <div class="vt-color-presets" id="vtNewLevelColorPresets" style="display: flex; gap: 6px; justify-content: center; padding: 5px; background: #f8f9fa; border-radius: 6px;">
+              <!-- Colors will be added by JS -->
+            </div>
             <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
               <i class='bx bx-plus'></i> Add Level
             </button>

@@ -25,6 +25,15 @@ function initViolationsModule() {
         console.log('🔗 API Base Path:', API_BASE);
         console.log('🌐 Full API URL will be:', window.location.origin + API_BASE + 'violations.php');
 
+        const STATUS_COLOR_PRESETS = [
+            { name: 'Green', value: '#10b981' },
+            { name: 'Orange', value: '#f59e0b' },
+            { name: 'Red', value: '#ef4444' },
+            { name: 'Blue', value: '#3b82f6' },
+            { name: 'Purple', value: '#8b5cf6' },
+            { name: 'Gray', value: '#6b7280' }
+        ];
+
         /** Map removed location values for edit / legacy records */
         const LEGACY_LOCATION_MAP = { gate_1: 'campus', gate_2: 'campus', cafeteria: 'canteen' };
         function mapViolationLocation(loc) {
@@ -139,7 +148,7 @@ function initViolationsModule() {
         
         // Use window-level cache so data persists when switching pages and back
         // This prevents re-fetching every time the violations page is visited
-        if (!window._violationsCache) window._violationsCache = { violations: [], students: [], violationTypes: [], loaded: false };
+        if (!window._violationsCache) window._violationsCache = { violations: [], students: [], violationTypes: [], violationStatuses: [], loaded: false };
         const _cache = window._violationsCache;
 
         let violations      = _cache.violations;
@@ -149,6 +158,7 @@ function initViolationsModule() {
         let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
+        let violationStatuses = _cache.violationStatuses || [];
         let isLoading       = false;
         let isSubmitting    = false;
         let currentPage     = 1;
@@ -156,6 +166,7 @@ function initViolationsModule() {
         let totalRecords    = 0;
         let totalPages      = 0;
         let selectedFiles   = [];
+        let manageView      = 'types'; // 'types' or 'statuses'
 
         function getCurrentAdminName() {
             // Try localStorage session first
@@ -632,6 +643,261 @@ function initViolationsModule() {
             }
         }
 
+        async function loadViolationStatuses(includeArchived = false) {
+            try {
+                const url = API_BASE + 'violations.php?action=get_statuses' + (includeArchived ? '&include_archived=1' : '');
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to load statuses');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    violationStatuses = data.data;
+                    _cache.violationStatuses = violationStatuses;
+                    
+                    // Update the main page filter
+                    renderMainStatusFilter();
+                    
+                    return violationStatuses;
+                }
+            } catch (error) {
+                console.error('Error loading violation statuses:', error);
+                showNotification('Failed to load statuses', 'error');
+            }
+            return [];
+        }
+
+        function renderMainStatusFilter() {
+            const filter = document.getElementById('ViolationsStatusFilter');
+            if (!filter) return;
+
+            const currentVal = filter.value;
+            let html = '<option value="all">All Status</option>';
+            
+            violationStatuses.filter(s => s.status === 'active').forEach(s => {
+                html += `<option value="${s.name.toLowerCase()}">${s.name}</option>`;
+            });
+            
+            filter.innerHTML = html;
+            if (currentVal) filter.value = currentVal;
+        }
+
+        function renderManageStatusesList() {
+            const list = document.getElementById('vtManageStatusesList');
+            if (!list) return;
+
+            if (!violationStatuses.length) {
+                list.innerHTML = '<p class="vt-manage-empty">No statuses defined. Add one below.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            violationStatuses.forEach(status => {
+                const isArchived = status.status === 'archived';
+                const item = document.createElement('div');
+                item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
+                
+                // Build color options for this status
+                let colorOptionsHtml = '';
+                STATUS_COLOR_PRESETS.forEach(preset => {
+                    const isActive = (status.status_color || '#f59e0b') === preset.value;
+                    colorOptionsHtml += `
+                        <div class="vt-color-dot ${isActive ? 'active' : ''}" 
+                             style="background-color: ${preset.value};" 
+                             title="${preset.name}"
+                             onclick="updateStatusStyle(${status.id}, '${preset.value}', this)"></div>
+                    `;
+                });
+
+                item.innerHTML = `
+                    <div class="vt-manage-item-info" style="flex: 1;">
+                        <input type="text" class="vt-status-name-input" value="${escapeHtml(status.name)}" style="font-weight: 600; font-size: 13px; border: none; background: transparent; width: 100%; margin-bottom: 2px;" placeholder="Status Name">
+                        <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px;">
+                            <div class="vt-status-presets-row" style="display: flex; gap: 4px; flex: 1;">
+                                ${colorOptionsHtml}
+                            </div>
+                            <button type="button" class="vt-save-status-btn" title="Save changes" style="background: var(--gold); border: none; border-radius: 4px; color: #fff; padding: 2px 6px; font-size: 10px; cursor: pointer;">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                    <div class="vt-manage-item-actions">
+                        ${isArchived ? `
+                            <button type="button" class="vt-manage-item-restore" title="Restore status" data-restore-status="${status.id}">
+                                <i class='bx bx-undo'></i>
+                            </button>
+                        ` : `
+                            <button type="button" class="vt-manage-item-delete" title="Delete status" data-delete-status="${status.id}">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        `}
+                    </div>
+                `;
+
+                const nameInput = item.querySelector('.vt-status-name-input');
+                const saveBtn = item.querySelector('.vt-save-status-btn');
+                
+                if (saveBtn) {
+                    saveBtn.onclick = () => {
+                        const newName = nameInput.value.trim();
+                        const activeDot = item.querySelector('.vt-color-dot.active');
+                        let color = activeDot ? activeDot.style.backgroundColor : status.status_color;
+                        
+                        if (color && color.startsWith('rgb')) {
+                            const rgb = color.match(/\d+/g);
+                            color = '#' + rgb.map(x => {
+                                const hex = parseInt(x).toString(16);
+                                return hex.length === 1 ? '0' + hex : hex;
+                            }).join('');
+                        }
+                        updateViolationStatus(status.id, newName, color);
+                    };
+                }
+
+                const deleteBtn = item.querySelector('[data-delete-status]');
+                if (deleteBtn) {
+                    deleteBtn.onclick = () => deleteViolationStatus(status.id, status.name);
+                }
+
+                const restoreBtn = item.querySelector('[data-restore-status]');
+                if (restoreBtn) {
+                    restoreBtn.onclick = () => restoreViolationStatus(status.id, status.name);
+                }
+
+                list.appendChild(item);
+            });
+        }
+
+        window.updateStatusStyle = function(statusId, color, dotEl) {
+            const row = dotEl.closest('.vt-status-presets-row');
+            if (row) {
+                row.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                dotEl.classList.add('active');
+            }
+        };
+
+        async function updateViolationStatus(id, name, color) {
+            if (!name) return showNotification('Status name is required', 'warning');
+            try {
+                showLoadingOverlay('Updating status...');
+                const response = await fetch(API_BASE + `violations.php?action=update_status&id=${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, status_color: color })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showNotification('Status updated', 'success');
+                    await loadViolationStatuses(true);
+                    renderManageStatusesList();
+                    renderManageLevelsList(selectedManageTypeId);
+                } else throw new Error(data.message);
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally { hideLoadingOverlay(); }
+        }
+
+        async function deleteViolationStatus(id, name) {
+            if (!confirm(`Delete status "${name}"?`)) return;
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=delete_status&id=${id}`, { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showNotification('Status removed/archived', 'success');
+                    await loadViolationStatuses(true);
+                    renderManageStatusesList();
+                } else throw new Error(data.message);
+            } catch (error) { showNotification(error.message, 'error'); }
+        }
+
+        async function restoreViolationStatus(id, name) {
+            try {
+                const response = await fetch(API_BASE + `violations.php?action=restore_status&id=${id}`, { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showNotification('Status restored', 'success');
+                    await loadViolationStatuses(true);
+                    renderManageStatusesList();
+                } else throw new Error(data.message);
+            } catch (error) { showNotification(error.message, 'error'); }
+        }
+
+        async function addViolationStatus() {
+            const nameInput = document.getElementById('vtNewStatusName');
+            const name = nameInput.value.trim();
+            if (!name) return showNotification('Enter status name', 'warning');
+
+            const activeDot = document.querySelector('#vtNewStatusColorPresets .vt-color-dot.active');
+            let color = activeDot ? activeDot.style.backgroundColor : '#f59e0b';
+            if (color.startsWith('rgb')) {
+                const rgb = color.match(/\d+/g);
+                color = '#' + rgb.map(x => {
+                    const hex = parseInt(x).toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('');
+            }
+
+            try {
+                showLoadingOverlay('Adding status...');
+                const response = await fetch(API_BASE + 'violations.php?action=create_status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, status_color: color })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    nameInput.value = '';
+                    showNotification('Status added', 'success');
+                    await loadViolationStatuses(true);
+                    renderManageStatusesList();
+                } else throw new Error(data.message);
+            } catch (error) { showNotification(error.message, 'error'); }
+            finally { hideLoadingOverlay(); }
+        }
+
+        function toggleManageView() {
+            const typesContainer = document.getElementById('vtManageTypesContainer');
+            const statusesContainer = document.getElementById('vtManageStatusesContainer');
+            const titleEl = document.getElementById('vtManageLeftTitle');
+            const toggleBtn = document.getElementById('vtToggleStatusesBtn');
+
+            if (manageView === 'types') {
+                manageView = 'statuses';
+                typesContainer.style.display = 'none';
+                statusesContainer.style.display = 'block';
+                titleEl.textContent = 'Global Statuses';
+                toggleBtn.innerHTML = "<i class='bx bx-left-arrow-alt'></i>";
+                toggleBtn.title = "Back to Violation Types";
+                
+                loadViolationStatuses(true).then(() => {
+                    renderManageStatusesList();
+                    initNewStatusColorPresets();
+                });
+            } else {
+                manageView = 'types';
+                typesContainer.style.display = 'block';
+                statusesContainer.style.display = 'none';
+                titleEl.textContent = 'Violation Types';
+                toggleBtn.innerHTML = "<i class='bx bx-cog'></i>";
+                toggleBtn.title = "Manage global statuses";
+                renderManageTypesList();
+            }
+        }
+
+        function initNewStatusColorPresets() {
+            const container = document.getElementById('vtNewStatusColorPresets');
+            if (!container) return;
+            container.innerHTML = '';
+            STATUS_COLOR_PRESETS.forEach(preset => {
+                const dot = document.createElement('div');
+                dot.className = 'vt-color-dot' + (preset.value === '#f59e0b' ? ' active' : '');
+                dot.style.backgroundColor = preset.value;
+                dot.onclick = () => {
+                    container.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                };
+                container.appendChild(dot);
+            });
+        }
+
         async function loadViolationTypes(includeArchived = false) {
             try {
                 console.log('🔄 Loading violation types...');
@@ -660,6 +926,27 @@ function initViolationsModule() {
         }
 
         let selectedManageTypeId = null;
+        let selectedNewLevelColor = '#f59e0b'; // Default orange
+
+        // Initialize color presets for new level form
+        function initNewLevelColorPresets() {
+            const container = document.getElementById('vtNewLevelColorPresets');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            STATUS_COLOR_PRESETS.forEach(preset => {
+                const dot = document.createElement('div');
+                dot.className = 'vt-color-dot' + (preset.value === selectedNewLevelColor ? ' active' : '');
+                dot.style.backgroundColor = preset.value;
+                dot.title = preset.name;
+                dot.onclick = () => {
+                    selectedNewLevelColor = preset.value;
+                    document.querySelectorAll('#vtNewLevelColorPresets .vt-color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                };
+                container.appendChild(dot);
+            });
+        }
 
         function getViolationTypeIcon(nameLower) {
             if (nameLower.includes('uniform')) return 'bx-t-shirt';
@@ -682,11 +969,49 @@ function initViolationsModule() {
             document.body.style.overflow = 'hidden';
             
             // Reload including archived for management
-            await loadViolationTypes(true);
+            await Promise.all([
+                loadViolationTypes(true),
+                loadViolationStatuses(true)
+            ]);
             
             selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
+            
+            // Initialize dynamic dropdown for Add Level form
+            updateAddLevelStatusDropdown();
+            
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
+            initNewLevelColorPresets();
+
+            // Setup toggle and status add listeners (only once)
+            const toggleBtn = document.getElementById('vtToggleStatusesBtn');
+            if (toggleBtn && !toggleBtn.dataset.listenerAdded) {
+                toggleBtn.onclick = toggleManageView;
+                toggleBtn.dataset.listenerAdded = 'true';
+            }
+
+            const addStatusBtn = document.getElementById('vtAddStatusBtn');
+            if (addStatusBtn && !addStatusBtn.dataset.listenerAdded) {
+                addStatusBtn.onclick = addViolationStatus;
+                addStatusBtn.dataset.listenerAdded = 'true';
+            }
+        }
+
+        function updateAddLevelStatusDropdown() {
+            const select = document.getElementById('vtNewLevelStatus');
+            if (!select) return;
+            
+            let html = '';
+            const activeStatuses = violationStatuses.filter(s => s.status === 'active');
+            if (activeStatuses.length === 0) {
+                html = '<option value="Warning" selected>Warning</option><option value="Permitted">Permitted</option><option value="Disciplinary">Disciplinary</option><option value="Resolved">Resolved</option>';
+            } else {
+                activeStatuses.forEach(s => {
+                    const isDefault = s.name.toLowerCase() === 'warning';
+                    html += `<option value="${escapeHtml(s.name)}" ${isDefault ? 'selected' : ''}>${escapeHtml(s.name)}</option>`;
+                });
+            }
+            select.innerHTML = html;
         }
 
         function closeViolationTypesManageModal() {
@@ -764,12 +1089,15 @@ function initViolationsModule() {
             const countEl = document.getElementById('vtManageLevelCount');
             const titleEl = document.getElementById('vtManageLevelsTitle');
             const addForm = document.getElementById('vtAddLevelForm');
+            const saveAllBtn = document.getElementById('vtSaveAllLevelsBtn');
+            
             if (!list) return;
 
             if (!typeId) {
                 if (countEl) countEl.textContent = '0';
                 if (titleEl) titleEl.textContent = 'Offense Levels';
                 if (addForm) addForm.style.display = 'none';
+                if (saveAllBtn) saveAllBtn.style.display = 'none';
                 list.innerHTML = '<p class="vt-manage-empty">Select a violation type to view its levels</p>';
                 return;
             }
@@ -784,6 +1112,7 @@ function initViolationsModule() {
             if (countEl) countEl.textContent = String(levels.length);
             if (titleEl) titleEl.textContent = `Levels — ${type.name}`;
             if (addForm) addForm.style.display = 'flex';
+            if (saveAllBtn) saveAllBtn.style.display = levels.length > 0 ? 'block' : 'none';
 
             if (!levels.length) {
                 list.innerHTML = '<p class="vt-manage-empty">No levels defined. Add one below.</p>';
@@ -795,10 +1124,56 @@ function initViolationsModule() {
                 const isArchived = level.status === 'archived';
                 const item = document.createElement('div');
                 item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
+                item.dataset.levelId = level.id;
+                
+                // Build color options for this level
+                let colorOptionsHtml = '';
+                STATUS_COLOR_PRESETS.forEach(preset => {
+                    const isActive = (level.status_color || '#f59e0b') === preset.value;
+                    colorOptionsHtml += `
+                        <div class="vt-color-dot ${isActive ? 'active' : ''}" 
+                             style="background-color: ${preset.value};" 
+                             title="${preset.name}"
+                             onclick="updateLevelStyle(${level.id}, '${preset.value}', this)"></div>
+                    `;
+                });
+
+                // Dynamic statuses from database
+                let statusOptionsHtml = '';
+                let activeStatuses = (violationStatuses || []).filter(s => s.status === 'active');
+                
+                // Fallback if no active statuses found
+                if (activeStatuses.length === 0) {
+                    activeStatuses = [
+                        { name: 'Warning' }, { name: 'Permitted' }, { name: 'Disciplinary' }, { name: 'Resolved' }
+                    ];
+                }
+
+                activeStatuses.forEach(s => {
+                    const statusName = (s.name || '').trim();
+                    const currentStatus = (level.default_status || 'warning').trim();
+                    const selected = currentStatus.toLowerCase() === statusName.toLowerCase() ? 'selected' : '';
+                    statusOptionsHtml += `<option value="${escapeHtml(statusName)}" ${selected}>${escapeHtml(statusName)}</option>`;
+                });
+
                 item.innerHTML = `
                     <span class="vt-manage-item-order">#${level.level_order || '-'}</span>
-                    <div class="vt-manage-item-info">
-                        <span class="vt-manage-item-name">${escapeHtml(level.name)} ${isArchived ? '<small>(Archived)</small>' : ''}</span>
+                    <div class="vt-manage-item-info" style="flex: 1;">
+                        <input type="text" class="vt-level-name-input" value="${escapeHtml(level.name)}" style="font-weight: 600; font-size: 13px; border: none; background: transparent; width: 100%; margin-bottom: 2px;" placeholder="Level Name">
+                        <div class="vt-manage-item-status-select" style="margin-top: 5px;">
+                            <label style="font-size: 10px; color: #666; display: block; margin-bottom: 2px;">Default Status & Color:</label>
+                            <select class="vt-level-status-input" style="font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; width: 100%; margin-bottom: 4px; background: #fff;">
+                                ${statusOptionsHtml}
+                            </select>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <div class="vt-level-presets-row" style="display: flex; gap: 4px; flex: 1;">
+                                    ${colorOptionsHtml}
+                                </div>
+                                <button type="button" class="vt-save-level-btn" title="Save changes" style="background: var(--gold); border: none; border-radius: 4px; color: #fff; padding: 2px 6px; font-size: 10px; cursor: pointer;">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="vt-manage-item-actions">
                         ${isArchived ? `
@@ -812,6 +1187,30 @@ function initViolationsModule() {
                         `}
                     </div>
                 `;
+
+                // Add event listeners for the newly created elements
+                const nameInput = item.querySelector('.vt-level-name-input');
+                const statusInput = item.querySelector('.vt-level-status-input');
+                const saveBtn = item.querySelector('.vt-save-level-btn');
+                
+                if (saveBtn) {
+                    saveBtn.onclick = () => {
+                        const newName = nameInput.value.trim();
+                        const newStatus = statusInput.value;
+                        const currentColor = item.querySelector('.vt-color-dot.active')?.style.backgroundColor || level.status_color || '#f59e0b';
+                        // Convert RGB back to Hex if needed
+                        let hexColor = currentColor;
+                        if (currentColor.startsWith('rgb')) {
+                            const rgb = currentColor.match(/\d+/g);
+                            hexColor = '#' + rgb.map(x => {
+                                const hex = parseInt(x).toString(16);
+                                return hex.length === 1 ? '0' + hex : hex;
+                            }).join('');
+                        }
+                        saveLevelChanges(level.id, newName, newStatus, hexColor, typeId);
+                    };
+                }
+
                 const deleteBtn = item.querySelector('[data-delete-level]');
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', (e) => {
@@ -916,8 +1315,116 @@ function initViolationsModule() {
             }
         }
 
+        window.updateLevelStyle = function(levelId, color, dotEl) {
+            const row = dotEl.closest('.vt-level-presets-row');
+            if (row) {
+                row.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                dotEl.classList.add('active');
+            }
+        };
+
+        async function saveAllLevels() {
+            if (!selectedManageTypeId) return;
+            
+            const list = document.getElementById('vtManageLevelsList');
+            const items = list.querySelectorAll('.vt-manage-item');
+            const updates = [];
+            
+            items.forEach(item => {
+                const levelId = item.dataset.levelId;
+                const nameInput = item.querySelector('.vt-level-name-input');
+                const statusInput = item.querySelector('.vt-level-status-input');
+                const activeDot = item.querySelector('.vt-color-dot.active');
+                
+                if (levelId && nameInput && statusInput && activeDot) {
+                    let color = activeDot.style.backgroundColor;
+                    // Convert RGB to Hex
+                    if (color.startsWith('rgb')) {
+                        const rgb = color.match(/\d+/g);
+                        color = '#' + rgb.map(x => {
+                            const hex = parseInt(x).toString(16);
+                            return hex.length === 1 ? '0' + hex : hex;
+                        }).join('');
+                    }
+                    
+                    updates.push({
+                        id: levelId,
+                        name: nameInput.value.trim(),
+                        default_status: statusInput.value.trim(),
+                        status_color: color
+                    });
+                }
+            });
+            
+            if (updates.length === 0) return;
+
+            try {
+                showLoadingOverlay('Saving all levels...');
+                
+                // Save each level one by one (or you could implement a batch API)
+                // Since there's no batch API, we'll use Promise.all
+                const promises = updates.map(update => 
+                    fetch(API_BASE + `violations.php?action=update_level&id=${update.id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(update)
+                    }).then(res => res.json())
+                );
+                
+                const results = await Promise.all(promises);
+                const failed = results.filter(r => r.status !== 'success');
+                
+                if (failed.length > 0) {
+                    throw new Error(`Failed to update ${failed.length} levels`);
+                }
+
+                showNotification('All levels updated successfully', 'success');
+                await loadViolationTypes();
+                renderManageLevelsList(selectedManageTypeId);
+            } catch (error) {
+                console.error('Error saving all levels:', error);
+                showNotification(error.message || 'Failed to save all levels', 'error');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
+        async function saveLevelChanges(levelId, name, status, color, typeId) {
+            if (!name) {
+                showNotification('Level name cannot be empty', 'warning');
+                return;
+            }
+
+            try {
+                showLoadingOverlay('Saving changes...');
+                const response = await fetch(API_BASE + `violations.php?action=update_level&id=${levelId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        default_status: status,
+                        status_color: color
+                    })
+                });
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to update level');
+                }
+
+                showNotification('Level updated successfully', 'success');
+                await loadViolationTypes();
+                renderManageLevelsList(typeId);
+            } catch (error) {
+                console.error('Error updating level:', error);
+                showNotification(error.message || 'Failed to update level', 'error');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
         async function addViolationLevelFromManage() {
             const nameInput = document.getElementById('vtNewLevelName');
+            const statusInput = document.getElementById('vtNewLevelStatus');
             if (!nameInput || !selectedManageTypeId) return;
 
             // CHECK ONLINE STATUS
@@ -927,6 +1434,8 @@ function initViolationsModule() {
             }
 
             const name = nameInput.value.trim();
+            const defaultStatus = statusInput ? statusInput.value : 'warning';
+            
             if (!name) {
                 showNotification('Please enter a level name', 'warning');
                 nameInput.focus();
@@ -934,12 +1443,15 @@ function initViolationsModule() {
             }
 
             try {
+                showLoadingOverlay('Adding level...');
                 const response = await fetch(API_BASE + 'violations.php?action=create_level', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         violation_type_id: selectedManageTypeId,
-                        name
+                        name: name,
+                        default_status: defaultStatus,
+                        status_color: selectedNewLevelColor
                     })
                 });
                 const data = await response.json();
@@ -948,11 +1460,18 @@ function initViolationsModule() {
                 }
 
                 nameInput.value = '';
+                if (statusInput) statusInput.value = 'warning';
+                selectedNewLevelColor = '#f59e0b';
+                initNewLevelColorPresets();
+                
                 showNotification('Violation level added', 'success');
                 await loadViolationTypes();
+                renderManageLevelsList(selectedManageTypeId);
             } catch (error) {
                 console.error('Error creating violation level:', error);
                 showNotification(error.message || 'Failed to add violation level', 'error');
+            } finally {
+                hideLoadingOverlay();
             }
         }
 
@@ -1073,23 +1592,29 @@ function initViolationsModule() {
             type.levels.forEach(level => {
                 const div = document.createElement('div');
                 
-                // Determine style class based on name/level
+                // Determine style class based on default_status from database
+                const status = (level.default_status || 'warning').toLowerCase();
                 let styleClass = 'level-warning';
-                const nameLower = level.name.toLowerCase();
-                // 1st & 2nd Offense = green, 3rd & 4th = orange, 5th/disciplinary = red
-                if (nameLower.includes('1st offense') || nameLower.includes('2nd offense') || nameLower.includes('permitted')) {
+                
+                if (status === 'permitted') {
                     styleClass = 'level-permitted';
-                } else if (nameLower.includes('5th offense') || nameLower.includes('disciplinary') || nameLower.includes('warning 3')) {
+                } else if (status === 'disciplinary') {
                     styleClass = 'level-disciplinary';
+                } else if (status === 'resolved') {
+                    styleClass = 'level-resolved';
                 }
-                // 3rd & 4th offense stay as level-warning (default)
 
                 div.className = `violation-level-option ${styleClass}`;
                 
+                // Use custom color if available in DB, otherwise fallback to class default
+                if (level.status_color) {
+                    div.style.setProperty('--level-color', level.status_color);
+                }
+                
                 div.innerHTML = `
-                    <input type="radio" id="level_${level.id}" name="violationLevel" value="${level.id}">
-                    <label for="level_${level.id}" class="${styleClass}">
-                        <span class="level-title">${level.name}</span>
+                    <input type="radio" id="level_${level.id}" name="violationLevel" value="${level.id}" data-default-status="${escapeHtml(status)}">
+                    <label for="level_${level.id}">
+                        <span class="level-title">${escapeHtml(level.name)}</span>
                     </label>
                 `;
                 
@@ -1103,6 +1628,14 @@ function initViolationsModule() {
                     document.querySelectorAll('.violation-level-option').forEach(c => c.classList.remove('active'));
                     const option = e.target.closest('.violation-level-option');
                     if (option) option.classList.add('active');
+
+                    // Update hidden status field
+                    const status = e.target.dataset.defaultStatus;
+                    const statusInput = document.getElementById('violationStatus');
+                    if (statusInput && status) {
+                        statusInput.value = status;
+                        console.log('Updated violation status to:', status);
+                    }
                 }
             };
 
@@ -3783,12 +4316,14 @@ function initViolationsModule() {
         const vtManageOverlay = document.getElementById('ViolationTypesManageOverlay');
         const vtAddTypeBtn = document.getElementById('vtAddTypeBtn');
         const vtAddLevelBtn = document.getElementById('vtAddLevelBtn');
+        const vtSaveAllLevelsBtn = document.getElementById('vtSaveAllLevelsBtn');
 
         if (closeVtManageBtn) closeVtManageBtn.addEventListener('click', closeViolationTypesManageModal);
         if (cancelVtManageBtn) cancelVtManageBtn.addEventListener('click', closeViolationTypesManageModal);
         if (vtManageOverlay) vtManageOverlay.addEventListener('click', closeViolationTypesManageModal);
         if (vtAddTypeBtn) vtAddTypeBtn.addEventListener('click', addViolationTypeFromManage);
         if (vtAddLevelBtn) vtAddLevelBtn.addEventListener('click', addViolationLevelFromManage);
+        if (vtSaveAllLevelsBtn) vtSaveAllLevelsBtn.addEventListener('click', saveAllLevels);
 
         if (vtManageModal) {
             const vtNewTypeName = document.getElementById('vtNewTypeName');
@@ -4753,33 +5288,8 @@ function initViolationsModule() {
                     const editingId = recordModal.dataset.editingId;
 
                     if (editingId) {
-                        // Determine status based on level name (not ID)
-                        let status = 'warning';
-                        if (violationLevel) {
-                            // Get the level name from the label
-                            const levelLabel = document.querySelector(`label[for="${violationLevel.id}"] .level-title`);
-                            let levelName = '';
-                            
-                            if (levelLabel) {
-                                levelName = levelLabel.textContent.trim().toLowerCase();
-                            } else if (typeof violationTypes !== 'undefined') {
-                                // Fallback: try to find in global data
-                                const typeId = document.querySelector('input[name="violationType"]:checked')?.value;
-                                const levelId = violationLevel.value;
-                                const type = violationTypes.find(t => t.id == typeId);
-                                const level = type?.levels?.find(l => l.id == levelId);
-                                if (level) levelName = level.name.toLowerCase();
-                            }
-
-                            // 1st & 2nd Offense = permitted, 3rd & 4th = warning, 5th/disciplinary = disciplinary
-                            if (levelName.includes('1st offense') || levelName.includes('2nd offense') || levelName.includes('permitted')) {
-                                status = 'permitted';
-                            } else if (levelName.includes('5th offense') || levelName.includes('disciplinary') || levelName.includes('warning 3')) {
-                                status = 'disciplinary';
-                            } else {
-                                status = 'warning'; // 3rd & 4th offense
-                            }
-                        }
+                        // Determine status based on the selected level's data attribute
+                        const status = violationLevel?.dataset?.defaultStatus || 'warning';
 
                         // Edit existing violation - keep JSON for PUT requests
                         const updateData = {
@@ -4802,36 +5312,8 @@ function initViolationsModule() {
                             throw new Error('Selected student not found in database.');
                         }
                     
-                        // Determine status based on level name (not ID)
-                        let status = 'warning';
-                        if (violationLevel) {
-                            // Get the level name from the label
-                            const levelLabel = document.querySelector(`label[for="${violationLevel.id}"] .level-title`);
-                            // Fallback: try to find it in the violationTypes data if label not found
-                            let levelName = '';
-                            
-                            if (levelLabel) {
-                                levelName = levelLabel.textContent.trim().toLowerCase();
-                            } else if (typeof violationTypes !== 'undefined') {
-                                // Try to find in global data
-                                const typeId = document.querySelector('input[name="violationType"]:checked')?.value;
-                                const levelId = violationLevel.value;
-                                const type = violationTypes.find(t => t.id == typeId);
-                                const level = type?.levels?.find(l => l.id == levelId);
-                                if (level) levelName = level.name.toLowerCase();
-                            }
-
-                            console.log('Determining status from level name:', levelName);
-
-                            // 1st & 2nd Offense = permitted, 3rd & 4th = warning, 5th/disciplinary = disciplinary
-                            if (levelName.includes('1st offense') || levelName.includes('2nd offense') || levelName.includes('permitted')) {
-                                status = 'permitted';
-                            } else if (levelName.includes('5th offense') || levelName.includes('disciplinary') || levelName.includes('warning 3')) {
-                                status = 'disciplinary';
-                            } else {
-                                status = 'warning'; // 3rd & 4th offense
-                            }
-                        }
+                        // Determine status based on the selected level's data attribute
+                        const status = violationLevel?.dataset?.defaultStatus || 'warning';
 
                         // Ensure department is included
                         const studentDepartment = student.department || 'N/A';
@@ -5358,6 +5840,7 @@ function initViolationsModule() {
                     violations     = _cache.violations;
                     students       = _cache.students;
                     violationTypes = _cache.violationTypes;
+                    violationStatuses = _cache.violationStatuses || [];
                     renderViolations();
                     updateStats();
                     loadDepartments();
@@ -5366,6 +5849,7 @@ function initViolationsModule() {
                     loadViolations(false).then(() => { renderViolations(); updateStats(); });
                     loadStudents(false);
                     if (violationTypes.length === 0) loadViolationTypes();
+                    if (violationStatuses.length === 0) loadViolationStatuses();
                     hideLoadingOverlay();
                     return;
                 }
@@ -5374,11 +5858,11 @@ function initViolationsModule() {
                     throw new Error('Required DOM elements not found. Please check the HTML structure.');
                 }
 
-                // Load violations and violation types immediately (needed for table render).
-                // Students and departments load in background — only needed for the add-violation modal.
-                const [violationsData] = await Promise.all([
+                // Load violations, types and statuses immediately
+                await Promise.all([
                     loadViolations(false),
-                    loadViolationTypes()
+                    loadViolationTypes(),
+                    loadViolationStatuses()
                 ]);
 
                 // Render as soon as violations are ready

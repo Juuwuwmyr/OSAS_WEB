@@ -54,6 +54,33 @@ body.dark {
   border-radius: 50%;
 }
 
+/* Management Modal Toggle Button */
+.vt-toggle-view-btn {
+  background: #f8f9fa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.vt-toggle-view-btn:hover {
+  background: var(--gold);
+  color: var(--dark);
+  border-color: var(--gold);
+  transform: rotate(90deg);
+}
+
+.vt-toggle-view-btn i {
+  font-size: 16px;
+}
+
 /* ========================================= */
 /*         BASE STYLES FOR PAGE             */
 /* ========================================= */
@@ -1746,37 +1773,70 @@ body.dark {
 }
 
 /* Level-specific colors */
-.level-permitted .level-title { color: #28a745; }
-.level-warning .level-title { color: #fd7e14; }
-.level-disciplinary .level-title { color: #dc3545; }
+.level-permitted { --level-color: #10b981; }
+.level-warning { --level-color: #f59e0b; }
+.level-disciplinary { --level-color: #ef4444; }
+.level-resolved { --level-color: #3b82f6; }
+
+.level-title {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--level-color);
+  transition: all 0.3s ease;
+}
 
 .violation-level-option:hover {
-  border-color: currentColor;
+  border-color: var(--level-color);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.violation-level-option.level-permitted:hover { border-color: #28a745; }
-.violation-level-option.level-warning:hover { border-color: #fd7e14; }
-.violation-level-option.level-disciplinary:hover { border-color: #dc3545; }
-
 .violation-level-option.active {
-  border-color: currentColor;
-  background: rgba(currentColor, 0.05);
+  border-color: var(--level-color);
+  background: color-mix(in srgb, var(--level-color), transparent 95%);
 }
 
 .violation-level-option.active::before {
-  background: currentColor;
+  background: var(--level-color);
 }
 
-.violation-level-option.active.level-permitted { border-color: #28a745; background: rgba(40, 167, 69, 0.05); }
-.violation-level-option.active.level-permitted::before { background: #28a745; }
+/* Manage Levels Color Dots */
+.vt-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
 
-.violation-level-option.active.level-warning { border-color: #fd7e14; background: rgba(253, 126, 20, 0.05); }
-.violation-level-option.active.level-warning::before { background: #fd7e14; }
+.vt-color-dot:hover {
+  transform: scale(1.2);
+}
 
-.violation-level-option.active.level-disciplinary { border-color: #dc3545; background: rgba(220, 53, 69, 0.05); }
-.violation-level-option.active.level-disciplinary::before { background: #dc3545; }
+.vt-color-dot.active {
+  border-color: #333;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  transform: scale(1.1);
+}
+
+.vt-save-all-btn {
+  background: var(--gold);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vt-save-all-btn:hover {
+  background: #e5c147;
+  transform: translateY(-1px);
+}
 
 /* Recorded & Disabled Level Styles */
 .violation-level-option.recorded {

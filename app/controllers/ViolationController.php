@@ -96,6 +96,31 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'get_statuses') {
+            $this->get_statuses();
+            return;
+        }
+
+        if ($action === 'create_status') {
+            $this->create_status();
+            return;
+        }
+
+        if ($action === 'update_status') {
+            $this->update_status();
+            return;
+        }
+
+        if ($action === 'delete_status') {
+            $this->delete_status();
+            return;
+        }
+
+        if ($action === 'restore_status') {
+            $this->restore_status();
+            return;
+        }
+
         if ($action === 'get_slip_data') {
             $this->get_slip_data();
             return;
@@ -675,13 +700,15 @@ class ViolationController extends Controller
         $name = $this->sanitize($input['name'] ?? '');
         $description = $this->sanitize($input['description'] ?? '');
         $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
+        $defaultStatus = $this->sanitize($input['default_status'] ?? 'warning');
+        $statusColor = $this->sanitize($input['status_color'] ?? '#f59e0b');
 
         if ($typeId <= 0) {
             $this->error('Violation type ID is required');
         }
 
         try {
-            $levelId = $this->model->createViolationLevel($typeId, $name, $description, $levelOrder);
+            $levelId = $this->model->createViolationLevel($typeId, $name, $description, $levelOrder, $defaultStatus, $statusColor);
             $levels = $this->model->getViolationLevels($typeId);
             $level = null;
             foreach ($levels as $l) {
@@ -707,13 +734,15 @@ class ViolationController extends Controller
         $name = $this->sanitize($input['name'] ?? '');
         $description = $this->sanitize($input['description'] ?? '');
         $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
+        $defaultStatus = $this->sanitize($input['default_status'] ?? 'warning');
+        $statusColor = $this->sanitize($input['status_color'] ?? '#f59e0b');
 
         if ($id <= 0 || $name === '') {
             $this->error('Level ID and name are required');
         }
 
         try {
-            $this->model->updateViolationLevel($id, $name, $description, $levelOrder);
+            $this->model->updateViolationLevel($id, $name, $description, $levelOrder, $defaultStatus, $statusColor);
             $this->success('Violation level updated successfully');
         } catch (Exception $e) {
             $this->error($e->getMessage());
@@ -760,6 +789,69 @@ class ViolationController extends Controller
         try {
             $this->model->restoreViolationLevel($id);
             $this->success('Violation level restored successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function get_statuses() {
+        try {
+            $includeArchived = $this->getGet('include_archived', '0') === '1';
+            $statuses = $this->model->getViolationStatuses($includeArchived);
+            $this->success('Violation statuses retrieved successfully', $statuses);
+        } catch (Exception $e) {
+            $this->error('Failed to retrieve statuses: ' . $e->getMessage());
+        }
+    }
+
+    private function create_status() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') $this->error('Invalid request method');
+        $input = $this->getManagementInput();
+        $name = $this->sanitize($input['name'] ?? '');
+        $color = $this->sanitize($input['status_color'] ?? $input['color'] ?? '#f59e0b');
+        try {
+            $id = $this->model->createViolationStatus($name, $color);
+            $this->success('Violation status created successfully', ['id' => $id, 'name' => $name, 'status_color' => $color]);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function update_status() {
+        $this->requireAdmin();
+        if (!in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT'], true)) $this->error('Invalid request method');
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        $name = $this->sanitize($input['name'] ?? '');
+        $color = $this->sanitize($input['status_color'] ?? $input['color'] ?? '#f59e0b');
+        try {
+            $this->model->updateViolationStatus($id, $name, $color);
+            $this->success('Violation status updated successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function delete_status() {
+        $this->requireAdmin();
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        try {
+            $this->model->deleteViolationStatus($id);
+            $this->success('Violation status deleted/archived successfully');
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    private function restore_status() {
+        $this->requireAdmin();
+        $input = $this->getManagementInput();
+        $id = (int)($input['id'] ?? $this->getGet('id', 0));
+        try {
+            $this->model->restoreViolationStatus($id);
+            $this->success('Violation status restored successfully');
         } catch (Exception $e) {
             $this->error($e->getMessage());
         }

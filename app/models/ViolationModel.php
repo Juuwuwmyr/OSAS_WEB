@@ -75,6 +75,33 @@ class ViolationModel extends Model {
             @$this->conn->query("ALTER TABLE violation_levels ADD COLUMN status ENUM('active', 'archived') DEFAULT 'active'");
             @$this->conn->query("ALTER TABLE violation_levels ADD INDEX idx_vl_status (status)");
         }
+
+        // Auto-fix: Create violation_statuses table if it doesn't exist
+        $this->conn->query("CREATE TABLE IF NOT EXISTS violation_statuses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            status_color VARCHAR(20) DEFAULT '#f59e0b',
+            status ENUM('active', 'archived') DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+
+        // Seed default statuses if table is empty
+        $statusCountCheck = $this->conn->query("SELECT COUNT(*) as count FROM violation_statuses");
+        if ($statusCountCheck && $statusCountCheck->fetch_assoc()['count'] == 0) {
+            $defaultStatuses = [
+                ['Warning', '#f59e0b'],
+                ['Permitted', '#10b981'],
+                ['Disciplinary', '#ef4444'],
+                ['Resolved', '#3b82f6']
+            ];
+            $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+            foreach ($defaultStatuses as $ds) {
+                $stmt->bind_param("ss", $ds[0], $ds[1]);
+                $stmt->execute();
+            }
+            $stmt->close();
+        }
         
         // First, check if there are any violations at all (without JOIN)
         $countQuery = "SELECT COUNT(*) as total FROM violations WHERE is_archived = ?";
@@ -519,6 +546,132 @@ class ViolationModel extends Model {
     }
 
     /**
+     * Get all violation statuses
+     */
+    public function getViolationStatuses($includeArchived = false) {
+        // Auto-fix: Create violation_statuses table if it doesn't exist
+        $this->conn->query("CREATE TABLE IF NOT EXISTS violation_statuses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            status_color VARCHAR(20) DEFAULT '#f59e0b',
+            status ENUM('active', 'archived') DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+
+        // Seed default statuses if table is empty
+        $statusCountCheck = $this->conn->query("SELECT COUNT(*) as count FROM violation_statuses");
+        if ($statusCountCheck && $statusCountCheck->fetch_assoc()['count'] == 0) {
+            $defaultStatuses = [
+                ['Warning', '#f59e0b'],
+                ['Permitted', '#10b981'],
+                ['Disciplinary', '#ef4444'],
+                ['Resolved', '#3b82f6']
+            ];
+            $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+            foreach ($defaultStatuses as $ds) {
+                $stmt->bind_param("ss", $ds[0], $ds[1]);
+                $stmt->execute();
+            }
+            $stmt->close();
+        }
+
+        $where = $includeArchived ? "" : " WHERE status = 'active'";
+        $query = "SELECT * FROM violation_statuses" . $where . " ORDER BY name ASC";
+        $result = $this->conn->query($query);
+        $statuses = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $statuses[] = $row;
+            }
+        }
+        return $statuses;
+    }
+
+    /**
+     * Create a new violation status
+     */
+    public function createViolationStatus($name, $color = '#f59e0b') {
+        $name = trim($name);
+        if ($name === '') throw new Exception('Status name is required');
+        
+        $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+        $stmt->bind_param("ss", $name, $color);
+        if (!$stmt->execute()) {
+            if ($this->conn->errno == 1062) throw new Exception('Status name already exists');
+            throw new Exception('Failed to create status: ' . $stmt->error);
+        }
+        $id = $stmt->insert_id;
+        $stmt->close();
+        return $id;
+    }
+
+    /**
+     * Update a violation status
+     */
+    public function updateViolationStatus($id, $name, $color) {
+        $name = trim($name);
+        if ($name === '') throw new Exception('Status name is required');
+        
+        $stmt = $this->conn->prepare("UPDATE violation_statuses SET name = ?, status_color = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $name, $color, $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete/Archive a violation status
+     */
+    public function deleteViolationStatus($id) {
+        // Check if status is in use in violation_levels
+        $stmt = $this->conn->prepare("SELECT name FROM violation_statuses WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $statusRow = $res->fetch_assoc();
+        $stmt->close();
+
+        if ($statusRow) {
+            $statusName = $statusRow['name'];
+            $stmt = $this->conn->prepare("SELECT COUNT(*) as cnt FROM violation_levels WHERE default_status = ?");
+            $stmt->bind_param("s", $statusName);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $count = $res->fetch_assoc()['cnt'];
+            $stmt->close();
+
+            if ($count > 0) {
+                // Archive if in use
+                $stmt = $this->conn->prepare("UPDATE violation_statuses SET status = 'archived' WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $success = $stmt->execute();
+                $stmt->close();
+                return $success;
+            } else {
+                // Delete if not in use
+                $stmt = $this->conn->prepare("DELETE FROM violation_statuses WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $success = $stmt->execute();
+                $stmt->close();
+                return $success;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Restore a violation status
+     */
+    public function restoreViolationStatus($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_statuses SET status = 'active' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
      * Get all violation types
      */
     public function getViolationTypes($includeArchived = false) {
@@ -648,7 +801,7 @@ class ViolationModel extends Model {
     /**
      * Create a violation level
      */
-    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null) {
+    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
         $name = trim($name);
         if ($name === '') {
             throw new Exception('Level name is required');
@@ -663,10 +816,10 @@ class ViolationModel extends Model {
         }
 
         $stmt = $this->conn->prepare(
-            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, created_at)
-             VALUES (?, ?, ?, ?, NOW())"
+            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, default_status, status_color, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())"
         );
-        $stmt->bind_param("iiss", $typeId, $levelOrder, $name, $description);
+        $stmt->bind_param("iissss", $typeId, $levelOrder, $name, $description, $defaultStatus, $statusColor);
         if (!$stmt->execute()) {
             $error = $stmt->error;
             $stmt->close();
@@ -680,7 +833,7 @@ class ViolationModel extends Model {
     /**
      * Update a violation level
      */
-    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null) {
+    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
         $name = trim($name);
         if ($name === '') {
             throw new Exception('Level name is required');
@@ -688,14 +841,14 @@ class ViolationModel extends Model {
 
         if ($levelOrder !== null) {
             $stmt = $this->conn->prepare(
-                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, updated_at = NOW() WHERE id = ?"
+                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
             );
-            $stmt->bind_param("ssii", $name, $description, $levelOrder, $id);
+            $stmt->bind_param("ssissi", $name, $description, $levelOrder, $defaultStatus, $statusColor, $id);
         } else {
             $stmt = $this->conn->prepare(
-                "UPDATE violation_levels SET name = ?, description = ?, updated_at = NOW() WHERE id = ?"
+                "UPDATE violation_levels SET name = ?, description = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
             );
-            $stmt->bind_param("ssi", $name, $description, $id);
+            $stmt->bind_param("ssssi", $name, $description, $defaultStatus, $statusColor, $id);
         }
         $success = $stmt->execute();
         $stmt->close();

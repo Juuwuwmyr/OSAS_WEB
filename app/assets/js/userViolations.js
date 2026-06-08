@@ -401,18 +401,18 @@ function renderViolationTable() {
     // ── LIST VIEW ──
     if (listBody) {
         listBody.innerHTML = paginatedItems.map(v => {
-            const status = (v.status || 'pending').toLowerCase();
+            let status = (v.status || 'warning').toLowerCase();
+            let statusText = v.statusLabel || 'Warning';
+
+            // Use level's default status if current status is generic 'warning'
+            if (status === 'warning' && v.levelDefaultStatus && v.levelDefaultStatus !== 'warning') {
+                status = v.levelDefaultStatus;
+                const labels = { 'permitted': 'Permitted', 'warning': 'Warning', 'disciplinary': 'Disciplinary', 'resolved': 'Resolved' };
+                statusText = labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+            }
+
+            const statusClass = status;
             const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
-            const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
-
-            let statusClass = 'warning';
-            let statusText = 'Pending';
-            if (status === 'resolved') { statusClass = 'resolved'; statusText = 'Resolved'; }
-            else if (status === 'permitted') { statusClass = 'permitted'; statusText = 'Permitted'; }
-            else if (isDisciplinary || status === 'disciplinary') { statusClass = 'disciplinary'; statusText = 'Disciplinary'; }
-            else if (status === 'warning') { statusClass = 'warning'; statusText = 'Warning'; }
-
             const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
             const violationTypeFormatted = formatViolationType(String(violationType));
             const typeClass  = getViolationTypeClass(violationType);
@@ -441,7 +441,7 @@ function renderViolationTable() {
                 </div>
                 <div class="violation-list-badges">
                     <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(violationTypeFormatted)}</span>
-                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
                     <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
                     <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
                     <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
@@ -456,18 +456,18 @@ function renderViolationTable() {
     const gridBody = document.getElementById('violationsGridBody');
     if (gridBody) {
         gridBody.innerHTML = paginatedItems.map(v => {
-            const status = (v.status || 'pending').toLowerCase();
+            let status = (v.status || 'warning').toLowerCase();
+            let statusText = v.statusLabel || 'Warning';
+
+            // Use level's default status if current status is generic 'warning'
+            if (status === 'warning' && v.levelDefaultStatus && v.levelDefaultStatus !== 'warning') {
+                status = v.levelDefaultStatus;
+                const labels = { 'permitted': 'Permitted', 'warning': 'Warning', 'disciplinary': 'Disciplinary', 'resolved': 'Resolved' };
+                statusText = labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+            }
+
+            const statusClass = status;
             const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
-            const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
-
-            let statusClass = 'warning';
-            let statusText = 'Pending';
-            if (status === 'resolved') { statusClass = 'resolved'; statusText = 'Resolved'; }
-            else if (status === 'permitted') { statusClass = 'permitted'; statusText = 'Permitted'; }
-            else if (isDisciplinary || status === 'disciplinary') { statusClass = 'disciplinary'; statusText = 'Disciplinary'; }
-            else if (status === 'warning') { statusClass = 'warning'; statusText = 'Warning'; }
-
             const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
             const violationTypeFormatted = formatViolationType(String(violationType));
             const typeClass  = getViolationTypeClass(violationType);
@@ -480,7 +480,7 @@ function renderViolationTable() {
                     <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
                 </div>
                 <div style="margin-bottom:8px;">
-                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px;">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
                 </div>
                 <div style="font-size:11px;color:var(--text-3,#64748b);display:flex;align-items:center;gap:4px;">
                     <i class='bx bx-calendar' style="font-size:12px;"></i>
