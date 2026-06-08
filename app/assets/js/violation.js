@@ -1685,13 +1685,16 @@ function initViolationsModule() {
                     // Create Badge
                     const badge = document.createElement('div');
                     
-                    // Determine class based on level name
+                    // Determine class based on status from database
+                    const status = (latest.status || 'warning').toLowerCase();
                     let statusClass = 'warning';
-                    const nameLower = levelName.toLowerCase();
-                    if (nameLower.includes('1st offense') || nameLower.includes('2nd offense') || nameLower.includes('permitted')) {
+                    
+                    if (status === 'permitted') {
                         statusClass = 'permitted';
-                    } else if (nameLower.includes('disciplinary') || nameLower.includes('5th offense') || nameLower.includes('warning 3')) {
+                    } else if (status === 'disciplinary') {
                         statusClass = 'disciplinary';
+                    } else if (status === 'resolved') {
+                        statusClass = 'resolved';
                     }
                     
                     badge.className = `violation-type-badge-overlay ${statusClass}`;
@@ -1786,29 +1789,16 @@ function initViolationsModule() {
 
             // STRICT PROGRESSION ENFORCEMENT
             // Disable any level that is more than 1 step ahead of the max recorded level
-            // Special Case: If Warning 3 is reached, stop there (disable Disciplinary Action level).
             
-            const isWarning3Reached = lastViolationLevelName.toLowerCase().includes('warning 3') || 
-                                     lastViolationLevelName.toLowerCase().includes('3rd') ||
-                                     lastViolationLevelName.toLowerCase().includes('5th offense');
-
             levelInputs.forEach((input, index) => {
                 let limit = maxLevelIndex + 1;
                 
-                // If Warning 3 is reached, do not allow proceeding to the next level (Disciplinary Action)
-                // effectively disabling it.
-                if (isWarning3Reached) {
-                    limit = maxLevelIndex; 
-                }
-
                 if (index > limit) {
                     input.disabled = true;
                     const optionContainer = input.closest('.violation-level-option');
                     if (optionContainer) {
                         optionContainer.classList.add('disabled', 'locked');
-                        optionContainer.title = isWarning3Reached 
-                            ? 'Maximum violation level reached (Disciplinary Status Active)' 
-                            : 'Complete previous levels first';
+                        optionContainer.title = 'Complete previous levels first';
                     }
                 }
             });
@@ -1817,15 +1807,6 @@ function initViolationsModule() {
 
             // Auto-select the next level
             if (maxLevelIndex > -1) {
-                // If Warning 3 is reached, don't select the next level
-                if (isWarning3Reached) {
-                    showNotification(`
-                        <strong>Maximum Violation Level Reached</strong><br>
-                        Student has reached 5th Offense. Status is now Disciplinary.
-                    `, 'warning', 6000);
-                    return;
-                }
-
                 // If the student has violations, select the NEXT level if available
                 if (maxLevelIndex < levelInputs.length - 1) {
                     const nextInput = levelInputs[maxLevelIndex + 1];
@@ -2837,18 +2818,8 @@ function initViolationsModule() {
             // Calculate statistics
             const totalViolations = studentViolations.length;
             const resolvedViolations = studentViolations.filter(v => v.status === 'resolved').length;
-            
-            // Apply Warning 3 -> Disciplinary logic for counts
-            const disciplinaryViolations = studentViolations.filter(v => {
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense');
-            }).length;
-            
-            const pendingViolations = studentViolations.filter(v => {
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) return false;
-                return ['warning', 'permitted'].includes(v.status);
-            }).length;
+            const disciplinaryViolations = studentViolations.filter(v => v.status === 'disciplinary').length;
+            const pendingViolations = studentViolations.filter(v => !['resolved', 'disciplinary'].includes(v.status)).length;
 
             // Render student profile
             const profileCard = document.getElementById('studentProfileCard');
@@ -2911,11 +2882,6 @@ function initViolationsModule() {
 
                 timeline.innerHTML = sortedViolations.map(violation => {
                     let displayStatus = violation.status;
-                    const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
-                        displayStatus = 'disciplinary';
-                    }
-                    
                     const statusClass = getStatusClass(displayStatus);
                     const typeClass = getViolationTypeClass(violation.violationTypeLabel);
 
@@ -3151,17 +3117,20 @@ function initViolationsModule() {
 
             // ── Helper: compute display status ──────────────────────────────
             function getDisplayStatus(v) {
+                // Rely entirely on the status from the database/API
                 let displayStatus = v.status;
-                let displayStatusLabel = v.statusLabel;
+                let displayStatusLabel = v.statusLabel || v.status;
+
                 // Don't override pending status — keep "Pending Sync" for offline violations
                 if (displayStatus === 'pending') {
-                    return { displayStatus, displayStatusLabel: displayStatusLabel || 'Pending Sync' };
+                    return { displayStatus, displayStatusLabel: 'Pending Sync' };
                 }
-                const ll = (v.violationLevelLabel || '').toLowerCase();
-                if ((ll.includes('warning 3') || ll.includes('3rd') || ll.includes('5th offense')) && displayStatus !== 'resolved') {
-                    displayStatus = 'disciplinary';
-                    displayStatusLabel = 'Disciplinary';
+                
+                // Capitalize for label if no label provided
+                if (!v.statusLabel) {
+                    displayStatusLabel = displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1);
                 }
+
                 return { displayStatus, displayStatusLabel };
             }
 
@@ -5506,62 +5475,60 @@ function initViolationsModule() {
         if (violationsGridView) violationsGridView.addEventListener('click', handleTableClick);
         if (violationsListView) violationsListView.addEventListener('click', handleTableClick);
 
-        // 13. TAB NAVIGATION
-        const tabBtns = document.querySelectorAll('.Violations-tab-btn');
-        const currentFiltersGroup = document.getElementById('currentFilters');
-        const archiveFiltersGroup = document.getElementById('archiveFilters');
-
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const view = this.dataset.view;
-                
-                // Update UI
-                tabBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                const currentFiltersGroup = document.getElementById('currentFilters');
-                const archiveFiltersGroup = document.getElementById('archiveFilters');
-                const mainTableContainer = document.querySelector('.Violations-table-container:not(#slipRequestsContainer)');
-                const slipRequestsContainer = document.getElementById('slipRequestsContainer');
-                const violationsGridView = document.getElementById('violationsGridView');
-                const violationsListView = document.getElementById('violationsListView');
-                const btnAddViolationLocal = document.getElementById('btnAddViolations');
-                const footerInfo = document.querySelector('.Violations-footer-info');
-                const pagination = document.querySelector('.Violations-pagination');
-
-                // Hide everything first
-                if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
-                if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
-                if (mainTableContainer) mainTableContainer.style.display = 'none';
-                if (violationsGridView) violationsGridView.style.display = 'none';
-                if (violationsListView) violationsListView.style.display = 'none';
-                if (slipRequestsContainer) slipRequestsContainer.style.display = 'none';
-                if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'none';
-                if (footerInfo) footerInfo.style.display = 'none';
-                if (pagination) pagination.style.display = 'none';
-
-                if (view === 'requests') {
-                    currentView = 'requests';
-                    if (slipRequestsContainer) slipRequestsContainer.style.display = 'block';
-                    loadSlipRequests();
-                } else if (view === 'archive') {
-                    currentView = 'archive';
-                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'flex';
-                    if (mainTableContainer) mainTableContainer.style.display = 'block';
-                    if (footerInfo) footerInfo.style.display = 'flex';
-                    if (pagination) pagination.style.display = 'flex';
-                    loadViolations(true).then(() => renderViolations());
-                } else {
-                    currentView = 'current';
-                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'flex';
-                    if (mainTableContainer) mainTableContainer.style.display = 'block';
-                    if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'flex';
-                    if (footerInfo) footerInfo.style.display = 'flex';
-                    if (pagination) pagination.style.display = 'flex';
-                    loadViolations(true).then(() => renderViolations());
-                }
+            // 13. TAB NAVIGATION
+            const tabBtns = document.querySelectorAll('.Violations-tab-btn');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    
+                    // Update UI
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+    
+                    const currentFiltersGroup = document.getElementById('currentFilters');
+                    const archiveFiltersGroup = document.getElementById('archiveFilters');
+                    const mainTableContainer = document.querySelector('.Violations-table-container:not(#slipRequestsContainer)');
+                    const slipRequestsContainer = document.getElementById('slipRequestsContainer');
+                    const violationsGridView = document.getElementById('violationsGridView');
+                    const violationsListView = document.getElementById('violationsListView');
+                    const btnAddViolationLocal = document.getElementById('btnAddViolations');
+                    const footerInfo = document.querySelector('.Violations-footer-info');
+                    const pagination = document.querySelector('.Violations-pagination');
+    
+                    // Hide everything first
+                    if (currentFiltersGroup) currentFiltersGroup.style.display = 'none';
+                    if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'none';
+                    if (mainTableContainer) mainTableContainer.style.display = 'none';
+                    if (violationsGridView) violationsGridView.style.display = 'none';
+                    if (violationsListView) violationsListView.style.display = 'none';
+                    if (slipRequestsContainer) slipRequestsContainer.style.display = 'none';
+                    if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'none';
+                    if (footerInfo) footerInfo.style.display = 'none';
+                    if (pagination) pagination.style.display = 'none';
+    
+                    if (view === 'requests') {
+                        currentView = 'requests';
+                        if (slipRequestsContainer) slipRequestsContainer.style.display = 'block';
+                        loadSlipRequests();
+                    } else if (view === 'archive') {
+                        currentView = 'archive';
+                        if (archiveFiltersGroup) archiveFiltersGroup.style.display = 'flex';
+                        if (mainTableContainer) mainTableContainer.style.display = 'block';
+                        if (footerInfo) footerInfo.style.display = 'flex';
+                        if (pagination) pagination.style.display = 'flex';
+                        loadViolations(true).then(() => renderViolations());
+                    } else {
+                        currentView = 'current';
+                        if (currentFiltersGroup) currentFiltersGroup.style.display = 'flex';
+                        if (mainTableContainer) mainTableContainer.style.display = 'block';
+                        if (btnAddViolationLocal) btnAddViolationLocal.style.display = 'flex';
+                        if (footerInfo) footerInfo.style.display = 'flex';
+                        if (pagination) pagination.style.display = 'flex';
+                        loadViolations(true).then(() => renderViolations());
+                    }
+                });
             });
-        });
 
         async function loadSlipRequests() {
             try {
