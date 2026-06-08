@@ -684,9 +684,6 @@ require_once __DIR__ . '/../../core/View.php';
             <select id="vtNewLevelStatus" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px;">
               <!-- Will be populated by JS -->
             </select>
-            <div class="vt-color-presets" id="vtNewLevelColorPresets" style="display: flex; gap: 6px; justify-content: center; padding: 5px; background: #f8f9fa; border-radius: 6px;">
-              <!-- Colors will be added by JS -->
-            </div>
             <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
               <i class='bx bx-plus'></i> Add Level
             </button>

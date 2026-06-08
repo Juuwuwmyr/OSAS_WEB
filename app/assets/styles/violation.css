@@ -5259,6 +5259,101 @@ body.dark #ViolationDetailsModal .timeline-content {
 }
 
 
+/* Dark mode for management modal */
+body.dark .vt-manage-body {
+  background: #1a1a1a;
+}
+
+body.dark .vt-manage-column-header,
+body.dark .vt-manage-add-form,
+body.dark .vt-manage-actions {
+  background: #1a1a1a !important;
+}
+
+body.dark .vt-manage-column {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-container {
+  background: #1a1a1a !important;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-header {
+  background: #222222 !important;
+  border-bottom-color: #333 !important;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-header h2 {
+  color: #fff !important;
+}
+
+body.dark #ViolationTypesManageModal .vt-manage-column-header h3 {
+  color: #e5e7eb !important;
+}
+
+body.dark .vt-manage-item {
+  background: #222222;
+  border-color: #333333;
+}
+
+body.dark .vt-manage-item:hover,
+body.dark .vt-manage-item:focus-within {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+body.dark .vt-manage-item.active {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold);
+}
+
+body.dark .vt-manage-item-name,
+body.dark .vt-level-name-input,
+body.dark .vt-status-name-input {
+  color: #ffffff;
+}
+
+body.dark .vt-level-status-input,
+body.dark .vt-manage-add-form input,
+body.dark .vt-manage-add-form select {
+  background: #2a2a2a !important;
+  border-color: #3f3f3f !important;
+  color: #ffffff !important;
+}
+
+body.dark .vt-level-status-input option {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+body.dark .vt-manage-empty {
+  color: #6b7280;
+}
+
+body.dark .vt-manage-count {
+  background: #2a2a2a;
+  color: #9ca3af;
+}
+
+body.dark .vt-toggle-view-btn {
+  background: #2a2a2a;
+  border-color: #3f3f3f;
+  color: #9ca3af;
+}
+
+body.dark .vt-color-presets {
+  background: #2a2a2a !important;
+}
+
+body.dark .vt-manage-item-delete,
+body.dark .vt-manage-item-restore {
+  color: #9ca3af;
+}
+
+body.dark .vt-manage-item-delete:hover {
+  color: #ef4444;
+}
+
 /* ============================================================
    MOBILE: Disable modal animations for instant popup (performance)
    ============================================================ */
@@ -5351,20 +5446,26 @@ body.dark #ViolationDetailsModal .timeline-content {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--border, #e5e7eb);
   background: #fff;
   margin-bottom: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.vt-manage-item:hover {
+.vt-manage-item:hover,
+.vt-manage-item:focus-within {
   border-color: rgba(212, 175, 55, 0.4);
 }
 
 .vt-manage-item.active {
   border-color: var(--gold, #d4af37);
   background: rgba(212, 175, 55, 0.08);
+}
+
+.vt-level-name-input:focus,
+.vt-status-name-input:focus {
+  outline: none;
 }
 
 .vt-manage-item-info {

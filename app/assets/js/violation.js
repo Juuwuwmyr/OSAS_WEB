@@ -926,27 +926,6 @@ function initViolationsModule() {
         }
 
         let selectedManageTypeId = null;
-        let selectedNewLevelColor = '#f59e0b'; // Default orange
-
-        // Initialize color presets for new level form
-        function initNewLevelColorPresets() {
-            const container = document.getElementById('vtNewLevelColorPresets');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            STATUS_COLOR_PRESETS.forEach(preset => {
-                const dot = document.createElement('div');
-                dot.className = 'vt-color-dot' + (preset.value === selectedNewLevelColor ? ' active' : '');
-                dot.style.backgroundColor = preset.value;
-                dot.title = preset.name;
-                dot.onclick = () => {
-                    selectedNewLevelColor = preset.value;
-                    document.querySelectorAll('#vtNewLevelColorPresets .vt-color-dot').forEach(d => d.classList.remove('active'));
-                    dot.classList.add('active');
-                };
-                container.appendChild(dot);
-            });
-        }
 
         function getViolationTypeIcon(nameLower) {
             if (nameLower.includes('uniform')) return 'bx-t-shirt';
@@ -981,7 +960,6 @@ function initViolationsModule() {
             
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
-            initNewLevelColorPresets();
 
             // Setup toggle and status add listeners (only once)
             const toggleBtn = document.getElementById('vtToggleStatusesBtn');
@@ -1126,18 +1104,6 @@ function initViolationsModule() {
                 item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
                 item.dataset.levelId = level.id;
                 
-                // Build color options for this level
-                let colorOptionsHtml = '';
-                STATUS_COLOR_PRESETS.forEach(preset => {
-                    const isActive = (level.status_color || '#f59e0b') === preset.value;
-                    colorOptionsHtml += `
-                        <div class="vt-color-dot ${isActive ? 'active' : ''}" 
-                             style="background-color: ${preset.value};" 
-                             title="${preset.name}"
-                             onclick="updateLevelStyle(${level.id}, '${preset.value}', this)"></div>
-                    `;
-                });
-
                 // Dynamic statuses from database
                 let statusOptionsHtml = '';
                 let activeStatuses = (violationStatuses || []).filter(s => s.status === 'active');
@@ -1161,15 +1127,12 @@ function initViolationsModule() {
                     <div class="vt-manage-item-info" style="flex: 1;">
                         <input type="text" class="vt-level-name-input" value="${escapeHtml(level.name)}" style="font-weight: 600; font-size: 13px; border: none; background: transparent; width: 100%; margin-bottom: 2px;" placeholder="Level Name">
                         <div class="vt-manage-item-status-select" style="margin-top: 5px;">
-                            <label style="font-size: 10px; color: #666; display: block; margin-bottom: 2px;">Default Status & Color:</label>
-                            <select class="vt-level-status-input" style="font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; width: 100%; margin-bottom: 4px; background: #fff;">
-                                ${statusOptionsHtml}
-                            </select>
-                            <div style="display: flex; gap: 4px; align-items: center;">
-                                <div class="vt-level-presets-row" style="display: flex; gap: 4px; flex: 1;">
-                                    ${colorOptionsHtml}
-                                </div>
-                                <button type="button" class="vt-save-level-btn" title="Save changes" style="background: var(--gold); border: none; border-radius: 4px; color: #fff; padding: 2px 6px; font-size: 10px; cursor: pointer;">
+                            <label style="font-size: 10px; color: #666; display: block; margin-bottom: 2px;">Default Status:</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select class="vt-level-status-input" style="font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; flex: 1;">
+                                    ${statusOptionsHtml}
+                                </select>
+                                <button type="button" class="vt-save-level-btn" title="Save changes" style="background: var(--gold); border: none; border-radius: 4px; color: #fff; padding: 4px 8px; font-size: 10px; cursor: pointer;">
                                     Save
                                 </button>
                             </div>
@@ -1197,16 +1160,11 @@ function initViolationsModule() {
                     saveBtn.onclick = () => {
                         const newName = nameInput.value.trim();
                         const newStatus = statusInput.value;
-                        const currentColor = item.querySelector('.vt-color-dot.active')?.style.backgroundColor || level.status_color || '#f59e0b';
-                        // Convert RGB back to Hex if needed
-                        let hexColor = currentColor;
-                        if (currentColor.startsWith('rgb')) {
-                            const rgb = currentColor.match(/\d+/g);
-                            hexColor = '#' + rgb.map(x => {
-                                const hex = parseInt(x).toString(16);
-                                return hex.length === 1 ? '0' + hex : hex;
-                            }).join('');
-                        }
+                        
+                        // Find color from global statuses
+                        const statusObj = violationStatuses.find(s => s.name === newStatus);
+                        const hexColor = statusObj ? statusObj.status_color : '#f59e0b';
+                        
                         saveLevelChanges(level.id, newName, newStatus, hexColor, typeId);
                     };
                 }
@@ -1334,23 +1292,16 @@ function initViolationsModule() {
                 const levelId = item.dataset.levelId;
                 const nameInput = item.querySelector('.vt-level-name-input');
                 const statusInput = item.querySelector('.vt-level-status-input');
-                const activeDot = item.querySelector('.vt-color-dot.active');
                 
-                if (levelId && nameInput && statusInput && activeDot) {
-                    let color = activeDot.style.backgroundColor;
-                    // Convert RGB to Hex
-                    if (color.startsWith('rgb')) {
-                        const rgb = color.match(/\d+/g);
-                        color = '#' + rgb.map(x => {
-                            const hex = parseInt(x).toString(16);
-                            return hex.length === 1 ? '0' + hex : hex;
-                        }).join('');
-                    }
+                if (levelId && nameInput && statusInput) {
+                    const statusName = statusInput.value.trim();
+                    const statusObj = violationStatuses.find(s => s.name === statusName);
+                    const color = statusObj ? statusObj.status_color : '#f59e0b';
                     
                     updates.push({
                         id: levelId,
                         name: nameInput.value.trim(),
-                        default_status: statusInput.value.trim(),
+                        default_status: statusName,
                         status_color: color
                     });
                 }
@@ -1434,13 +1385,17 @@ function initViolationsModule() {
             }
 
             const name = nameInput.value.trim();
-            const defaultStatus = statusInput ? statusInput.value : 'warning';
+            const defaultStatus = statusInput ? statusInput.value : 'Warning';
             
             if (!name) {
                 showNotification('Please enter a level name', 'warning');
                 nameInput.focus();
                 return;
             }
+
+            // Find color from global statuses
+            const statusObj = violationStatuses.find(s => s.name === defaultStatus);
+            const color = statusObj ? statusObj.status_color : '#f59e0b';
 
             try {
                 showLoadingOverlay('Adding level...');
@@ -1451,7 +1406,7 @@ function initViolationsModule() {
                         violation_type_id: selectedManageTypeId,
                         name: name,
                         default_status: defaultStatus,
-                        status_color: selectedNewLevelColor
+                        status_color: color
                     })
                 });
                 const data = await response.json();

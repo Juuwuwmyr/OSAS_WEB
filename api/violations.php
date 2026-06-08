@@ -32,6 +32,7 @@ try {
                 'archive', 'request_slip', 'approve_slip', 'deny_slip',
                 'create_type', 'update_type', 'delete_type', 'restore_type',
                 'create_level', 'update_level', 'delete_level', 'restore_level',
+                'create_status', 'update_status', 'delete_status', 'restore_status',
                 'mark_as_read', 'mark_all_read'
             ], true)) {
                 $controller->index();
@@ -42,7 +43,7 @@ try {
 
         case 'PUT':
             $action = $_GET['action'] ?? '';
-            if (in_array($action, ['update_type', 'update_level'], true)) {
+            if (in_array($action, ['update_type', 'update_level', 'update_status'], true)) {
                 $controller->index();
             } else {
                 $controller->update();
@@ -51,7 +52,7 @@ try {
 
         case 'DELETE':
             $action = $_GET['action'] ?? '';
-            if (in_array($action, ['delete_type', 'delete_level'], true)) {
+            if (in_array($action, ['delete_type', 'delete_level', 'delete_status'], true)) {
                 $controller->index();
             } else {
                 $controller->delete();
