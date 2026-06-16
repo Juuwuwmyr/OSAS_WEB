@@ -952,7 +952,10 @@ HOW-TO FOR ADMINS:
             responseText = responseText.trim();
 
             // Extract actions from response
+            console.log('🤖 Raw AI Response:', responseText);
             const { cleanText, actions } = this.extractActions(responseText);
+            console.log('🤖 Clean Text:', cleanText);
+            console.log('🤖 Extracted Actions:', actions);
             responseText = cleanText;
 
             // Add bot response to UI
@@ -1166,18 +1169,48 @@ HOW-TO FOR ADMINS:
         const actions = [];
         let cleanText = text;
 
-        // Find JSON blocks
-        const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
+        // 1. Find JSON blocks with ```json
+        const jsonRegex1 = /```json\s*([\s\S]*?)\s*```/g;
         let match;
-
-        while ((match = jsonRegex.exec(text)) !== null) {
+        
+        while ((match = jsonRegex1.exec(text)) !== null) {
             try {
                 const actionData = JSON.parse(match[1]);
                 actions.push(actionData);
-                // Remove the JSON block from display text
                 cleanText = cleanText.replace(match[0], '');
+                console.log('🤖 Extracted action from ```json block:', actionData);
             } catch (e) {
-                console.warn('Failed to parse action JSON:', e);
+                console.warn('Failed to parse ```json action JSON:', e);
+            }
+        }
+        
+        // 2. Find JSON blocks with just ```
+        const jsonRegex2 = /```\s*([\s\S]*?)\s*```/g;
+        while ((match = jsonRegex2.exec(cleanText)) !== null) {
+            try {
+                const actionData = JSON.parse(match[1]);
+                actions.push(actionData);
+                cleanText = cleanText.replace(match[0], '');
+                console.log('🤖 Extracted action from ``` block:', actionData);
+            } catch (e) {
+                console.warn('Failed to parse plain ``` block JSON:', e);
+            }
+        }
+        
+        // 3. If no actions found yet, try to find any JSON object that looks like an action
+        if (actions.length === 0) {
+            const looseJsonRegex = /\{[\s\S]*?"action"[\s\S]*?\}/g;
+            while ((match = looseJsonRegex.exec(text)) !== null) {
+                try {
+                    const actionData = JSON.parse(match[0]);
+                    if (actionData.action) {
+                        actions.push(actionData);
+                        cleanText = cleanText.replace(match[0], '');
+                        console.log('🤖 Extracted loose action JSON:', actionData);
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse loose JSON:', e);
+                }
             }
         }
 
@@ -1188,6 +1221,7 @@ HOW-TO FOR ADMINS:
      * Execute actions suggested by the AI
      */
     async executeActions(actions) {
+        console.log('🤖 executeActions called with:', actions);
         for (const actionData of actions) {
             const { action, params } = actionData;
             console.log('🤖 Executing system action:', action, params);
@@ -1201,6 +1235,7 @@ HOW-TO FOR ADMINS:
                         await this.handleCreateLevel(params);
                         break;
                     case 'export_pdf':
+                        console.log('🤖 Calling handleExportPDF');
                         await this.handleExportPDF(params);
                         break;
                     default:
@@ -1250,6 +1285,8 @@ HOW-TO FOR ADMINS:
     }
 
     async handleExportPDF(params) {
+        console.log('🤖 handleExportPDF called with params:', params);
+        
         // Validation check
         if (!params || !params.module) {
             console.error('Bot Export Error: Missing module parameter', params);
@@ -1258,7 +1295,6 @@ HOW-TO FOR ADMINS:
         }
 
         const moduleName = params.module.charAt(0).toUpperCase() + params.module.slice(1);
-        this.addMessage('bot', `📄 I've prepared the **${moduleName}** data for you. Click the button below to download your PDF report.`);
         
         try {
             // Identify what data we need to fetch
@@ -1292,10 +1328,19 @@ HOW-TO FOR ADMINS:
                     { header: 'HOD', dataKey: 'hod' },
                     { header: 'Students', dataKey: 'student_count' }
                 ];
+            } else {
+                throw new Error(`Unknown module: ${params.module}`);
             }
-
-            // Create a custom bubble with a download button
+            
+            console.log('🤖 handleExportPDF - apiEndpoint:', this.apiBase + apiEndpoint);
+            
+            // Check if container exists
             const container = document.getElementById('chatbot-messages');
+            if (!container) {
+                throw new Error('Chat messages container not found');
+            }
+            
+            // Create a custom bubble with a download button
             const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
             const row = document.createElement('div');
             row.className = 'cb-msg-row cb-bot-row';
@@ -1307,7 +1352,7 @@ HOW-TO FOR ADMINS:
                 <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
                 <div class="cb-bubble cb-bot-bubble">
                     <div class="cb-bubble-text">
-                        <div style="margin-bottom: 10px;">Your <strong>${moduleName}</strong> report is ready:</div>
+                        <div style="margin-bottom: 10px;">📄 Your <strong>${moduleName}</strong> report is ready:</div>
                         <button class="cb-download-btn" id="dl-btn-${Date.now()}" style="display: flex; align-items: center; gap: 8px; background: var(--gold); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; justify-content: center; transition: opacity 0.2s;">
                             <i class='bx bxs-file-pdf' style="font-size: 18px;"></i>
                             Download PDF
@@ -1318,16 +1363,23 @@ HOW-TO FOR ADMINS:
 
             container.appendChild(row);
             container.scrollTop = container.scrollHeight;
+            console.log('🤖 handleExportPDF - Download button added to DOM');
 
             // Attach click event to the newly created button
             const btn = row.querySelector('.cb-download-btn');
+            if (!btn) {
+                throw new Error('Download button not found after creation');
+            }
+            
             btn.onclick = async () => {
                 btn.disabled = true;
                 btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;
                 
                 try {
+                    console.log('🤖 handleExportPDF - Fetching data from:', this.apiBase + apiEndpoint);
                     const res = await fetch(this.apiBase + apiEndpoint);
                     const responseData = await res.json();
+                    console.log('🤖 handleExportPDF - API response:', responseData);
                     
                     // Standardize data extraction based on our API structure
                     let exportData = [];
@@ -1340,8 +1392,10 @@ HOW-TO FOR ADMINS:
                             exportData = responseData.data.students || responseData.data || [];
                         }
                     }
+                    console.log('🤖 handleExportPDF - Export data ready, count:', exportData.length);
 
-                    if (exportData.length > 0 && typeof window.jspdf !== 'undefined') {
+                    if (exportData.length > 0 && typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+                        console.log('🤖 handleExportPDF - Generating PDF');
                         const { jsPDF } = window.jspdf;
                         const doc = new jsPDF();
                         
@@ -1363,12 +1417,19 @@ HOW-TO FOR ADMINS:
                         btn.innerHTML = `<i class='bx bx-check'></i> Downloaded`;
                         btn.style.background = '#10b981'; // Green
                     } else {
-                        throw new Error('PDF library or data missing');
+                        if (typeof window.jspdf === 'undefined') {
+                            throw new Error('PDF library (jsPDF) not loaded');
+                        }
+                        if (exportData.length === 0) {
+                            throw new Error('No data available to export');
+                        }
+                        throw new Error('PDF generation failed');
                     }
                 } catch (err) {
                     btn.innerHTML = `<i class='bx bx-error'></i> Error`;
                     btn.style.background = '#ef4444';
                     console.error('Download failed:', err);
+                    this.addMessage('bot', `❌ Download failed: ${err.message}`);
                 }
             };
 
