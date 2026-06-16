@@ -1303,7 +1303,7 @@ HOW-TO FOR ADMINS:
             let title = `OSAS ${params.module.toUpperCase()} REPORT`;
 
             if (params.module === 'violations') {
-                apiEndpoint = 'violations.php?action=get';
+                apiEndpoint = 'violations.php?action=get&filter=active';
                 columns = [
                     { header: 'Student', dataKey: 'studentName' },
                     { header: 'Type', dataKey: 'violationType' },
@@ -1312,7 +1312,7 @@ HOW-TO FOR ADMINS:
                     { header: 'Date', dataKey: 'violationDate' }
                 ];
             } else if (params.module === 'students') {
-                apiEndpoint = 'students.php?action=get';
+                apiEndpoint = 'students.php?action=get&filter=active';
                 columns = [
                     { header: 'ID', dataKey: 'studentId' },
                     { header: 'First Name', dataKey: 'firstName' },
@@ -1321,7 +1321,7 @@ HOW-TO FOR ADMINS:
                     { header: 'Section', dataKey: 'section' }
                 ];
             } else if (params.module === 'departments') {
-                apiEndpoint = 'departments.php?action=get&limit=1000';
+                apiEndpoint = 'departments.php?action=get&filter=active&limit=1000';
                 columns = [
                     { header: 'Code', dataKey: 'code' },
                     { header: 'Department Name', dataKey: 'name' },

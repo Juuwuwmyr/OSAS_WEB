@@ -587,7 +587,7 @@ function callOpenAI($messages) {
         'model' => AI_MODEL,
         'messages' => $messages,
         'temperature' => 0.7,
-        'max_tokens' => 500
+        'max_tokens' => 2048
     ];
     
     $json_data = json_encode($data);
@@ -746,7 +746,7 @@ function callGroqWithKey($messages, $apiKey) {
         'model' => AI_MODEL,
         'messages' => $messages,
         'temperature' => 0.7,
-        'max_tokens' => 450
+        'max_tokens' => 2048
     ];
     
     $verify_ssl = defined('VERIFY_SSL_CERTIFICATE') ? VERIFY_SSL_CERTIFICATE : false;
