@@ -951,8 +951,17 @@ HOW-TO FOR ADMINS:
             // Trim the response
             responseText = responseText.trim();
 
+            // Extract actions from response
+            const { cleanText, actions } = this.extractActions(responseText);
+            responseText = cleanText;
+
             // Add bot response to UI
             this.addMessage('bot', responseText);
+
+            // Execute actions if any
+            if (actions && actions.length > 0) {
+                this.executeActions(actions);
+            }
 
             // Add to conversation history
             this.conversationHistory.push({
@@ -1148,6 +1157,225 @@ HOW-TO FOR ADMINS:
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * Extract JSON actions from AI response
+     */
+    extractActions(text) {
+        const actions = [];
+        let cleanText = text;
+
+        // Find JSON blocks
+        const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
+        let match;
+
+        while ((match = jsonRegex.exec(text)) !== null) {
+            try {
+                const actionData = JSON.parse(match[1]);
+                actions.push(actionData);
+                // Remove the JSON block from display text
+                cleanText = cleanText.replace(match[0], '');
+            } catch (e) {
+                console.warn('Failed to parse action JSON:', e);
+            }
+        }
+
+        return { cleanText: cleanText.trim(), actions };
+    }
+
+    /**
+     * Execute actions suggested by the AI
+     */
+    async executeActions(actions) {
+        for (const actionData of actions) {
+            const { action, params } = actionData;
+            console.log('🤖 Executing system action:', action, params);
+
+            try {
+                switch (action) {
+                    case 'create_violation_type':
+                        await this.handleCreateType(params);
+                        break;
+                    case 'create_violation_level':
+                        await this.handleCreateLevel(params);
+                        break;
+                    case 'export_pdf':
+                        await this.handleExportPDF(params);
+                        break;
+                    default:
+                        console.warn('Unknown action:', action);
+                }
+            } catch (err) {
+                console.error(`Action ${action} failed:`, err);
+                this.addMessage('bot', `⚠️ I tried to perform that action but encountered an error: ${err.message}`);
+            }
+        }
+    }
+
+    async handleCreateType(params) {
+        if (!params.name) throw new Error('Type name is required');
+        
+        const res = await fetch(this.apiBase + 'violations.php?action=create_type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: params.name })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            this.addMessage('bot', `✅ Successfully created violation type: **${params.name}**`);
+            // Trigger UI refresh if we are on the violations page
+            if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
+        } else throw new Error(data.message);
+    }
+
+    async handleCreateLevel(params) {
+        if (!params.type_id || !params.name) throw new Error('Type ID and Level Name are required');
+        
+        const res = await fetch(this.apiBase + 'violations.php?action=create_level', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                violation_type_id: params.type_id,
+                name: params.name,
+                default_status: params.status || 'Warning',
+                status_color: '#f59e0b'
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            this.addMessage('bot', `✅ Successfully added level **${params.name}** to the violation type.`);
+            if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
+        } else throw new Error(data.message);
+    }
+
+    async handleExportPDF(params) {
+        // Validation check
+        if (!params || !params.module) {
+            console.error('Bot Export Error: Missing module parameter', params);
+            this.addMessage('bot', `⚠️ I tried to export a report but didn't know which module to use. Please specify if you want a **violations**, **students**, or **departments** report.`);
+            return;
+        }
+
+        const moduleName = params.module.charAt(0).toUpperCase() + params.module.slice(1);
+        this.addMessage('bot', `📄 I've prepared the **${moduleName}** data for you. Click the button below to download your PDF report.`);
+        
+        try {
+            // Identify what data we need to fetch
+            let apiEndpoint = '';
+            let columns = [];
+            let title = `OSAS ${params.module.toUpperCase()} REPORT`;
+
+            if (params.module === 'violations') {
+                apiEndpoint = 'violations.php?action=get';
+                columns = [
+                    { header: 'Student', dataKey: 'studentName' },
+                    { header: 'Type', dataKey: 'violationType' },
+                    { header: 'Level', dataKey: 'violationLevel' },
+                    { header: 'Status', dataKey: 'status' },
+                    { header: 'Date', dataKey: 'violationDate' }
+                ];
+            } else if (params.module === 'students') {
+                apiEndpoint = 'students.php?action=get';
+                columns = [
+                    { header: 'ID', dataKey: 'studentId' },
+                    { header: 'First Name', dataKey: 'firstName' },
+                    { header: 'Last Name', dataKey: 'lastName' },
+                    { header: 'Department', dataKey: 'department' },
+                    { header: 'Section', dataKey: 'section' }
+                ];
+            } else if (params.module === 'departments') {
+                apiEndpoint = 'departments.php?action=get&limit=1000';
+                columns = [
+                    { header: 'Code', dataKey: 'code' },
+                    { header: 'Department Name', dataKey: 'name' },
+                    { header: 'HOD', dataKey: 'hod' },
+                    { header: 'Students', dataKey: 'student_count' }
+                ];
+            }
+
+            // Create a custom bubble with a download button
+            const container = document.getElementById('chatbot-messages');
+            const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+            const row = document.createElement('div');
+            row.className = 'cb-msg-row cb-bot-row';
+            
+            const timestamp = new Date().toISOString().slice(0,10);
+            const fileName = `OSAS_${params.module}_Report_${timestamp}.pdf`;
+
+            row.innerHTML = `
+                <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
+                <div class="cb-bubble cb-bot-bubble">
+                    <div class="cb-bubble-text">
+                        <div style="margin-bottom: 10px;">Your <strong>${moduleName}</strong> report is ready:</div>
+                        <button class="cb-download-btn" id="dl-btn-${Date.now()}" style="display: flex; align-items: center; gap: 8px; background: var(--gold); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; justify-content: center; transition: opacity 0.2s;">
+                            <i class='bx bxs-file-pdf' style="font-size: 18px;"></i>
+                            Download PDF
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+
+            // Attach click event to the newly created button
+            const btn = row.querySelector('.cb-download-btn');
+            btn.onclick = async () => {
+                btn.disabled = true;
+                btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;
+                
+                try {
+                    const res = await fetch(this.apiBase + apiEndpoint);
+                    const responseData = await res.json();
+                    
+                    // Standardize data extraction based on our API structure
+                    let exportData = [];
+                    if (responseData.status === 'success') {
+                        if (params.module === 'departments') {
+                            exportData = responseData.data.departments || [];
+                        } else if (params.module === 'violations') {
+                            exportData = responseData.data.violations || responseData.data || [];
+                        } else if (params.module === 'students') {
+                            exportData = responseData.data.students || responseData.data || [];
+                        }
+                    }
+
+                    if (exportData.length > 0 && typeof window.jspdf !== 'undefined') {
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF();
+                        
+                        doc.setFontSize(18);
+                        doc.text(title, 14, 22);
+                        doc.setFontSize(11);
+                        doc.setTextColor(100);
+                        doc.text(`Generated by OSAS Bot on ${new Date().toLocaleString()}`, 14, 30);
+
+                        doc.autoTable({
+                            startY: 35,
+                            head: [columns.map(col => col.header)],
+                            body: exportData.map(row => columns.map(col => row[col.dataKey] || '')),
+                            theme: 'striped',
+                            headStyles: { fillColor: [212, 175, 55] }
+                        });
+
+                        doc.save(fileName);
+                        btn.innerHTML = `<i class='bx bx-check'></i> Downloaded`;
+                        btn.style.background = '#10b981'; // Green
+                    } else {
+                        throw new Error('PDF library or data missing');
+                    }
+                } catch (err) {
+                    btn.innerHTML = `<i class='bx bx-error'></i> Error`;
+                    btn.style.background = '#ef4444';
+                    console.error('Download failed:', err);
+                }
+            };
+
+        } catch (err) {
+            console.error('Bot Export UI Error:', err);
+            this.addMessage('bot', `❌ Failed to prepare the download: ${err.message}`);
+        }
     }
 
     togglePrompts() { /* no-op — prompts are now inline chips */ }

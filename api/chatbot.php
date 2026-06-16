@@ -17,6 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../app/config/db_connect.php';
 
+// Ensure $conn is available if it was wrapped in a function or scope
+if (!isset($conn) && isset($GLOBALS['conn'])) {
+    $conn = $GLOBALS['conn'];
+}
+
 // Load AI API configuration
 $ai_config_file = __DIR__ . '/../app/config/ai_config.php';
 if (file_exists($ai_config_file)) {
@@ -104,8 +109,20 @@ RESPONSE RULES
 2. **Formatting:** Use bullet points, numbered lists, and bold text for clarity.
 3. **Length:** Be concise. Simple questions get 1-3 sentences. How-to guides use step-by-step format.
 4. **Scope:** Only answer questions related to E-OSAS, student affairs, and school discipline.
-5. **Conversational Style:** Be casual and approachable. Match the user's language (English, Filipino, or Taglish).
-6. **Troubleshooting:** For problems, suggest: clear cache, check connection, verify login, contact admin.
+6. **SYSTEM ACTIONS (NEW):** You can now trigger administrative actions. If a user asks to create something or export data, include a JSON block at the end of your message in this format:
+   ```json
+   {
+     "action": "export_pdf",
+     "params": { "module": "violations" }
+   }
+   ```
+   **Supported Actions:**
+   - `create_violation_type`: `{"name": "Type Name"}`
+    - `create_violation_level`: `{"type_id": ID, "name": "Level Name", "status": "Warning/Permitted/etc"}`
+    - `export_pdf`: `{"module": "violations"}` OR `{"module": "students"}` OR `{"module": "departments"}`
+
+7. **Conversational Style:** Be casual and approachable. Match the user's language (English, Filipino, or Taglish).
+8. **Troubleshooting:** For problems, suggest: clear cache, check connection, verify login, contact admin.
 
 PROMPT;
 
@@ -179,7 +196,7 @@ STAFF_PROMPT;
 
 
 // Optionally add database context
-if (USE_DATABASE_CONTEXT && $conn && !$conn->connect_error) {
+if (USE_DATABASE_CONTEXT && isset($conn) && $conn && !$conn->connect_error) {
     $context = getDatabaseContext($conn, $user_id, $user_role);
     if ($context) {
         $system_prompt .= "\n\nCurrent system context:\n" . $context;
@@ -232,6 +249,10 @@ try {
  * Get database context for the chatbot
  */
 function getDatabaseContext($conn, $user_id, $user_role) {
+    if (!$conn || $conn->connect_error) {
+        return "Database connection unavailable.";
+    }
+    
     $context = [];
     $isStudent = ($user_role === 'user');
     try {
