@@ -1192,35 +1192,37 @@ HOW-TO FOR ADMINS:
         const actions = [];
         let cleanText = text;
 
-        // 1. Find JSON blocks with ```json
-        const jsonRegex1 = /```json\s*([\s\S]*?)\s*```/g;
+        // 1. FIRST: Find ALL possible code blocks (json or not)
+        const allCodeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
         let match;
+        let tempText = text;
+        const matchesToRemove = [];
         
-        while ((match = jsonRegex1.exec(text)) !== null) {
+        // Collect all code blocks first
+        while ((match = allCodeBlockRegex.exec(tempText)) !== null) {
             try {
-                const actionData = JSON.parse(match[1]);
-                actions.push(actionData);
-                cleanText = cleanText.replace(match[0], '');
-                console.log('🤖 Extracted action from ```json block:', actionData);
+                // Strip JS-style comments before parsing (AI sometimes adds // comments)
+                const stripped = match[1].trim()
+                    .replace(/\/\/[^\n]*/g, '')   // remove // line comments
+                    .replace(/\/\*[\s\S]*?\*\//g, ''); // remove /* block comments */
+                const actionData = JSON.parse(stripped);
+                if (actionData.action) {
+                    actions.push(actionData);
+                    matchesToRemove.push(match[0]);
+                    console.log('🤖 Extracted action from code block:', actionData);
+                }
             } catch (e) {
-                console.warn('Failed to parse ```json action JSON:', e);
+                // Not valid JSON, skip
+                console.warn('Code block not valid action JSON:', e);
             }
         }
         
-        // 2. Find JSON blocks with just ```
-        const jsonRegex2 = /```\s*([\s\S]*?)\s*```/g;
-        while ((match = jsonRegex2.exec(cleanText)) !== null) {
-            try {
-                const actionData = JSON.parse(match[1]);
-                actions.push(actionData);
-                cleanText = cleanText.replace(match[0], '');
-                console.log('🤖 Extracted action from ``` block:', actionData);
-            } catch (e) {
-                console.warn('Failed to parse plain ``` block JSON:', e);
-            }
-        }
+        // 2. Now remove all the matched code blocks from cleanText
+        matchesToRemove.forEach(block => {
+            cleanText = cleanText.replace(block, '');
+        });
         
-        // 3. If no actions found yet, try to find any JSON object that looks like an action
+        // 3. If still no actions, try loose JSON matching
         if (actions.length === 0) {
             const looseJsonRegex = /\{[\s\S]*?"action"[\s\S]*?\}/g;
             while ((match = looseJsonRegex.exec(text)) !== null) {
@@ -1237,7 +1239,13 @@ HOW-TO FOR ADMINS:
             }
         }
 
-        return { cleanText: cleanText.trim(), actions };
+        // 4. FINAL CLEANUP: Remove extra newlines/whitespace from cleanText
+        cleanText = cleanText
+            .replace(/\n\s*\n\s*\n/g, '\n\n') // Collapse multiple blank lines
+            .replace(/^\s+|\s+$/g, '')       // Trim
+            .trim();
+
+        return { cleanText, actions };
     }
 
     /**
@@ -1245,7 +1253,37 @@ HOW-TO FOR ADMINS:
      */
     async executeActions(actions) {
         console.log('🤖 executeActions called with:', actions);
+
+        // Deduplicate: only ever execute ONE create_violation per response.
+        // If multiple exist, prefer the one with student_id (most reliable).
+        // This prevents the AI's summary/example blocks from also executing.
+        const deduped = [];
+        let bestViolationAction = null;
+
         for (const actionData of actions) {
+            if (actionData.action === 'create_violation') {
+                const p = actionData.params || {};
+                const hasStudent = !!(p.student_id || p.student_name);
+                const hasType = !!(p.violation_type_id || p.violation_type_name);
+                if (!hasStudent || !hasType) continue; // skip incomplete ones entirely
+
+                // Prefer student_id over student_name (more reliable)
+                if (!bestViolationAction) {
+                    bestViolationAction = actionData;
+                } else if (p.student_id && !(bestViolationAction.params || {}).student_id) {
+                    bestViolationAction = actionData; // upgrade to one with actual ID
+                }
+                // else keep current best - intentionally ignore extras
+            } else {
+                deduped.push(actionData);
+            }
+        }
+
+        if (bestViolationAction) {
+            deduped.push(bestViolationAction); // add exactly one violation action
+        }
+
+        for (const actionData of deduped) {
             const { action, params } = actionData;
             console.log('🤖 Executing system action:', action, params);
 
@@ -1256,6 +1294,20 @@ HOW-TO FOR ADMINS:
                         break;
                     case 'create_violation_level':
                         await this.handleCreateLevel(params);
+                        break;
+                    case 'create_violation':
+                        // Extra validation: Don't execute if params are empty or missing critical data
+                        if (!params || (!params.student_id && !params.student_name)) {
+                            console.warn('🤖 create_violation blocked: missing student identifier', params);
+                            // Don't show error to user - AI shouldn't have sent this
+                            break;
+                        }
+                        if (!params.violation_type_id && !params.violation_type_name) {
+                            console.warn('🤖 create_violation blocked: missing violation type', params);
+                            // Don't show error to user - AI shouldn't have sent this
+                            break;
+                        }
+                        await this.handleCreateViolation(params);
                         break;
                     case 'export_pdf':
                         console.log('🤖 Calling handleExportPDF');
@@ -1326,7 +1378,7 @@ HOW-TO FOR ADMINS:
             let title = `OSAS ${params.module.toUpperCase()} REPORT`;
 
             if (params.module === 'violations') {
-                apiEndpoint = 'violations.php?action=get&filter=active';
+                apiEndpoint = 'violations.php?action=get&filter=active&limit=all';
                 columns = [
                     { header: 'Student', dataKey: 'studentName' },
                     { header: 'Type', dataKey: 'violationType' },
@@ -1335,7 +1387,7 @@ HOW-TO FOR ADMINS:
                     { header: 'Date', dataKey: 'violationDate' }
                 ];
             } else if (params.module === 'students') {
-                apiEndpoint = 'students.php?action=get&filter=active';
+                apiEndpoint = 'students.php?action=get&filter=active&limit=all';
                 columns = [
                     { header: 'ID', dataKey: 'studentId' },
                     { header: 'First Name', dataKey: 'firstName' },
@@ -1352,7 +1404,7 @@ HOW-TO FOR ADMINS:
                     { header: 'Students', dataKey: 'student_count' }
                 ];
             } else if (params.module === 'sections') {
-                apiEndpoint = 'sections.php?action=get&filter=active';
+                apiEndpoint = 'sections.php?action=get&filter=active&limit=all';
                 columns = [
                     { header: 'Section Name', dataKey: 'name' },
                     { header: 'Department', dataKey: 'department' },
@@ -1426,6 +1478,79 @@ HOW-TO FOR ADMINS:
                             exportData = responseData.data.sections || [];
                         }
                     }
+
+                    // Apply any filters from params
+                    if (params.module === 'violations') {
+                        let startDate = null;
+                        let endDate = new Date();
+                        
+                        if (params.date === 'today') {
+                            startDate = new Date();
+                            endDate = new Date();
+                        } else if (params.date === 'yesterday' || params.date === 'last day') {
+                            startDate = new Date();
+                            startDate.setDate(startDate.getDate() - 1);
+                            endDate = new Date(startDate);
+                        } else if (params.date === 'last week' || params.date === 'past week') {
+                            startDate = new Date();
+                            startDate.setDate(startDate.getDate() - 7);
+                        } else if (params.date === 'last month' || params.date === 'past month') {
+                            startDate = new Date();
+                            startDate.setMonth(startDate.getMonth() - 1);
+                        } else if (params.date) {
+                            // Parse relative dates like "3 days ago", "2 weeks ago", "1 month ago"
+                            const daysMatch = params.date.match(/(\d+)\s*days?\s*ago/i);
+                            const weeksMatch = params.date.match(/(\d+)\s*weeks?\s*ago/i);
+                            const monthsMatch = params.date.match(/(\d+)\s*months?\s*ago/i);
+                            const lastXDaysMatch = params.date.match(/last\s*(\d+)\s*days?/i);
+                            const lastXWeeksMatch = params.date.match(/last\s*(\d+)\s*weeks?/i);
+                            const lastXMonthsMatch = params.date.match(/last\s*(\d+)\s*months?/i);
+                            
+                            if (daysMatch) {
+                                const daysAgo = parseInt(daysMatch[1]);
+                                startDate = new Date();
+                                startDate.setDate(startDate.getDate() - daysAgo);
+                                endDate = new Date();
+                            } else if (weeksMatch) {
+                                const weeksAgo = parseInt(weeksMatch[1]);
+                                startDate = new Date();
+                                startDate.setDate(startDate.getDate() - (weeksAgo * 7));
+                                endDate = new Date();
+                            } else if (monthsMatch) {
+                                const monthsAgo = parseInt(monthsMatch[1]);
+                                startDate = new Date();
+                                startDate.setMonth(startDate.getMonth() - monthsAgo);
+                                endDate = new Date();
+                            } else if (lastXDaysMatch) {
+                                const days = parseInt(lastXDaysMatch[1]);
+                                startDate = new Date();
+                                startDate.setDate(startDate.getDate() - days);
+                                endDate = new Date();
+                            } else if (lastXWeeksMatch) {
+                                const weeks = parseInt(lastXWeeksMatch[1]);
+                                startDate = new Date();
+                                startDate.setDate(startDate.getDate() - (weeks * 7));
+                                endDate = new Date();
+                            } else if (lastXMonthsMatch) {
+                                const months = parseInt(lastXMonthsMatch[1]);
+                                startDate = new Date();
+                                startDate.setMonth(startDate.getMonth() - months);
+                                endDate = new Date();
+                            }
+                        }
+                        
+                        if (startDate) {
+                            const startStr = startDate.toISOString().split('T')[0];
+                            const endStr = endDate.toISOString().split('T')[0];
+                            
+                            exportData = exportData.filter(violation => {
+                                const violationDate = violation.violationDate || violation.dateReported;
+                                if (!violationDate) return false;
+                                const vDate = new Date(violationDate).toISOString().split('T')[0];
+                                return vDate >= startStr && vDate <= endStr;
+                            });
+                        }
+                    }
                     console.log('🤖 handleExportPDF - Export data ready, count:', exportData.length);
 
                     if (exportData.length > 0 && typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
@@ -1491,6 +1616,293 @@ HOW-TO FOR ADMINS:
         } catch (err) {
             console.error('Bot Export UI Error:', err);
             this.addMessage('bot', `❌ Failed to prepare the download: ${err.message}`);
+        }
+    }
+
+    /**
+     * Find student by name
+     */
+    async findStudentByName(studentName) {
+        try {
+            console.log('🤖 findStudentByName called with:', studentName);
+            const res = await fetch(this.apiBase + 'students.php?filter=active&limit=all');
+            const data = await res.json();
+            console.log('🤖 Students API response status:', data.status, '| count:', data.data?.students?.length);
+            
+            if (data.status !== 'success') return null;
+            
+            // API returns { data: { students: [...] } }
+            const students = data.data?.students || data.data || [];
+            console.log('🤖 Total students loaded:', students.length);
+            if (students.length > 0) console.log('🤖 Sample student object keys:', Object.keys(students[0]));
+            
+            const nameLower = studentName.toLowerCase().trim();
+            
+            // Fields are camelCase: studentId, firstName, middleName, lastName
+            for (const s of students) {
+                const first = (s.firstName || s.first_name || '').toLowerCase().trim();
+                const last  = (s.lastName  || s.last_name  || '').toLowerCase().trim();
+                const mid   = (s.middleName || s.middle_name || '').toLowerCase().trim();
+                
+                const fullName       = `${first} ${last}`.trim();
+                const fullWithMid    = `${first} ${mid} ${last}`.trim();
+                const reverseName    = `${last} ${first}`.trim();
+                const reverseWithMid = `${last} ${first} ${mid}`.trim();
+                
+                if ([fullName, fullWithMid, reverseName, reverseWithMid].includes(nameLower)) {
+                    console.log('🤖 Exact match found:', s);
+                    return s;
+                }
+            }
+            
+            // Partial match
+            const matches = students.filter(s => {
+                const first = (s.firstName || s.first_name || '').toLowerCase();
+                const last  = (s.lastName  || s.last_name  || '').toLowerCase();
+                const mid   = (s.middleName || s.middle_name || '').toLowerCase();
+                return `${first} ${last}`.includes(nameLower) ||
+                       `${last} ${first}`.includes(nameLower) ||
+                       `${first} ${mid} ${last}`.includes(nameLower) ||
+                       first.includes(nameLower) || last.includes(nameLower);
+            });
+            
+            console.log('🤖 Partial matches:', matches.length);
+            if (matches.length === 1) return matches[0];
+            return matches;
+        } catch (err) {
+            console.error('Error finding student:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Find violation type by name or ID
+     */
+    async findViolationType(typeNameOrId) {
+        try {
+            const res = await fetch(this.apiBase + 'violations.php?action=types');
+            const data = await res.json();
+            if (data.status !== 'success') return null;
+            
+            const types = data.data || [];
+            const searchLower = String(typeNameOrId).toLowerCase().trim();
+            
+            for (const t of types) {
+                if (String(t.id) === String(typeNameOrId) || t.name.toLowerCase().trim() === searchLower) {
+                    return t;
+                }
+            }
+            
+            // Try partial match
+            const matches = types.filter(t => t.name.toLowerCase().trim().includes(searchLower));
+            if (matches.length === 1) return matches[0];
+            
+            return matches;
+        } catch (err) {
+            console.error('Error finding violation type:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Get next violation level for a student and type
+     */
+    async getNextViolationLevel(studentId, violationTypeId) {
+        try {
+            console.log('🤖 getNextViolationLevel called with:', { studentId, violationTypeId });
+            
+            const res = await fetch(this.apiBase + 'violations.php?action=types');
+            const data = await res.json();
+            console.log('🤖 Violation types response:', data);
+            
+            if (data.status !== 'success') return null;
+            
+            const types = data.data || [];
+            const type = types.find(t => t.id == violationTypeId);
+            console.log('🤖 Found violation type:', type);
+            
+            if (!type || !type.levels || type.levels.length === 0) {
+                console.warn('🤖 No levels found for type:', type);
+                return null;
+            }
+            
+            // Get student's previous violations for this type
+            const violRes = await fetch(this.apiBase + 'violations.php?is_archived=0');
+            const violData = await violRes.json();
+            console.log('🤖 Student violations response:', violData);
+            
+            if (violData.status !== 'success') {
+                console.log('🤖 Returning first level (no previous violations)');
+                return type.levels[0];
+            }
+            
+            const violations = violData.violations || violData.data || [];
+            const studentViolations = violations.filter(v => {
+                // API returns: studentId, violationType (number), violationLevel (number)
+                const vStudentId = v.studentId || v.student_id || '';
+                const vTypeId    = v.violationType || v.violation_type_id || v.violationTypeId || '';
+                return String(vStudentId) === String(studentId) &&
+                       String(vTypeId)    === String(violationTypeId);
+            }).sort((a, b) => {
+                const dateA = new Date(a.created_at || a.createdAt || a.dateReported);
+                const dateB = new Date(b.created_at || b.createdAt || b.dateReported);
+                return dateB - dateA;
+            });
+            
+            console.log('🤖 Student violations for this type:', studentViolations.length, studentViolations.map(v => ({ caseId: v.caseId, level: v.violationLevel, label: v.violationLevelLabel })));
+            
+            const lastViolation = studentViolations[0];
+            
+            if (!lastViolation) {
+                console.log('🤖 No previous violations, returning first level:', type.levels[0]);
+                return type.levels[0];
+            }
+            
+            // API returns violationLevel as the level ID (number)
+            const lastLevelId = lastViolation.violationLevel || lastViolation.violation_level_id || lastViolation.violationLevelId;
+            const currentLevelIndex = type.levels.findIndex(l => String(l.id) === String(lastLevelId));
+            
+            console.log('🤖 Last violation level ID:', lastLevelId);
+            console.log('🤖 Current level index in levels array:', currentLevelIndex);
+            console.log('🤖 All levels for this type:', type.levels.map(l => ({ id: l.id, name: l.name, order: l.level_order })));
+            
+            if (currentLevelIndex === -1) {
+                console.warn('🤖 Previous level not found in current levels array, returning first level');
+                return type.levels[0];
+            }
+            
+            if (currentLevelIndex < type.levels.length - 1) {
+                const nextLevel = type.levels[currentLevelIndex + 1];
+                console.log('🤖 Moving to next level:', nextLevel);
+                return nextLevel;
+            }
+            
+            console.log('🤖 Already at max level, keeping current level:', type.levels[type.levels.length - 1]);
+            return type.levels[type.levels.length - 1]; // Last level if already max
+        } catch (err) {
+            console.error('Error getting next violation level:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Handle create violation action
+     */
+    async handleCreateViolation(params) {
+        try {
+            console.log('🤖 handleCreateViolation called with params:', params);
+            
+            let studentId = params.student_id;
+            if (!studentId && params.student_name) {
+                console.log('🤖 Looking up student by name:', params.student_name);
+                const studentResult = await this.findStudentByName(params.student_name);
+                console.log('🤖 Student lookup result:', studentResult);
+                
+                if (!studentResult || (Array.isArray(studentResult) && studentResult.length === 0)) {
+                    throw new Error(`Student "${params.student_name}" not found in the system.`);
+                }
+                if (Array.isArray(studentResult) && studentResult.length > 1) {
+                    const names = studentResult.slice(0,5).map(s => `${s.firstName} ${s.lastName} (${s.studentId})`).join(', ');
+                    this.addMessage('bot', `⚠️ Found ${studentResult.length} students matching "${params.student_name}": ${names}. Please be more specific or use the student ID.`);
+                    return;
+                }
+                const student = Array.isArray(studentResult) ? studentResult[0] : studentResult;
+                // Model returns camelCase: studentId
+                studentId = student.studentId || student.student_id;
+                if (!studentId) {
+                    console.error('🤖 Student object has no ID field:', student);
+                    throw new Error(`Could not resolve student ID for "${params.student_name}". Student object: ${JSON.stringify(student)}`);
+                }
+                console.log('🤖 Resolved student ID:', studentId);
+            }
+            
+            let violationTypeId = params.violation_type_id;
+            if (!violationTypeId && params.violation_type_name) {
+                console.log('🤖 Looking up violation type by name:', params.violation_type_name);
+                const typeResult = await this.findViolationType(params.violation_type_name);
+                console.log('🤖 Violation type lookup result:', typeResult);
+                
+                if (!typeResult) {
+                    throw new Error(`Violation type "${params.violation_type_name}" not found.`);
+                }
+                if (Array.isArray(typeResult) && typeResult.length > 1) {
+                    this.addMessage('bot', `⚠️ Found multiple violation types matching "${params.violation_type_name}". Please be more specific.`);
+                    return;
+                }
+                violationTypeId = Array.isArray(typeResult) ? typeResult[0].id : typeResult.id;
+                console.log('🤖 Resolved violation type ID:', violationTypeId);
+            }
+            
+            if (!studentId) {
+                throw new Error('Student ID or name is required.');
+            }
+            if (!violationTypeId) {
+                throw new Error('Violation type ID or name is required.');
+            }
+            
+            const nextLevel = await this.getNextViolationLevel(studentId, violationTypeId);
+            // Always auto-detect the next level - ignore any level ID the AI may have passed
+            console.log('🤖 getNextViolationLevel returned:', nextLevel);
+            
+            if (!nextLevel) {
+                throw new Error('No violation levels found for this violation type.');
+            }
+            
+            if (!nextLevel.id) {
+                console.error('🤖 nextLevel missing id property:', nextLevel);
+                throw new Error('Invalid violation level data - missing ID.');
+            }
+            
+            const violationDate = params.violation_date || new Date().toISOString().split('T')[0];
+            const violationTime = params.violation_time || new Date().toTimeString().slice(0, 5);
+            const location = params.location || 'School Campus';
+            const status = params.status || nextLevel.default_status || 'warning';
+            const notes = params.notes || '';
+            
+            console.log('🤖 Creating violation with:', {
+                studentId,
+                violationTypeId,
+                levelId: nextLevel.id,
+                levelName: nextLevel.name,
+                violationDate,
+                violationTime,
+                location,
+                status,
+                notes
+            });
+            
+            const formData = new FormData();
+            formData.append('studentId', studentId);
+            formData.append('violationType', violationTypeId);
+            formData.append('violationLevel', nextLevel.id);
+            formData.append('violationDate', violationDate);
+            formData.append('violationTime', violationTime);
+            formData.append('location', location);
+            formData.append('status', status);
+            formData.append('notes', notes);
+            
+            const res = await fetch(this.apiBase + 'violations.php?action=create', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await res.json();
+            if (data.status !== 'success') {
+                throw new Error(data.message || 'Failed to create violation.');
+            }
+            
+            this.addMessage('bot', `✅ Violation recorded successfully! Case ID: ${data.data?.case_id || 'N/A'}\nLevel: ${nextLevel.name}`);
+            
+            // Refresh violations list if function exists
+            if (typeof window.refreshViolationsList === 'function') {
+                window.refreshViolationsList();
+            } else if (typeof window.loadViolations === 'function') {
+                window.loadViolations();
+            }
+            
+        } catch (err) {
+            console.error('handleCreateViolation failed:', err);
+            this.addMessage('bot', `❌ Failed to record violation: ${err.message}`);
         }
     }
 
