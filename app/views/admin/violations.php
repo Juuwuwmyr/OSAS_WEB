@@ -550,6 +550,7 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="notes-content">
             <p id="detailNotes">No notes available.</p>
           </div>
+          <div id="detailEditAuditTrail" style="display:none;"></div>
         </div>
 
         <!-- Evidence Section REMOVED — click the Evidence badge in Violation History to view -->
@@ -589,6 +590,9 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="violation-details-actions">
           <button class="Violations-action-btn view" id="detailRecordNewBtn" title="Record New Violation" style="background: #10b981; color: white;">
             <i class='bx bx-plus'></i> Record New
+          </button>
+          <button class="Violations-action-btn edit" id="detailEditBtn" title="Edit Violation" style="background: #3b82f6; color: white;">
+            <i class='bx bx-edit'></i> Edit
           </button>
           <button class="Violations-action-btn resolve" id="detailResolveBtn" title="Mark Resolved">
             <i class='bx bx-check'></i> Mark Resolved

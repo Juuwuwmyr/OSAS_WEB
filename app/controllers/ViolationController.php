@@ -521,22 +521,52 @@ class ViolationController extends Controller
             $this->error('Violation not found');
         }
 
+        $editorName  = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Admin';
+        $editedAt    = date('Y-m-d H:i:s');
+
+        $newTypeId  = $this->sanitize($input['violationType']  ?? $current['violation_type_id']);
+        $newLevelId = $this->sanitize($input['violationLevel'] ?? $current['violation_level_id']);
+        $newDate    = $this->sanitize($input['violationDate']  ?? $current['violation_date']);
+        $newTime    = $this->sanitize($input['violationTime']  ?? $current['violation_time']);
+        $newLocation= $this->sanitize($input['location']       ?? $current['location']);
+        $newStatus  = $this->sanitize($input['status']         ?? $current['status']);
+        $newNotes   = $this->sanitize($input['notes']          ?? $current['notes'] ?? '');
+
+        // --- Build audit trail appended to notes ---
+        $changes = [];
+        if ((string)$newTypeId  !== (string)$current['violation_type_id'])  $changes[] = 'type';
+        if ((string)$newLevelId !== (string)$current['violation_level_id']) $changes[] = 'level';
+        if ($newDate    !== ($current['violation_date'] ?? ''))              $changes[] = 'date';
+        if ($newTime    !== ($current['violation_time'] ?? ''))              $changes[] = 'time';
+        if ($newLocation !== ($current['location'] ?? ''))                   $changes[] = 'location';
+        if ($newStatus  !== ($current['status'] ?? ''))                      $changes[] = 'status';
+
+        $auditEntry = '';
+        if (!empty($changes)) {
+            $auditEntry = "\n[Edited by {$editorName} on {$editedAt}: " . implode(', ', $changes) . " changed]";
+        } else {
+            $auditEntry = "\n[Notes updated by {$editorName} on {$editedAt}]";
+        }
+
+        // Append audit trail to notes (keeps history visible)
+        $finalNotes = rtrim($newNotes) . $auditEntry;
+
         $data = [
-            'violation_type_id'  => $this->sanitize($input['violationType'] ?? $current['violation_type_id']),
-            'violation_level_id' => $this->sanitize($input['violationLevel'] ?? $current['violation_level_id']),
-            'violation_date'  => $this->sanitize($input['violationDate'] ?? $current['violation_date']),
-            'violation_time'  => $this->sanitize($input['violationTime'] ?? $current['violation_time']),
-            'location'        => $this->sanitize($input['location'] ?? $current['location']),
-            'reported_by'     => $current['reported_by'],
-            'status'          => $this->sanitize($input['status'] ?? $current['status']),
-            'notes'           => $this->sanitize($input['notes'] ?? $current['notes']),
-            'attachments'     => isset($input['attachments']) ? json_encode($input['attachments']) : $current['attachments'],
-            'updated_at'      => date('Y-m-d H:i:s')
+            'violation_type_id'  => $newTypeId,
+            'violation_level_id' => $newLevelId,
+            'violation_date'     => $newDate,
+            'violation_time'     => $newTime,
+            'location'           => $newLocation,
+            'reported_by'        => $current['reported_by'], // never change original reporter
+            'status'             => $newStatus,
+            'notes'              => $finalNotes,
+            'attachments'        => isset($input['attachments']) ? json_encode($input['attachments']) : $current['attachments'],
+            'updated_at'         => $editedAt
         ];
 
         try {
             $this->model->update($id, $data);
-            
+
             // Update reports
             try {
                 $this->reportModel->generateReportsFromViolations();
@@ -544,9 +574,37 @@ class ViolationController extends Controller
                 error_log("Failed to auto-update reports: " . $e->getMessage());
             }
 
-            $this->success('Violation updated successfully');
+            // Notify student if significant fields changed
+            if (!empty($changes)) {
+                try {
+                    require_once __DIR__ . '/../services/PushNotificationService.php';
+                    $studentId = $current['student_id'] ?? '';
+                    if ($studentId) {
+                        $typeInfo  = $this->model->query("SELECT name FROM violation_types WHERE id = ?",  [$newTypeId]);
+                        $levelInfo = $this->model->query("SELECT name FROM violation_levels WHERE id = ?", [$newLevelId]);
+                        $typeName  = $typeInfo[0]['name']  ?? 'Violation';
+                        $levelName = $levelInfo[0]['name'] ?? '';
+
+                        (new PushNotificationService())->notifyStudent(
+                            $studentId,
+                            'Violation Record Updated',
+                            "Your violation record ({$current['case_id']}) for \"{$typeName}\" ({$levelName}) has been updated by {$editorName}. Please check your E-OSAS portal for details.",
+                            ['type' => 'violation_updated', 'id' => $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-update-' . $id]
+                        );
+                    }
+                } catch (Throwable $e) {
+                    error_log('Violation edit push: ' . $e->getMessage());
+                }
+            }
+
+            $this->success('Violation updated successfully', [
+                'id'      => $id,
+                'changes' => $changes,
+                'edited_by' => $editorName,
+                'edited_at' => $editedAt
+            ]);
         } catch (Exception $e) {
-            $this->error('Failed to update violation');
+            $this->error('Failed to update violation: ' . $e->getMessage());
         }
     }
 

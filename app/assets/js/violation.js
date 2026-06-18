@@ -3444,6 +3444,23 @@ function initViolationsModule() {
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Edit Violation</span>';
                 }
+
+                // Hide student search in edit mode — student cannot be changed
+                const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+                if (studentSearchSection) studentSearchSection.style.display = 'none';
+
+                // Show edit-mode banner
+                let editBanner = document.getElementById('violationEditModeBanner');
+                if (!editBanner) {
+                    editBanner = document.createElement('div');
+                    editBanner.id = 'violationEditModeBanner';
+                    editBanner.style.cssText = 'display:flex;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:11px;color:#1d4ed8;margin:0 16px 0;';
+                    editBanner.innerHTML = '<i class=\'bx bx-info-circle\' style="font-size:16px;flex-shrink:0;"></i><span>You are editing an existing violation record. The student cannot be changed. All edits are logged with your name and timestamp.</span>';
+                    const form = document.getElementById('ViolationRecordForm');
+                    if (form) form.insertAdjacentElement('afterbegin', editBanner);
+                } else {
+                    editBanner.style.display = 'flex';
+                }
                 const violation = violations.find(v => v.id == editId);
                 if (violation) {
                     // Populate student info
@@ -3573,10 +3590,15 @@ function initViolationsModule() {
                         }
                     }
                     
-                    document.getElementById('violationNotes').value = violation.notes || '';
+                    document.getElementById('violationNotes').value = (violation.notes || '').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim();
 
-                    // Update notes counter
-                    updateNotesCounter((violation.notes || '').length);
+                    // Update notes counter (strip audit lines for length)
+                    const cleanNotes = (violation.notes || '').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim();
+                    updateNotesCounter(cleanNotes.length);
+
+                    // Update submit button label for edit mode
+                    const submitBtn = document.querySelector('#ViolationRecordForm .Violations-btn-primary');
+                    if (submitBtn) submitBtn.textContent = 'Save Changes';
                 }
             } else {
                 // Add new mode
@@ -3586,6 +3608,17 @@ function initViolationsModule() {
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Record New Violation</span>';
                 }
+
+                // Restore student search section and hide edit banner
+                const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+                if (studentSearchSection) studentSearchSection.style.display = '';
+                const editBanner = document.getElementById('violationEditModeBanner');
+                if (editBanner) editBanner.style.display = 'none';
+
+                // Reset submit button label for add mode
+                const submitBtn = document.querySelector('#ViolationRecordForm .Violations-btn-primary');
+                if (submitBtn) submitBtn.textContent = 'Record Violation';
+
                 if (form) {
                     form.reset();
                     setDefaultViolationLocation();
@@ -3810,8 +3843,24 @@ function initViolationsModule() {
                 return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
             });
             
-            setElementText('detailNotes', violation.notes || 'No notes available.');
-            
+            setElementText('detailNotes', (violation.notes || 'No notes available.').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim() || 'No notes available.');
+
+            // Show edit audit trail if present
+            const editAuditContainer = document.getElementById('detailEditAuditTrail');
+            if (editAuditContainer) {
+                const auditMatches = (violation.notes || '').match(/\[(Edited|Notes updated) by [^\]]+\]/g);
+                if (auditMatches && auditMatches.length > 0) {
+                    editAuditContainer.innerHTML = `
+                        <div class="edit-audit-trail" style="margin-top:8px;padding:8px 10px;background:#f8fafc;border-left:3px solid #3b82f6;border-radius:0 4px 4px 0;font-size:11px;color:#64748b;">
+                            <strong style="display:block;margin-bottom:4px;color:#475569;"><i class='bx bx-history'></i> Edit History</strong>
+                            ${auditMatches.map(a => `<div style="padding:2px 0;">${escapeHtml(a.replace(/^\[|\]$/g, ''))}</div>`).join('')}
+                        </div>`;
+                    editAuditContainer.style.display = 'block';
+                } else {
+                    editAuditContainer.style.display = 'none';
+                }
+            }
+
             // Attachments display
              // Evidence is now shown via the Evidence badge in Violation History — not here
              const attachmentsContainer = document.getElementById('detailAttachments');
@@ -4004,6 +4053,12 @@ function initViolationsModule() {
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
             if (studentCard) studentCard.style.display = 'none';
+
+            // Restore student search section and hide edit banner
+            const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+            if (studentSearchSection) studentSearchSection.style.display = '';
+            const editBanner = document.getElementById('violationEditModeBanner');
+            if (editBanner) editBanner.style.display = 'none';
 
             // Explicitly clear student info on close as well
             if (document.getElementById('modalStudentName')) {
