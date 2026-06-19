@@ -1664,44 +1664,126 @@ function initViolationsModule() {
                 const typeId = parseInt(input.value);
                 
                 // 3. Find history for this student and type
-                // Include both synced and pending violations for badge display
                 const history = violations.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
                 );
                 
                 if (history.length > 0) {
-                    // 4. Find the most relevant level
-                    // Sort by date descending
+                    // Sort ascending by level_order so highest offense is last
                     history.sort((a, b) => {
-                        const dateA = new Date((a.dateReported || a.violationDate) + ' ' + (a.violationTime || '00:00'));
-                        const dateB = new Date((b.dateReported || b.violationDate) + ' ' + (b.violationTime || '00:00'));
-                        return dateB - dateA;
+                        const getOrder = v => {
+                            const type = violationTypes.find(t => String(t.id) === String(v.violationType));
+                            const level = type?.levels?.find(l => String(l.id) === String(v.violationLevel));
+                            return level?.level_order ?? 0;
+                        };
+                        return getOrder(a) - getOrder(b);
                     });
-                    
-                    const latest = history[0];
-                    const levelName = latest.violationLevelLabel || 'Recorded';
-                    
-                    // Create Badge
-                    const badge = document.createElement('div');
-                    
-                    // Determine class based on status from database
-                    const status = (latest.status || 'warning').toLowerCase();
-                    let statusClass = 'warning';
-                    
-                    if (status === 'permitted') {
-                        statusClass = 'permitted';
-                    } else if (status === 'disciplinary') {
-                        statusClass = 'disciplinary';
-                    } else if (status === 'resolved') {
-                        statusClass = 'resolved';
+
+                    // Only show the HIGHEST offense with a single ✕ to step back one at a time
+                    const highest = history[history.length - 1];
+                    const levelName  = highest.violationLevelLabel || 'Recorded';
+                    const totalCount = history.length;
+                    const status     = (highest.status || 'warning').toLowerCase();
+                    const bg = status === 'permitted'    ? '#10b981'
+                             : status === 'disciplinary' ? '#ef4444'
+                             : status === 'resolved'     ? '#3b82f6'
+                             : '#f59e0b';
+                    const textColor = status === 'warning' ? '#7c2d12' : '#fff';
+                    const isPending  = String(highest.id).startsWith('TEMP-');
+
+                    const badgeWrap = document.createElement('div');
+                    badgeWrap.className = 'violation-type-badge-overlay';
+                    badgeWrap.style.cssText = `
+                        position:absolute; top:6px; right:6px;
+                        display:flex; flex-direction:column; align-items:flex-end;
+                        gap:3px; z-index:10; pointer-events:auto;
+                    `;
+
+                    const pill = document.createElement('div');
+                    pill.style.cssText = `
+                        display:inline-flex; align-items:center; gap:4px;
+                        padding:2px 5px 2px 7px; border-radius:20px;
+                        font-size:9px; font-weight:700; line-height:1.5;
+                        white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.25);
+                        background:${bg}; color:${textColor};
+                    `;
+                    pill.innerHTML = `
+                        <span style="letter-spacing:.3px;text-transform:uppercase;">
+                            ${escapeHtml(levelName)}${totalCount > 1 ? ` (${totalCount})` : ''}
+                        </span>
+                        ${!isPending ? `<button type="button"
+                            data-remove-vid="${highest.id}"
+                            data-remove-level="${escapeHtml(levelName)}"
+                            title="Remove ${escapeHtml(levelName)} — steps back to ${totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous' : 'no offense'}"
+                            style="
+                                display:inline-flex;align-items:center;justify-content:center;
+                                width:14px;height:14px;border-radius:50%;
+                                background:rgba(0,0,0,.2);border:none;cursor:pointer;
+                                padding:0;flex-shrink:0;color:inherit;font-size:9px;
+                                font-weight:900;line-height:1;
+                            ">✕</button>` : ''}
+                    `;
+
+                    pill.addEventListener('click', e => e.stopPropagation());
+
+                    // Wire the remove button — always removes highest offense (step back by one)
+                    const removeBtn = pill.querySelector('[data-remove-vid]');
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const vid        = removeBtn.dataset.removeVid;
+                            const levelLabel = removeBtn.dataset.removeLevel;
+                            const typeName   = card.querySelector('label span')?.textContent?.trim() || 'this type';
+                            const stepBackTo = totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous offense' : 'no offense';
+
+                            const ok = typeof window.showModernAlert === 'function'
+                                ? await window.showModernAlert({
+                                    title: `Remove ${levelLabel}?`,
+                                    message: `This will delete the <strong>${levelLabel}</strong> record for <strong>${typeName}</strong>.<br><br>Student will step back to: <strong>${stepBackTo}</strong>`,
+                                    icon: 'warning',
+                                    confirmText: 'Yes, Remove',
+                                    cancelText: 'Cancel'
+                                })
+                                : confirm(`Remove "${levelLabel}" for ${typeName}? Student steps back to: ${stepBackTo}`);
+
+                            if (!ok) return;
+
+                            try {
+                                showLoadingOverlay('Removing offense...');
+                                const res = await fetch(`${API_BASE}violations.php?id=${vid}`, { method: 'DELETE' });
+                                const data = await res.json();
+                                if (data.status !== 'success') throw new Error(data.message);
+
+                                // Remove from local cache
+                                const idx = violations.findIndex(x => x.id == vid);
+                                if (idx !== -1) violations.splice(idx, 1);
+
+                                showNotification(`"${levelLabel}" offense removed. Student is now at: ${stepBackTo}.`, 'success');
+
+                                // Refresh badges and level progression
+                                updateViolationTypeBadges(studentId);
+
+                                // Re-render levels for the currently selected type
+                                const selectedTypeInput = document.querySelector('input[name="violationType"]:checked');
+                                if (selectedTypeInput) {
+                                    renderViolationLevels(selectedTypeInput.value);
+                                }
+
+                                // Refresh main list in background
+                                loadViolations(false).then(() => renderViolations());
+                            } catch (err) {
+                                showNotification('Failed to remove offense: ' + err.message, 'error');
+                            } finally {
+                                hideLoadingOverlay();
+                            }
+                        });
                     }
-                    
-                    badge.className = `violation-type-badge-overlay ${statusClass}`;
-                    badge.textContent = levelName;
-                    
-                    card.style.position = 'relative'; // Ensure relative positioning
-                    card.appendChild(badge);
+                    badgeWrap.appendChild(pill);
+
+                    card.style.position = 'relative';
+                    card.appendChild(badgeWrap);
                 }
             });
         }
@@ -4395,6 +4477,65 @@ function initViolationsModule() {
                 if (violationId) {
                     closeDetailsModal();
                     openRecordModal(parseInt(violationId));
+                }
+            });
+        }
+
+        // Revert button — restores the violation to the state before the last edit
+        const detailRevertBtn = document.getElementById('detailRevertBtn');
+        if (detailRevertBtn) {
+            detailRevertBtn.addEventListener('click', async function() {
+                const violationId = detailsModal.dataset.viewingId;
+                if (!violationId) return;
+
+                const violation = violations.find(v => v.id == violationId);
+                if (!violation || !violation.previous_values) {
+                    showNotification('No previous version available to revert to.', 'warning');
+                    return;
+                }
+
+                let prev = {};
+                try { prev = JSON.parse(violation.previous_values); } catch(e) {}
+
+                const prevType      = violationTypes.find(t => String(t.id) === String(prev.violation_type_id));
+                const prevTypeName  = prevType?.name || '?';
+                const prevLevelName = prevType?.levels?.find(l => String(l.id) === String(prev.violation_level_id))?.name || '?';
+
+                const confirmed = typeof window.showModernAlert === 'function'
+                    ? await window.showModernAlert({
+                        title: 'Revert Violation?',
+                        message: `Restore this record to its previous version?<br><br>
+                            <b>Will restore to:</b><br>
+                            Type: <b>${prevTypeName}</b><br>
+                            Level: <b>${prevLevelName}</b><br>
+                            Date: <b>${prev.violation_date || '?'}</b><br>
+                            Status: <b>${prev.status || '?'}</b>`,
+                        icon: 'warning',
+                        confirmText: 'Yes, Revert',
+                        cancelText: 'Cancel'
+                    })
+                    : confirm(`Revert to: ${prevTypeName} — ${prevLevelName} (${prev.violation_date || '?'})?`);
+
+                if (!confirmed) return;
+
+                try {
+                    showLoadingOverlay('Reverting violation...');
+                    const response = await fetch(
+                        `${API_BASE}violations.php?action=revert&id=${violationId}`,
+                        { method: 'POST' }
+                    );
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message);
+
+                    showNotification('Violation reverted to previous version.', 'success');
+                    closeDetailsModal();
+                    await loadViolations(false);
+                    renderViolations();
+                    updateStats();
+                } catch (err) {
+                    showNotification('Failed to revert: ' + err.message, 'error');
+                } finally {
+                    hideLoadingOverlay();
                 }
             });
         }
