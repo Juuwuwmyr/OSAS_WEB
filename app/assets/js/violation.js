@@ -34,6 +34,8 @@ function initViolationsModule() {
             { name: 'Gray', value: '#6b7280' }
         ];
 
+        let selectedNewLevelColor = '#f59e0b'; // tracks color for new level form
+
         /** Map removed location values for edit / legacy records */
         const LEGACY_LOCATION_MAP = { gate_1: 'campus', gate_2: 'campus', cafeteria: 'canteen' };
         function mapViolationLocation(loc) {
@@ -896,6 +898,27 @@ function initViolationsModule() {
                 dot.onclick = () => {
                     container.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
+                };
+                container.appendChild(dot);
+            });
+        }
+
+        // Resets level color state after a level is added.
+        // The level add form has no color picker UI, so this just resets the tracked color variable.
+        function initNewLevelColorPresets() {
+            selectedNewLevelColor = '#f59e0b';
+            // If a color preset container is ever added to the level form, wire it up here.
+            const container = document.getElementById('vtNewLevelColorPresets');
+            if (!container) return;
+            container.innerHTML = '';
+            STATUS_COLOR_PRESETS.forEach(preset => {
+                const dot = document.createElement('div');
+                dot.className = 'vt-color-dot' + (preset.value === '#f59e0b' ? ' active' : '');
+                dot.style.backgroundColor = preset.value;
+                dot.onclick = () => {
+                    container.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    selectedNewLevelColor = preset.value;
                 };
                 container.appendChild(dot);
             });

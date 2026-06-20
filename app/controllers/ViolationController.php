@@ -979,26 +979,44 @@ class ViolationController extends Controller
         $year = date('Y', strtotime($currentDate));
         $studentId = $violation['studentId'] ?? '';
 
+        // Fetch all active violation types from DB (dynamic, not hardcoded)
+        $allTypes = $this->model->getViolationTypes(false); // active only
+        $monthlyViolations = [];
+        $typeLevelsMap = [];
+        foreach ($allTypes as $t) {
+            $monthlyViolations[$t['name']] = [];
+            $levels = $this->model->getViolationLevels($t['id'], false);
+            $typeLevelsMap[$t['name']] = array_column($levels, 'name');
+        }
+
+        // Union of all level names in order
+        $allLevelNames = [];
+        foreach ($typeLevelsMap as $levels) {
+            foreach ($levels as $lvl) {
+                if (!in_array($lvl, $allLevelNames)) $allLevelNames[] = $lvl;
+            }
+        }
+
         $history = $this->model->getAllWithStudentInfo('all', '', $studentId);
-        $monthlyViolations = [
-            'Improper Uniform' => [],
-            'Improper Foot Wear' => [],
-            'No ID' => []
-        ];
 
         foreach ($history as $v) {
             $vDate = $v['dateReported'];
             $ts = strtotime(str_replace('/', '-', $vDate));
             if (!$ts) $ts = strtotime($vDate);
-            
+
             if ($ts && date('m', $ts) == $month && date('Y', $ts) == $year) {
-                $type = strtolower($v['violationTypeLabel'] ?? '');
-                if (strpos($type, 'uniform') !== false) {
-                    $monthlyViolations['Improper Uniform'][] = $v;
-                } elseif (strpos($type, 'foot') !== false || strpos($type, 'shoe') !== false) {
-                    $monthlyViolations['Improper Foot Wear'][] = $v;
-                } elseif (strpos($type, 'id') !== false) {
-                    $monthlyViolations['No ID'][] = $v;
+                $typeLabel = $v['violationTypeLabel'] ?? '';
+                // Match by exact name first, then fallback to key-based lookup
+                if (array_key_exists($typeLabel, $monthlyViolations)) {
+                    $monthlyViolations[$typeLabel][] = $v;
+                } else {
+                    // Try case-insensitive match
+                    foreach ($monthlyViolations as $key => $val) {
+                        if (strcasecmp($key, $typeLabel) === 0) {
+                            $monthlyViolations[$key][] = $v;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -1017,6 +1035,8 @@ class ViolationController extends Controller
             'data' => [
                 'violation' => $violation,
                 'monthlyViolations' => $monthlyViolations,
+                'violationTypes' => array_column($allTypes, 'name'), // send type names to frontend
+                'violationLevels' => $allLevelNames, // all level names in order (for PDF columns)
                 'generatedAt' => date('Y-m-d H:i:s'),
                 'adminName' => $_SESSION['full_name'] ?? 'OSAS Admin'
             ]
@@ -1217,35 +1237,52 @@ class ViolationController extends Controller
         $year = date('Y', strtotime($currentDate));
         $studentId = $violation['studentId'] ?? '';
 
-        // 1.1 Fetch Violation History for this Month
-        $history = $this->model->getAllWithStudentInfo('all', '', $studentId);
-        $monthlyViolations = [
-            'Improper Uniform' => [],
-            'Improper Foot Wear' => [],
-            'No ID' => []
-        ];
+        // 1.1 Fetch all active violation types + their levels from DB (fully dynamic)
+        $allTypes = $this->model->getViolationTypes(false);
+        $monthlyViolations = [];
+        $typeNames = [];
+        $typeLevelsMap = []; // typeName => [level names in order]
 
-        foreach ($history as $v) {
-            $vDate = $v['dateReported']; // Fix: use dateReported instead of violation_date
-            // Parse date carefully (handle d/m/Y or Y-m-d)
-            $ts = strtotime(str_replace('/', '-', $vDate));
-            if (!$ts) $ts = strtotime($vDate);
-            
-            if ($ts && date('m', $ts) == $month && date('Y', $ts) == $year) {
-                $type = strtolower($v['violationTypeLabel'] ?? ''); // Fix: use violationTypeLabel
-                
-                // Categorize
-                if (strpos($type, 'uniform') !== false) {
-                    $monthlyViolations['Improper Uniform'][] = $v;
-                } elseif (strpos($type, 'foot') !== false || strpos($type, 'shoe') !== false) {
-                    $monthlyViolations['Improper Foot Wear'][] = $v;
-                } elseif (strpos($type, 'id') !== false) {
-                    $monthlyViolations['No ID'][] = $v;
+        foreach ($allTypes as $t) {
+            $monthlyViolations[$t['name']] = [];
+            $typeNames[] = $t['name'];
+            $levels = $this->model->getViolationLevels($t['id'], false);
+            $typeLevelsMap[$t['name']] = array_column($levels, 'name');
+        }
+
+        // Union of all level names (preserving order by first occurrence) for column headers
+        $allLevelNames = [];
+        foreach ($typeLevelsMap as $levels) {
+            foreach ($levels as $lvl) {
+                if (!in_array($lvl, $allLevelNames)) {
+                    $allLevelNames[] = $lvl;
                 }
             }
         }
 
-        // Sort by datetime ASC
+        $history = $this->model->getAllWithStudentInfo('all', '', $studentId);
+
+        foreach ($history as $v) {
+            $vDate = $v['dateReported'];
+            $ts = strtotime(str_replace('/', '-', $vDate));
+            if (!$ts) $ts = strtotime($vDate);
+
+            if ($ts && date('m', $ts) == $month && date('Y', $ts) == $year) {
+                $typeLabel = $v['violationTypeLabel'] ?? '';
+                if (array_key_exists($typeLabel, $monthlyViolations)) {
+                    $monthlyViolations[$typeLabel][] = $v;
+                } else {
+                    foreach ($monthlyViolations as $key => $val) {
+                        if (strcasecmp($key, $typeLabel) === 0) {
+                            $monthlyViolations[$key][] = $v;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort each type's violations by datetime ASC
         foreach ($monthlyViolations as $k => &$vList) {
             usort($vList, function($a, $b) {
                 $tsA = strtotime(str_replace('/', '-', $a['dateReported']) . ' ' . $a['violationTime']);
@@ -1278,28 +1315,51 @@ class ViolationController extends Controller
         $yearLevel = $violation['studentYearlevel'] ?? 'N/A';
         $courseYear = "$section - $yearLevel";
         
-        $vType = strtolower($violation['violationTypeLabel'] ?? '');
-        $vLevel = strtolower($violation['violationLevelLabel'] ?? '');
-
-        // Checkmark Logic (Legacy support + Visual indicator)
-        $checkUniform = (strpos($vType, 'uniform') !== false) ? '✔' : ' ';
-        $checkFootwear = (strpos($vType, 'foot') !== false || strpos($vType, 'shoe') !== false) ? '✔' : ' ';
-        $checkID = (strpos($vType, 'id') !== false || strpos($vType, 'identification') !== false) ? '✔' : ' ';
-        
-        $check1st = (strpos($vLevel, '1st') !== false) ? '✔' : ' ';
-        $check2nd = (strpos($vLevel, '2nd') !== false) ? '✔' : ' ';
-        $check3rd = (strpos($vLevel, '3rd') !== false) ? '✔' : ' ';
+        $vTypeLabel = trim($violation['violationTypeLabel'] ?? '');
+        $vLevelLabel = trim($violation['violationLevelLabel'] ?? '');
 
         // 4. Modify XML
         $zip = new ZipArchive;
         if ($zip->open($tempFile) === TRUE) {
             $xml = $zip->getFromName('word/document.xml');
 
-            // 4.1 Inject Monthly Violation Dates into Table
-            // Note: We do this BEFORE simple str_replace to ensure anchors are intact
-            $xml = $this->injectViolationsIntoTable($xml, 'Improper Uniform', $monthlyViolations['Improper Uniform']);
-            $xml = $this->injectViolationsIntoTable($xml, 'Improper Foot Wear', $monthlyViolations['Improper Foot Wear']);
-            $xml = $this->injectViolationsIntoTable($xml, 'No ID', $monthlyViolations['No ID']);
+            // 4.1 Replace the entire data section of the violation table dynamically.
+            // Rebuilds both header columns and data rows from DB types/levels.
+            $xml = $this->rebuildViolationTableRows($xml, $typeNames, $monthlyViolations, $allLevelNames);
+
+            // 4.2 Replace violation type labels in the header/checkbox area with checkmarks
+            foreach ($typeNames as $typeName) {
+                $isChecked = strcasecmp(trim($typeName), $vTypeLabel) === 0;
+                $mark = $isChecked ? ' ✔' : '';
+                // Safe XML text replacement
+                $xml = str_replace(
+                    htmlspecialchars($typeName),
+                    htmlspecialchars($typeName) . $mark,
+                    $xml
+                );
+            }
+
+            // 4.3 Replace offense level labels with checkmarks
+            // Collect distinct levels from all violations this month + current
+            $levelsSeen = [];
+            foreach ($monthlyViolations as $vList) {
+                foreach ($vList as $v) {
+                    $lvl = trim($v['violationLevelLabel'] ?? '');
+                    if ($lvl && !in_array($lvl, $levelsSeen)) $levelsSeen[] = $lvl;
+                }
+            }
+            if ($vLevelLabel && !in_array($vLevelLabel, $levelsSeen)) {
+                array_unshift($levelsSeen, $vLevelLabel);
+            }
+            foreach ($levelsSeen as $lvlName) {
+                $isChecked = strcasecmp(trim($lvlName), $vLevelLabel) === 0;
+                $mark = $isChecked ? ' ✔' : '';
+                $xml = str_replace(
+                    htmlspecialchars($lvlName),
+                    htmlspecialchars($lvlName) . $mark,
+                    $xml
+                );
+            }
 
             // 4.2 Standard Replacements (Sequential & Safe)
             // Sequence: ID (Left), Course (Left), Name (Left), ID (Right), Course (Right), Name (Right)
@@ -1349,15 +1409,6 @@ class ViolationController extends Controller
                 $xml = preg_replace($pattern, '$1' . $replacementXml, $xml, 1);
             }
 
-            // Violations (Text replacement - appends checkmark to label)
-            $xml = str_replace('Improper Uniform', "Improper Uniform $checkUniform", $xml);
-            $xml = str_replace('Improper Foot Wear', "Improper Foot Wear $checkFootwear", $xml);
-            $xml = str_replace('No ID', "No ID $checkID", $xml);
-            
-            $xml = str_replace('1st Offense', "1st Offense $check1st", $xml);
-            $xml = str_replace('2nd Offense', "2nd Offense $check2nd", $xml);
-            $xml = str_replace('3rd Offense', "3rd Offense $check3rd", $xml);
-
             // Write back
             $zip->addFromString('word/document.xml', $xml);
             $zip->close();
@@ -1384,58 +1435,191 @@ class ViolationController extends Controller
         }
     }
 
-    private function injectViolationsIntoTable($xml, $anchor, $violations) {
-        // Pattern: Find any table row (<w:tr>) that contains the anchor text
-        // This is much more robust than explode() because it handles multiple tables automatically
-        $pattern = '/<w:tr(?:(?!<w:tr).)*?' . preg_quote($anchor) . '.*?<\/w:tr>/s';
-        
-        return preg_replace_callback($pattern, function($match) use ($violations) {
-            $rowXml = $match[0];
-            
-            // Now we have the XML of ONE row. We need to fill its cells.
-            // Split by cell start tag to find columns
-            $cells = preg_split('/(?=<w:tc[ >])/', $rowXml);
-            if (count($cells) < 2) return $rowXml;
+    /**
+     * Dynamically rebuild the violation table:
+     * - Header row 2: replace level columns with DB-fetched level names
+     * - Data rows: one row per DB type, one date cell per level column
+     */
+    private function rebuildViolationTableRows($xml, array $typeNames, array $monthlyViolations, array $allLevelNames) {
+        $tablePattern = '/<w:tbl>(?:(?!<w:tbl>).)*?<\/w:tbl>/s';
 
-            $newRowXml = $cells[0]; // Content before first cell
-            
-            // Iterate through cells starting from index 1 (the first <w:tc>)
-            for ($i = 1; $i < count($cells); $i++) {
-                $cellContent = $cells[$i];
+        return preg_replace_callback($tablePattern, function($tableMatch) use ($typeNames, $monthlyViolations, $allLevelNames) {
+            $tableXml = $tableMatch[0];
 
-                // Map violations: index 0 -> Cell 1, index 1 -> Cell 2, etc.
-                // We offset by 1 because the first cell is the label
-                $vIndex = $i - 2; 
-                
-                if ($vIndex >= 0 && $vIndex < 5 && isset($violations[$vIndex])) {
-                    $v = $violations[$vIndex];
-                    $dateStrRaw = $v['dateReported'];
-                    $timeStrRaw = $v['violationTime'];
-                    
-                    // Parse date carefully
-                    $ts = strtotime(str_replace('/', '-', $dateStrRaw) . ' ' . $timeStrRaw);
-                    if (!$ts) $ts = strtotime($dateStrRaw . ' ' . $timeStrRaw);
-                    
-                    $dateStr = date('m/d/Y- g:i A', $ts);
-                    
-                    // Inject into <w:p> with standard small font size
-                    $runXml = '<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
-                    
-                    if (strpos($cellContent, '</w:p>') !== false) {
-                        // Find the last </w:p> in this cell and insert before it
-                        $lastPPos = strrpos($cellContent, '</w:p>');
-                        $cellContent = substr($cellContent, 0, $lastPPos) . $runXml . substr($cellContent, $lastPPos);
-                    } else {
-                        // Fallback: wrap in a paragraph
-                        $cellContent = preg_replace('/(<\/w:tc>)/', '<w:p>' . $runXml . '</w:p>$1', $cellContent);
-                    }
+            // Split into rows
+            preg_match_all('/<w:tr[ >].*?<\/w:tr>/s', $tableXml, $rowMatches);
+            $rows = $rowMatches[0];
+            if (count($rows) < 2) return $tableXml;
+
+            $legacyNames = ['Improper Uniform', 'Improper Foot Wear', 'No ID',
+                            'Permitted', '1st Offense', '2nd Offense', '3rd Offense'];
+            $allKnownNames = array_unique(array_merge($typeNames, $legacyNames));
+
+            // Classify rows
+            $row1 = null; // "Violation | Month | (empty colspan)" — keep as-is
+            $row2 = null; // level header row (Permitted, 1st Offense ...) — rebuild
+            $dataRowTemplate = null;
+            $dataRowIndices = [];
+
+            foreach ($rows as $idx => $row) {
+                // Row 1: contains "Violation" cell AND "Month" cell (no level names)
+                if ($row1 === null && strpos($row, '>Violation<') !== false && strpos($row, '>Month<') !== false) {
+                    $row1 = $row;
+                    continue;
                 }
-                
-                $newRowXml .= $cellContent;
+                // Row 2: level header — contains "Permitted" or "1st Offense" or "2nd Offense"
+                if ($row2 === null && (
+                    stripos($row, 'Permitted') !== false ||
+                    stripos($row, '1st Offense') !== false ||
+                    stripos($row, '2nd Offense') !== false
+                )) {
+                    $row2 = $row;
+                    continue;
+                }
+                // Data rows: contain a violation type name
+                $isDataRow = false;
+                foreach ($allKnownNames as $name) {
+                    if (stripos($row, $name) !== false) { $isDataRow = true; break; }
+                }
+                if ($isDataRow) {
+                    $dataRowIndices[] = $idx;
+                    if ($dataRowTemplate === null) $dataRowTemplate = $row;
+                }
             }
-            
-            return $newRowXml;
+
+            if ($dataRowTemplate === null) return $tableXml;
+
+            // --- Rebuild row 2 (level header) with dynamic columns ---
+            $newRow2 = '';
+            if ($row2 !== null) {
+                $newRow2 = $this->rebuildLevelHeaderRow($row2, $allLevelNames);
+            }
+
+            // --- Rebuild data rows ---
+            $newDataRows = '';
+            preg_match_all('/<w:tc[ >].*?<\/w:tc>/s', $dataRowTemplate, $cellMatches);
+            $cellStructures = $cellMatches[0];
+            $numLevelCols = count($allLevelNames);
+            // We need 1 (violation name) + numLevelCols cells total
+            foreach ($typeNames as $typeName) {
+                $violations = $monthlyViolations[$typeName] ?? [];
+                $newDataRows .= $this->buildDataRowByLevel(
+                    $dataRowTemplate, $cellStructures, $typeName, $violations, $allLevelNames
+                );
+            }
+
+            // Rebuild table content: replace all rows, put back header rows + new data rows
+            $newTableContent = preg_replace('/<w:tr[ >].*?<\/w:tr>/s', '', $tableXml);
+            $replacement = ($row1 ?? '') . ($newRow2 !== '' ? $newRow2 : ($row2 ?? '')) . $newDataRows;
+            $newTableContent = str_replace('</w:tbl>', $replacement . '</w:tbl>', $newTableContent);
+
+            return $newTableContent;
         }, $xml);
+    }
+
+    /**
+     * Rebuild the level header row (row 2) replacing old level cells with DB level names.
+     */
+    private function rebuildLevelHeaderRow($row2Xml, array $allLevelNames) {
+        // Get row properties
+        $trPr = '';
+        if (preg_match('/<w:trPr>.*?<\/w:trPr>/s', $row2Xml, $m)) $trPr = $m[0];
+        if (preg_match('/<w:tblPrEx>.*?<\/w:tblPrEx>/s', $row2Xml, $m)) $trPr = $m[0] . $trPr;
+
+        // Extract all cells from the row
+        preg_match_all('/<w:tc[ >].*?<\/w:tc>/s', $row2Xml, $cellMatches);
+        $cells = $cellMatches[0];
+
+        // Cell 0 is the vMerge:continue "Violation" cell — keep it
+        $firstCell = $cells[0] ?? '';
+
+        // Use cell 1 as template for level cells (has the right borders/shading)
+        $levelCellTemplate = $cells[1] ?? $cells[0];
+        $tcPr = '';
+        if (preg_match('/<w:tcPr>.*?<\/w:tcPr>/s', $levelCellTemplate, $m)) $tcPr = $m[0];
+
+        $newCells = $firstCell;
+        foreach ($allLevelNames as $levelName) {
+            $newCells .= '<w:tc>' . $tcPr
+                . '<w:p><w:pPr><w:pStyle w:val="6"/><w:jc w:val="center"/></w:pPr>'
+                . '<w:r><w:rPr>'
+                . '<w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/>'
+                . '<w:b/><w:bCs/><w:sz w:val="15"/><w:szCs w:val="15"/>'
+                . '</w:rPr><w:t xml:space="preserve">' . htmlspecialchars($levelName) . '</w:t></w:r></w:p>'
+                . '</w:tc>';
+        }
+
+        return '<w:tr>' . $trPr . $newCells . '</w:tr>';
+    }
+
+    /**
+     * Build a data row where each date cell maps to the specific level column.
+     * A violation is placed in the column matching its violationLevelLabel.
+     */
+    private function buildDataRowByLevel($templateRow, $cellStructures, $typeName, $violations, array $allLevelNames) {
+        $trPr = '';
+        if (preg_match('/<w:tblPrEx>.*?<\/w:tblPrEx>/s', $templateRow, $m)) $trPr .= $m[0];
+        if (preg_match('/<w:trPr>.*?<\/w:trPr>/s', $templateRow, $m)) $trPr .= $m[0];
+
+        // Get cell properties from template data cells (index 1 onward = date cells)
+        $dateCellTcPr = '';
+        if (isset($cellStructures[1]) && preg_match('/<w:tcPr>.*?<\/w:tcPr>/s', $cellStructures[1], $m)) {
+            $dateCellTcPr = $m[0];
+        }
+
+        // Get label cell properties (index 0)
+        $labelCellTcPr = '';
+        if (isset($cellStructures[0]) && preg_match('/<w:tcPr>.*?<\/w:tcPr>/s', $cellStructures[0], $m)) {
+            $labelCellTcPr = $m[0];
+        }
+
+        // Build an index: levelName => violation record (use first match per level)
+        $levelToViolation = [];
+        foreach ($violations as $v) {
+            $lvl = trim($v['violationLevelLabel'] ?? '');
+            if ($lvl && !isset($levelToViolation[$lvl])) {
+                $levelToViolation[$lvl] = $v;
+            }
+        }
+
+        // Label cell
+        $cells = '<w:tc>' . $labelCellTcPr
+            . '<w:p><w:pPr><w:pStyle w:val="6"/></w:pPr>'
+            . '<w:r><w:rPr>'
+            . '<w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/>'
+            . '<w:b/><w:bCs/><w:sz w:val="15"/><w:szCs w:val="15"/>'
+            . '</w:rPr><w:t xml:space="preserve">' . htmlspecialchars($typeName) . '</w:t></w:r></w:p>'
+            . '</w:tc>';
+
+        // One cell per level column
+        foreach ($allLevelNames as $levelName) {
+            $v = null;
+            // Exact match first, then case-insensitive
+            if (isset($levelToViolation[$levelName])) {
+                $v = $levelToViolation[$levelName];
+            } else {
+                foreach ($levelToViolation as $k => $rec) {
+                    if (strcasecmp($k, $levelName) === 0) { $v = $rec; break; }
+                }
+            }
+
+            if ($v !== null) {
+                $ts = strtotime(str_replace('/', '-', $v['dateReported']) . ' ' . $v['violationTime']);
+                if (!$ts) $ts = strtotime($v['dateReported'] . ' ' . $v['violationTime']);
+                $dateStr = $ts ? date('m/d/Y g:i A', $ts) : $v['dateReported'];
+                $content = '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>'
+                    . '<w:r><w:rPr>'
+                    . '<w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/>'
+                    . '<w:sz w:val="14"/><w:szCs w:val="14"/>'
+                    . '</w:rPr><w:t xml:space="preserve">' . htmlspecialchars($dateStr) . '</w:t></w:r></w:p>';
+            } else {
+                $content = '<w:p><w:r><w:t></w:t></w:r></w:p>';
+            }
+
+            $cells .= '<w:tc>' . $dateCellTcPr . $content . '</w:tc>';
+        }
+
+        return '<w:tr>' . $trPr . $cells . '</w:tr>';
     }
 
 }
