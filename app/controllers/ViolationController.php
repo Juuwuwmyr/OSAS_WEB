@@ -1437,6 +1437,8 @@ class ViolationController extends Controller
 
     /**
      * Dynamically rebuild the violation table:
+     * - tblGrid: recalculate column widths for the new column count
+     * - Row 1: fix the "Month" cell's gridSpan to match level count
      * - Header row 2: replace level columns with DB-fetched level names
      * - Data rows: one row per DB type, one date cell per level column
      */
@@ -1456,18 +1458,16 @@ class ViolationController extends Controller
             $allKnownNames = array_unique(array_merge($typeNames, $legacyNames));
 
             // Classify rows
-            $row1 = null; // "Violation | Month | (empty colspan)" — keep as-is
-            $row2 = null; // level header row (Permitted, 1st Offense ...) — rebuild
+            $row1 = null;
+            $row2 = null;
             $dataRowTemplate = null;
             $dataRowIndices = [];
 
             foreach ($rows as $idx => $row) {
-                // Row 1: contains "Violation" cell AND "Month" cell (no level names)
                 if ($row1 === null && strpos($row, '>Violation<') !== false && strpos($row, '>Month<') !== false) {
                     $row1 = $row;
                     continue;
                 }
-                // Row 2: level header — contains "Permitted" or "1st Offense" or "2nd Offense"
                 if ($row2 === null && (
                     stripos($row, 'Permitted') !== false ||
                     stripos($row, '1st Offense') !== false ||
@@ -1476,7 +1476,6 @@ class ViolationController extends Controller
                     $row2 = $row;
                     continue;
                 }
-                // Data rows: contain a violation type name
                 $isDataRow = false;
                 foreach ($allKnownNames as $name) {
                     if (stripos($row, $name) !== false) { $isDataRow = true; break; }
@@ -1489,6 +1488,39 @@ class ViolationController extends Controller
 
             if ($dataRowTemplate === null) return $tableXml;
 
+            $numLevelCols = count($allLevelNames);
+            // Total columns = 1 (Violation label) + 1 (Month/date col) + numLevelCols
+            // But the original layout is: col0=Violation(label), col1=first date col, col2..N=remaining date cols
+            // Actually: col0 = Violation (label), cols 1..N = level date columns
+            $totalCols = 1 + $numLevelCols;
+
+            // --- Rebuild tblGrid with equal-width columns ---
+            // Original total table width ~6979 dxa. Keep it, distribute evenly.
+            $totalWidth = 6979;
+            $labelColWidth = 1822; // keep original label column width
+            $levelColWidth = (int)(($totalWidth - $labelColWidth) / max($numLevelCols, 1));
+            
+            $newGrid = '<w:tblGrid>';
+            $newGrid .= '<w:gridCol w:w="' . $labelColWidth . '"/>';
+            for ($i = 0; $i < $numLevelCols; $i++) {
+                $newGrid .= '<w:gridCol w:w="' . $levelColWidth . '"/>';
+            }
+            $newGrid .= '</w:tblGrid>';
+
+            $tableXml = preg_replace('/<w:tblGrid>.*?<\/w:tblGrid>/s', $newGrid, $tableXml);
+
+            // --- Fix Row 1: update the "Month" + empty merged cell gridSpan ---
+            // Row 1 has: [Violation vMerge:restart] [Month] [empty gridSpan=4]
+            // The empty cell needs gridSpan = numLevelCols (covers all level columns)
+            // and the Month cell has no span (it maps to 1 col by itself... 
+            // actually in the original: Month=1col, empty=gridSpan4 covering 4 cols = 5 total date cols)
+            // New layout: Month cell = 1 col? No — looking at XML, Month spans 1 col,
+            // and the 3rd cell has gridSpan=4 (originally). We want them to merge into numLevelCols together.
+            // Simplest: give Month cell gridSpan=numLevelCols, remove the empty cell.
+            if ($row1 !== null) {
+                $row1 = $this->fixRow1GridSpan($row1, $numLevelCols);
+            }
+
             // --- Rebuild row 2 (level header) with dynamic columns ---
             $newRow2 = '';
             if ($row2 !== null) {
@@ -1499,8 +1531,6 @@ class ViolationController extends Controller
             $newDataRows = '';
             preg_match_all('/<w:tc[ >].*?<\/w:tc>/s', $dataRowTemplate, $cellMatches);
             $cellStructures = $cellMatches[0];
-            $numLevelCols = count($allLevelNames);
-            // We need 1 (violation name) + numLevelCols cells total
             foreach ($typeNames as $typeName) {
                 $violations = $monthlyViolations[$typeName] ?? [];
                 $newDataRows .= $this->buildDataRowByLevel(
@@ -1508,13 +1538,50 @@ class ViolationController extends Controller
                 );
             }
 
-            // Rebuild table content: replace all rows, put back header rows + new data rows
+            // Rebuild table content
             $newTableContent = preg_replace('/<w:tr[ >].*?<\/w:tr>/s', '', $tableXml);
             $replacement = ($row1 ?? '') . ($newRow2 !== '' ? $newRow2 : ($row2 ?? '')) . $newDataRows;
             $newTableContent = str_replace('</w:tbl>', $replacement . '</w:tbl>', $newTableContent);
 
             return $newTableContent;
         }, $xml);
+    }
+
+    /**
+     * Fix Row 1 so the "Month" header spans all level columns correctly.
+     * Original: [Violation vMerge] [Month 1-col] [empty gridSpan=4]
+     * New:      [Violation vMerge] [Month gridSpan=numLevelCols]
+     */
+    private function fixRow1GridSpan($row1Xml, $numLevelCols) {
+        // Get all cells
+        preg_match_all('/<w:tc[ >].*?<\/w:tc>/s', $row1Xml, $cellMatches);
+        $cells = $cellMatches[0];
+        if (count($cells) < 2) return $row1Xml;
+
+        // Cell 0 = Violation (vMerge:restart) — keep exactly as-is
+        $violationCell = $cells[0];
+
+        // Cell 1 = Month — update its gridSpan to cover all level cols
+        $monthCell = $cells[1];
+        // Remove any existing gridSpan
+        $monthCell = preg_replace('/<w:gridSpan[^\/]*\/>/s', '', $monthCell);
+        // Insert gridSpan after tcW (or at start of tcPr)
+        if ($numLevelCols > 1) {
+            $monthCell = preg_replace(
+                '/(<w:tcPr>)/',
+                '$1<w:gridSpan w:val="' . $numLevelCols . '"/>',
+                $monthCell,
+                1
+            );
+        }
+
+        // Get row properties
+        $trPr = '';
+        if (preg_match('/<w:tblPrEx>.*?<\/w:tblPrEx>/s', $row1Xml, $m)) $trPr .= $m[0];
+        if (preg_match('/<w:trPr>.*?<\/w:trPr>/s', $row1Xml, $m)) $trPr .= $m[0];
+
+        // Rebuild with only 2 cells (drop the old empty gridSpan cell)
+        return '<w:tr>' . $trPr . $violationCell . $monthCell . '</w:tr>';
     }
 
     /**
