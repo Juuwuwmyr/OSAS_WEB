@@ -984,6 +984,7 @@ class ViolationController extends Controller
         $monthlyViolations = [];
         $typeLevelsMap = [];
         foreach ($allTypes as $t) {
+            if (($t['status'] ?? 'active') !== 'active') continue; // extra safety guard
             $monthlyViolations[$t['name']] = [];
             $levels = $this->model->getViolationLevels($t['id'], false);
             $typeLevelsMap[$t['name']] = array_column($levels, 'name');
@@ -1238,12 +1239,14 @@ class ViolationController extends Controller
         $studentId = $violation['studentId'] ?? '';
 
         // 1.1 Fetch all active violation types + their levels from DB (fully dynamic)
-        $allTypes = $this->model->getViolationTypes(false);
+        // Only 'active' status types appear as rows in the slip — archived/deleted types are excluded.
+        $allTypes = $this->model->getViolationTypes(false); // false = active only
         $monthlyViolations = [];
         $typeNames = [];
         $typeLevelsMap = []; // typeName => [level names in order]
 
         foreach ($allTypes as $t) {
+            if (($t['status'] ?? 'active') !== 'active') continue; // extra safety guard
             $monthlyViolations[$t['name']] = [];
             $typeNames[] = $t['name'];
             $levels = $this->model->getViolationLevels($t['id'], false);
@@ -1453,11 +1456,10 @@ class ViolationController extends Controller
             $rows = $rowMatches[0];
             if (count($rows) < 2) return $tableXml;
 
-            $legacyNames = ['Improper Uniform', 'Improper Foot Wear', 'No ID',
-                            'Permitted', '1st Offense', '2nd Offense', '3rd Offense'];
-            $allKnownNames = array_unique(array_merge($typeNames, $legacyNames));
-
-            // Classify rows
+            // Detect row types by content markers only — no hardcoded type names
+            // Row 1: has both "Violation" and "Month" text cells
+            // Row 2: level header — has "Permitted" or "Offense" level names
+            // Data rows: any remaining rows with multiple cells (template rows)
             $row1 = null;
             $row2 = null;
             $dataRowTemplate = null;
@@ -1470,17 +1472,14 @@ class ViolationController extends Controller
                 }
                 if ($row2 === null && (
                     stripos($row, 'Permitted') !== false ||
-                    stripos($row, '1st Offense') !== false ||
-                    stripos($row, '2nd Offense') !== false
+                    stripos($row, 'Offense') !== false
                 )) {
                     $row2 = $row;
                     continue;
                 }
-                $isDataRow = false;
-                foreach ($allKnownNames as $name) {
-                    if (stripos($row, $name) !== false) { $isDataRow = true; break; }
-                }
-                if ($isDataRow) {
+                // Any remaining row with at least 2 cells is a data row (template structure)
+                preg_match_all('/<w:tc[ >]/', $row, $tcMatches);
+                if (count($tcMatches[0]) >= 2) {
                     $dataRowIndices[] = $idx;
                     if ($dataRowTemplate === null) $dataRowTemplate = $row;
                 }
