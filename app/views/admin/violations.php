@@ -64,23 +64,12 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-stat-card">
       <div class="Violations-stat-icon">
-        <i class='bx bx-check-circle'></i>
+        <i class='bx bx-shield-quarter'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Permitted</h3>
+        <h3 class="Violations-stat-title">With Sanction</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
-      </div>
-    </div>
-
-    <div class="Violations-stat-card">
-      <div class="Violations-stat-icon">
-        <i class='bx bx-user-voice'></i>
-      </div>
-          <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Warning</h3>
-        <div class="Violations-stat-value" id="pendingViolations">0</div>
-        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
     </div>
 
@@ -89,9 +78,20 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Disciplinary</h3>
+        <h3 class="Violations-stat-title">No Sanction Yet</h3>
+        <div class="Violations-stat-value" id="pendingViolations">0</div>
+        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
+      </div>
+    </div>
+
+    <div class="Violations-stat-card">
+      <div class="Violations-stat-icon">
+        <i class='bx bx-calendar-week'></i>
+      </div>
+      <div class="Violations-stat-content">
+        <h3 class="Violations-stat-title">This Week</h3>
         <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
-        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
+        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">+0 this week</div>
       </div>
     </div>
   </div>
@@ -129,11 +129,9 @@ require_once __DIR__ . '/../../core/View.php';
           </select>
 
           <select id="ViolationsStatusFilter" class="Violations-filter-select">
-            <option value="all">All Status</option>
-            <option value="permitted">Resolved / Permitted</option>
-            <option value="warning">Warning</option>
-            <option value="disciplinary">Disciplinary</option>
-            <option value="resolved">Resolved</option>
+            <option value="all">All Records</option>
+            <option value="with_sanction">Has Sanction</option>
+            <option value="no_sanction">No Sanction</option>
           </select>
         </div>
 
@@ -458,7 +456,6 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Action Buttons -->
         <div class="Violations-form-actions">
-          <input type="hidden" id="violationStatus" name="status" value="warning">
           <button type="button" class="Violations-btn-outline" id="cancelRecordModal">Cancel</button>
           <button type="button" class="Violations-btn-outline entrance-btn" id="modalEntranceBtn" style="display: none;">
             <i class='bx bx-receipt'></i> Entrance Slip
@@ -553,10 +550,14 @@ require_once __DIR__ . '/../../core/View.php';
           <div id="detailEditAuditTrail" style="display:none;"></div>
         </div>
 
-        <!-- Evidence Section REMOVED — click the Evidence badge in Violation History to view -->
-
-        <!-- Evidence Popup (shown when clicking Evidence badge in history) -->
-        <!-- REMOVED — Evidence badge now opens lightbox directly -->
+        <!-- Sanction Description Block -->
+        <div id="detailAdminSanctionSection" style="display:none;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:14px 16px;margin:10px 0;">
+          <h4 style="display:flex;align-items:center;gap:7px;color:#b8860b;margin-bottom:8px;font-size:13px;">
+            <i class='bx bx-shield-quarter'></i>
+            Sanction: <span id="detailAdminSanctionName" style="font-weight:700;"></span>
+          </h4>
+          <p id="detailAdminSanctionDesc" style="font-size:13px;color:#374151;margin:0;line-height:1.6;">-</p>
+        </div>
 
         <!-- Image Lightbox -->
         <div id="evidenceLightbox" class="evidence-lightbox" style="display:none">
@@ -636,12 +637,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="vt-manage-column">
           <div class="vt-manage-column-header">
             <h3 id="vtManageLeftTitle">Violation Types</h3>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <span class="vt-manage-count" id="vtManageTypeCount" style="margin: 0;">0</span>
-              <button type="button" class="vt-toggle-view-btn" id="vtToggleStatusesBtn" title="Manage global statuses">
-                <i class='bx bx-cog'></i>
-              </button>
-            </div>
+            <span class="vt-manage-count" id="vtManageTypeCount">0</span>
           </div>
           <div id="vtManageTypesContainer">
             <div class="vt-manage-list" id="vtManageTypesList">
@@ -651,20 +647,6 @@ require_once __DIR__ . '/../../core/View.php';
               <input type="text" id="vtNewTypeName" placeholder="New violation type name..." maxlength="255">
               <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddTypeBtn">
                 <i class='bx bx-plus'></i> Add Type
-              </button>
-            </div>
-          </div>
-          <div id="vtManageStatusesContainer" style="display: none;">
-            <div class="vt-manage-list" id="vtManageStatusesList">
-              <p class="vt-manage-empty">Loading statuses...</p>
-            </div>
-            <div class="vt-manage-add-form" style="flex-direction: column; gap: 10px;">
-              <input type="text" id="vtNewStatusName" placeholder="New status name (e.g. Expulsion)..." maxlength="100">
-              <div class="vt-color-presets" id="vtNewStatusColorPresets" style="display: flex; gap: 6px; justify-content: center; padding: 5px; background: #f8f9fa; border-radius: 6px;">
-                <!-- Colors will be added by JS -->
-              </div>
-              <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddStatusBtn">
-                <i class='bx bx-plus'></i> Add Status
               </button>
             </div>
           </div>
@@ -683,11 +665,10 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="vt-manage-list" id="vtManageLevelsList">
             <p class="vt-manage-empty">Select a violation type to view its levels</p>
           </div>
-          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 10px;">
+          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 8px;">
             <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
-            <select id="vtNewLevelStatus" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px;">
-              <!-- Will be populated by JS -->
-            </select>
+            <input type="text" id="vtNewLevelSanctionName" placeholder="Sanction name (e.g. Sanction 6 — Suspension)" maxlength="150" style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">
+            <textarea id="vtNewLevelSanctionDesc" placeholder="Sanction description — what this means for the student..." style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:12px;resize:vertical;min-height:52px;"></textarea>
             <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
               <i class='bx bx-plus'></i> Add Level
             </button>

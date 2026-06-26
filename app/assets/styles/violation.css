@@ -990,6 +990,33 @@ body.dark {
   border-color: rgba(33, 150, 243, 0.4);
 }
 
+/* ── Sanction Badge ── */
+.sanction-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(212, 175, 55, 0.15);
+  color: #92650a;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.case-status-badge.sanction {
+  background: rgba(212, 175, 55, 0.15);
+  color: #92650a;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.case-status-badge.level {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
 /* ========================================= */
 /*            ACTION BUTTONS                */
 /* ========================================= */
@@ -1078,14 +1105,39 @@ body.dark {
 }
 
 .Violations-action-btn.resolve {
-  background: #10b981;
-  color: #ffffff;
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.Violations-action-btn.resolve i,
+.Violations-action-btn.resolve .bx {
+  color: #ffffff !important;
+  font-size: 16px;
 }
 
 .Violations-action-btn.resolve:hover {
-  background: #059669;
+  background: #059669 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+}
+
+.Violations-action-btn.reopen {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.Violations-action-btn.reopen i,
+.Violations-action-btn.reopen .bx {
+  color: #ffffff !important;
+  font-size: 16px;
+}
+
+.Violations-action-btn.reopen:hover {
+  background: #d97706 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
 }
 
 .Violations-action-btn.escalate {

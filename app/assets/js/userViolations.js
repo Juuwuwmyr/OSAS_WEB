@@ -313,12 +313,9 @@ function renderViolationTable() {
             }
         }
 
-        const status = (v.status || 'pending').toLowerCase();
-        const matchesStatus = statusFilter === 'all' || 
-                             (statusFilter === 'resolved' && (status === 'resolved' || status === 'permitted')) ||
-                             (statusFilter === 'pending' && (status === 'pending' || status === 'warning')) ||
-                             (statusFilter === 'warning' && status === 'warning') ||
-                             status === statusFilter;
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'with_sanction' && v.sanctionName) ||
+            (statusFilter === 'no_sanction' && !v.sanctionName);
 
         return matchesSearch && matchesType && matchesStatus;
     });
@@ -355,27 +352,15 @@ function renderViolationTable() {
     if (tbody) {
         tbody.innerHTML = paginatedItems.map(v => {
         const status = (v.status || 'pending').toLowerCase();
-        
         const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
         const levelVal = String(level).toLowerCase();
         const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
-       
         let statusClass = 'warning';
         let statusText = 'Pending';
-
-        if (status === 'resolved') {
-            statusClass = 'resolved';
-            statusText = 'Resolved';
-        } else if (status === 'permitted') {
-            statusClass = 'permitted';
-            statusText = 'Permitted';
-        } else if (isDisciplinary || status === 'disciplinary') {
-            statusClass = 'disciplinary';
-            statusText = 'Disciplinary';
-        } else if (status === 'warning') {
-            statusClass = 'warning';
-            statusText = 'Warning';
-        }
+        if (status === 'resolved') { statusClass = 'resolved'; statusText = 'Resolved'; }
+        else if (status === 'permitted') { statusClass = 'permitted'; statusText = 'Permitted'; }
+        else if (isDisciplinary || status === 'disciplinary') { statusClass = 'disciplinary'; statusText = 'Disciplinary'; }
+        else if (status === 'warning') { statusClass = 'warning'; statusText = 'Warning'; }
 
         const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
         const violationTypeFormatted = formatViolationType(String(violationType));
@@ -385,7 +370,11 @@ function renderViolationTable() {
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
                 <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
-                <td data-label="Status"><span class="Violations-status-badge ${statusClass}">${statusText}</span></td>
+                <td data-label="Status">
+                    ${v.sanctionName
+                        ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
+                        : `<span class="Violations-status-badge ${statusClass}">${statusText}</span>`}
+                </td>
                 <td data-label="Actions">
                     <div class="action-buttons">
                         <button class="Violations-action-btn view" onclick="viewViolationDetails(${v.id})" title="View Details">
@@ -443,7 +432,9 @@ function renderViolationTable() {
                     <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(violationTypeFormatted)}</span>
                     <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
                     <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
-                    <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
+                    ${v.sanctionName
+                        ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
+                        : `<span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>`}
                     <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
                         <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.created_at || v.violation_date || v.date)}
                     </span>
@@ -474,10 +465,12 @@ function renderViolationTable() {
             const levelClass = getViolationLevelClass(level);
 
             return `
-            <div class="violation-card ${statusClass}" data-id="${v.id}" style="background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px;cursor:pointer;" onclick="viewViolationDetails(${v.id})">
+            <div class="violation-card" data-id="${v.id}" style="background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px;cursor:pointer;" onclick="viewViolationDetails(${v.id})">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
                     <span class="violation-type-badge ${typeClass}" style="font-size:10px;padding:3px 8px;">${escapeHtml(violationTypeFormatted)}</span>
-                    <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
+                    ${v.sanctionName
+                        ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
+                        : `<span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>`}
                 </div>
                 <div style="margin-bottom:8px;">
                     <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
@@ -651,26 +644,23 @@ function viewViolationDetails(id) {
     };
 
     // --- Case Header ---
-    let displayStatus = (v.status || '').toLowerCase();
-    let displayStatusLabel = v.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'Unknown');
+    const sanctionName = v.sanctionName || null;
+    const sanctionDescription = v.sanctionDescription || null;
 
+    let displayStatus = (v.status || '').toLowerCase();
+    let displayStatusLabel = v.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'Recorded');
     const levelLabel = (v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
     const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense') || levelLabel.includes('disciplinary');
-
-    if (displayStatus === 'resolved') {
-        displayStatusLabel = 'Resolved';
-        // keep displayStatus = 'resolved'
-    } else if (displayStatus === 'permitted') {
-        displayStatusLabel = 'Permitted';
-        displayStatus = 'permitted';
-    } else if (isDisciplinary || displayStatus === 'disciplinary') {
-        displayStatus = 'disciplinary';
-        displayStatusLabel = 'Disciplinary';
-    }
+    if (isDisciplinary || displayStatus === 'disciplinary') { displayStatus = 'disciplinary'; displayStatusLabel = 'Disciplinary'; }
+    else if (displayStatus === 'permitted') { displayStatusLabel = 'Permitted'; }
+    else if (displayStatus === 'resolved') { displayStatusLabel = 'Resolved'; }
 
     setElementText('detailCaseId', v.case_id || '#' + v.id);
-    setElementText('detailStatusBadge', displayStatusLabel);
-    setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
+    // Show sanction name if defined, otherwise show offense level (not the raw DB status)
+    const badgeLabel = sanctionName || v.violationLevelLabel || v.violation_level_name || displayStatusLabel;
+    const badgeClass = sanctionName ? 'sanction' : (v.violationLevelLabel ? 'level' : getStatusClass(displayStatus));
+    setElementText('detailStatusBadge', badgeLabel);
+    setElementClass('detailStatusBadge', `case-status-badge ${badgeClass}`);
 
     // --- Student Info ---
     const studentName = v.student_name || v.studentName || 'Student';
@@ -752,28 +742,38 @@ function viewViolationDetails(id) {
     // Reported By
     renderList('detailReportedBy', displayList, sv => sv.reported_by || sv.reportedBy || '-');
     
-    // Statuses
+    // Status / Sanction column — show sanction if defined, fall back to status
     renderList('detailStatus', displayList, sv => {
-        let itemStatus = (sv.status || '').toLowerCase();
-        let itemStatusLabel = sv.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
-        
-        const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
-        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('5th offense') || svLevelLabel.includes('disciplinary');
-        
-        if (itemStatus === 'resolved') {
-            itemStatusLabel = 'Resolved';
-        } else if (itemStatus === 'permitted') {
-            itemStatusLabel = 'Permitted';
-        } else if (svIsDisciplinary || itemStatus === 'disciplinary') {
-            itemStatus = 'disciplinary';
-            itemStatusLabel = 'Disciplinary';
+        if (sv.sanctionName) {
+            return `<span class="sanction-badge">${escapeHtml(sv.sanctionName)}</span>`;
         }
-        
+        let itemStatus = (sv.status || '').toLowerCase();
+        let itemStatusLabel = sv.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : '—');
+        const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
+        if (svLevelLabel.includes('disciplinary') || svLevelLabel.includes('5th offense')) {
+            itemStatus = 'disciplinary'; itemStatusLabel = 'Disciplinary';
+        }
         return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
     });
 
     // --- Description / Notes ---
     setElementText('detailNotes', v.notes || v.description || 'No description provided.');
+
+    // --- Sanction Section (shown if level has a sanction defined) ---
+    const sanctionSection = document.getElementById('detailSanctionSection');
+    if (sanctionSection) {
+        if (sanctionName) {
+            sanctionSection.style.display = 'block';
+            const snEl = document.getElementById('detailSanctionName');
+            const sdEl = document.getElementById('detailSanctionDesc');
+            // Show sanction name + violation type: "Sanction 1 — Improper Footwear"
+            const typeName = v.violationTypeLabel || v.violation_type_name || v.violation_type || '';
+            if (snEl) snEl.textContent = typeName ? `${sanctionName} — ${typeName}` : sanctionName;
+            if (sdEl) sdEl.textContent = sanctionDescription || 'No description provided.';
+        } else {
+            sanctionSection.style.display = 'none';
+        }
+    }
 
     // --- Evidence / Attachments (Match Admin) ---
     const attachmentsContainer = document.getElementById('detailAttachments');
@@ -870,6 +870,7 @@ function viewViolationDetails(id) {
                 } else if (hIsDisciplinary || itemStatus === 'disciplinary') {
                     statusHtml = '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
                 }
+                const hSanctionHtml = h.sanctionName ? `<span class="sanction-badge" style="font-size:10px;margin-left:4px;">${escapeHtml(h.sanctionName)}</span>` : '';
 
                 return `
                 <div class="timeline-item ${activeClass}">
@@ -882,7 +883,7 @@ function viewViolationDetails(id) {
                         </span>
                         <span class="timeline-desc">
                             Reported at ${hLoc} 
-                            ${statusHtml}
+                            ${statusHtml} ${hSanctionHtml}
                         </span>
                     </div>
                 </div>

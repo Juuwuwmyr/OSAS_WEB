@@ -305,8 +305,11 @@ class ViolationController extends Controller
         $violationTime  = $this->sanitize($input['violationTime'] ?? '');
         $location       = $this->sanitize($input['location'] ?? '');
         $reportedBy     = $this->sanitize(($_SESSION['full_name'] ?? $_SESSION['username'] ?? '') ?: ($input['reportedBy'] ?? ''));
-        $status         = $this->sanitize($input['status'] ?? 'warning');
         $notes          = $this->sanitize($input['notes'] ?? '');
+
+        // Auto-derive status from the level's default_status (not hardcoded 'warning')
+        $levelData = $this->model->query("SELECT default_status FROM violation_levels WHERE id = ?", [$violationLevel]);
+        $status = !empty($levelData) ? ($this->sanitize($levelData[0]['default_status'] ?? 'warning')) : 'warning';
 
         // Handle attachments (File Upload)
         $attachmentPaths = [];
@@ -422,39 +425,40 @@ class ViolationController extends Controller
             try {
                 require_once __DIR__ . '/../services/PushNotificationService.php';
                 
-                // Get violation type and level names for a presentable notification
+                // Get violation type, level, and sanction info
                 $typeInfo = $this->model->query("SELECT name FROM violation_types WHERE id = ?", [$violationType]);
-                $levelInfo = $this->model->query("SELECT name FROM violation_levels WHERE id = ?", [$violationLevel]);
+                $levelInfo = $this->model->query("SELECT name, sanction_name, sanction_description FROM violation_levels WHERE id = ?", [$violationLevel]);
                 $typeName = $typeInfo[0]['name'] ?? 'Violation';
                 $levelName = $levelInfo[0]['name'] ?? '';
-                
-                // Build student-friendly notification based on level
+                $sanctionName = $levelInfo[0]['sanction_name'] ?? null;
+                $sanctionDescription = $levelInfo[0]['sanction_description'] ?? null;
+
                 $studentFirstName = $student[0]['first_name'] ?? 'Student';
-                $levelLower = strtolower($levelName);
-                
-                if (strpos($levelLower, '1st offense') !== false || strpos($levelLower, 'permitted') !== false) {
-                    // First offense — gentle reminder
-                    $pushTitle = 'Dress Code Reminder';
-                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\" (1st Offense). This is just a reminder — please follow the proper dress code next time.";
-                } elseif (strpos($levelLower, '2nd offense') !== false) {
-                    $pushTitle = '2nd Offense — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 2nd offense for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
-                } elseif (strpos($levelLower, '3rd offense') !== false || strpos($levelLower, 'warning 1') !== false) {
-                    $pushTitle = '3rd Offense — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 3rd offense for \"{$typeName}\". Please comply immediately to avoid escalation.";
-                } elseif (strpos($levelLower, '4th offense') !== false || strpos($levelLower, 'warning 2') !== false) {
-                    $pushTitle = '4th Offense — Final Warning';
-                    $pushBody = "Hi {$studentFirstName}, this is your 4th offense for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
-                } elseif (strpos($levelLower, '5th offense') !== false || strpos($levelLower, 'warning 3') !== false) {
-                    $pushTitle = '5th Offense — Disciplinary Action Required';
-                    $pushBody = "Hi {$studentFirstName}, you've reached your 5th offense for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
-                } elseif (strpos($levelLower, 'disciplinary') !== false) {
-                    $pushTitle = 'Disciplinary Notice';
-                    $pushBody = "Hi {$studentFirstName}, a disciplinary action has been recorded for repeated \"{$typeName}\" violations. Please report to the Office of Student Affairs immediately.";
+
+                // Use sanction if defined, otherwise fall back to level-name-based messages
+                if ($sanctionName) {
+                    $pushTitle = "{$sanctionName} — {$typeName}";
+                    $pushBody = $sanctionDescription
+                        ? "Hi {$studentFirstName}, you received \"{$sanctionName}\" for \"{$typeName}\" ({$levelName}). {$sanctionDescription}"
+                        : "Hi {$studentFirstName}, a \"{$typeName}\" ({$levelName}) violation has been recorded. Sanction: {$sanctionName}.";
                 } else {
-                    // Fallback for any other level names
-                    $pushTitle = 'Violation Notice';
-                    $pushBody = "Hi {$studentFirstName}, a \"{$typeName}\" violation ({$levelName}) has been recorded. Please check your E-OSAS portal for details.";
+                    $levelLower = strtolower($levelName);
+                    if (strpos($levelLower, '1st') !== false) {
+                        $pushTitle = 'Violation Notice';
+                        $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\" ({$levelName}). Please follow the dress code policy.";
+                    } elseif (strpos($levelLower, '2nd') !== false) {
+                        $pushTitle = 'Violation Notice';
+                        $pushBody = "Hi {$studentFirstName}, this is your 2nd offense for \"{$typeName}\". Please comply with the policy.";
+                    } elseif (strpos($levelLower, '3rd') !== false) {
+                        $pushTitle = 'Violation Notice';
+                        $pushBody = "Hi {$studentFirstName}, 3rd offense for \"{$typeName}\". Please comply immediately.";
+                    } elseif (strpos($levelLower, 'disciplinary') !== false) {
+                        $pushTitle = 'Disciplinary Notice';
+                        $pushBody = "Hi {$studentFirstName}, a disciplinary action has been recorded for \"{$typeName}\". Please report to the OSAS office.";
+                    } else {
+                        $pushTitle = 'Violation Notice';
+                        $pushBody = "Hi {$studentFirstName}, a \"{$typeName}\" ({$levelName}) violation has been recorded. Please check your E-OSAS portal.";
+                    }
                 }
                 
                 (new PushNotificationService())->notifyStudent(
@@ -585,12 +589,41 @@ class ViolationController extends Controller
                         $typeName  = $typeInfo[0]['name']  ?? 'Violation';
                         $levelName = $levelInfo[0]['name'] ?? '';
 
-                        (new PushNotificationService())->notifyStudent(
-                            $studentId,
-                            'Violation Record Updated',
-                            "Your violation record ({$current['case_id']}) for \"{$typeName}\" ({$levelName}) has been updated by {$editorName}. Please check your E-OSAS portal for details.",
-                            ['type' => 'violation_updated', 'id' => $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-update-' . $id]
-                        );
+                        // Dedicated "Resolved" notification when status changes to resolved
+                        if ($newStatus === 'resolved' && ($current['status'] ?? '') !== 'resolved') {
+                            $studentInfo = $this->model->query(
+                                "SELECT first_name FROM students WHERE student_id = ? LIMIT 1",
+                                [$studentId]
+                            );
+                            $firstName = $studentInfo[0]['first_name'] ?? 'Student';
+
+                            (new PushNotificationService())->notifyStudent(
+                                $studentId,
+                                '✅ Violation Resolved',
+                                "Hi {$firstName}, your violation ({$current['case_id']}) for \"{$typeName}\" has been marked as resolved by {$editorName}. No further action is required.",
+                                ['type' => 'violation_resolved', 'id' => $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-resolved-' . $id]
+                            );
+
+                            // Also notify admins that a violation was resolved
+                            $studentFullInfo = $this->model->query(
+                                "SELECT first_name, last_name FROM students WHERE student_id = ? LIMIT 1",
+                                [$studentId]
+                            );
+                            $studentFullName = trim(($studentFullInfo[0]['first_name'] ?? '') . ' ' . ($studentFullInfo[0]['last_name'] ?? ''));
+                            (new PushNotificationService())->notifyAdmins(
+                                'Violation Resolved',
+                                "{$editorName} marked violation {$current['case_id']} for {$studentFullName} ({$studentId}) as resolved.",
+                                ['type' => 'admin_violation_resolved', 'id' => $id, 'page' => 'violations', 'tag' => 'admin-resolved-' . $id],
+                                $_SESSION['user_id'] ?? null
+                            );
+                        } else {
+                            (new PushNotificationService())->notifyStudent(
+                                $studentId,
+                                'Violation Record Updated',
+                                "Your violation record ({$current['case_id']}) for \"{$typeName}\" ({$levelName}) has been updated by {$editorName}. Please check your E-OSAS portal for details.",
+                                ['type' => 'violation_updated', 'id' => $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-update-' . $id]
+                            );
+                        }
                     }
                 } catch (Throwable $e) {
                     error_log('Violation edit push: ' . $e->getMessage());
@@ -760,20 +793,19 @@ class ViolationController extends Controller
         $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
         $defaultStatus = $this->sanitize($input['default_status'] ?? 'warning');
         $statusColor = $this->sanitize($input['status_color'] ?? '#f59e0b');
+        $sanctionName = $this->sanitize($input['sanction_name'] ?? '') ?: null;
+        $sanctionDescription = $this->sanitize($input['sanction_description'] ?? '') ?: null;
 
         if ($typeId <= 0) {
             $this->error('Violation type ID is required');
         }
 
         try {
-            $levelId = $this->model->createViolationLevel($typeId, $name, $description, $levelOrder, $defaultStatus, $statusColor);
-            $levels = $this->model->getViolationLevels($typeId);
+            $levelId = $this->model->createViolationLevel($typeId, $name, $description, $levelOrder, $defaultStatus, $statusColor, $sanctionName, $sanctionDescription);
+            $levels = $this->model->getViolationLevels($typeId, true);
             $level = null;
             foreach ($levels as $l) {
-                if ((int)$l['id'] === $levelId) {
-                    $level = $l;
-                    break;
-                }
+                if ((int)$l['id'] === $levelId) { $level = $l; break; }
             }
             $this->success('Violation level created successfully', $level ?: ['id' => $levelId]);
         } catch (Exception $e) {
@@ -794,13 +826,15 @@ class ViolationController extends Controller
         $levelOrder = isset($input['level_order']) ? (int)$input['level_order'] : null;
         $defaultStatus = $this->sanitize($input['default_status'] ?? 'warning');
         $statusColor = $this->sanitize($input['status_color'] ?? '#f59e0b');
+        $sanctionName = $this->sanitize($input['sanction_name'] ?? '') ?: null;
+        $sanctionDescription = $this->sanitize($input['sanction_description'] ?? '') ?: null;
 
         if ($id <= 0 || $name === '') {
             $this->error('Level ID and name are required');
         }
 
         try {
-            $this->model->updateViolationLevel($id, $name, $description, $levelOrder, $defaultStatus, $statusColor);
+            $this->model->updateViolationLevel($id, $name, $description, $levelOrder, $defaultStatus, $statusColor, $sanctionName, $sanctionDescription);
             $this->success('Violation level updated successfully');
         } catch (Exception $e) {
             $this->error($e->getMessage());
