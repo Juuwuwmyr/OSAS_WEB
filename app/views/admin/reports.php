@@ -294,6 +294,7 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="reportType">Report Type</label>
             <select id="reportType" name="reportType" required>
               <option value="">Select report type</option>
+              <option value="print_all">Print All Records</option>
               <option value="summary">Summary Report</option>
               <option value="detailed">Detailed Report</option>
               <option value="department">Department-wise Report</option>
