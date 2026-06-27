@@ -157,14 +157,7 @@ function renderUserTypeStatCards() {
     const container = document.getElementById('uvTypeStatsContainer');
     if (!container) return;
 
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const thisMonthViolations = userViolations.filter(v => {
-        const dateStr = v.created_at || v.violation_date || v.date || '';
-        const d = new Date(String(dateStr).replace(/\//g, '-'));
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
+    const allViolations = allUserViolations.length > 0 ? allUserViolations : userViolations;
 
     if (!userViolationTypes.length) {
         container.innerHTML = '<p class="uv-stats-loading">No violation types found</p>';
@@ -172,14 +165,14 @@ function renderUserTypeStatCards() {
     }
 
     container.innerHTML = userViolationTypes.map(type => {
-        const count = countUserViolationsByType(type, thisMonthViolations);
+        const count = countUserViolationsByType(type, allViolations);
         const icon = getUserTypeIcon(type.name);
         const label = type.name.length > 22 ? `${type.name.slice(0, 20)}…` : type.name;
         return `
         <div class="uv-stat" title="${type.name}">
             <div class="uv-stat__icon"><i class='bx ${icon}'></i></div>
             <div class="uv-stat__body">
-                <span class="uv-stat__lbl">${label} <small>(this month)</small></span>
+                <span class="uv-stat__lbl">${label}</span>
                 <span class="uv-stat__val">${count}</span>
             </div>
         </div>`;
@@ -273,16 +266,8 @@ function renderViolationTable() {
     const listBody = document.getElementById('violationsListBody');
     const showingCount = document.getElementById('showingViolationsCount');
     
-    // Determine source based on time period filter
-    const timePeriod = document.getElementById('timePeriodFilter')?.value || 'current_month';
-    let sourceViolations;
-    
-    if (timePeriod === 'all') {
-        sourceViolations = allUserViolations.length > 0 ? allUserViolations : (window.allUserViolations || []);
-    } else {
-        // current_month — only active (non-archived) violations
-        sourceViolations = userViolations.length > 0 ? userViolations : (window.userViolations || []);
-    }
+    // Always use full history — "This Month" filter removed
+    let sourceViolations = allUserViolations.length > 0 ? allUserViolations : (window.allUserViolations || userViolations);
 
     // Apply filters
     const searchTerm = (document.getElementById('searchViolation')?.value || '').toLowerCase();
@@ -373,7 +358,10 @@ function renderViolationTable() {
                 <td data-label="Status">
                     ${v.sanctionName
                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
-                        : `<span class="Violations-status-badge ${statusClass}">${statusText}</span>`}
+                        : ''}
+                    ${status === 'resolved'
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </td>
                 <td data-label="Actions">
                     <div class="action-buttons">
@@ -434,7 +422,10 @@ function renderViolationTable() {
                     <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
                     ${v.sanctionName
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
-                        : `<span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>`}
+                        : ''}
+                    ${statusClass === 'resolved'
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                     <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
                         <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.created_at || v.violation_date || v.date)}
                     </span>
@@ -470,7 +461,10 @@ function renderViolationTable() {
                     <span class="violation-type-badge ${typeClass}" style="font-size:10px;padding:3px 8px;">${escapeHtml(violationTypeFormatted)}</span>
                     ${v.sanctionName
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
-                        : `<span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>`}
+                        : ''}
+                    ${statusClass === 'resolved'
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </div>
                 <div style="margin-bottom:8px;">
                     <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>

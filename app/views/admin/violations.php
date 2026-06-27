@@ -28,10 +28,6 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-header-actions">
       <div class="Violations-button-group">
-        <button id="btnMonthlyReset" class="Violations-btn outline small warning" title="Archive old violations and reset student levels">
-          <i class='bx bx-reset'></i>
-          <span>Monthly Reset</span>
-        </button>
         <!-- Import button removed -->
         <button id="btnExportViolations" class="Violations-btn outline small">
           <i class='bx bx-download'></i>
@@ -182,10 +178,10 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Display Mode Toggle: Latest per student vs All records -->
         <div class="Violations-view-toggle" id="displayModeToggle">
-          <button class="Violations-display-btn active" data-display="latest" title="Latest per student">
+          <button class="Violations-display-btn" data-display="latest" title="Latest per student">
             <i class='bx bx-user'></i>
           </button>
-          <button class="Violations-display-btn" data-display="all" title="All violations (full history)">
+          <button class="Violations-display-btn active" data-display="all" title="All violations (full history)">
             <i class='bx bx-history'></i>
           </button>
         </div>

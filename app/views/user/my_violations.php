@@ -54,8 +54,7 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-search'></i>
           <input type="text" id="searchViolation" placeholder="Search…">
         </div>
-        <select id="timePeriodFilter" class="uv-select" onchange="filterViolations()">
-          <option value="current_month">This Month</option>
+        <select id="timePeriodFilter" class="uv-select" onchange="filterViolations()" style="display:none;">
           <option value="all">All History</option>
         </select>
         <select id="violationFilter" class="uv-select" onchange="filterViolations()">

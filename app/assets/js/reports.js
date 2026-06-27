@@ -109,9 +109,10 @@ function initReportsModule() {
         function renderTypeCountCells(report) {
             return reportViolationTypes.map(type => {
                 const count = getReportTypeCount(report, type.id);
-                const countClass = getCountBadgeClass(count);
+                const maxLevel = type.max_level || 3;
+                const countClass = getCountBadgeClass(count, maxLevel);
                 return `<td class="violation-count" data-label="${type.name}">
-                    <div class="count-badge ${countClass}">${count}/5</div>
+                    <div class="count-badge ${countClass}">${count}/${maxLevel}</div>
                 </td>`;
             }).join('');
         }
@@ -247,9 +248,10 @@ function initReportsModule() {
             return classes[status] || 'default';
         }
 
-        function getCountBadgeClass(count) {
-            if (count >= 3) return 'high';
-            if (count >= 2) return 'medium';
+        function getCountBadgeClass(count, maxLevel) {
+            const max = maxLevel || 3;
+            if (count >= max) return 'high';
+            if (count >= Math.ceil(max / 2)) return 'medium';
             if (count >= 1) return 'low';
             return 'none';
         }
@@ -271,28 +273,35 @@ function initReportsModule() {
                 return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
 
-            const offenseLabels = ['', '1st', '2nd', '3rd', '4th', '5th'];
             const parts = [];
 
             reportViolationTypes.forEach(type => {
                 const count = getReportTypeCount(report, type.id);
                 if (count <= 0) return;
 
-                const level = Math.min(count, 5);
+                const maxLevel = type.max_level || 3;
+                const level = Math.min(count, maxLevel);
+
                 let badgeClass;
-                if (level <= 2) badgeClass = 'permitted';
-                else if (level <= 4) badgeClass = 'warning';
-                else badgeClass = 'disciplinary';
+                if (level >= maxLevel) badgeClass = 'disciplinary';
+                else if (level >= Math.ceil(maxLevel / 2)) badgeClass = 'warning';
+                else badgeClass = 'permitted';
 
                 const shortName = type.name.length > 14 ? `${type.name.slice(0, 12)}…` : type.name;
-                const offenseLabel = level >= 5 ? 'DISCIPLINARY' : `${offenseLabels[level]} OFFENSE`;
-                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${shortName}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
+                const offenseLabel = level >= maxLevel ? 'DISCIPLINARY' : `${getOrdinal(level)} OFFENSE`;
+                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${shortName}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/${maxLevel} ${offenseLabel}</strong>`);
             });
 
             if (parts.length === 0) {
                 return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
             return parts.join(' ');
+        }
+
+        function getOrdinal(n) {
+            const s = ['th','st','nd','rd'];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
         }
 
         function getCurrentAdminName() {
@@ -546,7 +555,8 @@ function initReportsModule() {
             } else {
                 tableBody.innerHTML = pageItems.map(report => {
                     const deptClass    = getDepartmentClass(report.deptCode);
-                    const totalClass   = getCountBadgeClass(report.totalViolations);
+                    const totalMaxLevel = reportViolationTypes.reduce((sum, t) => sum + (t.max_level || 3), 0) || 3;
+                    const totalClass   = getCountBadgeClass(report.totalViolations, totalMaxLevel);
                     return `
                     <tr data-id="${report.id}">
                         <td class="report-student-info" data-label="Student">
@@ -587,15 +597,17 @@ function initReportsModule() {
                 } else {
                     gridBody.innerHTML = pageItems.map(report => {
                         const deptClass    = getDepartmentClass(report.deptCode);
-                        const totalClass   = getCountBadgeClass(report.totalViolations);
+                        const totalMaxLevel = reportViolationTypes.reduce((sum, t) => sum + (t.max_level || 3), 0) || 3;
+                        const totalClass   = getCountBadgeClass(report.totalViolations, totalMaxLevel);
                         const typeCountItems = reportViolationTypes.map(type => {
                             const count = getReportTypeCount(report, type.id);
-                            const countClass = getCountBadgeClass(count);
+                            const maxLevel = type.max_level || 3;
+                            const countClass = getCountBadgeClass(count, maxLevel);
                             const shortName = type.name.length > 12 ? `${type.name.slice(0, 10)}…` : type.name;
                             return `
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">${shortName}</span>
-                                        <span class="report-card-count-value ${countClass}">${count}/5</span>
+                                        <span class="report-card-count-value ${countClass}">${count}/${maxLevel}</span>
                                     </div>`;
                         }).join('');
                         return `
@@ -838,6 +850,7 @@ function initReportsModule() {
                 if (reportViolationTypes && reportViolationTypes.length > 0) {
                     reportViolationTypes.forEach(type => {
                         const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
                         // Only show if count > 0 or it's one of the main types the user expects
                         const isMainType = ['uniform', 'footwear', 'shoe', 'id'].some(kw => type.name.toLowerCase().includes(kw));
                         
@@ -849,7 +862,7 @@ function initReportsModule() {
                                     </div>
                                     <div class="stat-content">
                                         <span class="stat-title">${type.name}</span>
-                                        <span class="stat-value">${count}/5</span>
+                                        <span class="stat-value">${count}/${maxLevel}</span>
                                     </div>
                                 </div>
                             `;
@@ -862,21 +875,21 @@ function initReportsModule() {
                             <div class="stat-icon"><i class='bx bxs-t-shirt'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">Uniform Violations</span>
-                                <span class="stat-value">${report.uniformCount}/5</span>
+                                <span class="stat-value">${report.uniformCount}</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon"><i class='bx bxs-walk'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">Footwear Violations</span>
-                                <span class="stat-value">${report.footwearCount}/5</span>
+                                <span class="stat-value">${report.footwearCount}</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon"><i class='bx bxs-id-card'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">No ID Violations</span>
-                                <span class="stat-value">${report.noIdCount}/5</span>
+                                <span class="stat-value">${report.noIdCount}</span>
                             </div>
                         </div>
                     `;
@@ -1603,9 +1616,11 @@ function initReportsModule() {
                     report.department,
                     report.section,
                     getReportPeriodLabel(report),
-                    report.uniformCount + '/5',
-                    report.footwearCount + '/5',
-                    report.noIdCount + '/5',
+                    ...reportViolationTypes.map(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
+                        return count + '/' + maxLevel;
+                    }),
                     report.totalViolations
                 ];
                 tableRows.push(reportData);
@@ -1911,9 +1926,11 @@ function initReportsModule() {
                         report.department,
                         report.section,
                         getReportPeriodLabel(report),
-                        report.uniformCount + '/5',
-                        report.footwearCount + '/5',
-                        report.noIdCount + '/5',
+                        ...reportViolationTypes.map(type => {
+                            const count = getReportTypeCount(report, type.id);
+                            const maxLevel = type.max_level || 3;
+                            return count + '/' + maxLevel;
+                        }),
                         String(report.totalViolations)
                     ].map(text => new TableCell({
                         children: [new Paragraph({ 
@@ -2041,6 +2058,11 @@ function initReportsModule() {
                 `;
 
                 reportsData.forEach(report => {
+                    const typeCells = reportViolationTypes.map(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
+                        return `<td align="center" style="mso-number-format:'\@';">${count + '/' + maxLevel}</td>`;
+                    }).join('');
                     html += `
                         <tr>
                             <td>${report.reportId || ''}</td>
@@ -2049,9 +2071,7 @@ function initReportsModule() {
                             <td>${report.department || ''}</td>
                             <td>${report.section || ''}</td>
                             <td style="mso-number-format:'\@';">${getReportPeriodLabel(report)}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.uniformCount || 0) + '/5'}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.footwearCount || 0) + '/5'}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.noIdCount || 0) + '/5'}</td>
+                            ${typeCells}
                             <td align="center"><b>${report.totalViolations || 0}</b></td>
                         </tr>
                     `;

@@ -156,7 +156,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
-        let displayMode     = 'latest'; // 'latest' = one per student, 'all' = full history
+        let displayMode     = 'all'; // 'latest' = one per student, 'all' = full history
         let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
@@ -3252,7 +3252,7 @@ function initViolationsModule() {
                     <td data-label="Status">
                         ${v.sanctionName
                             ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
-                            : `<span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>`}
+                            : ''}
                         ${displayStatus === 'resolved'
                             ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;margin-left:3px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                             : ''}
@@ -3327,7 +3327,7 @@ function initViolationsModule() {
                                 <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
                                     ${v.sanctionName
                                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
-                                        : `<span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>`}
+                                        : ''}
                                     ${displayStatus === 'resolved'
                                         ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                                         : ''}
@@ -3390,7 +3390,7 @@ function initViolationsModule() {
                                 <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${v.section || 'N/A'}</span>
                                 ${v.sanctionName
                                     ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
-                                    : `<span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${displayStatusLabel}</span>`}
+                                    : ''}
                                 ${displayStatus === 'resolved'
                                     ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                                     : ''}
@@ -3923,18 +3923,49 @@ function initViolationsModule() {
                 return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
             });
 
-            // Sanction description block for the current violation — include violation type
+            // Sanction description block — show ALL sanctions from the student's full violation history
             const sanctionSection = document.getElementById('detailAdminSanctionSection');
             if (sanctionSection) {
-                const currentSanctionName = violation.sanctionName || null;
-                const currentSanctionDesc = violation.sanctionDescription || null;
-                if (currentSanctionName) {
+                // Use the full unfiltered history for this student, not the deduped latest-per-type
+                const allStudentViolations = violations
+                    .filter(v => v.studentId === violation.studentId && v.sanctionName)
+                    .sort((a, b) => {
+                        const dateA = new Date((a.dateReported || '') + ' ' + (a.violationTime || '00:00'));
+                        const dateB = new Date((b.dateReported || '') + ' ' + (b.violationTime || '00:00'));
+                        return dateA - dateB; // oldest first so offenses read in order
+                    });
+
+                if (allStudentViolations.length > 0) {
                     sanctionSection.style.display = 'block';
+
                     const snEl = document.getElementById('detailAdminSanctionName');
                     const sdEl = document.getElementById('detailAdminSanctionDesc');
-                    const typeName = violation.violationTypeLabel || '';
-                    if (snEl) snEl.textContent = typeName ? `${currentSanctionName} — ${typeName}` : currentSanctionName;
-                    if (sdEl) sdEl.textContent = currentSanctionDesc || 'No description provided.';
+
+                    if (allStudentViolations.length === 1) {
+                        const sv = allStudentViolations[0];
+                        const typeName = sv.violationTypeLabel || '';
+                        if (snEl) snEl.textContent = typeName ? `${sv.sanctionName} — ${typeName}` : sv.sanctionName;
+                        if (sdEl) sdEl.textContent = sv.sanctionDescription || 'No description provided.';
+                    } else {
+                        if (snEl) snEl.textContent = `${allStudentViolations.length} Sanctions`;
+                        if (sdEl) {
+                            sdEl.innerHTML = allStudentViolations.map((sv, idx) => {
+                                const typeName = sv.violationTypeLabel || '';
+                                const levelName = sv.violationLevelLabel || '';
+                                const desc = sv.sanctionDescription || 'No description provided.';
+                                const date = sv.dateReported ? `<span style="font-size:10px;color:#9ca3af;margin-left:6px;">${formatDate(sv.dateReported)}</span>` : '';
+                                const isLast = idx === allStudentViolations.length - 1;
+                                return `<div style="margin-bottom:${isLast ? '0' : '10px'};padding-bottom:${isLast ? '0' : '8px'};${isLast ? '' : 'border-bottom:1px solid rgba(212,175,55,0.2);'}">
+                                    <strong style="font-size:12px;color:#b8860b;display:block;margin-bottom:3px;">
+                                        ${escapeHtml(sv.sanctionName)}${typeName ? ` — ${escapeHtml(typeName)}` : ''}
+                                        ${levelName ? `<span style="font-weight:400;color:#6b7280;font-size:11px;">(${escapeHtml(levelName)})</span>` : ''}
+                                        ${date}
+                                    </strong>
+                                    <span style="font-size:12px;color:#374151;">${escapeHtml(desc)}</span>
+                                </div>`;
+                            }).join('');
+                        }
+                    }
                 } else {
                     sanctionSection.style.display = 'none';
                 }
@@ -5902,44 +5933,6 @@ function initViolationsModule() {
                 showNotification('Error: ' + error.message, 'error');
             }
         };
-
-        // 14. MONTHLY RESET FUNCTIONALITY
-        const btnMonthlyReset = document.getElementById('btnMonthlyReset');
-        if (btnMonthlyReset) {
-            btnMonthlyReset.addEventListener('click', async function() {
-                const confirmMessage = "Are you sure you want to perform a monthly reset?\n\n" +
-                                     "This will:\n" +
-                                     "1. Archive all violations from previous months\n" +
-                                     "2. Reset all student violation levels and counts\n\n" +
-                                     "This action cannot be undone.";
-
-                if (confirm(confirmMessage)) {
-                    try {
-                        showLoadingOverlay('Performing monthly reset...');
-                        const response = await fetch(API_BASE + 'violations.php?action=archive', {
-                            method: 'POST'
-                        });
-
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            showNotification(result.message, 'success', 5000);
-                            // Refresh current view
-                            loadViolations(true).then(() => {
-                                renderViolations();
-                                updateStats();
-                            });
-                        } else {
-                            throw new Error(result.message || 'Failed to perform reset');
-                        }
-                    } catch (error) {
-                        console.error('Error during monthly reset:', error);
-                        showNotification('Reset failed: ' + error.message, 'error');
-                    } finally {
-                        hideLoadingOverlay();
-                    }
-                }
-            });
-        }
 
         // 14. SORT FUNCTIONALITY
         const sortHeaders = document.querySelectorAll('.Violations-sortable');
