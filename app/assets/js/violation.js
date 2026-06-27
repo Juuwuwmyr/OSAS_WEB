@@ -1061,9 +1061,32 @@ function initViolationsModule() {
                 return;
             }
 
+            // Build status options for the default_status dropdown
+            const statusOpts = violationStatuses.length > 0
+                ? violationStatuses.map(s =>
+                    `<option value="${escapeHtml(s.name.toLowerCase())}">{name}</option>`.replace('{name}', escapeHtml(s.name))
+                  ).join('')
+                : ['warning','permitted','disciplinary','resolved'].map(s =>
+                    `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+                  ).join('');
+
             list.innerHTML = '';
             levels.forEach(level => {
                 const isArchived = level.status === 'archived';
+                const currentColor = level.status_color || '#f59e0b';
+                const currentDefaultStatus = (level.default_status || 'warning').toLowerCase();
+
+                // Build color dot presets
+                let colorDotsHtml = STATUS_COLOR_PRESETS.map(preset => {
+                    const isActive = currentColor === preset.value;
+                    return `<div class="vt-color-dot ${isActive ? 'active' : ''}" 
+                                 style="background-color:${preset.value};" 
+                                 title="${preset.name}"
+                                 onclick="updateLevelColorDot(this)"></div>`;
+                }).join('');
+
+
+
                 const item = document.createElement('div');
                 item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
                 item.dataset.levelId = level.id;
@@ -1079,9 +1102,13 @@ function initViolationsModule() {
                             style="font-size:12px;border:1px solid #e5e7eb;border-radius:5px;padding:3px 7px;width:100%;margin-bottom:4px;background:#fafafa;"
                             placeholder="Sanction name (e.g. Sanction 1 — Verbal Warning)">
                         <textarea class="vt-level-sanction-desc-input"
-                            style="font-size:11px;border:1px solid #e5e7eb;border-radius:5px;padding:4px 7px;width:100%;resize:vertical;min-height:44px;background:#fafafa;"
+                            style="font-size:11px;border:1px solid #e5e7eb;border-radius:5px;padding:4px 7px;width:100%;resize:vertical;min-height:44px;background:#fafafa;margin-bottom:6px;"
                             placeholder="Sanction description — what this means for the student...">${escapeHtml(level.sanction_description || '')}</textarea>
-                        <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                            <span style="font-size:10px;color:#6b7280;flex-shrink:0;">Color:</span>
+                            <div class="vt-level-presets-row" style="display:flex;gap:4px;align-items:center;">${colorDotsHtml}</div>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;margin-top:2px;">
                             <button type="button" class="vt-save-level-btn"
                                 style="background:var(--gold);border:none;border-radius:4px;color:#fff;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600;">
                                 Save
@@ -1108,12 +1135,21 @@ function initViolationsModule() {
 
                 if (saveBtn) {
                     saveBtn.onclick = () => {
+                        // Resolve active color dot back to hex
+                        const activeDot = item.querySelector('.vt-level-presets-row .vt-color-dot.active');
+                        let color = activeDot ? activeDot.style.backgroundColor : currentColor;
+                        if (color && color.startsWith('rgb')) {
+                            const rgb = color.match(/\d+/g);
+                            color = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+                        }
                         saveLevelChanges(
                             level.id,
                             nameInput.value.trim(),
                             sanctionNameInput.value.trim(),
                             sanctionDescInput.value.trim(),
-                            typeId
+                            typeId,
+                            color,
+                            currentDefaultStatus
                         );
                     };
                 }
@@ -1230,6 +1266,14 @@ function initViolationsModule() {
             }
         };
 
+        window.updateLevelColorDot = function(dotEl) {
+            const row = dotEl.closest('.vt-level-presets-row');
+            if (row) {
+                row.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                dotEl.classList.add('active');
+            }
+        };
+
         async function saveAllLevels() {
             if (!selectedManageTypeId) return;
 
@@ -1243,12 +1287,21 @@ function initViolationsModule() {
                 const sanctionNameInput = item.querySelector('.vt-level-sanction-name-input');
                 const sanctionDescInput = item.querySelector('.vt-level-sanction-desc-input');
 
+                // Resolve active color dot
+                const activeDot = item.querySelector('.vt-level-presets-row .vt-color-dot.active');
+                let color = activeDot ? activeDot.style.backgroundColor : '#f59e0b';
+                if (color && color.startsWith('rgb')) {
+                    const rgb = color.match(/\d+/g);
+                    color = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+                }
+
                 if (levelId && nameInput) {
                     updates.push({
                         id: levelId,
                         name: nameInput.value.trim(),
                         sanction_name: sanctionNameInput ? (sanctionNameInput.value.trim() || null) : null,
-                        sanction_description: sanctionDescInput ? (sanctionDescInput.value.trim() || null) : null
+                        sanction_description: sanctionDescInput ? (sanctionDescInput.value.trim() || null) : null,
+                        status_color: color
                     });
                 }
             });
@@ -1279,7 +1332,7 @@ function initViolationsModule() {
             }
         }
 
-        async function saveLevelChanges(levelId, name, sanctionName, sanctionDescription, typeId) {
+        async function saveLevelChanges(levelId, name, sanctionName, sanctionDescription, typeId, statusColor, defaultStatus) {
             if (!name) {
                 showNotification('Level name cannot be empty', 'warning');
                 return;
@@ -1292,7 +1345,9 @@ function initViolationsModule() {
                     body: JSON.stringify({
                         name,
                         sanction_name: sanctionName || null,
-                        sanction_description: sanctionDescription || null
+                        sanction_description: sanctionDescription || null,
+                        status_color: statusColor || '#f59e0b',
+                        default_status: defaultStatus || 'warning'
                     })
                 });
                 const data = await response.json();
@@ -1312,6 +1367,7 @@ function initViolationsModule() {
             const nameInput = document.getElementById('vtNewLevelName');
             const sanctionNameInput = document.getElementById('vtNewLevelSanctionName');
             const sanctionDescInput = document.getElementById('vtNewLevelSanctionDesc');
+            const colorRow = document.getElementById('vtNewLevelColorRow');
             if (!nameInput || !selectedManageTypeId) return;
 
             if (!navigator.onLine) {
@@ -1329,6 +1385,14 @@ function initViolationsModule() {
             const sanctionName = sanctionNameInput ? sanctionNameInput.value.trim() : '';
             const sanctionDescription = sanctionDescInput ? sanctionDescInput.value.trim() : '';
 
+            // Resolve selected color dot
+            const activeDot = colorRow ? colorRow.querySelector('.vt-color-dot.active') : null;
+            let statusColor = activeDot ? activeDot.style.backgroundColor : '#f59e0b';
+            if (statusColor && statusColor.startsWith('rgb')) {
+                const rgb = statusColor.match(/\d+/g);
+                statusColor = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+            }
+
             try {
                 showLoadingOverlay('Adding level...');
                 const response = await fetch(API_BASE + 'violations.php?action=create_level', {
@@ -1338,7 +1402,8 @@ function initViolationsModule() {
                         violation_type_id: selectedManageTypeId,
                         name,
                         sanction_name: sanctionName || null,
-                        sanction_description: sanctionDescription || null
+                        sanction_description: sanctionDescription || null,
+                        status_color: statusColor
                     })
                 });
                 const data = await response.json();
@@ -1347,6 +1412,10 @@ function initViolationsModule() {
                 nameInput.value = '';
                 if (sanctionNameInput) sanctionNameInput.value = '';
                 if (sanctionDescInput) sanctionDescInput.value = '';
+                // Reset color dot to first (orange)
+                if (colorRow) {
+                    colorRow.querySelectorAll('.vt-color-dot').forEach((d, i) => d.classList.toggle('active', i === 0));
+                }
 
                 showNotification('Violation level added', 'success');
                 await loadViolationTypes(true);

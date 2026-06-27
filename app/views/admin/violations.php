@@ -669,6 +669,17 @@ require_once __DIR__ . '/../../core/View.php';
             <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
             <input type="text" id="vtNewLevelSanctionName" placeholder="Sanction name (e.g. Sanction 6 — Suspension)" maxlength="150" style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">
             <textarea id="vtNewLevelSanctionDesc" placeholder="Sanction description — what this means for the student..." style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:12px;resize:vertical;min-height:52px;"></textarea>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#6b7280;flex-shrink:0;">Color:</span>
+              <div id="vtNewLevelColorRow" style="display:flex;gap:5px;align-items:center;">
+                <div class="vt-color-dot active" style="background:#f59e0b;" title="Orange" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#10b981;" title="Green" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#ef4444;" title="Red" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#3b82f6;" title="Blue" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#8b5cf6;" title="Purple" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#6b7280;" title="Gray" onclick="updateLevelColorDot(this)"></div>
+              </div>
+            </div>
             <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
               <i class='bx bx-plus'></i> Add Level
             </button>
