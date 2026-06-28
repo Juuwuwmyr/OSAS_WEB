@@ -360,7 +360,8 @@ class ViolationController extends Controller
         }
 
         try {
-            // FIRST: Check if student already has this violation type recorded on the same day
+            // TEMPORARILY COMMENTED OUT: Check if student already has this violation type recorded on the same day
+            /*
             $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
                 $studentId,
                 $violationType,
@@ -371,6 +372,7 @@ class ViolationController extends Controller
                 $this->error('This violation type has already been recorded for this student today by ' . $existingViolation['reported_by'], ['existing_id' => $existingViolation['id'], 'reported_by' => $existingViolation['reported_by']]);
                 return;
             }
+            */
 
             // Check for duplicate violation (Double Submission Check - same exact details)
             $existingId = $this->model->checkDuplicateSubmission(
