@@ -527,6 +527,22 @@ class ViolationModel extends Model {
     }
 
     /**
+     * Check if student already has a violation of the same type on the same day
+     * Returns the full violation row if exists, false otherwise
+     */
+    public function checkStudentViolationByTypeAndDate($studentId, $violationTypeId, $violationDate) {
+        $query = "SELECT id, reported_by FROM violations 
+                  WHERE student_id = ? 
+                  AND violation_type_id = ? 
+                  AND violation_date = ? 
+                  AND deleted_at IS NULL
+                  LIMIT 1";
+        
+        $result = $this->query($query, [$studentId, $violationTypeId, $violationDate]);
+        return !empty($result) ? $result[0] : false;
+    }
+
+    /**
      * Check for duplicate violation within time window (for near-simultaneous submissions)
      */
     public function checkDuplicateInTimeWindow($studentId, $violationTypeId, $violationLevelId, $violationDate, $violationTime, $location, $timeWindowMinutes = 5) {
