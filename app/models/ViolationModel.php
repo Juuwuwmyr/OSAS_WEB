@@ -100,7 +100,7 @@ class ViolationModel extends Model {
                 ['Warning', '#f59e0b'],
                 ['Permitted', '#10b981'],
                 ['Disciplinary', '#ef4444'],
-                ['Resolved', '#3b82f6']
+                ['Resolved', '#10b981']
             ];
             $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
             foreach ($defaultStatuses as $ds) {
@@ -108,6 +108,9 @@ class ViolationModel extends Model {
                 $stmt->execute();
             }
             $stmt->close();
+        } else {
+            // Fix legacy blue Resolved color (#3b82f6) → green (#10b981)
+            @$this->conn->query("UPDATE violation_statuses SET status_color = '#10b981' WHERE LOWER(name) = 'resolved' AND status_color = '#3b82f6'");
         }
         
         // First, check if there are any violations at all (without JOIN)
@@ -138,6 +141,7 @@ class ViolationModel extends Model {
                     v.*, 
                     vt.name as violation_type_name,
                     vl.name as violation_level_name,
+                    vl.status_color as level_color,
                     vl.sanction_name as level_sanction_name,
                     vl.sanction_description as level_sanction_description,
                     s.student_id as student_id_no,
@@ -343,6 +347,7 @@ class ViolationModel extends Model {
                     'violationTypeLabel' => $violationTypeLabel,
                     'violationLevel' => $row['violation_level_id'] ?? '',
                     'violationLevelLabel' => $violationLevelLabel,
+                    'levelColor' => $row['level_color'] ?? null,
                     'sanctionName' => $sanctionName,
                     'sanctionDescription' => $sanctionDescription,
                     'department' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
@@ -597,7 +602,7 @@ class ViolationModel extends Model {
                 ['Warning', '#f59e0b'],
                 ['Permitted', '#10b981'],
                 ['Disciplinary', '#ef4444'],
-                ['Resolved', '#3b82f6']
+                ['Resolved', '#10b981']
             ];
             $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
             foreach ($defaultStatuses as $ds) {
@@ -605,6 +610,9 @@ class ViolationModel extends Model {
                 $stmt->execute();
             }
             $stmt->close();
+        } else {
+            // Fix legacy blue Resolved color (#3b82f6) → green (#10b981)
+            @$this->conn->query("UPDATE violation_statuses SET status_color = '#10b981' WHERE LOWER(name) = 'resolved' AND status_color = '#3b82f6'");
         }
 
         $where = $includeArchived ? "" : " WHERE status = 'active'";

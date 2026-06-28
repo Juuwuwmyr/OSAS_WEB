@@ -1771,45 +1771,66 @@ function initViolationsModule() {
                     const highest = history[history.length - 1];
                     const levelName  = highest.violationLevelLabel || 'Recorded';
                     const totalCount = history.length;
-                    const status     = (highest.status || 'warning').toLowerCase();
-                    const bg = status === 'permitted'    ? '#10b981'
-                             : status === 'disciplinary' ? '#ef4444'
-                             : status === 'resolved'     ? '#3b82f6'
-                             : '#f59e0b';
-                    const textColor = status === 'warning' ? '#7c2d12' : '#fff';
                     const isPending  = String(highest.id).startsWith('TEMP-');
+
+                    // Use levelColor (the color set on the violation level) for the pill badge.
+                    // Fall back to statusColor (from violation_statuses table) if levelColor absent,
+                    // then fall back to sensible defaults by status.
+                    const pillHex = highest.levelColor || highest.statusColor || (() => {
+                        const s = (highest.status || 'warning').toLowerCase();
+                        if (s === 'permitted')    return '#10b981';
+                        if (s === 'disciplinary') return '#ef4444';
+                        if (s === 'resolved')     return '#10b981';
+                        return '#f59e0b';
+                    })();
+
+                    // Parse hex → transparent badge style matching all other badges
+                    const _ph = pillHex.replace('#','');
+                    const _pr = parseInt(_ph.substring(0,2),16)||128;
+                    const _pg = parseInt(_ph.substring(2,4),16)||128;
+                    const _pb = parseInt(_ph.substring(4,6),16)||128;
+                    const pillBg     = `rgba(${_pr},${_pg},${_pb},0.18)`;
+                    const pillBorder = `rgba(${_pr},${_pg},${_pb},0.35)`;
+                    const pillText   = `rgb(${Math.round(_pr*0.45)},${Math.round(_pg*0.45)},${Math.round(_pb*0.45)})`;
 
                     const badgeWrap = document.createElement('div');
                     badgeWrap.className = 'violation-type-badge-overlay';
                     badgeWrap.style.cssText = `
-                        position:absolute; top:6px; right:6px;
+                        position:absolute; top:-8px; right:-6px;
                         display:flex; flex-direction:column; align-items:flex-end;
                         gap:3px; z-index:10; pointer-events:auto;
                     `;
 
                     const pill = document.createElement('div');
                     pill.style.cssText = `
-                        display:inline-flex; align-items:center; gap:4px;
-                        padding:2px 5px 2px 7px; border-radius:20px;
-                        font-size:9px; font-weight:700; line-height:1.5;
-                        white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.25);
-                        background:${bg}; color:${textColor};
+                        display:inline-flex; align-items:center; gap:5px;
+                        padding:4px 6px 4px 9px; border-radius:100px;
+                        font-size:10px; font-weight:700; line-height:1;
+                        white-space:nowrap; letter-spacing:0.3px;
+                        font-family:'Space Grotesk', 'Inter', sans-serif;
+                        box-shadow: 0 2px 8px rgba(${_pr},${_pg},${_pb},0.35), 0 1px 3px rgba(0,0,0,0.12);
+                        background: linear-gradient(135deg, rgba(${_pr},${_pg},${_pb},0.22) 0%, rgba(${_pr},${_pg},${_pb},0.12) 100%);
+                        color:${pillText};
+                        border: 1.5px solid rgba(${_pr},${_pg},${_pb},0.4);
+                        backdrop-filter: blur(4px);
+                        -webkit-backdrop-filter: blur(4px);
                     `;
                     pill.innerHTML = `
-                        <span style="letter-spacing:.3px;text-transform:uppercase;">
-                            ${escapeHtml(levelName)}${totalCount > 1 ? ` (${totalCount})` : ''}
-                        </span>
+                        <span style="font-size:9px;opacity:0.7;margin-right:1px;">●</span>
+                        <span>${escapeHtml(levelName)}${totalCount > 1 ? `<span style="opacity:0.65;font-size:8px;margin-left:3px;">${totalCount}×</span>` : ''}</span>
                         ${!isPending ? `<button type="button"
                             data-remove-vid="${highest.id}"
                             data-remove-level="${escapeHtml(levelName)}"
-                            title="Remove ${escapeHtml(levelName)} — steps back to ${totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous' : 'no offense'}"
+                            title="Remove ${escapeHtml(levelName)}"
                             style="
                                 display:inline-flex;align-items:center;justify-content:center;
-                                width:14px;height:14px;border-radius:50%;
-                                background:rgba(0,0,0,.2);border:none;cursor:pointer;
-                                padding:0;flex-shrink:0;color:inherit;font-size:9px;
-                                font-weight:900;line-height:1;
-                            ">✕</button>` : ''}
+                                width:15px;height:15px;border-radius:50%;
+                                background:rgba(${_pr},${_pg},${_pb},0.25);
+                                border:1px solid rgba(${_pr},${_pg},${_pb},0.3);
+                                cursor:pointer; padding:0; flex-shrink:0;
+                                color:${pillText}; font-size:8px; font-weight:900;
+                                line-height:1; transition:background 0.15s;
+                            ">✕</button>` : `<span style="opacity:0.5;font-size:8px;">⏳</span>`}
                     `;
 
                     pill.addEventListener('click', e => e.stopPropagation());
@@ -2442,6 +2463,36 @@ function initViolationsModule() {
             if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
                 lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
             return 'default';
+        }
+
+        /**
+         * Returns an inline style string for a level badge using the stored color.
+         * Matches the transparent badge style used by other badges (20% bg, dark text, 30% border).
+         * Falls back gracefully if no custom color is set.
+         */
+        function getLevelBadgeStyle(v) {
+            const color = v.levelColor;
+            if (!color) return '';
+
+            // Parse hex color to RGB for rgba() usage
+            let r = 128, g = 128, b = 128;
+            const hex = color.replace('#', '');
+            if (hex.length === 6) {
+                r = parseInt(hex.substring(0, 2), 16);
+                g = parseInt(hex.substring(2, 4), 16);
+                b = parseInt(hex.substring(4, 6), 16);
+            } else if (hex.length === 3) {
+                r = parseInt(hex[0] + hex[0], 16);
+                g = parseInt(hex[1] + hex[1], 16);
+                b = parseInt(hex[2] + hex[2], 16);
+            }
+
+            // Darken the color for text (multiply by ~0.6 for readability)
+            const tr = Math.round(r * 0.45);
+            const tg = Math.round(g * 0.45);
+            const tb = Math.round(b * 0.45);
+
+            return `background:rgba(${r},${g},${b},0.18);color:rgb(${tr},${tg},${tb});border-color:rgba(${r},${g},${b},0.35);`;
         }
 
         function getDepartmentAcronym(dept) {
@@ -3333,6 +3384,7 @@ function initViolationsModule() {
                 const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                 const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                 const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                const levelStyle  = getLevelBadgeStyle(v);
                 const deptClass   = getDepartmentClass(v.department);
                 const statusClass = getStatusClass(displayStatus);
 
@@ -3355,7 +3407,7 @@ function initViolationsModule() {
                         <span class="violation-type-badge ${typeClass}">${v.violationTypeLabel}</span>
                     </td>
                     <td class="violation-level" data-label="Offense Level">
-                        <span class="violation-level-badge ${levelClass}">${v.violationLevelLabel}</span>
+                        <span class="violation-level-badge ${levelClass}" style="${levelStyle}">${v.violationLevelLabel}</span>
                     </td>
                     <td class="violation-dept" data-label="Department">
                         <span class="dept-badge ${deptClass}" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
@@ -3405,6 +3457,7 @@ function initViolationsModule() {
                         const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                         const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                         const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const levelStyle  = getLevelBadgeStyle(v);
                         const deptClass   = getDepartmentClass(v.department);
                         const statusClass = getStatusClass(displayStatus);
                         return `
@@ -3427,7 +3480,7 @@ function initViolationsModule() {
                                     </div>
                                     <div class="violation-card-meta-row">
                                         <span class="violation-card-meta-label">Level</span>
-                                        <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;">${v.violationLevelLabel}</span>
+                                        <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;${levelStyle}">${v.violationLevelLabel}</span>
                                     </div>
                                     <div class="violation-card-meta-row">
                                         <span class="violation-card-meta-label">Dept</span>
@@ -3476,6 +3529,7 @@ function initViolationsModule() {
                         const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                         const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                         const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const levelStyle  = getLevelBadgeStyle(v);
                         const deptClass   = getDepartmentClass(v.department);
                         const statusClass = getStatusClass(displayStatus);
                         return `
@@ -3502,7 +3556,7 @@ function initViolationsModule() {
                             </div>
                             <div class="violation-list-badges">
                                 <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${v.violationTypeLabel}</span>
-                                <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${v.violationLevelLabel}</span>
+                                <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;${levelStyle}">${v.violationLevelLabel}</span>
                                 <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${v.section || 'N/A'}</span>
                                 ${v.sanctionName
                                     ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
@@ -4013,7 +4067,8 @@ function initViolationsModule() {
             renderList('detailViolationLevel', studentViolations, v => {
                 const level = v.violationLevelLabel || '-';
                 const badgeClass = level !== '-' ? `badge ${getViolationLevelClass(level)}` : '';
-                return `<span class="${badgeClass}">${level}</span>`;
+                const inlineStyle = level !== '-' ? getLevelBadgeStyle(v) : '';
+                return `<span class="${badgeClass}" style="${inlineStyle}">${level}</span>`;
             });
 
             // Dates
