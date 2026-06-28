@@ -635,6 +635,59 @@ class UserDashboardData {
         // Otherwise, format it nicely
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
+
+    async showLatestViolationsNotifications(force) {
+        if (Notification.permission !== 'granted') return;
+        if (!force) return;
+        
+        const key = 'eosas_viol_batch_shown';
+        if (localStorage.getItem(key)) return;
+
+        const allViolations = this.allViolations || this.violations || [];
+        if (!allViolations.length) {
+            await this.showViolationViaServiceWorker('E-OSAS', 'No violations recorded for you.', 'eosas-empty-viol');
+            localStorage.setItem(key, '1');
+            return;
+        }
+
+        const sorted = [...allViolations].sort((a, b) => new Date(b.date || b.created_at || b.violation_date) - new Date(a.date || a.created_at || a.violation_date)).slice(0, 5);
+
+        for (let i = 0; i < sorted.length; i++) {
+            const v = sorted[i];
+            const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown violation';
+            const sanction = v.sanctionName ? `Sanction: ${v.sanctionName}` : 'Pending review';
+            await this.showViolationViaServiceWorker(
+                'New violation recorded',
+                `${typeLabel} — ${sanction}`,
+                'violation-' + (v.id || v.violation_id),
+                { type: 'violation', id: v.id || v.violation_id, page: 'user-page/my_violations' }
+            );
+            if (i < sorted.length - 1) await new Promise(r => setTimeout(r, 450));
+        }
+
+        localStorage.setItem(key, '1');
+    }
+
+    async showViolationViaServiceWorker(title, body, tag, data) {
+        if (Notification.permission !== 'granted') return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const root = USER_API_BASE.replace(/\/api\/$/, '');
+            const iconUrl = root + '/app/assets/img/default.png';
+            await reg.showNotification(title, {
+                body: body.substring(0, 200),
+                icon: iconUrl,
+                badge: iconUrl,
+                tag: tag || 'eosas-viol',
+                data: data || { type: 'violation', page: 'user-page/my_violations' },
+                renotify: true
+            });
+        } catch (e) {
+            const root = USER_API_BASE.replace(/\/api\/$/, '');
+            const iconUrl = root + '/app/assets/img/default.png';
+            new Notification(title, { body, icon: iconUrl });
+        }
+    }
 }
 
 // Auto-load when DOM is ready
@@ -649,6 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mainContent && (mainContent.innerHTML.includes('My Dashboard') || mainContent.innerHTML.includes('sd-violations-list') || mainContent.innerHTML.includes('student-dash'))) {
             window.userDashboardData.loadAllData().then(() => {
                 window.userDashboardData.startPolling(20000); // Poll every 20s
+                window.userDashboardData.showLatestViolationsNotifications(true);
             });
         }
     }, 100);
@@ -661,5 +715,12 @@ window.initializeUserDashboard = function() {
     }
     window.userDashboardData.loadAllData().then(() => {
         window.userDashboardData.startPolling(20000); // Poll every 20s
+        window.userDashboardData.showLatestViolationsNotifications(true);
     });
+};
+
+window.showLatestViolationsNotifications = (force) => {
+    if (window.userDashboardData) {
+        window.userDashboardData.showLatestViolationsNotifications(force);
+    }
 };
