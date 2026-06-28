@@ -926,9 +926,8 @@ function viewViolationDetails(id) {
                 const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('5th offense') || hlLabel.includes('disciplinary');
                 
                 let statusHtml = '';
-                if (itemStatus === 'resolved' || itemStatus === 'permitted') {
-                    const label = hIsDisciplinary ? 'Resolved' : 'Permitted';
-                    statusHtml = `<span style="color: green; font-weight: bold;">(${label})</span>`;
+                if (itemStatus === 'resolved') {
+                    statusHtml = `<span style="color: green; font-weight: bold;">(Resolved)</span>`;
                 } else if (hIsDisciplinary || itemStatus === 'disciplinary') {
                     statusHtml = '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
                 }

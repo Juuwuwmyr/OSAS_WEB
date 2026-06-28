@@ -414,6 +414,7 @@ class UserDashboardData {
             const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date)
                 .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            const isResolved = (v.status || '').toLowerCase() === 'resolved';
 
             let badgeClass, badgeText;
             if (sanctionName) {
@@ -438,6 +439,7 @@ class UserDashboardData {
                         <div class="sd-violation-item__meta">
                             <span class="sd-violation-item__date"><i class='bx bx-calendar'></i> ${date}</span>
                             <span class="sd-badge ${badgeClass}">${badgeText}</span>
+                            ${isResolved ? `<span class="sd-badge sd-badge--resolved">Resolved</span>` : ''}
                         </div>
                     </div>
                     <div class="sd-violation-item__action">
@@ -469,7 +471,8 @@ class UserDashboardData {
                 description: v.sanctionDescription || '',
                 type: v.violationTypeLabel || v.violation_type_name || '',
                 level: v.violationLevelLabel || v.violation_level_name || '',
-                date: v.dateReported || v.date || v.created_at || ''
+                date: v.dateReported || v.date || v.created_at || '',
+                status: v.status || ''
             });
         });
 
@@ -481,20 +484,25 @@ class UserDashboardData {
             return;
         }
 
-        container.innerHTML = sanctions.map(s => `
+        container.innerHTML = sanctions.map(s => {
+            const isResolved = (s.status || '').toLowerCase() === 'resolved';
+            return `
             <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                     <i class='bx bx-shield-quarter' style="font-size:16px;color:#92650a;flex-shrink:0;"></i>
                     <strong style="font-size:13px;color:#92650a;">${this.escapeHtml(s.name)}</strong>
-                    ${s.type ? `<span style="font-size:11px;color:#6b7280;margin-left:auto;">for ${this.escapeHtml(s.type)}</span>` : ''}
+                    <span class="sd-badge ${isResolved ? 'sd-badge--resolved' : 'sd-badge--pending'}" style="margin-left:auto;">
+                        ${isResolved ? 'Resolved' : 'Pending'}
+                    </span>
                 </div>
                 ${s.level ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><i class='bx bx-chevron-right' style="vertical-align:middle;"></i> ${this.escapeHtml(s.level)}</div>` : ''}
+                ${s.type ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><i class='bx bx-error-circle' style="vertical-align:middle;"></i> for ${this.escapeHtml(s.type)}</div>` : ''}
                 ${s.description
                     ? `<p style="font-size:12px;color:#374151;margin:0;line-height:1.6;">${this.escapeHtml(s.description)}</p>`
                     : `<p style="font-size:12px;color:#9ca3af;margin:0;font-style:italic;">No description provided.</p>`
                 }
             </div>
-        `).join('');
+        `}).join('');
     }
 
     updateAnnouncementsDisplay() {
