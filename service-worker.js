@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-06-28-pwa-notif';
+const BUILD_DATE = '2026-06-28-pwa-login-notif';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -335,13 +335,7 @@ self.addEventListener('notificationclick', event => {
       return;
     }
 
-    // Try to launch via clients.openWindow with the scope in mind
-    // This will use the installed PWA if it's available
-    try {
-      return await clients.openWindow(targetUrl);
-    } catch (e) {
-      // Fallback: just open the URL normally
-      return clients.openWindow(targetUrl);
-    }
+    // Open the URL, which will use the installed PWA if it's set as the default
+    return clients.openWindow(targetUrl);
   })());
 });
