@@ -1030,6 +1030,7 @@ class ViolationModel extends Model {
                    v.student_id,
                    vt.name as violation_type,
                    vl.name as violation_level,
+                   vl.sanction_name,
                    v.violation_date,
                    v.violation_time,
                    v.status,
