@@ -92,66 +92,11 @@ class UserDashboardData {
 
             console.log('✅ All data loaded, updating display...');
             this.updateDashboardDisplay();
-            
-            // Show notifications for latest 5 violations on login
-            setTimeout(() => this.showLatestViolationsNotifications(), 1000);
         } catch (error) {
             console.error('❌ Error loading dashboard data:', error);
             // Still try to update display even if there's an error
             this.updateDashboardDisplay();
         }
-    }
-
-    showLatestViolationsNotifications() {
-        if (!this.violations || this.violations.length === 0) {
-            return;
-        }
-        
-        // Get all violations (active + archived) and sort by date descending
-        const allViolations = [...this.allViolations || this.violations];
-        const sorted = allViolations.sort((a, b) => {
-            const dateA = new Date(a.created_at || a.violation_date);
-            const dateB = new Date(b.created_at || b.violation_date);
-            return dateB - dateA;
-        });
-        
-        // Take latest 5
-        const latest = sorted.slice(0, 5);
-        
-        latest.forEach((violation, index) => {
-            setTimeout(() => {
-                const typeLabel = violation.violation_type_name || violation.violationTypeLabel || 'Violation';
-                const dateStr = new Date(violation.created_at || violation.violation_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-                const status = (violation.status || '').toLowerCase();
-                const notificationType = status === 'resolved' ? 'success' : 'warning';
-                
-                // Try multiple ways to call showNotification
-                const tryShow = (msg, type) => {
-                    try {
-                        if (typeof window.showNotification === 'function') {
-                            window.showNotification(msg, type);
-                            return;
-                        }
-                    } catch (e) {
-                        // Ignore
-                    }
-                    try {
-                        if (typeof showNotification === 'function') {
-                            showNotification(msg, type);
-                            return;
-                        }
-                    } catch (e) {
-                        // Ignore
-                    }
-                };
-                
-                tryShow(`${typeLabel} - ${dateStr}`, notificationType);
-            }, index * 500);
-        });
     }
 
     displayNoStudentIdMessage() {
