@@ -421,14 +421,14 @@ function renderViolationTable() {
         return `
             <tr class="violation-row">
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
-                <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}">${level}</span></td>
+                <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}" style="${getLevelBadgeStyle(v)}">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
                 <td data-label="Status">
                     ${v.sanctionName
                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${status === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </td>
                 <td data-label="Actions">
@@ -486,13 +486,13 @@ function renderViolationTable() {
                 </div>
                 <div class="violation-list-badges">
                     <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(violationTypeFormatted)}</span>
-                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;${getLevelBadgeStyle(v)}">${escapeHtml(level)}</span>
                     <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
                     ${v.sanctionName
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${statusClass === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                     <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
                         <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.created_at || v.violation_date || v.date)}
@@ -531,11 +531,11 @@ function renderViolationTable() {
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${statusClass === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </div>
                 <div style="margin-bottom:8px;">
-                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px;${getLevelBadgeStyle(v)}">${escapeHtml(level)}</span>
                 </div>
                 <div style="font-size:11px;color:var(--text-3,#64748b);display:flex;align-items:center;gap:4px;">
                     <i class='bx bx-calendar' style="font-size:12px;"></i>
@@ -642,7 +642,6 @@ function getViolationTypeClass(typeLabel) {
 function getViolationLevelClass(level) {
     if (level === null || level === undefined) return 'default';
     const lowerLevel = String(level).toLowerCase();
-    // 1st & 2nd Offense = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
     if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
         lowerLevel.startsWith('permitted')) return 'permitted';
     if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
@@ -650,6 +649,41 @@ function getViolationLevelClass(level) {
     if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
         lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
     return 'default';
+}
+
+/**
+ * Build a transparent badge inline style from a hex color string.
+ * Matches the same style used across the admin side.
+ */
+function buildBadgeStyleFromHex(hex) {
+    if (!hex) return '';
+    const h = hex.replace('#', '');
+    let r = 128, g = 128, b = 128;
+    if (h.length === 6) {
+        r = parseInt(h.substring(0, 2), 16);
+        g = parseInt(h.substring(2, 4), 16);
+        b = parseInt(h.substring(4, 6), 16);
+    } else if (h.length === 3) {
+        r = parseInt(h[0] + h[0], 16);
+        g = parseInt(h[1] + h[1], 16);
+        b = parseInt(h[2] + h[2], 16);
+    }
+    const tr = Math.round(r * 0.45);
+    const tg = Math.round(g * 0.45);
+    const tb = Math.round(b * 0.45);
+    return `background:rgba(${r},${g},${b},0.18);color:rgb(${tr},${tg},${tb});border-color:rgba(${r},${g},${b},0.35);`;
+}
+
+function getLevelBadgeStyle(v) {
+    return v.levelColor ? buildBadgeStyleFromHex(v.levelColor) : '';
+}
+
+function getStatusBadgeStyle(v) {
+    if (v.statusColor) return buildBadgeStyleFromHex(v.statusColor);
+    if (v.status === 'resolved')     return buildBadgeStyleFromHex('#10b981');
+    if (v.status === 'disciplinary') return buildBadgeStyleFromHex('#ef4444');
+    if (v.status === 'permitted')    return buildBadgeStyleFromHex('#10b981');
+    return buildBadgeStyleFromHex('#f59e0b');
 }
 
 function getDepartmentClass(dept) {
