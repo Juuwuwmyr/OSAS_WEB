@@ -385,7 +385,7 @@ require_once __DIR__ . '/../../core/View.php';
           <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">View student violation analysis and history.</p>
         </div>
         <div class="modal-actions">
-          <button class="Reports-action-btn export">
+          <button class="Reports-action-btn export" id="detailExportBtn">
             <i class='bx bx-download'></i> Export
           </button>
           <button class="Reports-close-btn" id="closeDetailsModal">

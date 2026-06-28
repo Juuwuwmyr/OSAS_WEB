@@ -1338,7 +1338,7 @@ function initReportsModule() {
                 const reportId = detailsModal.dataset.viewingId;
                 const report = reports.find(r => r.id === parseInt(reportId));
                 if (report) {
-                    downloadSingleReport(report);
+                    printReport(report);
                 }
             });
         }
@@ -1499,13 +1499,23 @@ function initReportsModule() {
                 doc.text("Violation Summary", 14, y);
                 y += 5;
 
-                const statsTable = [
-                    ["Violation Type", "Count"],
-                    ["Improper Uniform", report.uniformCount.toString()],
-                    ["Improper Footwear", report.footwearCount.toString()],
-                    ["No ID", report.noIdCount.toString()],
-                    ["Total Violations", report.totalViolations.toString()]
-                ];
+                const statsTable = [["Violation Type", "Count"]];
+                
+                if (window.reportViolationTypes && window.reportViolationTypes.length > 0) {
+                    window.reportViolationTypes.forEach(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        if (count > 0) {
+                            statsTable.push([type.name, count.toString()]);
+                        }
+                    });
+                } else {
+                    // Fallback to basic counts if types not loaded
+                    if (report.uniformCount) statsTable.push(["Improper Uniform", report.uniformCount.toString()]);
+                    if (report.footwearCount) statsTable.push(["Improper Footwear", report.footwearCount.toString()]);
+                    if (report.noIdCount) statsTable.push(["No ID", report.noIdCount.toString()]);
+                }
+                
+                statsTable.push(["Total Violations", report.totalViolations.toString()]);
 
                 doc.autoTable({
                     body: statsTable.slice(1),
@@ -2477,8 +2487,10 @@ function initReportsModule() {
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Report ID</th>
                                 <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
-                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Year Level</th>
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Contact No</th>
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Period</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Uniform</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Footwear</th>
@@ -2499,7 +2511,9 @@ function initReportsModule() {
                             <td>${report.studentId || ''}</td>
                             <td>${report.studentName || ''}</td>
                             <td>${report.department || ''}</td>
+                            <td>${report.yearlevel || report.year_level || ''}</td>
                             <td>${report.section || ''}</td>
+                            <td>${report.studentContact || report.contact_no || ''}</td>
                             <td style="mso-number-format:'\@';">${getReportPeriodLabel(report)}</td>
                             ${typeCells}
                             <td align="center"><b>${report.totalViolations || 0}</b></td>

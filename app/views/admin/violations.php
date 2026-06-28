@@ -106,6 +106,17 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="Violations-header-right">
+        <!-- Mobile: search bar + filter toggle on one row -->
+        <div class="Violations-mobile-filter-bar">
+          <div class="Violations-search-box" id="mobileSearchBox">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchViolationMobile" placeholder="Search violations...">
+          </div>
+          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
+            <i class='bx bx-filter-alt'></i> Filters
+          </button>
+        </div>
+
         <!-- Current Month Filters -->
         <div id="currentFilters" class="Violations-filter-group">
           <div class="Violations-search-box">
@@ -113,22 +124,24 @@ require_once __DIR__ . '/../../core/View.php';
             <input type="text" id="searchViolation" placeholder="Search violations...">
           </div>
 
-          <div class="Violations-date-filter">
-            <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
-            <span>to</span>
-            <input type="date" id="ViolationDateTo" class="Violations-filter-date" title="To Date">
+          <div class="Violations-filter-grid">
+            <div class="Violations-date-filter">
+              <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
+              <span>to</span>
+              <input type="date" id="ViolationDateTo" class="Violations-filter-date" title="To Date">
+            </div>
+
+            <select id="ViolationsFilter" class="Violations-filter-select">
+              <option value="all">All Departments</option>
+              <!-- Departments will be loaded via JS -->
+            </select>
+
+            <select id="ViolationsStatusFilter" class="Violations-filter-select">
+              <option value="all">All Records</option>
+              <option value="with_sanction">Has Sanction</option>
+              <option value="no_sanction">No Sanction</option>
+            </select>
           </div>
-
-          <select id="ViolationsFilter" class="Violations-filter-select">
-            <option value="all">All Departments</option>
-            <!-- Departments will be loaded via JS -->
-          </select>
-
-          <select id="ViolationsStatusFilter" class="Violations-filter-select">
-            <option value="all">All Records</option>
-            <option value="with_sanction">Has Sanction</option>
-            <option value="no_sanction">No Sanction</option>
-          </select>
         </div>
 
         <!-- Archive Filters (Initially Hidden) -->
@@ -138,65 +151,70 @@ require_once __DIR__ . '/../../core/View.php';
             <input type="text" id="searchViolationArchive" placeholder="Search archive...">
           </div>
 
-          <div class="Violations-date-filter">
-            <input type="date" id="ArchiveDateFrom" class="Violations-filter-date" title="From Date">
-            <span>to</span>
-            <input type="date" id="ArchiveDateTo" class="Violations-filter-date" title="To Date">
+          <div class="Violations-filter-grid">
+            <div class="Violations-date-filter">
+              <input type="date" id="ArchiveDateFrom" class="Violations-filter-date" title="From Date">
+              <span>to</span>
+              <input type="date" id="ArchiveDateTo" class="Violations-filter-date" title="To Date">
+            </div>
+
+            <select id="ArchiveDeptFilter" class="Violations-filter-select">
+              <option value="all">All Departments</option>
+              <!-- Departments will be loaded via JS -->
+            </select>
+
+            <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
+              <option value="all">All Years</option>
+              <?php
+              $currentYear = (int)date('Y');
+              for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
+                  $selected = ($y == $currentYear) ? 'selected' : '';
+                  echo "<option value='$y' $selected>$y</option>";
+              }
+              ?>
+            </select>
+            
+            <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
+              <option value="all">All Months</option>
+              <?php
+              for ($i = 1; $i <= 12; $i++) {
+                  $month = date('M', mktime(0, 0, 0, $i, 1));
+                  $selected = ($i == date('n')) ? 'selected' : '';
+                  echo "<option value='$i' $selected>$month</option>";
+              }
+              ?>
+            </select>
           </div>
-
-          <select id="ArchiveDeptFilter" class="Violations-filter-select">
-            <option value="all">All Departments</option>
-            <!-- Departments will be loaded via JS -->
-          </select>
-
-          <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
-            <option value="all">All Years</option>
-            <?php
-            $currentYear = (int)date('Y');
-            for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
-                $selected = ($y == $currentYear) ? 'selected' : '';
-                echo "<option value='$y' $selected>$y</option>";
-            }
-            ?>
-          </select>
-          
-          <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
-            <option value="all">All Months</option>
-            <?php
-            for ($i = 1; $i <= 12; $i++) {
-                $month = date('M', mktime(0, 0, 0, $i, 1));
-                $selected = ($i == date('n')) ? 'selected' : '';
-                echo "<option value='$i' $selected>$month</option>";
-            }
-            ?>
-          </select>
         </div>
 
         <button class="Violations-filter-btn" title="More filters">
           <i class='bx bx-filter-alt'></i>
         </button>
 
-        <!-- Display Mode Toggle: Latest per student vs All records -->
-        <div class="Violations-view-toggle" id="displayModeToggle">
-          <button class="Violations-display-btn" data-display="latest" title="Latest per student">
-            <i class='bx bx-user'></i>
-          </button>
-          <button class="Violations-display-btn active" data-display="all" title="All violations (full history)">
-            <i class='bx bx-history'></i>
-          </button>
-        </div>
+        <!-- Display Mode + View toggles share a row on mobile -->
+        <div class="Violations-toggles-row">
+          <!-- Display Mode Toggle: Latest per student vs All records -->
+          <div class="Violations-view-toggle" id="displayModeToggle">
+            <button class="Violations-display-btn" data-display="latest" title="Latest per student">
+              <i class='bx bx-user'></i>
+            </button>
+            <button class="Violations-display-btn active" data-display="all" title="All violations (full history)">
+              <i class='bx bx-history'></i>
+            </button>
+          </div>
 
-        <!-- View Toggle -->
-        <div class="Violations-view-toggle">
-          <button class="Violations-view-btn" data-view="table" title="Table View">
-            <i class='bx bx-table'></i>
-          </button>
-          <button class="Violations-view-btn" data-view="grid" title="Grid View">
-            <i class='bx bx-grid-alt'></i>
-          </button>
-          <button class="Violations-view-btn active" data-view="list" title="List View">
-            <i class='bx bx-list-ul'></i>
-          </button>
+          <!-- View Toggle -->
+          <div class="Violations-view-toggle">
+            <button class="Violations-view-btn" data-view="table" title="Table View">
+              <i class='bx bx-table'></i>
+            </button>
+            <button class="Violations-view-btn" data-view="grid" title="Grid View">
+              <i class='bx bx-grid-alt'></i>
+            </button>
+            <button class="Violations-view-btn active" data-view="list" title="List View">
+              <i class='bx bx-list-ul'></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -780,6 +798,94 @@ require_once __DIR__ . '/../../core/View.php';
 <script src="<?= View::asset('js/lib/docxtemplater.js') ?>"></script>
 <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 
+<script>
+(function () {
+  // ── Mobile filter toggle ────────────────────────────────────────────────
+  var isMobile = function () { return window.innerWidth <= 768; };
+
+  var toggleBtn   = document.getElementById('violationsFilterToggle');
+  var mobileBar   = document.querySelector('.Violations-mobile-filter-bar');
+  var mobileInput = document.getElementById('searchViolationMobile');
+
+  // Wire the mobile search input to the real hidden search input
+  if (mobileInput) {
+    mobileInput.addEventListener('input', function () {
+      var real = document.getElementById('searchViolation');
+      if (real) {
+        real.value = this.value;
+        real.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  }
+
+  function getActiveFilterGroup() {
+    // Whichever filter group is currently "active" (not display:none)
+    var current = document.getElementById('currentFilters');
+    var archive = document.getElementById('archiveFilters');
+    if (current && current.style.display !== 'none') return current;
+    if (archive && archive.style.display !== 'none') return archive;
+    return current;
+  }
+
+  function applyMobileLayout() {
+    if (!isMobile()) {
+      // Desktop — show everything normally, hide mobile-only elements
+      if (mobileBar) mobileBar.style.display = 'none';
+      var groups = document.querySelectorAll('.Violations-filter-group');
+      groups.forEach(function (g) {
+        g.classList.remove('mobile-open');
+        // restore inline display from data-attr or let tab switching handle it
+      });
+      return;
+    }
+
+    // Mobile — show the compact bar, hide filter groups until toggle
+    if (mobileBar) mobileBar.style.display = 'flex';
+    var groups = document.querySelectorAll('.Violations-filter-group');
+    groups.forEach(function (g) {
+      if (!g.classList.contains('mobile-open')) {
+        // Only hide if not forced open
+        if (g.style.display !== 'none') {
+          // Mark it as "was visible" so we can track it
+          g.dataset.wasVisible = '1';
+        }
+      }
+    });
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      var group = getActiveFilterGroup();
+      if (!group) return;
+      var isOpen = group.classList.contains('mobile-open');
+      group.classList.toggle('mobile-open', !isOpen);
+      toggleBtn.classList.toggle('active', !isOpen);
+      toggleBtn.innerHTML = !isOpen
+        ? '<i class=\'bx bx-x\'></i> Close'
+        : '<i class=\'bx bx-filter-alt\'></i> Filters';
+    });
+  }
+
+  // Re-run on resize
+  window.addEventListener('resize', applyMobileLayout);
+  // Initial run
+  applyMobileLayout();
+
+  // When tabs switch (Current / Archive), close any open panel and update toggle
+  document.querySelectorAll('.Violations-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!isMobile()) return;
+      document.querySelectorAll('.Violations-filter-group').forEach(function (g) {
+        g.classList.remove('mobile-open');
+      });
+      if (toggleBtn) {
+        toggleBtn.classList.remove('active');
+        toggleBtn.innerHTML = '<i class=\'bx bx-filter-alt\'></i> Filters';
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
 
