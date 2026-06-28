@@ -923,6 +923,30 @@ function initViolationsModule() {
             return 'bx-error-circle';
         }
 
+        let vtManageViewMode = 'levels'; // 'levels' or 'statuses'
+        
+        function toggleManageView() {
+            const levelsView = document.getElementById('vtManageLevelsView');
+            const statusesView = document.getElementById('vtManageStatusesView');
+            const toggleBtn = document.getElementById('vtToggleManageViewBtn');
+            
+            if (!levelsView || !statusesView || !toggleBtn) return;
+            
+            if (vtManageViewMode === 'levels') {
+                vtManageViewMode = 'statuses';
+                levelsView.style.display = 'none';
+                statusesView.style.display = 'block';
+                toggleBtn.style.color = '#d4af37'; // Highlight when active
+                renderManageStatusesList();
+            } else {
+                vtManageViewMode = 'levels';
+                statusesView.style.display = 'none';
+                levelsView.style.display = 'block';
+                toggleBtn.style.color = '#6b7280';
+                renderManageLevelsList(selectedManageTypeId);
+            }
+        }
+        
         async function openViolationTypesManageModal() {
             if (!navigator.onLine) {
                 showNotification("Please check your internet connection. Internet requires to manage violation types and levels.", 'error');
@@ -934,9 +958,36 @@ function initViolationsModule() {
             document.body.style.overflow = 'hidden';
 
             await loadViolationTypes(true);
+            await loadViolationStatuses(true);
             selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
+            
+            // Reset view mode to levels
+            vtManageViewMode = 'levels';
+            const levelsView = document.getElementById('vtManageLevelsView');
+            const statusesView = document.getElementById('vtManageStatusesView');
+            const toggleBtn = document.getElementById('vtToggleManageViewBtn');
+            if (levelsView) levelsView.style.display = 'block';
+            if (statusesView) statusesView.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.color = '#6b7280';
+            
+            // Initialize status color presets and add button
+            initNewStatusColorPresets();
+            const addStatusBtn = document.getElementById('vtAddStatusBtn');
+            if (addStatusBtn) {
+                addStatusBtn.onclick = addViolationStatus;
+            }
+            
+            // Initialize level color presets
+            initNewLevelColorPresets();
+            
+            // Attach toggle button listener
+            if (toggleBtn) {
+                toggleBtn.onclick = toggleManageView;
+            }
+            
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
+            renderManageStatusesList();
         }
 
         function updateAddLevelStatusDropdown() {
