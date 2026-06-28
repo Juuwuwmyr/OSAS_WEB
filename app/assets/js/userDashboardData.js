@@ -25,6 +25,33 @@ class UserDashboardData {
         this.violations = [];
         this.announcements = [];
         this.dashcontents = [];
+        this.pollingInterval = null;
+    }
+
+    /**
+     * Start periodic polling for real-time updates
+     */
+    startPolling(intervalMs = 30000) {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        
+        console.log(`📡 User Dashboard polling started (${intervalMs}ms)`);
+        this.pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                console.log('🔄 Polling user dashboard data...');
+                this.loadAllData().catch(console.error);
+            }
+        }, intervalMs);
+    }
+
+    /**
+     * Stop periodic polling
+     */
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('📡 User Dashboard polling stopped');
+        }
     }
 
     /**
@@ -620,7 +647,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only load if we're on dashboard page
         const mainContent = document.getElementById('main-content');
         if (mainContent && (mainContent.innerHTML.includes('My Dashboard') || mainContent.innerHTML.includes('sd-violations-list') || mainContent.innerHTML.includes('student-dash'))) {
-            window.userDashboardData.loadAllData();
+            window.userDashboardData.loadAllData().then(() => {
+                window.userDashboardData.startPolling(20000); // Poll every 20s
+            });
         }
     }, 100);
 });
@@ -630,5 +659,7 @@ window.initializeUserDashboard = function() {
     if (!window.userDashboardData) {
         window.userDashboardData = new UserDashboardData();
     }
-    window.userDashboardData.loadAllData();
+    window.userDashboardData.loadAllData().then(() => {
+        window.userDashboardData.startPolling(20000); // Poll every 20s
+    });
 };

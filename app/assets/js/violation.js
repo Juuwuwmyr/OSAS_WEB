@@ -1274,6 +1274,28 @@ function initViolationsModule() {
             }
         };
 
+        function updateViolationsSanctions() {
+            // Update all violations in the local array with the latest sanction info from violationTypes
+            violations = violations.map(v => {
+                // Find the corresponding violation type and level in violationTypes
+                const type = violationTypes.find(t => t.id == v.violationType);
+                if (type && type.levels) {
+                    const level = type.levels.find(l => l.id == v.violationLevel);
+                    if (level) {
+                        return {
+                            ...v,
+                            sanctionName: level.sanction_name || null,
+                            sanctionDescription: level.sanction_description || null
+                        };
+                    }
+                }
+                return v;
+            });
+            
+            // Update the window cache as well
+            _cache.violations = violations;
+        }
+
         async function saveAllLevels() {
             if (!selectedManageTypeId) return;
 
@@ -1324,7 +1346,20 @@ function initViolationsModule() {
 
                 showNotification('All levels updated successfully', 'success');
                 await loadViolationTypes(true);
+                // Update sanctions on violations
+                updateViolationsSanctions();
+                // Re-render violations list
+                if (typeof renderViolations === 'function') renderViolations();
+                // Update details modal if open
+                if (detailsModal && detailsModal.dataset.viewingId) {
+                    openDetailsModal(parseInt(detailsModal.dataset.viewingId));
+                }
                 renderManageLevelsList(selectedManageTypeId);
+                
+                // Real-time update: Refresh dashboard if instance exists
+                if (window.dashboardDataInstance && typeof window.dashboardDataInstance.loadAllData === 'function') {
+                    window.dashboardDataInstance.loadAllData().catch(console.error);
+                }
             } catch (error) {
                 showNotification(error.message || 'Failed to save all levels', 'error');
             } finally {
@@ -1354,8 +1389,19 @@ function initViolationsModule() {
                 if (data.status !== 'success') throw new Error(data.message || 'Failed to update level');
                 showNotification('Level updated successfully', 'success');
                 await loadViolationTypes(true);
+                // Update sanctions on violations
+                updateViolationsSanctions();
                 renderManageLevelsList(typeId);
                 if (typeof renderViolations === 'function') renderViolations();
+                // Update details modal if open
+                if (detailsModal && detailsModal.dataset.viewingId) {
+                    openDetailsModal(parseInt(detailsModal.dataset.viewingId));
+                }
+
+                // Real-time update: Refresh dashboard if instance exists
+                if (window.dashboardDataInstance && typeof window.dashboardDataInstance.loadAllData === 'function') {
+                    window.dashboardDataInstance.loadAllData().catch(console.error);
+                }
             } catch (error) {
                 showNotification(error.message || 'Failed to update level', 'error');
             } finally {

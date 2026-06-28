@@ -39,6 +39,33 @@ class DashboardData {
         };
         // Flag to prevent multiple chart updates
         this.chartsUpdating = false;
+        this.pollingInterval = null;
+    }
+
+    /**
+     * Start periodic polling for real-time updates
+     */
+    startPolling(intervalMs = 30000) {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        
+        console.log(`📡 Dashboard polling started (${intervalMs}ms)`);
+        this.pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                console.log('🔄 Polling dashboard data...');
+                this.loadAllData().catch(console.error);
+            }
+        }, intervalMs);
+    }
+
+    /**
+     * Stop periodic polling
+     */
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('📡 Dashboard polling stopped');
+        }
     }
 
     /**
@@ -1362,7 +1389,9 @@ function initDashboardData() {
         if (dashcontent && mainContent && mainContent.innerHTML.trim() !== '') {
             clearInterval(checkInterval);
             console.log('✅ Dashboard content found, loading data...');
-            dashboardDataInstance.loadAllData().catch(error => {
+            dashboardDataInstance.loadAllData().then(() => {
+                dashboardDataInstance.startPolling(20000); // Poll every 20s
+            }).catch(error => {
                 console.error('❌ Error loading dashboard data:', error);
                 window.initDashboardDataAttempted = false; // Allow retry on error
             });

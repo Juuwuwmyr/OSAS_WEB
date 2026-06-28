@@ -79,6 +79,14 @@ async function initUserViolations() {
 
     await loadUserViolationTypes();
     await loadUserViolations();
+
+    // Start periodic refresh to check for updated sanctions/violations
+    startPeriodicRefresh();
+
+    // Also expose to window for manual calls if needed
+    window.updateUserViolationsSanctions = updateUserViolationsSanctions;
+    window.startPeriodicRefresh = startPeriodicRefresh;
+    window.stopPeriodicRefresh = stopPeriodicRefresh;
 }
 
 function getUserTypeIcon(name) {
@@ -90,24 +98,81 @@ function getUserTypeIcon(name) {
     return 'bx-error-circle';
 }
 
+function updateUserViolationsSanctions() {
+    // Update all user violations with the latest sanction info from userViolationTypes
+    const updateArray = (arr) => {
+        return arr.map(v => {
+            // Find the corresponding violation type and level
+            const type = userViolationTypes.find(t => t.id == v.violation_type_id || t.id == v.violationType);
+            if (type && type.levels) {
+                const level = type.levels.find(l => l.id == v.violation_level_id || l.id == v.violationLevel);
+                if (level) {
+                    return {
+                        ...v,
+                        sanctionName: level.sanction_name || null,
+                        sanctionDescription: level.sanction_description || null
+                    };
+                }
+            }
+            return v;
+        });
+    };
+
+    userViolations = updateArray(userViolations);
+    allUserViolations = updateArray(allUserViolations);
+    // Also update window cache variables if they exist
+    if (window.userViolations) window.userViolations = userViolations;
+    if (window.allUserViolations) window.allUserViolations = allUserViolations;
+
+    // Refresh details modal if open
+    const detailsModal = document.getElementById('ViolationDetailsModal');
+    if (detailsModal && detailsModal.style.display !== 'none' && currentViolationId) {
+        viewViolationDetails(currentViolationId);
+    }
+
+    // Re-render the violations table
+    renderViolationTable();
+}
+
+let refreshIntervalId = null;
+function startPeriodicRefresh() {
+    if (refreshIntervalId) return;
+
+    // Refresh every 30 seconds to get updated violation types and sanctions
+    refreshIntervalId = setInterval(async () => {
+        try {
+            // Reload violation types first to get latest sanction info
+            await loadUserViolationTypes();
+            // Reload violations to get any new ones
+            await loadUserViolations();
+        } catch (e) {
+            console.error('Periodic refresh failed:', e);
+        }
+    }, 30000); // 30 seconds
+}
+
+function stopPeriodicRefresh() {
+    if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
+    }
+}
+
 async function loadUserViolationTypes() {
     try {
         const response = await fetch(`${API_BASE}violations.php?action=types`);
         const data = await response.json();
         if (data.status === 'success' && Array.isArray(data.data)) {
-            userViolationTypes = data.data.map(type => ({
-                id: type.id,
-                name: type.type_name || type.name
-            }));
+            userViolationTypes = data.data; // save full data including levels
         } else {
             throw new Error('Invalid types response');
         }
     } catch (error) {
         console.warn('Could not load violation types, using defaults:', error);
         userViolationTypes = [
-            { id: 'uniform', name: 'Improper Uniform' },
-            { id: 'footwear', name: 'Improper Footwear' },
-            { id: 'no_id', name: 'No ID' }
+            { id: 'uniform', name: 'Improper Uniform', levels: [] },
+            { id: 'footwear', name: 'Improper Footwear', levels: [] },
+            { id: 'no_id', name: 'No ID', levels: [] }
         ];
     }
 
@@ -238,6 +303,9 @@ async function loadUserViolations() {
         // All violations = active + archived
         allUserViolations = [...userViolations, ...archivedViolations];
         console.log('✅ Loaded', userViolations.length, 'active +', archivedViolations.length, 'archived violations');
+
+        // Update sanctions on all violations
+        updateUserViolationsSanctions();
 
         updateViolationStats();
         renderViolationTable();
