@@ -3030,7 +3030,26 @@ function initViolationsModule() {
         };
         
         function renderViolations() {
-            console.log('🎨 renderViolations called, tableBody exists:', !!tableBody);
+            // RBAC: Only 'admin' role can see the Resolve button
+            let isUserAdmin = false;
+            const sessionStr = localStorage.getItem('userSession');
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            let currentRole = '';
+            
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    currentRole = session.role || '';
+                } catch (e) {}
+            }
+            
+            if (!currentRole && cookieRoleMatch) {
+                currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            }
+            
+            isUserAdmin = (currentRole.toLowerCase() === 'admin');
+            
+            console.log('🎨 renderViolations called, currentRole:', currentRole, 'isUserAdmin:', isUserAdmin);
             console.log('📊 Current violations data:', violations.length, 'items');
 
             if (!tableBody) {
@@ -3265,7 +3284,7 @@ function initViolationsModule() {
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${displayStatus === 'resolved'
+                            ${displayStatus === 'resolved' || !isUserAdmin
                                 ? ''
                                 : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
                                     <i class='bx bx-check'></i>
@@ -3339,7 +3358,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved'
+                                    ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
                                     }
@@ -3378,7 +3397,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved'
+                                    ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
                                     }
@@ -4091,15 +4110,39 @@ function initViolationsModule() {
             document.body.style.overflow = 'hidden';
 
             // Update action buttons visibility based on status
+            const detailEditBtn = document.getElementById('detailEditBtn');
             const detailResolveBtn = document.getElementById('detailResolveBtn');
             const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
             const detailSlipStatus = document.getElementById('detailSlipStatus');
             const detailApproveSlipBtn = document.getElementById('detailApproveSlipBtn');
             const detailDenySlipBtn = document.getElementById('detailDenySlipBtn');
             
+            // RBAC: Check for admin role
+            let isUserAdmin = false;
+            const sessionStr = localStorage.getItem('userSession');
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            let currentRole = '';
+            
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    currentRole = session.role || '';
+                } catch (e) {}
+            }
+            
+            if (!currentRole && cookieRoleMatch) {
+                currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            }
+            
+            isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+            if (detailEditBtn) {
+                detailEditBtn.style.display = isUserAdmin ? 'inline-flex' : 'none';
+            }
+            
             if (detailResolveBtn) {
                 // Show Resolve on all violations; show Reopen if already resolved
-                if (violation.status === 'resolved') {
+                if (violation.status === 'resolved' || !isUserAdmin) {
                     detailResolveBtn.style.display = 'none';
                 } else {
                     detailResolveBtn.style.display = 'inline-flex';
@@ -4226,6 +4269,30 @@ function initViolationsModule() {
             }
 
             if (editBtn) {
+                // RBAC: Only 'admin' role can edit
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can edit violations.', 'error');
+                    return;
+                }
+
                 const id = editBtn.dataset.id;
                 openRecordModal(id);
             }
@@ -4239,6 +4306,30 @@ function initViolationsModule() {
             }
 
             if (resolveBtn) {
+                // RBAC: Only 'admin' role can resolve
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can resolve violations.', 'error');
+                    return;
+                }
+
                 const id = resolveBtn.dataset.id;
                 const violation = violations.find(v => v.id == id);
 
@@ -4523,6 +4614,30 @@ function initViolationsModule() {
 
         if (detailEditBtn) {
             detailEditBtn.addEventListener('click', function() {
+                // RBAC: Extra safety check
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can edit violations.', 'error');
+                    return;
+                }
+
                 const violationId = detailsModal.dataset.viewingId;
                 if (violationId) {
                     closeDetailsModal();

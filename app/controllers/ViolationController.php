@@ -311,6 +311,11 @@ class ViolationController extends Controller
         $levelData = $this->model->query("SELECT default_status FROM violation_levels WHERE id = ?", [$violationLevel]);
         $status = !empty($levelData) ? ($this->sanitize($levelData[0]['default_status'] ?? 'warning')) : 'warning';
 
+        // RBAC: Only 'admin' role can record a violation as 'resolved'
+        if ($status === 'resolved' && ($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can record resolved violations.', 403);
+        }
+
         // Handle attachments (File Upload)
         $attachmentPaths = [];
         if (!empty($_FILES['attachments'])) {
@@ -514,8 +519,8 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
-            $this->error('Access denied', 'Admin privileges required', 403);
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can edit violations.', 403);
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
@@ -535,6 +540,13 @@ class ViolationController extends Controller
         $newLocation= $this->sanitize($input['location']       ?? $current['location']);
         $newStatus  = $this->sanitize($input['status']         ?? $current['status']);
         $newNotes   = $this->sanitize($input['notes']          ?? $current['notes'] ?? '');
+
+        // RBAC: Only 'admin' role can mark a violation as 'resolved'
+        if ($newStatus === 'resolved' && ($current['status'] ?? '') !== 'resolved') {
+            if (($_SESSION['role'] ?? '') !== 'admin') {
+                $this->error('Access denied', 'Only Administrators can resolve violations.', 403);
+            }
+        }
 
         // --- Build audit trail appended to notes ---
         $changes = [];
