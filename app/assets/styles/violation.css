@@ -1580,15 +1580,26 @@ body.dark {
   inset: 0;
   z-index: 99999;
   display: flex;
-  align-items: center;          /* vertically center on desktop */
+  align-items: center;
   justify-content: center;
   pointer-events: none;
+  /* Hidden by default — visibility:hidden prevents the flash-on-load */
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  /* NO transition here — added via .qr-scanner-modal--ready to avoid flash on page load */
+}
+
+/* Transition only enabled after first open (JS adds this class) */
+.qr-scanner-modal--ready {
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.qr-scanner-modal--ready .qr-scanner-sheet {
+  transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.64, 1);
 }
 
 .qr-scanner-modal.active {
   pointer-events: all;
+  visibility: visible;
   opacity: 1;
 }
 
@@ -1605,18 +1616,15 @@ body.dark {
 .qr-scanner-sheet {
   position: relative;
   z-index: 1;
-  /* Fixed comfortable width — never stretches full screen on laptop */
   width: 360px;
-  max-width: calc(100vw - 32px);   /* safe on narrow phones */
+  max-width: calc(100vw - 32px);
   background: #111827;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* pop-in animation */
+  /* transform set here, transition added by --ready class */
   transform: scale(0.92) translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.64, 1);
-  /* max height so it never overflows the viewport */
   max-height: calc(100dvh - 48px);
   box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
 }
@@ -1926,7 +1934,6 @@ body.dark {
   }
   .qr-scanner-sheet {
     border-radius: 20px;
-    /* Remove slide-from-bottom, use scale-in instead */
     transform: scale(0.92);
   }
   .qr-scanner-modal.active .qr-scanner-sheet {

@@ -4656,6 +4656,15 @@ function initViolationsModule() {
                 return;
             }
 
+            // Enable transitions on first open — this prevents the flash-on-load
+            // caused by CSS transitions firing during initial page render.
+            if (!modal.classList.contains('qr-scanner-modal--ready')) {
+                // Force a reflow so the browser registers the initial transform/opacity
+                // before we add the transition class and active class.
+                modal.getBoundingClientRect();
+                modal.classList.add('qr-scanner-modal--ready');
+            }
+
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             setQRStatus('loading', 'Starting camera…');
