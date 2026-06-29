@@ -9,6 +9,8 @@ require_once __DIR__ . '/../../core/View.php';
   <title>Violations | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
+  <!-- html5-qrcode: camera-based QR scanner (no extra install needed) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
   
@@ -344,6 +346,9 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="studentSearch">Search Student</label>
           <div class="student-search-wrapper">
             <input type="text" id="studentSearch" placeholder="Search by Student ID or Name...">
+            <button type="button" id="qrScanStudentBtn" class="Violations-qr-btn" title="Scan QR Code">
+              <i class='bx bx-qr-scan'></i>
+            </button>
             <button type="button" id="searchStudentBtn" class="Violations-search-btn">
               <i class='bx bx-search-alt'></i> Search
             </button>
@@ -825,6 +830,68 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
   </div>
+
+  <!-- ========== QR SCANNER MODAL ========== -->
+  <div id="QRScannerModal" class="qr-scanner-modal" aria-modal="true" role="dialog" aria-label="Scan QR Code">
+    <!-- Full dark overlay -->
+    <div class="qr-scanner-backdrop" id="qrScannerBackdrop"></div>
+
+    <div class="qr-scanner-sheet">
+      <!-- Header bar -->
+      <div class="qr-scanner-header">
+        <div class="qr-scanner-header-left">
+          <div class="qr-scanner-icon-wrap">
+            <i class='bx bx-qr-scan'></i>
+          </div>
+          <div>
+            <h3 class="qr-scanner-title">Scan Student QR</h3>
+            <p class="qr-scanner-subtitle">Point the camera at the student's QR code</p>
+          </div>
+        </div>
+        <button type="button" class="qr-scanner-close-btn" id="qrScannerCloseBtn" title="Close scanner">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <!-- Camera viewport -->
+      <div class="qr-viewport-wrap">
+        <!-- The actual camera feed is rendered here by html5-qrcode -->
+        <div id="qrReaderView"></div>
+
+        <!-- Animated scan frame overlay -->
+        <div class="qr-scan-frame" id="qrScanFrame">
+          <span class="qr-corner tl"></span>
+          <span class="qr-corner tr"></span>
+          <span class="qr-corner bl"></span>
+          <span class="qr-corner br"></span>
+          <div class="qr-scan-line" id="qrScanLine"></div>
+        </div>
+      </div>
+
+      <!-- Status + torch row -->
+      <div class="qr-scanner-footer">
+        <div class="qr-status-pill" id="qrScanStatus">
+          <i class='bx bx-loader-alt bx-spin' id="qrStatusIcon"></i>
+          <span id="qrStatusText">Starting camera…</span>
+        </div>
+        <button type="button" class="qr-torch-btn" id="qrTorchBtn" title="Toggle flashlight" style="display:none;">
+          <i class='bx bx-bulb'></i>
+        </button>
+      </div>
+
+      <!-- Manual fallback -->
+      <div class="qr-manual-fallback">
+        <p>Can't scan? Enter the student ID manually:</p>
+        <div class="qr-manual-row">
+          <input type="text" id="qrManualInput" class="qr-manual-input" placeholder="e.g. 2023-0001" autocomplete="off">
+          <button type="button" id="qrManualConfirmBtn" class="qr-manual-confirm-btn">
+            <i class='bx bx-check'></i> Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ========== END QR SCANNER MODAL ========== -->
 
 </main>
 

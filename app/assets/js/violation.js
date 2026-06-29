@@ -4362,6 +4362,9 @@ function initViolationsModule() {
             console.log('Closing record modal');
             recordModal.classList.remove('active');
             document.body.style.overflow = 'auto';
+
+            // Stop QR scanner if running
+            stopQRScannerOnModalClose();
             
             // Reset form if exists
             const form = document.getElementById('ViolationRecordForm');
@@ -4638,6 +4641,198 @@ function initViolationsModule() {
                 }
             }
         }
+
+        // ========== QR SCANNER MODAL ==========
+        let _html5QrScanner = null;
+        let _qrTorchOn = false;
+
+        function openQRScannerModal() {
+            const modal = document.getElementById('QRScannerModal');
+            if (!modal) return;
+
+            // Make sure html5-qrcode library is available
+            if (typeof Html5Qrcode === 'undefined') {
+                showNotification('QR scanner library not loaded. Please check your internet connection.', 'error');
+                return;
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setQRStatus('loading', 'Starting camera…');
+
+            // Small delay so the modal transition completes before the camera boots
+            setTimeout(() => startQRCamera(), 300);
+        }
+
+        function closeQRScannerModal() {
+            stopQRCamera();
+            const modal = document.getElementById('QRScannerModal');
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+            _qrTorchOn = false;
+            const torchBtn = document.getElementById('qrTorchBtn');
+            if (torchBtn) { torchBtn.classList.remove('active'); torchBtn.style.display = 'none'; }
+            const manualInput = document.getElementById('qrManualInput');
+            if (manualInput) manualInput.value = '';
+        }
+
+        function setQRStatus(state, text) {
+            const pill   = document.getElementById('qrScanStatus');
+            const icon   = document.getElementById('qrStatusIcon');
+            const label  = document.getElementById('qrStatusText');
+            const frame  = document.getElementById('qrScanFrame');
+            if (!pill) return;
+
+            pill.className = 'qr-status-pill ' + state; // idle | loading | success | error
+            if (label) label.textContent = text;
+
+            if (icon) {
+                icon.className = state === 'loading'
+                    ? 'bx bx-loader-alt bx-spin'
+                    : state === 'success'
+                        ? 'bx bx-check-circle'
+                        : state === 'error'
+                            ? 'bx bx-error-circle'
+                            : 'bx bx-scan';
+            }
+
+            if (frame) {
+                frame.classList.toggle('success', state === 'success');
+                frame.classList.toggle('error',   state === 'error');
+            }
+        }
+
+        async function startQRCamera() {
+            // Clear any previous instance
+            if (_html5QrScanner) {
+                try { await _html5QrScanner.stop(); } catch (_) {}
+                try { _html5QrScanner.clear(); }     catch (_) {}
+                _html5QrScanner = null;
+            }
+
+            // Wipe the container so html5-qrcode can re-render cleanly
+            const viewEl = document.getElementById('qrReaderView');
+            if (viewEl) viewEl.innerHTML = '';
+
+            _html5QrScanner = new Html5Qrcode('qrReaderView', { verbose: false });
+
+            let cameras;
+            try {
+                cameras = await Html5Qrcode.getCameras();
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                if (/permission/i.test(msg)) {
+                    setQRStatus('error', 'Camera permission denied');
+                    showNotification('Please allow camera access and try again.', 'error');
+                } else {
+                    setQRStatus('error', 'No camera found');
+                    showNotification('No camera found on this device.', 'error');
+                }
+                return;
+            }
+
+            if (!cameras || cameras.length === 0) {
+                setQRStatus('error', 'No camera found on this device');
+                return;
+            }
+
+            // Prefer back / environment camera
+            const cam = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
+
+            const config = {
+                fps: 12,
+                // qrbox as a function: scan region is 60% of the smaller dimension
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.6);
+                    return { width: edge, height: edge };
+                },
+                aspectRatio: 1.0,
+                disableFlip: false,
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
+
+            try {
+                await _html5QrScanner.start(
+                    cam.id,
+                    config,
+                    (decodedText) => onQRDecoded(decodedText),
+                    () => {} // per-frame error — ignore
+                );
+
+                setQRStatus('idle', 'Align QR code inside the frame');
+
+                // Show torch button if supported
+                const torchBtn = document.getElementById('qrTorchBtn');
+                if (torchBtn && _html5QrScanner.getRunningTrackCameraCapabilities) {
+                    try {
+                        const caps = _html5QrScanner.getRunningTrackCameraCapabilities();
+                        if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                            torchBtn.style.display = 'flex';
+                        }
+                    } catch (_) {}
+                }
+
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                console.error('QR camera start error:', err);
+                setQRStatus('error', 'Could not start camera');
+                showNotification('Could not start QR scanner: ' + msg, 'error');
+            }
+        }
+
+        function stopQRCamera() {
+            if (_html5QrScanner) {
+                _html5QrScanner.stop().catch(() => {}).finally(() => {
+                    try { _html5QrScanner.clear(); } catch (_) {}
+                    _html5QrScanner = null;
+                    const viewEl = document.getElementById('qrReaderView');
+                    if (viewEl) viewEl.innerHTML = '';
+                });
+            }
+        }
+
+        function onQRDecoded(text) {
+            const trimmed = text.trim();
+
+            // Flash success state on the frame
+            setQRStatus('success', '✅ QR Scanned!');
+
+            // Brief success pause so the user sees the green frame, then close
+            setTimeout(() => {
+                closeQRScannerModal();
+
+                // Populate search field in the violation modal
+                const searchInput = document.getElementById('studentSearch');
+                if (searchInput) searchInput.value = trimmed;
+
+                // Trigger the existing student search
+                handleStudentSearch().catch(err => console.error('QR student search error:', err));
+            }, 700);
+        }
+
+        // torch toggle
+        function toggleQRTorch() {
+            if (!_html5QrScanner) return;
+            try {
+                const caps = _html5QrScanner.getRunningTrackCameraCapabilities();
+                if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                    _qrTorchOn = !_qrTorchOn;
+                    caps.torchFeature().apply(_qrTorchOn);
+                    const btn = document.getElementById('qrTorchBtn');
+                    if (btn) btn.classList.toggle('active', _qrTorchOn);
+                }
+            } catch (err) {
+                console.warn('Torch toggle failed:', err);
+            }
+        }
+
+        // Alias used by closeRecordModal
+        function stopQRScannerOnModalClose() {
+            closeQRScannerModal();
+        }
+        // Legacy alias so nothing else breaks
+        function startQRScanner() { openQRScannerModal(); }
+        function stopQRScanner()  { closeQRScannerModal(); }
 
         // ========== EVENT LISTENERS ==========
         
@@ -5842,6 +6037,73 @@ function initViolationsModule() {
                 });
             }
         }
+
+        // 8. QR SCANNER BUTTON
+        const qrScanStudentBtn = document.getElementById('qrScanStudentBtn');
+        if (qrScanStudentBtn) {
+            qrScanStudentBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openQRScannerModal();
+            });
+        }
+
+        // QR modal close button
+        const qrScannerCloseBtn = document.getElementById('qrScannerCloseBtn');
+        if (qrScannerCloseBtn) {
+            qrScannerCloseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeQRScannerModal();
+            });
+        }
+
+        // QR modal backdrop click — close
+        const qrScannerBackdrop = document.getElementById('qrScannerBackdrop');
+        if (qrScannerBackdrop) {
+            qrScannerBackdrop.addEventListener('click', () => closeQRScannerModal());
+        }
+
+        // Torch button
+        const qrTorchBtn = document.getElementById('qrTorchBtn');
+        if (qrTorchBtn) {
+            qrTorchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleQRTorch();
+            });
+        }
+
+        // Manual input confirm
+        const qrManualConfirmBtn = document.getElementById('qrManualConfirmBtn');
+        if (qrManualConfirmBtn) {
+            qrManualConfirmBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const manualInput = document.getElementById('qrManualInput');
+                const val = manualInput ? manualInput.value.trim() : '';
+                if (!val) return;
+                onQRDecoded(val);
+            });
+        }
+
+        // Manual input — Enter key
+        const qrManualInputEl = document.getElementById('qrManualInput');
+        if (qrManualInputEl) {
+            qrManualInputEl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = qrManualInputEl.value.trim();
+                    if (val) onQRDecoded(val);
+                }
+            });
+        }
+
+        // Close QR modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const qrModal = document.getElementById('QRScannerModal');
+                if (qrModal && qrModal.classList.contains('active')) {
+                    closeQRScannerModal();
+                }
+            }
+        });
 
         // 9. VIOLATION TYPE SELECTION
         const violationTypeCards = document.querySelectorAll('.violation-type-card');
