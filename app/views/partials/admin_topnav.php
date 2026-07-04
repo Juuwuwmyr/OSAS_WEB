@@ -7,6 +7,9 @@ $role     = $_SESSION['role'] ?? 'admin';
 // Only admin and OSAS Staff can access these restricted pages
 $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
 
+// Announcements are accessible to all staff roles
+$canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member']);
+
 // Generate initials from the user's name (first letter of first & last name)
 $nameParts = explode(' ', trim($username));
 $initials = strtoupper(substr($nameParts[0], 0, 1));
@@ -96,13 +99,13 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
         </a>
       <?php endif; ?>
     </li>
-    <li class="nav-item<?= !$canAccessRestricted ? ' nav-restricted' : '' ?>">
-      <?php if ($canAccessRestricted): ?>
+    <li class="nav-item<?= !$canAccessAnnouncements ? ' nav-restricted' : '' ?>">
+      <?php if ($canAccessAnnouncements): ?>
         <a href="#" data-page="admin_page/Announcements" class="nav-link" title="Announcements">
           <i class='bx bxs-megaphone'></i><span>Announcements</span>
         </a>
       <?php else: ?>
-        <a href="#" class="nav-link nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+        <a href="#" class="nav-link nav-disabled" title="Access restricted" onclick="return false;">
           <i class='bx bxs-megaphone'></i><span>Announcements</span>
           <i class='bx bxs-lock-alt nav-lock-icon'></i>
         </a>

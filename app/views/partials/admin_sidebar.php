@@ -10,6 +10,9 @@ $role = $_SESSION['role'] ?? 'admin';
 
 // Only admin and OSAS Staff can access these restricted pages
 $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
+
+// Announcements are accessible to all staff roles
+$canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member']);
 ?>
 <!-- SIDEBAR -->
 <section id="sidebar">
@@ -99,14 +102,14 @@ $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
         </a>
       <?php endif; ?>
     </li>
-    <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
-      <?php if ($canAccessRestricted): ?>
+    <li<?= !$canAccessAnnouncements ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessAnnouncements): ?>
         <a href="#" data-page="admin_page/Announcements">
           <i class='bx bxs-megaphone'></i>
           <span class="text">Announcements</span>
         </a>
       <?php else: ?>
-        <a href="#" class="nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+        <a href="#" class="nav-disabled" title="Access restricted" onclick="return false;">
           <i class='bx bxs-megaphone'></i>
           <span class="text">Announcements</span>
           <i class='bx bxs-lock-alt nav-lock-icon'></i>
