@@ -69,6 +69,9 @@ body, html {
   font-weight: 600;
   font-size: 0.85rem;
   color: var(--dark);
+  /* Default: not clickable on desktop */
+  cursor: default;
+  user-select: none;
 }
 
 .nav-logo {
@@ -1331,7 +1334,7 @@ body.dark .mobile-sidebar-divider {
     display: none !important;
   }
 
-  /* Make logo area a clickable toggle button */
+  /* Make logo area a clickable toggle button on mobile */
   .nav-brand {
     cursor: pointer;
     user-select: none;
@@ -2039,4 +2042,123 @@ body.dark .tn-dropdown-role { color: #9ca3af !important; }
   .nav-notifications .notif-name {
     max-width: 110px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE SIDEBAR — PROFILE SECTION  (admin view)
+   ═══════════════════════════════════════════════════════ */
+
+.mobile-sidebar-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  background: linear-gradient(135deg, rgba(255,215,0,0.07) 0%, transparent 100%);
+  flex-shrink: 0;
+}
+
+body.dark .mobile-sidebar-profile {
+  border-bottom-color: rgba(255,255,255,0.06);
+  background: linear-gradient(135deg, rgba(255,215,0,0.06) 0%, transparent 100%);
+}
+
+.msb-avatar-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #FFD700 0%, #ffb347 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 16px rgba(255,215,0,0.35);
+}
+
+.msb-avatar-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid #ffffff;
+  display: block;
+}
+body.dark .msb-avatar-img { border-color: #1a1a1a; }
+
+.msb-avatar-initials {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFD700;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+  border: 2.5px solid #ffffff;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  user-select: none;
+}
+body.dark .msb-avatar-initials { border-color: #1a1a1a; }
+
+.msb-user-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+  margin-bottom: 3px;
+}
+body.dark .msb-user-name { color: #f1f5f9; }
+
+.msb-user-role {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #D4AF37;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE TOPNAV — SETTINGS GEAR BUTTON  (admin)
+   ═══════════════════════════════════════════════════════ */
+
+.mobile-topnav-settings-btn {
+  display: none; /* hidden on desktop */
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #eef0f4;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #4b5563;
+  font-size: 18px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+  outline: none;
+}
+.mobile-topnav-settings-btn:hover {
+  background: rgba(255,215,0,0.18);
+  color: #D4AF37;
+  transform: rotate(22deg);
+}
+body.dark .mobile-topnav-settings-btn { background: #2a2a2a; color: #aaa; }
+body.dark .mobile-topnav-settings-btn:hover { background: #333; color: #FFD700; }
+
+@media (max-width: 768px) {
+  /* Show gear settings button on mobile */
+  .mobile-topnav-settings-btn { display: flex !important; }
+  /* Hide full profile pill — profile moves to sidebar */
+  .tn-user-pill { display: none !important; }
 }

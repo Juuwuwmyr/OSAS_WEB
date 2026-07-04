@@ -44,6 +44,22 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
       <i class='bx bx-x'></i>
     </button>
   </div>
+
+  <!-- Mobile Sidebar — Profile Section (mobile only) -->
+  <div class="mobile-sidebar-profile">
+    <div class="msb-avatar-wrap">
+      <?php if ($hasProfilePic): ?>
+        <img src="<?= $userImage ?>" alt="Profile" class="msb-avatar-img"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <span class="msb-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+      <?php else: ?>
+        <span class="msb-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+      <?php endif; ?>
+    </div>
+    <div class="msb-user-name"><?= htmlspecialchars($username) ?></div>
+    <div class="msb-user-role"><?= htmlspecialchars(ucfirst($role)) ?></div>
+  </div>
+
   <ul class="mobile-sidebar-menu" id="mobileSidebarMenu">
     <li class="mobile-sidebar-item active" data-page="admin_page/dashcontent">
       <a href="#" data-page="admin_page/dashcontent">
@@ -286,6 +302,11 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
       </div>
     </div>
 
+    <!-- Mobile-only settings gear button (shown when user pill is hidden) -->
+    <button class="mobile-topnav-settings-btn settings-link" id="mobileTopnavSettingsBtn" aria-label="Settings" title="Settings">
+      <i class='bx bxs-cog'></i>
+    </button>
+
   </div>
 </nav>
 <!-- /TOP NAVIGATION -->
@@ -325,9 +346,17 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     document.body.style.overflow = '';
   }
 
-  if (toggle)  toggle.addEventListener('click',  openSidebar);
+  /* Only activate toggle on mobile (≤768px) */
+  if (toggle) toggle.addEventListener('click', function() {
+    if (window.innerWidth <= 768) openSidebar();
+  });
   if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
   if (overlay)  overlay.addEventListener('click',  closeSidebar);
+
+  /* Close sidebar if screen is resized to desktop */
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) closeSidebar();
+  });
 
   /* Close sidebar when a nav link is clicked and load the page */
   var sidebarLinks = document.querySelectorAll('#mobileSidebarMenu a[data-page]');
