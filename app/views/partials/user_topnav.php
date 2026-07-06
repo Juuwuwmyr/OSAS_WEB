@@ -214,18 +214,6 @@ if (count($nameParts) > 1) {
 
 <script>
 (function() {
-  /* ── User avatar dropdown ── */
-  var avatar = document.querySelector('.user-avatar');
-  var dropdown = document.querySelector('.user-dropdown');
-  if (avatar && dropdown) {
-    avatar.addEventListener('click', function(e) {
-      e.stopPropagation();
-      dropdown.classList.toggle('show');
-    });
-    document.addEventListener('click', function() {
-      dropdown.classList.remove('show');
-    });
-  }
 
   /* ── Mobile Sidebar Toggle ── */
   var toggle   = document.getElementById('mobileMenuToggle');
