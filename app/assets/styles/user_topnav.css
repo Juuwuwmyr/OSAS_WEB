@@ -74,6 +74,14 @@ body.dark .top-nav {
   text-decoration: none;
   flex-shrink: 0;
 }
+.mobile-menu-icon {
+  display: none;
+  font-size: 1.8rem;
+  color: #333;
+}
+body.dark .mobile-menu-icon {
+  color: var(--gold);
+}
 .nav-logo {
   width: 30px; height: 30px;
   border-radius: 8px;
@@ -453,7 +461,8 @@ body.dark .user-avatar-img { border-color: #2a2a2a; }
   .top-nav { padding: 0 16px; height: 56px; }
   .nav-title, .nav-title-compact { display: none; }
   .nav-brand { gap: 0; cursor: pointer; user-select: none; }
-  .nav-logo { width: 34px; height: 34px; border-radius: 50%; }
+  .nav-logo { display: none !important; }
+  .mobile-menu-icon { display: block !important; }
 
   /* Hide desktop nav from top bar */
   .nav-menu--desktop { display: none !important; }

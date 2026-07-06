@@ -74,6 +74,15 @@ body, html {
   user-select: none;
 }
 
+.mobile-menu-icon {
+  display: none;
+  font-size: 1.8rem;
+  color: var(--dark);
+}
+body.dark .mobile-menu-icon {
+  color: var(--gold);
+}
+
 .nav-logo {
   width: 28px;
   height: 28px;
@@ -115,8 +124,11 @@ body, html {
   }
   
   .nav-logo {
-    width: 32px;
-    height: 32px;
+    display: none !important;
+  }
+  
+  .mobile-menu-icon {
+    display: block !important;
   }
 }
 

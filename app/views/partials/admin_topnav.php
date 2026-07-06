@@ -149,6 +149,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
   <!-- Brand — click to toggle mobile sidebar -->
   <div class="nav-brand" id="mobileMenuToggle" role="button" aria-label="Open navigation menu">
+    <i class='bx bx-menu mobile-menu-icon'></i>
     <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS" class="nav-logo">
     <span class="nav-title">E-OSAS</span>
   </div>

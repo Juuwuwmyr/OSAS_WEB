@@ -106,6 +106,7 @@ if (count($nameParts) > 1) {
 <nav class="top-nav">
   <!-- Logo Section — click to open mobile sidebar -->
   <div class="nav-brand" id="mobileMenuToggle" role="button" aria-label="Open navigation menu">
+    <i class='bx bx-menu mobile-menu-icon'></i>
     <img src="<?= View::asset('img/default.png') ?>" alt="Osas Logo" class="nav-logo">
     <span class="nav-title" title="Office of Student Affairs and Services">E-Osas</span>
     <span class="nav-title-compact" title="Office of Student Affairs and Services">OSAS</span>
