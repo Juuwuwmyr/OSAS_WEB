@@ -99,17 +99,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Static assets — cache first
+  // Static assets — Stale-While-Revalidate
   event.respondWith(
     caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
+      const fetchPromise = fetch(req).then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(req, clone));
         }
         return res;
       }).catch(() => null);
+      
+      // Return cached immediately if available, otherwise wait for network
+      return cached || fetchPromise;
     })
   );
 });
