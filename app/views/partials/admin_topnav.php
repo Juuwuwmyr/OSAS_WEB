@@ -50,8 +50,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     <div class="msb-avatar-wrap">
       <?php if ($hasProfilePic): ?>
         <img src="<?= $userImage ?>" alt="Profile" class="msb-avatar-img"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <span class="msb-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+             onerror="this.outerHTML='<span class=\'msb-avatar-initials\'><?= htmlspecialchars($initials) ?></span>';">
       <?php else: ?>
         <span class="msb-avatar-initials"><?= htmlspecialchars($initials) ?></span>
       <?php endif; ?>
@@ -303,10 +302,45 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
       </div>
     </div>
 
-    <!-- Mobile-only settings gear button (shown when user pill is hidden) -->
-    <button class="mobile-topnav-settings-btn settings-link" id="mobileTopnavSettingsBtn" aria-label="Settings" title="Settings">
-      <i class='bx bxs-cog'></i>
-    </button>
+    <!-- Mobile-only profile avatar button (top-right on mobile) -->
+    <div class="mobile-profile-btn" id="mobileProfileBtn" role="button" aria-label="Profile menu">
+      <div class="mpb-ring">
+        <?php if ($hasProfilePic): ?>
+          <img src="<?= $userImage ?>" alt="Profile" class="mpb-img"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="mpb-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+        <?php else: ?>
+          <span class="mpb-initials"><?= htmlspecialchars($initials) ?></span>
+        <?php endif; ?>
+      </div>
+
+      <!-- Mini dropdown -->
+      <div class="mpb-dropdown" id="mobileProfileDropdown">
+        <div class="mpb-dropdown-header">
+          <div class="mpb-hd-ring">
+            <?php if ($hasProfilePic): ?>
+              <img src="<?= $userImage ?>" alt="Profile" class="mpb-hd-img"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <span class="mpb-hd-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+            <?php else: ?>
+              <span class="mpb-hd-initials"><?= htmlspecialchars($initials) ?></span>
+            <?php endif; ?>
+          </div>
+          <div class="mpb-hd-info">
+            <div class="mpb-hd-name"><?= htmlspecialchars($username) ?></div>
+            <div class="mpb-hd-role"><?= htmlspecialchars(ucfirst($role)) ?></div>
+          </div>
+        </div>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item settings-link">
+          <i class='bx bxs-cog'></i> Settings
+        </a>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item mpb-logout" onclick="logout(); return false;">
+          <i class='bx bx-log-out'></i> Sign Out
+        </a>
+      </div>
+    </div>
 
   </div>
 </nav>
@@ -314,6 +348,18 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
 <script>
 (function () {
+  /* ── Mobile Profile Button Dropdown ── */
+  var mobileProfileBtn = document.getElementById('mobileProfileBtn');
+  if (mobileProfileBtn) {
+    mobileProfileBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      mobileProfileBtn.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      mobileProfileBtn.classList.remove('open');
+    });
+  }
+
   /* ── User pill dropdown ── */
   var pill     = document.getElementById('tnUserPill');
   var dropdown = document.getElementById('tnUserDropdown');

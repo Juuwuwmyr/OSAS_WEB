@@ -1,0 +1,153 @@
+/*
+ * stats-scroll.css
+ * Mobile horizontal scroll-snap for ALL feature stat card rows.
+ * Included in every feature page via its CSS file or directly.
+ * On desktop: keeps existing grid layout untouched.
+ * On mobile (≤768px): converts every stat container to a
+ *   horizontal scrollable, scroll-snap row — same as Reports.
+ */
+
+/* ═══════════════════════════════════════════
+   SHARED SCROLL-SNAP MIXIN (applied per page)
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* ── Dashboard (.box-info ul) ── */
+  #content main .box-info {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none !important;
+  }
+  #content main .box-info::-webkit-scrollbar { display: none; }
+
+  #content main .box-info li {
+    flex: 0 0 72vw !important;
+    max-width: 280px !important;
+    min-width: 180px !important;
+    scroll-snap-align: start !important;
+    border-radius: 12px !important;
+  }
+
+  /* ── Students ── */
+  .Students-stats-overview {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none !important;
+  }
+  .Students-stats-overview::-webkit-scrollbar { display: none; }
+
+  .Students-stat-card {
+    flex: 0 0 72vw !important;
+    max-width: 280px !important;
+    min-width: 160px !important;
+    scroll-snap-align: start !important;
+    width: auto !important;
+  }
+
+  /* ── Violations ── */
+  .Violations-stats-overview {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none !important;
+  }
+  .Violations-stats-overview::-webkit-scrollbar { display: none; }
+
+  .Violations-stat-card {
+    flex: 0 0 72vw !important;
+    max-width: 280px !important;
+    min-width: 160px !important;
+    scroll-snap-align: start !important;
+    width: auto !important;
+    /* undo the row layout that violation.css sets on mobile */
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  /* ── Departments ── */
+  .stats-overview {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none !important;
+  }
+  .stats-overview::-webkit-scrollbar { display: none; }
+
+  .stat-card {
+    flex: 0 0 72vw !important;
+    max-width: 280px !important;
+    min-width: 160px !important;
+    scroll-snap-align: start !important;
+    width: auto !important;
+  }
+
+  /* ── Sections ── */
+  .sections-stats-overview {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+    scrollbar-width: none !important;
+  }
+  .sections-stats-overview::-webkit-scrollbar { display: none; }
+
+  .sections-stat-card {
+    flex: 0 0 72vw !important;
+    max-width: 280px !important;
+    min-width: 160px !important;
+    scroll-snap-align: start !important;
+    width: auto !important;
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  /* ── Scroll hint fade — right edge ── */
+  .Students-stats-overview,
+  .Violations-stats-overview,
+  .stats-overview,
+  .sections-stats-overview {
+    /* subtle right-fade to hint there's more to scroll */
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+}
+
+/* ── Slightly tighter cards on very small screens ── */
+@media (max-width: 480px) {
+  #content main .box-info li,
+  .Students-stat-card,
+  .Violations-stat-card,
+  .stat-card,
+  .sections-stat-card {
+    flex: 0 0 80vw !important;
+    min-width: 150px !important;
+  }
+}

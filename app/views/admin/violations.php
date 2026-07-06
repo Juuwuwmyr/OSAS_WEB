@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../core/View.php';
   <title>Violations | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/stats-scroll.css') ?>">
   <!-- html5-qrcode: camera-based QR scanner (no extra install needed) -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>

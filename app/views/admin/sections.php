@@ -24,6 +24,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
   <title>Sections | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/section.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/stats-scroll.css') ?>">
 </head>
 
 <body>

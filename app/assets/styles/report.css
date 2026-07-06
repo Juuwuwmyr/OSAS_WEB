@@ -2813,3 +2813,95 @@ input[type="checkbox"]:checked + .toggle-label::after {
     animation-duration: 0s !important;
   }
 }
+
+/* =========================================================
+   FILTER BUTTON (mobile) + FILTER MODAL
+   ========================================================= */
+
+/* The filter button is always rendered but hidden on desktop */
+.Reports-filter-mobile-btn {
+  display: none;
+  position: relative;
+}
+
+/* Active-filters dot indicator on the button */
+.filter-active-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold, #D4AF37);
+  border: 1.5px solid #fff;
+  pointer-events: none;
+}
+
+body.dark .filter-active-dot { border-color: #1a1a1a; }
+
+/* Show button & hide the inline filter card on mobile */
+@media (max-width: 768px) {
+  .Reports-filter-mobile-btn {
+    display: inline-flex !important;
+  }
+
+  .Reports-filter-card {
+    display: none !important;
+  }
+}
+
+/* ── Filter Modal wrapper ── */
+.Reports-filter-modal-wrap .Reports-modal-container.Reports-filter-modal-panel {
+  max-width: 420px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  /* ensure it sits centered over the overlay */
+  position: relative;
+  z-index: 2001;
+  margin: auto;
+}
+
+/* On very small screens slide it up from the bottom */
+@media (max-width: 480px) {
+  .Reports-filter-modal-wrap.Reports-modal.active {
+    align-items: flex-end;
+  }
+
+  .Reports-filter-modal-wrap .Reports-modal-container.Reports-filter-modal-panel {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
+    margin: 0;
+    animation: slideUpPanel 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes slideUpPanel {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+/* Groups inside the filter modal */
+.filter-modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-modal-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dark-grey, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.filter-modal-group .Reports-filter-select {
+  width: 100%;
+}
