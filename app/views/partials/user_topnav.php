@@ -13,19 +13,15 @@ if (isset($student) && $student) {
     if (!empty($fullName)) {
         $username = $fullName;
     }
-    // Check for avatar (ignore generated ui-avatars URLs and default.png)
+    // Check for avatar
     if (!empty($student['avatar'])) {
         $avatar = $student['avatar'];
-        $isGenerated = (strpos($avatar, 'ui-avatars.com') !== false);
-        $isDefault = (strpos($avatar, 'default.png') !== false);
-        if (!$isGenerated && !$isDefault) {
-            if (filter_var($avatar, FILTER_VALIDATE_URL)) {
-                $userImage = $avatar;
-            } else {
-                $userImage = View::asset($avatar);
-            }
-            $hasProfilePic = true;
+        if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+            $userImage = $avatar;
+        } else {
+            $userImage = View::asset($avatar);
         }
+        $hasProfilePic = true;
     }
 }
 
@@ -254,6 +250,7 @@ if (count($nameParts) > 1) {
   var mobileProfileBtn = document.getElementById('mobileProfileBtn');
   if (mobileProfileBtn) {
     mobileProfileBtn.addEventListener('click', function(e) {
+      if (e.target.closest('.mpb-dropdown')) return; // let dropdown items bubble normally
       e.stopPropagation();
       mobileProfileBtn.classList.toggle('open');
     });

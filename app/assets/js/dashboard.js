@@ -2435,15 +2435,26 @@ function initializeEventListeners() {
         }, 100);
     });
 
-    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link, .tn-user-dropdown .settings-link, #mobileTopnavSettingsBtn');
-    if (settingsTriggers.length > 0) {
-        settingsTriggers.forEach(function (trigger) {
-            trigger.addEventListener('click', function (e) {
-                e.preventDefault();
-                openSettingsModal('admins');
-            });
-        });
-    }
+    // Use event delegation for all settings links (topnav, sidebar, mobile, and dynamic dashboard content)
+    document.addEventListener('click', function(e) {
+        const settingsTrigger = e.target.closest('.nav-settings, .settings-link, #mobileTopnavSettingsBtn');
+        if (settingsTrigger) {
+            e.preventDefault();
+            openSettingsModal('admins');
+            
+            // Close any open dropdowns
+            const tnPill = document.getElementById('tnUserPill');
+            const tnDropdown = document.getElementById('tnUserDropdown');
+            if (tnPill && tnDropdown) {
+                tnPill.classList.remove('open');
+                tnDropdown.classList.remove('show');
+            }
+            const mobileBtn = document.getElementById('mobileProfileBtn');
+            if (mobileBtn) {
+                mobileBtn.classList.remove('open');
+            }
+        }
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', function (e) {

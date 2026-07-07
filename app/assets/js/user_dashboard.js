@@ -50,8 +50,16 @@ function initializeUserDropdown() {
     if (settingsLink) {
       e.preventDefault();
       openUserSettingsModal();
-      if (userDropdown) {
+      
+      // Close desktop dropdown
+      if (typeof userDropdown !== 'undefined' && userDropdown) {
         userDropdown.classList.remove('show');
+      }
+      
+      // Close mobile dropdown
+      const mobileBtn = document.getElementById('mobileProfileBtn');
+      if (mobileBtn) {
+          mobileBtn.classList.remove('open');
       }
     }
   });
