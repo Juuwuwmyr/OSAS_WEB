@@ -1141,16 +1141,13 @@ body.dark #departmentModal .close-btn:hover {
   .header-right {
     width: 100%;
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
     margin-bottom: 10px;
   }
 
   .search-box {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
   }
 
   .search-box input {
@@ -1165,21 +1162,21 @@ body.dark #departmentModal .close-btn:hover {
   }
 
   .filter-group {
-    display: contents;
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    align-items: center;
   }
 
   .filter-select {
-    width: 100% !important;
+    flex: 1;
     height: 40px;
     font-size: 13px;
-    min-width: 0;
-    order: 2;
+    width: auto !important;
   }
 
   .dept-view-toggle {
-    width: auto;
     height: 40px;
-    order: 1;
     display: flex;
     gap: 4px;
     padding: 4px;
@@ -1197,7 +1194,6 @@ body.dark #departmentModal .close-btn:hover {
   .filter-btn {
     width: 40px !important;
     height: 40px !important;
-    order: 1;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -352,6 +352,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   var mobileProfileBtn = document.getElementById('mobileProfileBtn');
   if (mobileProfileBtn) {
     mobileProfileBtn.addEventListener('click', function(e) {
+      if (e.target.closest('.mpb-dropdown')) return; // let dropdown items bubble normally
       e.stopPropagation();
       mobileProfileBtn.classList.toggle('open');
     });
@@ -365,6 +366,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   var dropdown = document.getElementById('tnUserDropdown');
   if (pill && dropdown) {
     pill.addEventListener('click', function (e) {
+      if (e.target.closest('.tn-user-dropdown')) return; // let dropdown items bubble normally
       e.stopPropagation();
       dropdown.classList.toggle('show');
       pill.classList.toggle('open');
