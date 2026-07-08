@@ -1909,6 +1909,27 @@ function loadModuleScript(moduleName) {
 
 // Initialize all event listeners
 function initializeEventListeners() {
+    // Mobile menu toggle - hamburger button in navbar
+    const mobileMenuToggle = document.querySelector('#content .top-navbar .bx.bx-menu');
+    if (mobileMenuToggle && sidebar) {
+        mobileMenuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('hide');
+        });
+    }
+
+    // Close mobile sidebar when clicking on overlay (outside sidebar)
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hide')) {
+            const isClickInsideSidebar = sidebar.contains(e.target);
+            const isMenuToggle = e.target.closest('.bx.bx-menu') || e.target.closest('.sidebar-menu-toggle');
+            
+            if (!isClickInsideSidebar && !isMenuToggle) {
+                sidebar.classList.add('hide');
+            }
+        }
+    });
+
     // Enhanced navigation functionality (works with both sidebar and top nav)
     allSideMenu.forEach(item => {
         // Skip chatbot buttons - they have their own handlers
@@ -2482,9 +2503,24 @@ function initializeEventListeners() {
 
 // Enhanced responsive adjustments
 function handleResponsiveAdjustments() {
-    // Sidebar behavior
+    // Sidebar behavior for mobile
     if (window.innerWidth < 768 && sidebar) {
+        // On mobile, always hide sidebar by default (it becomes an overlay)
         sidebar.classList.add('hide');
+        
+        // Ensure content takes full width
+        const content = document.getElementById('content');
+        if (content) {
+            content.style.width = '100%';
+            content.style.left = '0';
+        }
+        
+        const navbar = document.querySelector('#content .top-navbar');
+        if (navbar) {
+            navbar.style.left = '0';
+            navbar.style.width = '100%';
+            navbar.style.maxWidth = '100vw';
+        }
     } else if (window.innerWidth >= 768 && sidebar) {
         // Restore sidebar state on larger screens
         const sidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
@@ -2499,6 +2535,11 @@ function handleResponsiveAdjustments() {
         if (searchForm) {
             searchForm.classList.remove('show');
         }
+    }
+    
+    // Adjust table horizontal scrolling for touch devices
+    if (window.innerWidth < 768) {
+        enableDragScroll('.settings-table-wrapper, table-container, .data-table-wrapper');
     }
 }
 
