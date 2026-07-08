@@ -1104,7 +1104,12 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 @media (max-width: 768px) {
-  :root { --dept-view-btn-size: 18px; --dept-view-btn-font-size: 12px; }
+  :root {
+    --dept-view-btn-size: 24px;
+    --dept-view-btn-font-size: 13px;
+    --dept-mobile-control-height: 40px;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
@@ -1129,7 +1134,7 @@ body.dark #departmentModal .close-btn:hover {
     box-shadow: none;
   }
 
-  #department-page .action-btn {
+  #department-page .button-group > .action-btn {
     flex: 1;
     min-width: calc(50% - 6px);
     justify-content: center;
@@ -1141,111 +1146,103 @@ body.dark #departmentModal .close-btn:hover {
     font-size: 12px;
   }
 
+  .table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 15px 8px;
+    overflow: hidden;
+  }
+
+  .header-left,
   .header-right {
     width: 100%;
+  }
+
+  .header-right {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    align-items: stretch;
     margin-bottom: 10px;
   }
 
   .search-box {
     width: 100%;
+    min-width: 0;
   }
 
   .search-box input {
-    height: 40px;
-    font-size: 13px;
-    padding-left: 38px;
+    height: var(--dept-mobile-control-height);
+    min-height: var(--dept-mobile-control-height);
+    font-size: 12px;
+    padding: 0 12px 0 36px;
+    box-sizing: border-box;
   }
 
   .search-box i {
-    font-size: 16px;
-    left: 14px;
-  }
-  /* Mobile header: search full width, controls wrap with consistent sizes */
-  .table-header {
-    overflow: hidden;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    left: 12px;
+    font-size: 15px;
   }
 
-  .header-right {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
+  .filter-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: stretch;
-  }
-
-  /* Keep the search box full width on mobile */
-  .search-box {
+    gap: 8px;
     width: 100%;
     min-width: 0;
-    margin-bottom: 6px;
-  }
-
-  /* Filter group becomes a wrapping row under the search */
-  .filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-  }
-
-  /* Prevent the select from stretching and keep controls consistent height */
-  .filter-select {
-    flex: 0 0 auto;
-    min-width: 140px;
-    height: 44px;
-  }
-
-  /* Make view toggle match select height and hide unused filter button */
-  .filter-group {
-    display: flex;
-    width: 100%;
-    gap: 8px;
-    align-items: center;
-    justify-content: flex-start;
   }
 
   .filter-select {
-    flex: 0 0 auto;
-    min-width: 140px;
-    height: 40px;
-    font-size: 13px;
-    width: auto !important;
+    grid-column: 1;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    height: var(--dept-mobile-control-height);
+    min-height: var(--dept-mobile-control-height);
+    font-size: 12px;
+    padding: 0 32px 0 10px;
+    box-sizing: border-box;
   }
 
   .dept-view-toggle {
-    height: 40px;
-    display: flex;
-    gap: 4px;
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
-    padding: 2px;
-    background: var(--grey);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    flex: 0 0 auto;
+    justify-items: center;
+    height: var(--dept-mobile-control-height);
+    min-height: var(--dept-mobile-control-height);
+    gap: 3px;
+    padding: 3px;
+    border-radius: 10px;
+    box-sizing: border-box;
   }
 
-  /* Make selector buttons more compact (mobile only) */
   .dept-view-btn {
-    width: 10px !important;
-    height: 10px !important;
-    border-radius: 4px;
-    flex: none;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
     padding: 0;
+    margin: 0;
+    line-height: 1;
   }
 
-  /* Remove non-functional filter button */
-  .filter-btn { display: none !important; }
+  .dept-view-btn i {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .filter-btn {
+    display: none !important;
+  }
 
   .department-table-container {
     overflow-x: hidden !important;
@@ -1256,20 +1253,19 @@ body.dark #departmentModal .close-btn:hover {
     min-width: 0 !important;
   }
 
-  .department-table, 
-  .department-table thead, 
-  .department-table tbody, 
-  .department-table th, 
-  .department-table td, 
-  .department-table tr { 
-    display: block; 
+  .department-table,
+  .department-table thead,
+  .department-table tbody,
+  .department-table th,
+  .department-table td,
+  .department-table tr {
+    display: block;
     width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
   }
 
-  /* Hide table headers (but keep for accessibility) */
-  .department-table thead tr { 
+  .department-table thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
@@ -1281,7 +1277,7 @@ body.dark #departmentModal .close-btn:hover {
     border-radius: 10px;
     padding: 10px;
     background: var(--light);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     transition: transform 0.3s ease;
   }
 
@@ -1289,10 +1285,10 @@ body.dark #departmentModal .close-btn:hover {
     transform: translateY(-2px);
   }
 
-  .department-table td { 
+  .department-table td {
     border: none;
     position: relative;
-    padding-left: 52% !important; 
+    padding-left: 52% !important;
     text-align: right !important;
     padding-top: 10px !important;
     padding-bottom: 10px !important;
@@ -1315,12 +1311,12 @@ body.dark #departmentModal .close-btn:hover {
     margin-top: 10px;
   }
 
-  .department-table td::before { 
+  .department-table td::before {
     content: attr(data-label);
     position: absolute;
     left: 10px;
-    width: 45%; 
-    padding-right: 5px; 
+    width: 45%;
+    padding-right: 5px;
     white-space: normal;
     line-height: 1.1;
     text-align: left;
@@ -1345,77 +1341,61 @@ body.dark #departmentModal .close-btn:hover {
     font-size: 14px;
     flex-shrink: 0;
   }
-  
-  /* Actions column */
+
   .department-table td[data-label="Actions"]::before {
     display: none;
   }
 
-  /* Adjust badges in card view */
   .status-badge {
     margin: 0;
   }
 
-  /* Force two-line header on small screens: search (row 1), filters (row 2) */
-  .table-header {
-    flex-direction: column;
-    align-items: stretch;
+  .dept-grid-container {
+    padding: 12px;
+  }
+
+  .dept-list-container {
+    padding: 10px 12px 12px;
+  }
+
+  .dept-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 8px;
-    padding: 12px 15px 8px;
   }
 
-  /* Keep header-left (title) above and header-right below as two rows */
-  .header-left {
-    width: 100%;
+  .dept-card-body {
+    padding: 12px;
+    gap: 6px;
   }
 
-  .header-right {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
+  .dept-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+
+  .dept-card-footer {
+    padding: 6px 12px 10px;
+  }
+
+  .dept-list-item {
+    padding: 9px 12px 9px 15px;
+  }
+
+  .dept-list-top {
     gap: 8px;
-    align-items: stretch;
   }
 
-  /* Search occupies the full first line */
-  .search-box {
-    width: 100%;
-    min-width: 0;
+  .dept-list-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
   }
 
-  /* Filters sit on a single second row; allow horizontal scrolling if needed */
-  .filter-group {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
+  .dept-list-badges {
+    padding-left: 0;
   }
-
-  /* Make select and controls compact so they fit in one row */
-  .filter-select {
-    flex: 0 0 auto;
-    min-width: 120px;
-    max-width: 60%;
-    height: 38px;
-    font-size: 12px;
-  }
-
-  .dept-view-toggle {
-    flex: 0 0 auto;
-  }
-
-  .dept-view-btn, .filter-btn {
-    width: calc(var(--dept-view-btn-size));
-    height: calc(var(--dept-view-btn-size));
-    flex: 0 0 auto;
-  }
-
-  /* keep .dept-view-btn using the defined variable size (uniform across breakpoints) */
 }
 
 /* Hide delete button */
@@ -1764,5 +1744,28 @@ body.dark #departmentModal .close-btn:hover {
     transition: none !important;
     animation: none !important;
     animation-duration: 0s !important;
+  }
+
+  #department-page .action-buttons,
+  #department-page .dept-card-actions,
+  #department-page .dept-list-actions {
+    gap: 4px;
+  }
+
+  #department-page .violation-list-actions .action-btn,
+  #department-page .dept-card-actions .action-btn,
+  #department-page .dept-list-actions .action-btn,
+  #department-page .list-item-actions .action-btn,
+  #department-page .action-buttons .action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    font-size: 14px !important;
+  }
+
+  #department-page .dept-card-actions .action-btn i,
+  #department-page .dept-list-actions .action-btn i,
+  #department-page .action-buttons .action-btn i {
+    font-size: 13px !important;
   }
 }

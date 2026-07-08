@@ -109,15 +109,12 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="Violations-header-right">
-        <!-- Mobile: search bar + filter toggle on one row -->
+        <!-- Mobile: search bar on its own row for wider input -->
         <div class="Violations-mobile-filter-bar">
           <div class="Violations-search-box" id="mobileSearchBox">
             <i class='bx bx-search'></i>
             <input type="text" id="searchViolationMobile" placeholder="Search violations...">
           </div>
-          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
-            <i class='bx bx-filter-alt'></i> Filters
-          </button>
         </div>
 
         <!-- Current Month Filters -->
@@ -196,6 +193,10 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Display Mode + View toggles share a row on mobile -->
         <div class="Violations-toggles-row">
+          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
+            <i class='bx bx-filter-alt'></i> Filters
+          </button>
+
           <!-- Display Mode Toggle: Latest per student vs All records -->
           <div class="Violations-view-toggle" id="displayModeToggle">
             <button class="Violations-display-btn" data-display="latest" title="Latest per student">

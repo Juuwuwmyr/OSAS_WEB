@@ -696,7 +696,7 @@ body.dark {
 
 /* Mobile: force three-line header - title | search+view | filters */
 @media (max-width: 768px) {
-  :root { --dept-view-btn-size: 18px; --dept-view-btn-font-size: 12px; }
+  :root { --dept-view-btn-size: 24px; --dept-view-btn-font-size: 13px; }
   .Reports-table-header {
     flex-direction: column;
     align-items: stretch;
@@ -709,8 +709,36 @@ body.dark {
   .Reports-search-box { width: 100%; }
   .Reports-search-box input { height: 40px; }
 
-  .Reports-view-options { height: 40px; display:flex; align-items:center; padding:4px; border:1px solid var(--border); }
-  .Reports-view-btn { width: var(--dept-view-btn-size); height: var(--dept-view-btn-size); font-size: var(--dept-view-btn-font-size); padding: 0; }
+  .Reports-view-options {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  .Reports-view-btn {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 13px;
+  }
+
+  .Reports-view-btn i {
+    line-height: 1;
+  }
 
   /* Filters row */
   .Reports-filter-select { min-width: 120px; height: 40px; }
@@ -2872,6 +2900,49 @@ body.dark .filter-active-dot { border-color: #1a1a1a; }
 
   .Reports-filter-card {
     display: none !important;
+  }
+
+  .Reports-search-box input,
+  .Reports-filter-select,
+  .Reports-view-options {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .Reports-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .Reports-filter-select {
+    padding: 0 32px 0 10px;
+  }
+
+  .Reports-view-options {
+    gap: 3px !important;
+    padding: 3px !important;
+    border-radius: 9px !important;
+  }
+
+  .Reports-view-btn {
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .Reports-view-btn i {
+    line-height: 1 !important;
+    font-size: 13px !important;
   }
 }
 

@@ -2010,4 +2010,105 @@ body.dark {
     animation: none !important;
     animation-duration: 0s !important;
   }
+
+  .Students-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .Students-search-toggle-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .Students-search-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .Students-search-box input,
+  .Students-filter-select,
+  .Students-view-toggle,
+  .Students-filter-btn {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .Students-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .Students-view-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .Students-view-btn {
+    width: 28px !important;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px !important;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1;
+    font-size: 14px !important;
+  }
+
+  .Students-view-btn i {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .Students-filter-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+    grid-template-areas:
+      "status department department"
+      "section section filter";
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .Students-filter-select {
+    width: 100%;
+    min-width: 0;
+    padding: 0 32px 0 10px;
+  }
+
+  #StudentsFilterSelect {
+    grid-area: status;
+  }
+
+  #StudentsDepartmentFilter {
+    grid-area: department;
+  }
+
+  #StudentsSectionFilter {
+    grid-area: section;
+  }
+
+  .Students-filter-btn {
+    grid-area: filter;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    justify-self: stretch;
+  }
 }

@@ -1562,4 +1562,47 @@ body.dark {
     animation: none !important;
     animation-duration: 0s !important;
   }
+
+  .sections-search-box input,
+  .sections-filter-select,
+  .sect-view-toggle {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .sections-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .sections-filter-select {
+    padding: 0 32px 0 10px;
+  }
+
+  .sect-view-toggle {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .sect-view-btn {
+    width: 28px !important;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px !important;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1;
+    font-size: 14px !important;
+  }
+
+  .sect-view-btn i {
+    font-size: 14px;
+    line-height: 1;
+  }
 }
