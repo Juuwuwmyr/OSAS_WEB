@@ -71,11 +71,14 @@ $notificationCount = 7; // Can be dynamic later
   <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/initModules.js') ?>"></script>
   <script src="<?= View::asset('js/user_dashboard.js') ?>"></script>
+  <script src="<?= View::asset('js/userDashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/userViolations.js') ?>"></script>
   <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
   <script>window.OSAS_USER_ID = <?= json_encode((string)($_SESSION['user_id'] ?? 'guest')) ?>;</script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>
+  <script src="<?= View::asset('js/push-notifications.js') ?>"></script>
+  <script src="<?= View::asset('js/realtimeAlerts.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
 </body>
 
