@@ -39,12 +39,6 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-refresh' style="font-size:14px;"></i>
           <span>Refresh</span>
         </button>
-        <!-- Filter button — visible on mobile, hidden on desktop -->
-        <button id="btnOpenFilterModal" class="Reports-btn outline small Reports-filter-mobile-btn" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
-          <i class='bx bx-filter-alt' style="font-size:14px;"></i>
-          <span>Filter</span>
-          <span class="filter-active-dot" id="filterActiveDot" style="display:none;"></span>
-        </button>
       </div>
       <div class="Reports-button-group">
         <button id="btnGenerateReports" class="Reports-btn primary" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
@@ -206,6 +200,12 @@ require_once __DIR__ . '/../../core/View.php';
             <i class='bx bx-list-ul'></i>
           </button>
         </div>
+
+        <button id="btnOpenFilterModal" class="Reports-btn outline small Reports-filter-mobile-btn" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;flex-shrink:0;">
+          <i class='bx bx-filter-alt' style="font-size:14px;"></i>
+          <span>Filter</span>
+          <span class="filter-active-dot" id="filterActiveDot" style="display:none;"></span>
+        </button>
       </div>
     </div>
 

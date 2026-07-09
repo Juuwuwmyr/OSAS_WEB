@@ -550,9 +550,16 @@ body.dark {
   display: none;
 }
 
-/* Toggles row — desktop: these are already inline in the flex row */
+/* Toggles row — desktop: flex row with filter btn pushed to the right */
 .Violations-toggles-row {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Violations-toggles-row .Violations-filter-btn {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .Violations-date-filter {
@@ -3982,10 +3989,7 @@ body.dark {
     padding: 0 10px;
   }
 
-  /* Hide the old standalone filter button — replaced by the toggle */
-  .Violations-filter-btn {
-    display: none;
-  }
+  /* Filter button is now a view-btn inside the toggle group */
 
   .Violations-search-box {
     width: 100% !important;
@@ -4016,6 +4020,7 @@ body.dark {
   .Violations-toggles-row .Violations-filter-toggle-btn {
     flex: 0 0 auto;
     padding: 0 10px;
+    margin-left: auto;
   }
 
   /* Both toggle groups split the row 50/50 */

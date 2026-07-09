@@ -622,14 +622,30 @@ body.dark {
 
 .Reports-header-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.Reports-search-row {
+  width: 100%;
 }
 
 .Reports-search-box {
   position: relative;
-  width: 220px;
+  flex: 1;
+  min-width: 0;
+}
+
+.Reports-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Reports-controls-row .Reports-filter-mobile-btn {
+  margin-left: auto;
 }
 
 .Reports-search-box i {
@@ -704,9 +720,9 @@ body.dark {
   }
 
   .Reports-header-left { width: 100%; }
-  .Reports-header-right { width: 100%; display:flex; flex-direction:column; gap:8px; align-items:stretch; }
+  .Reports-header-right { width: 100%; display:flex; flex-direction:row; align-items:center; gap:8px; flex-wrap:nowrap; }
 
-  .Reports-search-box { width: 100%; }
+  .Reports-search-box { flex: 1; min-width: 0; width: auto; }
   .Reports-search-box input { height: 40px; }
 
   .Reports-view-options {
@@ -2871,9 +2887,9 @@ input[type="checkbox"]:checked + .toggle-label::after {
    FILTER BUTTON (mobile) + FILTER MODAL
    ========================================================= */
 
-/* The filter button is always rendered but hidden on desktop */
+/* Filter button — always visible, sits in the search row */
 .Reports-filter-mobile-btn {
-  display: none;
+  display: inline-flex;
   position: relative;
 }
 

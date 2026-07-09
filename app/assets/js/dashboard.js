@@ -26,13 +26,13 @@ document.addEventListener('DOMContentLoaded', function () {
     syncThemeToggles();
 
     // Load default dashboard content or restore last visited page
-    const lastPage = sessionStorage.getItem('lastPage') || 'admin_page/dashcontent';
+    const lastPage = localStorage.getItem('lastPage') || 'admin_page/dashcontent';
     loadContent(lastPage);
 
 
 
     // Set dashboard as active by default only if no saved page
-    if (!sessionStorage.getItem('lastPage')) {
+    if (!localStorage.getItem('lastPage')) {
         const dashboardLink = document.querySelector('[data-page="admin_page/dashcontent"]');
         if (dashboardLink) {
             dashboardLink.parentElement.classList.add('active');
@@ -69,13 +69,31 @@ function syncThemeToggles() {
  * Update active navigation item based on the current page
  */
 function updateActiveNavItem(page) {
-    if (!allSideMenu) return;
-    
-    allSideMenu.forEach(item => {
-        const itemPage = item.getAttribute('data-page');
-        const li = item.parentElement;
-        
-        if (itemPage === page) {
+    // Desktop sidebar: #sidebar .side-menu li a
+    document.querySelectorAll('#sidebar .side-menu.top li').forEach(li => {
+        const a = li.querySelector('a[data-page]');
+        if (!a) return;
+        if (a.getAttribute('data-page') === page) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+
+    // Mobile drawer sidebar: .mobile-sidebar-item[data-page]
+    document.querySelectorAll('.mobile-sidebar-item[data-page]').forEach(li => {
+        if (li.getAttribute('data-page') === page) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+
+    // Top/bottom nav: .nav-item with child a[data-page]
+    document.querySelectorAll('.nav-item').forEach(li => {
+        const a = li.querySelector('a[data-page]');
+        if (!a) return;
+        if (a.getAttribute('data-page') === page) {
             li.classList.add('active');
         } else {
             li.classList.remove('active');
@@ -296,8 +314,8 @@ const _CACHE_PAGES = ['admin_page/department', 'admin_page/Sections', 'admin_pag
                       'admin_page/Violations', 'admin_page/Reports', 'admin_page/Announcements'];
 
 function loadContent(page) {
-    // Save current page to sessionStorage for refresh persistence
-    sessionStorage.setItem('lastPage', page);
+    // Save current page to localStorage for refresh persistence
+    localStorage.setItem('lastPage', page);
 
     // Update active navigation item
     updateActiveNavItem(page);

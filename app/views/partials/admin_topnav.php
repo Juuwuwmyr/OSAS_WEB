@@ -60,7 +60,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   </div>
 
   <ul class="mobile-sidebar-menu" id="mobileSidebarMenu">
-    <li class="mobile-sidebar-item active" data-page="admin_page/dashcontent">
+    <li class="mobile-sidebar-item" data-page="admin_page/dashcontent">
       <a href="#" data-page="admin_page/dashcontent">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>
@@ -155,7 +155,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
   <!-- Nav links -->
   <ul class="nav-menu">
-    <li class="nav-item active">
+    <li class="nav-item">
       <a href="#" data-page="admin_page/dashcontent" class="nav-link" title="Dashboard">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>

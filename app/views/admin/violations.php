@@ -187,16 +187,8 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
 
-        <button class="Violations-filter-btn" title="More filters">
-          <i class='bx bx-filter-alt'></i>
-        </button>
-
-        <!-- Display Mode + View toggles share a row on mobile -->
+        <!-- Display Mode + View toggles + Filter icon share a row -->
         <div class="Violations-toggles-row">
-          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
-            <i class='bx bx-filter-alt'></i> Filters
-          </button>
-
           <!-- Display Mode Toggle: Latest per student vs All records -->
           <div class="Violations-view-toggle" id="displayModeToggle">
             <button class="Violations-display-btn" data-display="latest" title="Latest per student">
@@ -219,6 +211,10 @@ require_once __DIR__ . '/../../core/View.php';
               <i class='bx bx-list-ul'></i>
             </button>
           </div>
+
+          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
+            <i class='bx bx-filter-alt'></i> Filters
+          </button>
         </div>
       </div>
     </div>
