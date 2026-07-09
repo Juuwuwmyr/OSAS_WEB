@@ -294,14 +294,14 @@ body.dark {
 }
 
 .sections-stat-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 19px;
   color: var(--dark);
   flex-shrink: 0;
 }
