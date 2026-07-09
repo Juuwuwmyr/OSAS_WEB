@@ -13,27 +13,24 @@
 
 @media (max-width: 768px) {
 
-  /* ── Dashboard (.box-info ul) ── */
+  /* ── Dashboard (.box-info ul) — 1-col stack, no scroll ── */
   #content main .box-info {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 10px !important;
-    padding-bottom: 12px !important;
-    scrollbar-width: none !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    overflow-x: visible !important;
+    padding-bottom: 0 !important;
   }
-  #content main .box-info::-webkit-scrollbar { display: none; }
 
   #content main .box-info li {
-    flex: 0 0 72vw !important;
-    max-width: 280px !important;
-    min-width: 180px !important;
-    scroll-snap-align: start !important;
-    border-radius: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: unset !important;
+    scroll-snap-align: unset !important;
+    border-radius: 16px !important;
+    min-height: 110px !important;
+    padding: 24px 20px !important;
   }
 
   /* ── Students ── */
