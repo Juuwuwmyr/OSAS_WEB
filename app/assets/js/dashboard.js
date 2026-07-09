@@ -107,7 +107,6 @@ function updateActiveNavItem(page) {
 function isMainAdmin() {
     const sessionStr = localStorage.getItem('userSession');
     if (!sessionStr) {
-        // Fallback to cookie
         const cookieRole = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
         if (cookieRole) {
             const role = decodeURIComponent(cookieRole.split('=')[1]);
@@ -122,6 +121,22 @@ function isMainAdmin() {
     } catch (e) {
         return false;
     }
+}
+
+// Returns true only for roles that can view Admin/User account tabs
+// CSC Officer and Officer are excluded
+function canViewAccounts() {
+    const restrictedRoles = ['csc officer', 'officer'];
+    const sessionStr = localStorage.getItem('userSession');
+    let role = '';
+    if (sessionStr) {
+        try { role = (JSON.parse(sessionStr).role || '').toLowerCase(); } catch(e) {}
+    }
+    if (!role) {
+        const cookieRole = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+        if (cookieRole) role = decodeURIComponent(cookieRole.split('=')[1]).toLowerCase();
+    }
+    return !restrictedRoles.includes(role);
 }
 
 // Path Resolution Helper — works on AWS root AND local subfolder
@@ -708,6 +723,7 @@ function createSettingsModal() {
     
     // Check privileges
     const isMain = isMainAdmin();
+    const showAccounts = canViewAccounts();
 
     overlay.innerHTML = `
         <div class="settings-modal admin-settings-modal">
@@ -718,14 +734,16 @@ function createSettingsModal() {
                         <i class='bx bx-id-card'></i>
                         <span>Profile</span>
                     </button>
+                    ${showAccounts ? `
                     <button type="button" class="settings-sidebar-item" data-section="admins">
                         <i class='bx bx-user-circle'></i>
                         <span>Admin accounts</span>
-                    </button>
+                    </button>` : ''}
+                    ${showAccounts ? `
                     <button type="button" class="settings-sidebar-item" data-section="users">
                         <i class='bx bx-group'></i>
                         <span>User Accounts</span>
-                    </button>
+                    </button>` : ''}
                     ${isMain ? `
                     <button type="button" class="settings-sidebar-item" data-section="archive">
                         <i class='bx bx-archive'></i>
@@ -800,6 +818,7 @@ function createSettingsModal() {
                     </form>
                 </div>
                 
+                ${showAccounts ? `
                 <div class="settings-section" data-section="admins">
                     <div class="settings-header-group">
                         <div class="settings-header-text">
@@ -927,6 +946,7 @@ function createSettingsModal() {
                     </div>
                     <div id="settingsUserPagination" class="settings-pagination"></div>
                 </div>
+                ` : ''}
 
                 ${isMain ? `
                 <div class="settings-section" data-section="archive">
@@ -1208,10 +1228,15 @@ function openSettingsModal(initialSection) {
     
     // Validate section access
     const isMain = isMainAdmin();
+    const showAccounts = canViewAccounts();
     let targetSection = initialSection || (isMain ? 'admins' : 'profile');
     
     // If not main admin, only allow 'profile'
     if (!isMain && targetSection !== 'profile') {
+        targetSection = 'profile';
+    }
+    // CSC Officer / Officer cannot access admins or users sections
+    if (!showAccounts && (targetSection === 'admins' || targetSection === 'users')) {
         targetSection = 'profile';
     }
     
