@@ -7,7 +7,7 @@
     position: fixed;
     inset: 0;
     z-index: 99999;
-    background: #ffffff;
+    background: #ffffff !important;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -193,6 +193,19 @@
     color: rgba(0, 0, 0, 0.3);
     letter-spacing: 0.05em;
     animation: splash-fade-up 0.5s ease 1.1s both;
+}
+
+/* Force splash to always render light regardless of theme */
+body.dark #eosas-splash,
+body #eosas-splash {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+}
+
+body.dark .splash-dot-label,
+body.dark .splash-brand-sub,
+body.dark .splash-school {
+    color: rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ======================================================
