@@ -466,12 +466,13 @@ function initStudentsModule() {
             const activePctEl   = document.getElementById('activeStudentsPct');
             const inactivePctEl = document.getElementById('inactiveStudentsPct');
             const graduatingPctEl = document.getElementById('graduatingStudentsPct');
+            const thisMonthEl   = document.getElementById('studentsThisMonth');
 
-            // Static override: 546 total enrolled (until registrar fixes duplicate IDs)
-            const total      = 546;
-            const active     = 546;
+            const total      = Number(stats.total)      || 0;
+            const active     = Number(stats.active)     || 0;
             const inactive   = Number(stats.inactive)   || 0;
             const graduating = Number(stats.graduating) || 0;
+            const newThisMonth = Number(stats.new_this_month) || 0;
 
             animateCount(totalEl,      total);
             animateCount(activeEl,     active);
@@ -485,6 +486,7 @@ function initStudentsModule() {
             if (activePctEl)     activePctEl.textContent     = `${activePct}%`;
             if (inactivePctEl)   inactivePctEl.textContent   = `${inactivePct}%`;
             if (graduatingPctEl) graduatingPctEl.textContent = `${graduatingPct}%`;
+            if (thisMonthEl)     thisMonthEl.textContent     = `+${newThisMonth} this month`;
         }
 
         async function loadStats() {

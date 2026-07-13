@@ -58,7 +58,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
         <div class="Students-stat-value" id="totalStudents">0</div>
         <div class="Students-stat-change positive">
           <i class='bx bx-up-arrow-alt'></i>
-          <span>+25 this month</span>
+          <span id="studentsThisMonth">+0 this month</span>
         </div>
       </div>
     </div>

@@ -16,7 +16,7 @@ class StudentModel extends Model {
         // Build query with JOINs
         if ($sectionsExist && $deptExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -27,7 +27,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } elseif ($sectionsExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -37,7 +37,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } else {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              'N/A' as section_name, 
                              'N/A' as section_code, 
@@ -383,9 +383,9 @@ class StudentModel extends Model {
                         'dateOfBirth' => $row['date_of_birth'] ?? null,
                         'dob' => $row['date_of_birth'] ?? null,
                         'gender' => $row['gender'] ?? null,
-                        'year_level' => $row['year_level'] ?? null,
-                        'yearLevel' => $row['year_level'] ?? null,
-                        'year' => $row['year_level'] ?? null,
+                        'year_level' => $row['yearlevel'] ?? null,
+                        'yearLevel' => $row['yearlevel'] ?? null,
+                        'year' => $row['yearlevel'] ?? null,
                         'yearlevel' => $row['yearlevel'] ?? null,
                         'created_at' => $row['created_at'] ?? null,
                         'createdAt' => $row['created_at'] ?? null,
@@ -420,6 +420,8 @@ class StudentModel extends Model {
      * Check if email exists
      */
     public function emailExists($email, $excludeId = null) {
+        // Never treat empty/null email as "exists" — allows multiple NULLs
+        if (empty($email)) return false;
         $query = "SELECT id FROM students WHERE email = ?";
         if ($excludeId) {
             $query .= " AND id != ?";
@@ -497,74 +499,76 @@ class StudentModel extends Model {
         $studentsData = $data['students'] ?? [];
         if (empty($studentsData)) return ['created' => 0, 'updated' => 0, 'skipped' => 0];
 
-        // ── 0. Helper: sanitize gender to single char M / F ──────────────────
+        // ── 0. Helpers ────────────────────────────────────────────────────────
         $normGender = function($raw) {
             $v = strtoupper(trim((string)$raw));
             if ($v === 'M' || $v === 'MALE')   return 'M';
             if ($v === 'F' || $v === 'FEMALE') return 'F';
-            return strlen($v) ? strtoupper($v[0]) : '';   // take first char as fallback
+            return strlen($v) ? strtoupper($v[0]) : '';
         };
 
-        // ── 1. Auto-create departments from import data ───────────────────────
-        $deptData = $data['departments'] ?? [];
-        foreach ($deptData as $code => $dept) {
+        // ── 1. Auto-create departments ────────────────────────────────────────
+        foreach (($data['departments'] ?? []) as $code => $dept) {
             $code = trim($code);
             $name = trim($dept['name'] ?? $code);
-            $res  = $this->conn->query("SELECT id FROM departments WHERE department_code = '" . $this->conn->real_escape_string($code) . "' LIMIT 1");
-            if ($res && $res->num_rows === 0) {
-                $this->conn->query("INSERT INTO departments (department_code, department_name, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', 'active', NOW())");
-            }
+            if (!$code) continue;
+            $this->conn->query("INSERT IGNORE INTO departments (department_code, department_name, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', 'active', NOW())");
         }
 
-        // ── 2. Auto-create sections from import data ──────────────────────────
-        $sectionData = $data['sections'] ?? [];
-        foreach ($sectionData as $sec) {
+        // ── 2. Auto-create sections ───────────────────────────────────────────
+        foreach (($data['sections'] ?? []) as $sec) {
             $code     = trim($sec['code'] ?? '');
             $name     = trim($sec['name'] ?? $code);
             $deptCode = trim($sec['department_code'] ?? '');
             if (!$code) continue;
             $res = $this->conn->query("SELECT id FROM sections WHERE section_code = '" . $this->conn->real_escape_string($code) . "' LIMIT 1");
             if ($res && $res->num_rows === 0) {
-                // Look up the department id
                 $dRes   = $this->conn->query("SELECT id FROM departments WHERE department_code = '" . $this->conn->real_escape_string($deptCode) . "' LIMIT 1");
                 $deptId = ($dRes && $dRes->num_rows > 0) ? (int)$dRes->fetch_assoc()['id'] : null;
-                // Derive year_level from section code digit
-                $yearNum = 0;
-                if (preg_match('/(\d)/', $code, $m)) $yearNum = (int)$m[1];
                 $acadYear = date('Y') . '-' . (date('Y') + 1);
                 if ($deptId) {
-                    $this->conn->query("INSERT INTO sections (section_code, section_name, department_id, year_level, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', $deptId, $yearNum, '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
+                    $this->conn->query("INSERT INTO sections (section_code, section_name, department_id, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', $deptId, '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
                 } else {
-                    $this->conn->query("INSERT INTO sections (section_code, section_name, year_level, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', $yearNum, '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
+                    $this->conn->query("INSERT INTO sections (section_code, section_name, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
                 }
             }
         }
 
-        // ── 3. Re-fetch lookup maps after auto-create ─────────────────────────
-        $deptMap = [];
-        $res = $this->conn->query("SELECT id, department_code FROM departments");
-        while ($row = $res->fetch_assoc()) $deptMap[$row['department_code']] = $row['id'];
-
+        // ── 3. Lookup maps ────────────────────────────────────────────────────
         $sectionMap = [];
         $res = $this->conn->query("SELECT id, section_code FROM sections");
         while ($row = $res->fetch_assoc()) $sectionMap[$row['section_code']] = $row['id'];
 
+        // Pre-fetch existing students keyed by student_id
         $existingStudents = [];
         $res = $this->conn->query("SELECT id, student_id, email FROM students");
-        while ($row = $res->fetch_assoc()) $existingStudents[$row['student_id']] = $row;
+        while ($row = $res->fetch_assoc()) {
+            $existingStudents[$row['student_id']] = $row;
+        }
+
+        // Build used-emails set from existing non-empty emails
+        $usedEmails = [];
+        foreach ($existingStudents as $row) {
+            if (!empty($row['email'])) $usedEmails[$row['email']] = true;
+        }
 
         $existingUsers = [];
         $res = $this->conn->query("SELECT id, student_id, email FROM users WHERE role = 'user'");
         while ($row = $res->fetch_assoc()) {
             if ($row['student_id']) $existingUsers[$row['student_id']] = $row['id'];
-            if ($row['email'])      $existingUsers[$row['email']]      = $row['id'];
         }
 
-        // ── 4. Prepare Statements ─────────────────────────────────────────────
-        $updateStmt    = $this->conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, gender=?, department=?, section_id=?, yearlevel=?, email=?, status='active', updated_at=NOW() WHERE id=?");
-        $insertStmt    = $this->conn->prepare("INSERT INTO students (student_id, first_name, middle_name, last_name, gender, email, department, section_id, yearlevel, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())");
-        $userInsertStmt = $this->conn->prepare("INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())");
-        $userUpdateStmt = $this->conn->prepare("UPDATE users SET is_active=1, role='user' WHERE id=?");
+        // ── 4. Prepared statements ────────────────────────────────────────────
+        $updateStmt = $this->conn->prepare(
+            "UPDATE students SET first_name=?, middle_name=?, last_name=?, gender=?, department=?, section_id=?, yearlevel=?, status='active', updated_at=NOW() WHERE id=?"
+        );
+        $insertStmt = $this->conn->prepare(
+            "INSERT INTO students (student_id, first_name, middle_name, last_name, gender, email, department, section_id, yearlevel, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())"
+        );
+        $userInsertStmt = $this->conn->prepare(
+            "INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())"
+        );
+        $userUpdateStmt = $this->conn->prepare("UPDATE users SET full_name=?, is_active=1 WHERE id=?");
 
         $defaultPassword  = password_hash('password123', PASSWORD_DEFAULT);
         $processedInBatch = [];
@@ -578,62 +582,49 @@ class StudentModel extends Model {
                 $studentId = trim($s['student_id']);
                 if (empty($studentId)) { $skipped++; continue; }
 
-                $sectionId  = $sectionMap[$s['section_code']] ?? null;
-                $genderVal  = $normGender($s['sex'] ?? '');
+                // Skip duplicate student_id within the same file
+                if (isset($processedInBatch[$studentId])) { $skipped++; continue; }
+                $processedInBatch[$studentId] = true;
 
-                // Year level from section code digit
-                $yearNum = 0;
+                $sectionId = $sectionMap[$s['section_code']] ?? null;
+                $genderVal = $normGender($s['sex'] ?? '');
+                $yearNum   = 0;
                 if (preg_match('/(\d)/', $s['section_code'], $m)) $yearNum = (int)$m[1];
-                $suffixes     = [1 => 'st', 2 => 'nd', 3 => 'rd'];
-                $yearLevelStr = $yearNum ? $yearNum . ($suffixes[$yearNum] ?? 'th') . ' Year' : 'N/A';
-
-                $fullName = trim($s['first_name'] . ' ' . $s['last_name']);
+                $fullName  = trim($s['first_name'] . ' ' . $s['last_name']);
 
                 if (isset($existingStudents[$studentId])) {
-                    $id    = $existingStudents[$studentId]['id'];
-                    $email = $existingStudents[$studentId]['email'] ?: $this->generateEmail($s['first_name'], $s['last_name']);
-
-                    $updateStmt->bind_param("sssssisi",
+                    // ── UPDATE existing student (preserve email & avatar) ──────
+                    $id = $existingStudents[$studentId]['id'];
+                    $updateStmt->bind_param("sssssiii",
                         $s['first_name'], $s['middle_name'], $s['last_name'],
                         $genderVal, $s['department_code'], $sectionId,
-                        $yearNum, $email, $id
+                        $yearNum, $id
                     );
                     $updateStmt->execute();
+
+                    // Update user full_name
+                    $userId = $existingUsers[$studentId] ?? null;
+                    if ($userId) {
+                        $userUpdateStmt->bind_param("si", $fullName, $userId);
+                        $userUpdateStmt->execute();
+                    }
                     $updated++;
                 } else {
-                    if (isset($processedInBatch[$studentId])) {
-                        $conflicts[] = ['student_id' => $studentId, 'name' => $fullName, 'existing_name' => $processedInBatch[$studentId], 'section' => $s['section_code'] ?? ''];
-                        $skipped++;
-                        continue;
-                    }
+                    // ── INSERT new student ────────────────────────────────────
+                    $email = $this->generateEmail($s['first_name'], $s['last_name'], $studentId, $usedEmails);
+                    $insertStmt->bind_param("sssssssii",
+                        $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
+                        $genderVal, $email, $s['department_code'], $sectionId, $yearNum
+                    );
+                    $insertStmt->execute();
 
-                    $email = $this->generateEmail($s['first_name'], $s['last_name']);
-                    try {
-                        $insertStmt->bind_param("sssssssii",
-                            $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
-                            $genderVal, $email, $s['department_code'], $sectionId,
-                            $yearNum
-                        );
-                        $insertStmt->execute();
-                        $created++;
-                        $processedInBatch[$studentId] = $fullName;
-                    } catch (Exception $dupEx) {
-                        $conflicts[] = ['student_id' => $studentId, 'name' => $fullName, 'section' => $s['section_code'] ?? '', 'error' => 'Duplicate ID'];
-                        $skipped++;
-                        continue;
-                    }
-                }
-
-                // Sync User account
-                $userId = $existingUsers[$studentId] ?? $existingUsers[$email] ?? null;
-                if ($userId) {
-                    $userUpdateStmt->bind_param("i", $userId);
-                    $userUpdateStmt->execute();
-                } else {
+                    // Create user account
                     try {
                         $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
                         $userInsertStmt->execute();
-                    } catch (Exception $userEx) { /* already exists */ }
+                    } catch (Exception $userEx) { /* user already exists */ }
+
+                    $created++;
                 }
             }
             $this->conn->commit();
@@ -648,20 +639,39 @@ class StudentModel extends Model {
         $userUpdateStmt->close();
 
         return ['created' => $created, 'updated' => $updated, 'skipped' => $skipped, 'conflicts' => $conflicts];
+
     }
 
-    private function generateEmail($firstName, $lastName) {
+    private function generateEmail($firstName, $lastName, $studentId = '', array &$usedEmails = []) {
         $cleanFirst = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
-        $cleanLast = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+        $cleanLast  = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+
+        // Fallback: use student ID if name produces empty strings
+        if (empty($cleanFirst) && empty($cleanLast)) {
+            $cleanBase = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $studentId)) ?: ('s' . time());
+            $cleanFirst = $cleanBase;
+            $cleanLast  = 'student';
+        } elseif (empty($cleanFirst)) {
+            $cleanFirst = 'student';
+        } elseif (empty($cleanLast)) {
+            $cleanLast = 'student';
+        }
+
+        // Final safety — should never be empty now
+        if (empty($cleanFirst)) $cleanFirst = 'student';
+        if (empty($cleanLast))  $cleanLast  = 'x';
+
         $baseEmail = $cleanFirst . '.' . $cleanLast . '@colegiodenaujan.edu.ph';
-        
-        // Check for duplicates
-        $email = $baseEmail;
-        $counter = 1;
-        while ($this->emailExists($email)) {
+        $email     = $baseEmail;
+        $counter   = 1;
+
+        // Check in-memory batch set first (DB emails were nulled, so DB check is skipped)
+        while (isset($usedEmails[$email])) {
             $email = $cleanFirst . '.' . $cleanLast . $counter . '@colegiodenaujan.edu.ph';
             $counter++;
         }
+
+        $usedEmails[$email] = true;
         return $email;
     }
 
