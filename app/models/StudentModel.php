@@ -561,8 +561,8 @@ class StudentModel extends Model {
         }
 
         // ── 4. Prepare Statements ─────────────────────────────────────────────
-        $updateStmt    = $this->conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, gender=?, department=?, section_id=?, yearlevel=?, year_level=?, email=?, status='active', updated_at=NOW() WHERE id=?");
-        $insertStmt    = $this->conn->prepare("INSERT INTO students (student_id, first_name, middle_name, last_name, gender, email, department, section_id, yearlevel, year_level, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())");
+        $updateStmt    = $this->conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, gender=?, department=?, section_id=?, yearlevel=?, email=?, status='active', updated_at=NOW() WHERE id=?");
+        $insertStmt    = $this->conn->prepare("INSERT INTO students (student_id, first_name, middle_name, last_name, gender, email, department, section_id, yearlevel, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())");
         $userInsertStmt = $this->conn->prepare("INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())");
         $userUpdateStmt = $this->conn->prepare("UPDATE users SET is_active=1, role='user' WHERE id=?");
 
@@ -593,10 +593,10 @@ class StudentModel extends Model {
                     $id    = $existingStudents[$studentId]['id'];
                     $email = $existingStudents[$studentId]['email'] ?: $this->generateEmail($s['first_name'], $s['last_name']);
 
-                    $updateStmt->bind_param("sssssisssi",
+                    $updateStmt->bind_param("sssssisi",
                         $s['first_name'], $s['middle_name'], $s['last_name'],
                         $genderVal, $s['department_code'], $sectionId,
-                        $yearNum, $yearLevelStr, $email, $id
+                        $yearNum, $email, $id
                     );
                     $updateStmt->execute();
                     $updated++;
@@ -609,10 +609,10 @@ class StudentModel extends Model {
 
                     $email = $this->generateEmail($s['first_name'], $s['last_name']);
                     try {
-                        $insertStmt->bind_param("sssssssiss",
+                        $insertStmt->bind_param("sssssssii",
                             $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
                             $genderVal, $email, $s['department_code'], $sectionId,
-                            $yearNum, $yearLevelStr
+                            $yearNum
                         );
                         $insertStmt->execute();
                         $created++;
