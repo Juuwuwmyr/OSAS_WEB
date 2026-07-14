@@ -2270,6 +2270,59 @@ function initStudentsModule() {
             }
         }
 
+        // ── DELETE ALL STUDENTS ──────────────────────────────────────────────────
+        const btnDeleteAll = document.getElementById('btnDeleteAllStudents');
+        const deleteAllModal = document.getElementById('DeleteAllModal');
+        const deleteAllInput = document.getElementById('deleteAllConfirmInput');
+        const btnDeleteAllConfirm = document.getElementById('btnDeleteAllConfirm');
+        const btnDeleteAllCancel = document.getElementById('btnDeleteAllCancel');
+
+        if (btnDeleteAll && deleteAllModal) {
+            // Open modal
+            btnDeleteAll.addEventListener('click', () => {
+                deleteAllInput.value = '';
+                btnDeleteAllConfirm.disabled = true;
+                deleteAllModal.style.display = 'flex';
+            });
+
+            // Enable confirm only when user types DELETE
+            deleteAllInput.addEventListener('input', () => {
+                btnDeleteAllConfirm.disabled = deleteAllInput.value.trim() !== 'DELETE';
+            });
+
+            // Cancel
+            btnDeleteAllCancel.addEventListener('click', () => {
+                deleteAllModal.style.display = 'none';
+            });
+
+            // Click outside to close
+            deleteAllModal.addEventListener('click', (e) => {
+                if (e.target === deleteAllModal) deleteAllModal.style.display = 'none';
+            });
+
+            // Confirm delete
+            btnDeleteAllConfirm.addEventListener('click', async () => {
+                btnDeleteAllConfirm.disabled = true;
+                btnDeleteAllConfirm.textContent = 'Deleting...';
+                try {
+                    const res = await fetch(`${apiBase}?action=deleteAll`, { method: 'POST' });
+                    const data = await res.json();
+                    deleteAllModal.style.display = 'none';
+                    if (data.status === 'success') {
+                        window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
+                        showSuccess('All students and login accounts deleted successfully.');
+                        await fetchStudents();
+                    } else {
+                        showError(data.message || 'Failed to delete students.');
+                    }
+                } catch (err) {
+                    deleteAllModal.style.display = 'none';
+                    showError('Error: ' + err.message);
+                }
+                btnDeleteAllConfirm.textContent = 'Delete All';
+            });
+        }
+
         // Start initialization
         initialize(); 
         

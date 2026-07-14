@@ -43,6 +43,27 @@ require_once __DIR__ . '/../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
+        <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;">
+          <i class='bx bx-trash'></i>
+          <span>Delete All</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE ALL CONFIRMATION MODAL -->
+  <div id="DeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
+      </div>
+      <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Delete All Students?</h3>
+      <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong> and their <strong>login accounts</strong>. This cannot be undone.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;">Type <strong>DELETE</strong> to confirm</p>
+      <input id="deleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;text-align:center;">
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="btnDeleteAllCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;">Cancel</button>
+        <button id="btnDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;" disabled>Delete All</button>
       </div>
     </div>
   </div>
