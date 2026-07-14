@@ -79,6 +79,14 @@ body, html {
   font-size: 1.8rem;
   color: var(--dark);
 }
+
+/* Ensure hidden on desktop regardless of other overrides */
+@media (min-width: 769px) {
+  .mobile-menu-icon {
+    display: none !important;
+  }
+}
+
 body.dark .mobile-menu-icon {
   color: var(--gold);
 }
