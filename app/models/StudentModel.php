@@ -517,32 +517,43 @@ class StudentModel extends Model {
             return strlen($v) ? strtoupper($v[0]) : '';
         };
 
-        // ── 1. Auto-create departments ────────────────────────────────────────
+        // ── 1. Upsert departments (insert new, update name if changed) ──────────
         foreach (($data['departments'] ?? []) as $code => $dept) {
             $code = trim($code);
             $name = trim($dept['name'] ?? $code);
             if (!$code) continue;
-            $this->conn->query("INSERT IGNORE INTO departments (department_code, department_name, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', 'active', NOW())");
+            $codeEsc = $this->conn->real_escape_string($code);
+            $nameEsc = $this->conn->real_escape_string($name);
+            $this->conn->query("INSERT INTO departments (department_code, department_name, status, created_at)
+                VALUES ('$codeEsc', '$nameEsc', 'active', NOW())
+                ON DUPLICATE KEY UPDATE department_name = '$nameEsc', status = 'active', updated_at = NOW()");
         }
 
-        // ── 2. Auto-create sections ───────────────────────────────────────────
+        // ── 2. Upsert sections (insert new, update name/dept if changed) ────────
         foreach (($data['sections'] ?? []) as $sec) {
             $code     = trim($sec['code'] ?? '');
             $name     = trim($sec['name'] ?? $code);
             $deptCode = trim($sec['department_code'] ?? '');
             if (!$code) continue;
-            $res = $this->conn->query("SELECT id FROM sections WHERE section_code = '" . $this->conn->real_escape_string($code) . "' LIMIT 1");
-            if ($res && $res->num_rows === 0) {
-                $dRes   = $this->conn->query("SELECT id FROM departments WHERE department_code = '" . $this->conn->real_escape_string($deptCode) . "' LIMIT 1");
-                $deptId = ($dRes && $dRes->num_rows > 0) ? (int)$dRes->fetch_assoc()['id'] : null;
-                $acadYear = date('Y') . '-' . (date('Y') + 1);
-                if ($deptId) {
-                    $this->conn->query("INSERT INTO sections (section_code, section_name, department_id, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', $deptId, '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
-                } else {
-                    // Cannot insert section without a valid department — skip and log
-                    error_log("importAll: skipping section '$code' — department '$deptCode' not found");
-                }
+
+            $codeEsc = $this->conn->real_escape_string($code);
+            $nameEsc = $this->conn->real_escape_string($name);
+
+            // Resolve department id
+            $dRes   = $this->conn->query("SELECT id FROM departments WHERE department_code = '" . $this->conn->real_escape_string($deptCode) . "' LIMIT 1");
+            $deptId = ($dRes && $dRes->num_rows > 0) ? (int)$dRes->fetch_assoc()['id'] : null;
+
+            if (!$deptId) {
+                error_log("importAll: skipping section '$code' — department '$deptCode' not found");
+                continue;
             }
+
+            $acadYear = date('Y') . '-' . (date('Y') + 1);
+            $acadYearEsc = $this->conn->real_escape_string($acadYear);
+
+            $this->conn->query("INSERT INTO sections (section_code, section_name, department_id, academic_year, status, created_at)
+                VALUES ('$codeEsc', '$nameEsc', $deptId, '$acadYearEsc', 'active', NOW())
+                ON DUPLICATE KEY UPDATE section_name = '$nameEsc', department_id = $deptId, status = 'active', updated_at = NOW()");
         }
 
         // ── 3. Lookup maps ────────────────────────────────────────────────────
