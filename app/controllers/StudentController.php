@@ -444,9 +444,12 @@ class StudentController extends Controller {
 
         // Try to find Python executable in common locations
         $pythonCandidates = [
-            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python310\python.exe',
-            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\patri\AppData\Local\Programs\Python\Python312\python.exe',
+            'C:\Users\patri\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\patri\AppData\Local\Programs\Python\Python310\python.exe',
             'C:\Users\Amiepc\AppData\Local\Programs\Python\Python312\python.exe',
+            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python310\python.exe',
             'C:\Python310\python.exe',
             'C:\Python311\python.exe',
             'C:\Python312\python.exe',
