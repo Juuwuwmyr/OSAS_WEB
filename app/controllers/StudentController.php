@@ -284,9 +284,9 @@ class StudentController extends Controller {
 
         try {
             $this->model->deleteAll();
-            $this->success('All students and associated user accounts deleted successfully!');
+            $this->success('All students, sections, and departments have been deleted. You can now import a fresh student list.');
         } catch (Exception $e) {
-            $this->error('Failed to delete all students: ' . $e->getMessage());
+            $this->error('Failed to reset system: ' . $e->getMessage());
         }
     }
 

@@ -1688,6 +1688,9 @@ HOW-TO FOR ADMINS:
                         console.log('🤖 Calling handleExportPDF');
                         await this.handleExportPDF(params);
                         break;
+                    case 'reset_system':
+                        await this.handleResetSystem(params);
+                        break;
                     default:
                         console.warn('Unknown action:', action);
                 }
@@ -1732,6 +1735,36 @@ HOW-TO FOR ADMINS:
             this.addMessage('bot', `✅ Successfully added level **${params.name}** to the violation type.`);
             if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
         } else throw new Error(data.message);
+    }
+
+    /**
+     * Handle reset_system action — deletes all students, sections, and departments.
+     * Triggered by the AI chatbot after explicit user confirmation.
+     */
+    async handleResetSystem(params) {
+        try {
+            this.addMessage('bot', '⏳ Resetting system... deleting all students, sections, and departments.');
+
+            const apiBase = window.location.pathname.includes('/includes/')
+                ? '../api/students.php'
+                : 'api/students.php';
+
+            const res = await fetch(`${apiBase}?action=deleteAll`, { method: 'POST' });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                // Clear any cached student data in the page
+                if (window._studentsCache) {
+                    window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
+                }
+                this.addMessage('bot', '✅ System reset complete. All students, sections, and departments have been cleared.\n\nYou can now go to **Students → Import** to upload a fresh enrollment list and everything will be recreated automatically.');
+            } else {
+                throw new Error(data.message || 'Reset failed');
+            }
+        } catch (err) {
+            console.error('handleResetSystem error:', err);
+            this.addMessage('bot', `⚠️ System reset failed: ${err.message}`);
+        }
     }
 
     async handleExportPDF(params) {

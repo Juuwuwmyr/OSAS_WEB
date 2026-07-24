@@ -58,7 +58,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
         <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
       </div>
       <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Delete All Students?</h3>
-      <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong> and their <strong>login accounts</strong>. This cannot be undone.</p>
+      <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
       <p style="margin:0 0 24px;font-size:13px;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;">Type <strong>DELETE</strong> to confirm</p>
       <input id="deleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;text-align:center;">
       <div style="display:flex;gap:10px;justify-content:center;">

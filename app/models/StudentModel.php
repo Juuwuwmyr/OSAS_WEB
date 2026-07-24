@@ -469,22 +469,32 @@ class StudentModel extends Model {
     }
 
     /**
-     * Delete all students and their associated user accounts
+     * Delete all students, their user accounts, all sections, and all departments.
+     * This is a full system reset — importing students will recreate everything.
      */
     public function deleteAll() {
         try {
             $this->conn->begin_transaction();
-            
-            // 1. Delete all users with role 'user' (assuming all students have role 'user')
-            // Or more precisely, delete users that have a student_id linked
+
+            // 1. Delete student user accounts
             $this->conn->query("DELETE FROM users WHERE student_id IS NOT NULL AND role = 'user'");
-            
-            // 2. Clear students table
+
+            // 2. Clear students (TRUNCATE resets AUTO_INCREMENT too)
+            $this->conn->query("SET FOREIGN_KEY_CHECKS = 0");
             $this->conn->query("TRUNCATE TABLE students");
-            
+
+            // 3. Clear sections (they belong to departments; recreated on import)
+            $this->conn->query("TRUNCATE TABLE sections");
+
+            // 4. Clear departments (recreated on import)
+            $this->conn->query("TRUNCATE TABLE departments");
+
+            $this->conn->query("SET FOREIGN_KEY_CHECKS = 1");
+
             $this->conn->commit();
             return true;
         } catch (Exception $e) {
+            $this->conn->query("SET FOREIGN_KEY_CHECKS = 1");
             $this->conn->rollback();
             error_log("StudentModel::deleteAll error: " . $e->getMessage());
             throw $e;
@@ -529,7 +539,8 @@ class StudentModel extends Model {
                 if ($deptId) {
                     $this->conn->query("INSERT INTO sections (section_code, section_name, department_id, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', $deptId, '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
                 } else {
-                    $this->conn->query("INSERT INTO sections (section_code, section_name, academic_year, status, created_at) VALUES ('" . $this->conn->real_escape_string($code) . "', '" . $this->conn->real_escape_string($name) . "', '" . $this->conn->real_escape_string($acadYear) . "', 'active', NOW())");
+                    // Cannot insert section without a valid department — skip and log
+                    error_log("importAll: skipping section '$code' — department '$deptCode' not found");
                 }
             }
         }

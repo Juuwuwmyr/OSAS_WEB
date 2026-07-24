@@ -29,16 +29,35 @@ DEPT_NAMES = {
     "BSCS":   "Bachelor of Science in Computer Science",
 }
 
+# CHS and WFT are sections under BTVTED, not standalone departments
+SECTION_TO_DEPT = {
+    "CHS": "BTVTED",
+    "WFT": "BTVTED",
+}
+
+# Section codes that need a parent prefix to match the DB format
+SECTION_CODE_PREFIX = {
+    "CHS": "BTVTED-CHS",
+    "WFT": "BTVTED-WFT",
+}
+
 def normalize_section_code(sheet_name):
-    """BPA 1 → BPA1, BSIS 2 → BSIS2"""
-    return re.sub(r'\s+', '', sheet_name).upper()
+    """BPA 1 → BPA1, BSIS 2 → BSIS2, CHS 1 → BTVTED-CHS1, WFT 1 → BTVTED-WFT1"""
+    code = re.sub(r'\s+', '', sheet_name).upper()
+    # Extract the letter prefix (strip trailing digits)
+    prefix = re.sub(r'\d+$', '', code).strip()
+    suffix = code[len(prefix):]  # the digit(s)
+    if prefix in SECTION_CODE_PREFIX:
+        return SECTION_CODE_PREFIX[prefix] + suffix
+    return code
 
 def extract_department_code(sheet_name):
-    """BPA 1 → BPA, BSIS 2 → BSIS"""
-    code = normalize_section_code(sheet_name)   # e.g. BPA1
+    """BPA 1 → BPA, BSIS 2 → BSIS, CHS 1 → BTVTED, WFT 1 → BTVTED"""
+    code = re.sub(r'\s+', '', sheet_name).upper()
     # Strip trailing digits
-    dept = re.sub(r'\d+$', '', code)
-    return dept.strip()
+    dept = re.sub(r'\d+$', '', code).strip()
+    # Remap section-level codes to their parent department
+    return SECTION_TO_DEPT.get(dept, dept)
 
 def normalize_sex(raw):
     """Ensure only M or F is stored (max 1 char)."""
