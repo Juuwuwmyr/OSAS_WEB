@@ -1550,7 +1550,6 @@ body.dark {
   background: var(--grey);
   border-color: var(--gold);
   color: var(--gold);
-  transform: rotate(180deg);
 }
 
 /* QR Scan Button */
@@ -4263,15 +4262,15 @@ body.dark {
 
 /* Refresh button animation */
 #refreshViolationsBtn {
-  transition: all 0.3s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 #refreshViolationsBtn:hover {
-  transform: rotate(180deg);
+  /* no rotate — avoids glitch when spin animation is also active */
 }
 
 #refreshViolationsBtn i {
-  transition: transform 0.3s ease;
+  transition: none;
 }
 
 /* Enhanced empty state for loading */
