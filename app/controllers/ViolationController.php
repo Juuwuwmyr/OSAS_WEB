@@ -213,6 +213,7 @@ class ViolationController extends Controller
         }
 
         if ($action === 'mark_all_read') {
+            $studentId = '';
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
                 $studentId = $_SESSION['student_id_code'] ?? '';
             } else {
@@ -231,44 +232,6 @@ class ViolationController extends Controller
                 $this->error('Failed to mark all as read: ' . $e->getMessage());
                 return;
             }
-        }
-
-        if ($action === 'get_recent_violations') {
-            // Only admins and staff can access this
-            $sessionRole = $_SESSION['role'] ?? '';
-            if (!in_array($sessionRole, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
-                $this->error('Access denied', '', 403);
-                return;
-            }
-
-            // Returns violations recorded in the last 24h, excluding the current user's own,
-            // with student and violation type info for the admin notification bell.
-            $currentUser = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
-            $since = date('Y-m-d H:i:s', strtotime('-24 hours'));
-
-            try {
-                $rows = $this->model->query(
-                    "SELECT v.id, v.case_id, v.reported_by, v.created_at, v.status, v.is_archived,
-                            vt.name AS violation_type_name,
-                            vl.name AS violation_level_name,
-                            s.first_name, s.last_name, s.avatar, v.student_id
-                     FROM violations v
-                     LEFT JOIN violation_types  vt ON vt.id = v.violation_type_id
-                     LEFT JOIN violation_levels vl ON vl.id = v.violation_level_id
-                     LEFT JOIN students         s  ON BINARY s.student_id = BINARY v.student_id
-                     WHERE v.created_at >= ?
-                       AND v.is_archived = 0
-                       AND v.reported_by != ?
-                     ORDER BY v.created_at DESC
-                     LIMIT 20",
-                    [$since, $currentUser]
-                );
-
-                $this->json(['status' => 'success', 'data' => $rows ?: []]);
-            } catch (Exception $e) {
-                $this->error('Failed to fetch recent violations: ' . $e->getMessage());
-            }
-            return;
         }
 
         // Role-based access control for fetching violations
@@ -354,7 +317,6 @@ class ViolationController extends Controller
         $location       = $this->sanitize($input['location'] ?? '');
         $reportedBy     = $this->sanitize(($_SESSION['full_name'] ?? $_SESSION['username'] ?? '') ?: ($input['reportedBy'] ?? ''));
         $notes          = $this->sanitize($input['notes'] ?? '');
-        $force          = !empty($input['force']) && $input['force'] === '1';
 
         // Auto-derive status from the level's default_status (not hardcoded 'warning')
         $levelData = $this->model->query("SELECT default_status FROM violation_levels WHERE id = ?", [$violationLevel]);
@@ -409,41 +371,19 @@ class ViolationController extends Controller
         }
 
         try {
-            // Check if student already has this violation type recorded on the same day
-            // If user confirmed (force=1), skip this check and allow recording anyway
-            if (!$force) {
-                $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
-                    $studentId,
-                    $violationType,
-                    $violationDate
-                );
-
-                if ($existingViolation) {
-                    // Fetch violation type name for a friendlier message
-                    $vtypeRow = $this->model->query("SELECT name FROM violation_types WHERE id = ? LIMIT 1", [$violationType]);
-                    $vtypeName = !empty($vtypeRow) ? $vtypeRow[0]['name'] : 'this violation type';
-
-                    // Fetch student name
-                    $studentRow = $this->studentModel->query(
-                        "SELECT first_name, last_name FROM students WHERE student_id = ? LIMIT 1",
-                        [$studentId]
-                    );
-                    $studentName = !empty($studentRow)
-                        ? trim($studentRow[0]['first_name'] . ' ' . $studentRow[0]['last_name'])
-                        : $studentId;
-
-                    $this->json([
-                        'status'       => 'duplicate_day',
-                        'message'      => "A \"$vtypeName\" violation was already recorded for $studentName today by {$existingViolation['reported_by']}.",
-                        'existing_id'  => $existingViolation['id'],
-                        'reported_by'  => $existingViolation['reported_by'],
-                        'student_name' => $studentName,
-                        'violation_type_name' => $vtypeName,
-                        'violation_date' => $violationDate,
-                    ]);
-                    return;
-                }
+            // TEMPORARILY COMMENTED OUT: Check if student already has this violation type recorded on the same day
+            /*
+            $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
+                $studentId,
+                $violationType,
+                $violationDate
+            );
+            
+            if ($existingViolation) {
+                $this->error('This violation type has already been recorded for this student today by ' . $existingViolation['reported_by'], ['existing_id' => $existingViolation['id'], 'reported_by' => $existingViolation['reported_by']]);
+                return;
             }
+            */
 
             // Check for duplicate violation (Double Submission Check - same exact details)
             $existingId = $this->model->checkDuplicateSubmission(

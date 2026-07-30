@@ -98,8 +98,6 @@
                         'violation-' + latestV.id
                     );
                     newCount++;
-                    // Tell the admin bell to refresh immediately
-                    window.dispatchEvent(new CustomEvent('osas:newViolation', { detail: latestV }));
                 }
                 snap.lastViolationId = latestV.id;
             }

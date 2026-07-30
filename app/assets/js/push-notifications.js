@@ -193,10 +193,9 @@
         const runRetry = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
             retryBtn.disabled = true;
-            retryBtn.textContent = 'Please wait…';
-            try {
-                const perm = await requestNotificationPermission();
-                if (perm === 'granted') {
+            const perm = await requestNotificationPermission();
+            if (perm === 'granted') {
+                try {
                     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
                         throw new Error('Push not supported in this browser');
                     }
@@ -206,15 +205,13 @@
                     }
                     toast('Notifications enabled.', true);
                     overlay.remove();
-                } else {
-                    toast('Still blocked — enable notifications in your browser site settings.', false);
+                } catch (err) {
+                    toast(err.message || 'Failed', false);
                 }
-            } catch (err) {
-                toast(err.message || 'Failed', false);
-            } finally {
-                retryBtn.disabled = false;
-                retryBtn.textContent = 'Try again';
+            } else {
+                toast('Still blocked — enable in Settings → Apps → E-OSAS → Notifications', false);
             }
+            retryBtn.disabled = false;
         };
         retryBtn.addEventListener('click', runRetry, { passive: false });
         retryBtn.addEventListener('touchend', runRetry, { passive: false });
@@ -229,11 +226,8 @@
         document.body.appendChild(overlay);
     }
 
-    function isMobile() {
-        return /android|iphone|ipad|ipod/i.test(navigator.userAgent) || ('ontouchstart' in window);
-    }
-
     function showEnableModal(mode) {
+        if (!isInstalledPWA()) return;
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
@@ -245,13 +239,7 @@
         const title = document.createElement('h3');
         title.textContent = 'Stay updated';
         const desc = document.createElement('p');
-
-        const mobile = isMobile();
-        if (mobile) {
-            desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
-        } else {
-            desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates.<br><br>After clicking Enable, look for the <strong>permission popup near the address bar</strong> at the top of your browser and click <strong>Allow</strong>.';
-        }
+        desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
 
         const btns = document.createElement('div');
         btns.className = 'eosas-push-btns';
@@ -264,30 +252,20 @@
 
         const promptKey = mode === 'guest' ? GUEST_PROMPT : STUDENT_PROMPT;
 
-        let _running = false;
         const run = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
-            if (_running) return;
-            _running = true;
             yes.disabled = true;
             yes.textContent = 'Please wait…';
             try {
                 if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    toast('Use Chrome for push notification support.', false);
+                    toast('Use Chrome and install the app for alerts.', false);
                     return;
                 }
                 const perm = await requestNotificationPermission();
                 if (perm !== 'granted') {
-                    if (perm === 'denied') {
-                        toast('Notifications blocked — click the 🔒 lock icon in your address bar and allow notifications.', false);
-                    } else {
-                        // dismissed — remind them where to look on desktop
-                        if (!mobile) {
-                            toast('Look for the notification prompt near your browser\'s address bar and click Allow.', false);
-                        } else {
-                            toast('Tap Allow on the permission prompt to enable notifications.', false);
-                        }
-                    }
+                    toast(perm === 'denied'
+                        ? 'Blocked — enable in Settings → Apps → E-OSAS → Notifications'
+                        : 'Tap Allow on the next screen.', false);
                     return;
                 }
                 // Always subscribe with 'full' scope so all notifications work
@@ -298,21 +276,17 @@
                     await window.showLatestAnnouncementNotifications(true);
                 }
             } catch (err) {
-                toast(err.message || 'Failed to enable notifications.', false);
-            } finally {
-                yes.disabled = false;
-                yes.textContent = 'Enable notifications';
-                _running = false;
+                toast(err.message || 'Failed', false);
             }
+            yes.disabled = false;
+            yes.textContent = 'Enable notifications';
         };
 
-        // Use only 'click' on desktop, add 'touchend' only on mobile to avoid double-fire
         yes.addEventListener('click', run, { passive: false });
-        if (mobile) {
-            yes.addEventListener('touchend', run, { passive: false });
-        }
+        yes.addEventListener('touchend', run, { passive: false });
         no.addEventListener('click', (e) => {
             e.preventDefault();
+            localStorage.setItem(promptKey, '1');
             overlay.remove();
         });
 
@@ -340,7 +314,8 @@
 
     async function initGuestPush() {
         if (!isGuestApp() || !('Notification' in window)) return;
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+        if (!isInstalledPWA()) return;
 
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
@@ -353,7 +328,8 @@
             setTimeout(() => showBlockedModal('guest'), 1200);
             return;
         }
-        // Don't suppress: push permission is required, keep re-prompting each session
+        if (localStorage.getItem(GUEST_PROMPT)) return;
+
         setTimeout(() => showEnableModal('guest'), 800);
     }
 
@@ -372,6 +348,8 @@
             }
         });
 
+        if (!isInstalledPWA()) return;
+
         if (Notification.permission === 'granted') {
             await syncStudentSubscription();
             return;
@@ -380,7 +358,8 @@
             setTimeout(() => showBlockedModal('student'), 1200);
             return;
         }
-        // Don't suppress: push permission is required, keep re-prompting each session
+        if (localStorage.getItem(STUDENT_PROMPT)) return;
+
         setTimeout(() => showEnableModal('student'), 800);
     }
 
@@ -391,6 +370,7 @@
     async function initAdminPush() {
         if (!isAdminApp() || !('Notification' in window)) return;
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!isInstalledPWA()) return;
 
         if (Notification.permission === 'granted') {
             // Sync admin subscription
@@ -406,7 +386,8 @@
             setTimeout(() => showBlockedModal('admin'), 1200);
             return;
         }
-        // Don't suppress: push permission is required, keep re-prompting each session
+        if (localStorage.getItem('eosas_admin_push_prompted')) return;
+
         setTimeout(() => showEnableModal('admin'), 800);
     }
 
