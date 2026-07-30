@@ -45,7 +45,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
         </button>
 
         <!-- Delete All — hidden by default, toggled by the chevron -->
-        <div style="display:flex;align-items:center;gap:4px;">
+        <div class="delete-all-toggle-group">
           <div id="deleteAllWrapper" style="overflow:hidden;max-width:0;opacity:0;transition:max-width 0.3s ease,opacity 0.25s ease;">
             <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;white-space:nowrap;">
               <i class='bx bx-trash'></i>
