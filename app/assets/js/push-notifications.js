@@ -227,7 +227,6 @@
     }
 
     function showEnableModal(mode) {
-        if (!isInstalledPWA()) return;
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
@@ -286,7 +285,6 @@
         yes.addEventListener('touchend', run, { passive: false });
         no.addEventListener('click', (e) => {
             e.preventDefault();
-            localStorage.setItem(promptKey, '1');
             overlay.remove();
         });
 
@@ -314,8 +312,7 @@
 
     async function initGuestPush() {
         if (!isGuestApp() || !('Notification' in window)) return;
-
-        if (!isInstalledPWA()) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
         if (Notification.permission === 'granted') {
             await syncGuestSubscription();
@@ -328,8 +325,7 @@
             setTimeout(() => showBlockedModal('guest'), 1200);
             return;
         }
-        if (localStorage.getItem(GUEST_PROMPT)) return;
-
+        // Don't suppress: push permission is required, keep re-prompting each session
         setTimeout(() => showEnableModal('guest'), 800);
     }
 
@@ -348,8 +344,6 @@
             }
         });
 
-        if (!isInstalledPWA()) return;
-
         if (Notification.permission === 'granted') {
             await syncStudentSubscription();
             return;
@@ -358,8 +352,7 @@
             setTimeout(() => showBlockedModal('student'), 1200);
             return;
         }
-        if (localStorage.getItem(STUDENT_PROMPT)) return;
-
+        // Don't suppress: push permission is required, keep re-prompting each session
         setTimeout(() => showEnableModal('student'), 800);
     }
 
@@ -370,7 +363,6 @@
     async function initAdminPush() {
         if (!isAdminApp() || !('Notification' in window)) return;
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-        if (!isInstalledPWA()) return;
 
         if (Notification.permission === 'granted') {
             // Sync admin subscription
@@ -386,8 +378,7 @@
             setTimeout(() => showBlockedModal('admin'), 1200);
             return;
         }
-        if (localStorage.getItem('eosas_admin_push_prompted')) return;
-
+        // Don't suppress: push permission is required, keep re-prompting each session
         setTimeout(() => showEnableModal('admin'), 800);
     }
 
