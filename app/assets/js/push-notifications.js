@@ -250,7 +250,12 @@
         no.id = 'eosas-push-later';
         no.textContent = 'Not now';
 
-        const promptKey = mode === 'guest' ? GUEST_PROMPT : STUDENT_PROMPT;
+        const promptKey = mode === 'guest' ? GUEST_PROMPT : (mode === 'admin' ? 'eosas_admin_push_prompted' : STUDENT_PROMPT);
+
+        // Mark as prompted immediately when the modal is shown.
+        // This prevents it from re-appearing if the user closes the app
+        // without tapping either button.
+        localStorage.setItem(promptKey, '1');
 
         const run = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -286,7 +291,6 @@
         yes.addEventListener('touchend', run, { passive: false });
         no.addEventListener('click', (e) => {
             e.preventDefault();
-            localStorage.setItem(promptKey, '1');
             overlay.remove();
         });
 
