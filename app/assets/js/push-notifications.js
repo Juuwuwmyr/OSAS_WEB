@@ -193,9 +193,10 @@
         const runRetry = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
             retryBtn.disabled = true;
-            const perm = await requestNotificationPermission();
-            if (perm === 'granted') {
-                try {
+            retryBtn.textContent = 'Please wait…';
+            try {
+                const perm = await requestNotificationPermission();
+                if (perm === 'granted') {
                     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
                         throw new Error('Push not supported in this browser');
                     }
@@ -205,13 +206,15 @@
                     }
                     toast('Notifications enabled.', true);
                     overlay.remove();
-                } catch (err) {
-                    toast(err.message || 'Failed', false);
+                } else {
+                    toast('Still blocked — enable notifications in your browser site settings.', false);
                 }
-            } else {
-                toast('Still blocked — enable in Settings → Apps → E-OSAS → Notifications', false);
+            } catch (err) {
+                toast(err.message || 'Failed', false);
+            } finally {
+                retryBtn.disabled = false;
+                retryBtn.textContent = 'Try again';
             }
-            retryBtn.disabled = false;
         };
         retryBtn.addEventListener('click', runRetry, { passive: false });
         retryBtn.addEventListener('touchend', runRetry, { passive: false });
@@ -257,14 +260,14 @@
             yes.textContent = 'Please wait…';
             try {
                 if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    toast('Use Chrome and install the app for alerts.', false);
+                    toast('Use Chrome for push notification support.', false);
                     return;
                 }
                 const perm = await requestNotificationPermission();
                 if (perm !== 'granted') {
                     toast(perm === 'denied'
-                        ? 'Blocked — enable in Settings → Apps → E-OSAS → Notifications'
-                        : 'Tap Allow on the next screen.', false);
+                        ? 'Notifications blocked — enable them in your browser site settings.'
+                        : 'Permission dismissed — tap Enable to try again.', false);
                     return;
                 }
                 // Always subscribe with 'full' scope so all notifications work
@@ -275,10 +278,11 @@
                     await window.showLatestAnnouncementNotifications(true);
                 }
             } catch (err) {
-                toast(err.message || 'Failed', false);
+                toast(err.message || 'Failed to enable notifications.', false);
+            } finally {
+                yes.disabled = false;
+                yes.textContent = 'Enable notifications';
             }
-            yes.disabled = false;
-            yes.textContent = 'Enable notifications';
         };
 
         yes.addEventListener('click', run, { passive: false });
