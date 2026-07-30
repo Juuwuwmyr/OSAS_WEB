@@ -5,9 +5,6 @@
 (function () {
     'use strict';
 
-    const GUEST_PROMPT = 'eosas_guest_push_prompted';
-    const STUDENT_PROMPT = 'eosas_student_push_prompted';
-    const INSTALL_PROMPT = 'eosas_install_prompted';
     const STYLE_ID = 'eosas-push-styles';
 
     /** True when opened from home-screen installed app (not a browser tab). */
@@ -166,67 +163,7 @@
         return;
     }
 
-    function showBlockedModal(mode) {
-        if (document.getElementById('eosas-push-overlay')) return;
-        injectStyles();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'eosas-push-overlay';
-        const modal = document.createElement('div');
-        modal.id = 'eosas-push-modal';
-
-        const title = document.createElement('h3');
-        title.textContent = 'Notifications are blocked';
-        const desc = document.createElement('p');
-        desc.innerHTML = 'You tapped <strong>Don\'t allow</strong>. To get campus alerts, turn notifications <strong>On</strong> in your phone settings for E-OSAS, then tap <strong>Try again</strong> below.';
-
-        const btns = document.createElement('div');
-        btns.className = 'eosas-push-btns';
-        const retryBtn = document.createElement('button');
-        retryBtn.id = 'eosas-push-enable';
-        retryBtn.textContent = 'Try again';
-        const laterBtn = document.createElement('button');
-        laterBtn.id = 'eosas-push-later';
-        laterBtn.textContent = 'Later';
-
-        const scope = 'full';
-        const runRetry = async (e) => {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            retryBtn.disabled = true;
-            const perm = await requestNotificationPermission();
-            if (perm === 'granted') {
-                try {
-                    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                        throw new Error('Push not supported in this browser');
-                    }
-                    await subscribeAfterPermission(scope);
-                    if (mode === 'guest' && typeof window.showLatestAnnouncementNotifications === 'function') {
-                        await window.showLatestAnnouncementNotifications(true);
-                    }
-                    toast('Notifications enabled.', true);
-                    overlay.remove();
-                } catch (err) {
-                    toast(err.message || 'Failed', false);
-                }
-            } else {
-                toast('Still blocked — enable in Settings → Apps → E-OSAS → Notifications', false);
-            }
-            retryBtn.disabled = false;
-        };
-        retryBtn.addEventListener('click', runRetry, { passive: false });
-        retryBtn.addEventListener('touchend', runRetry, { passive: false });
-        laterBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            overlay.remove();
-        });
-
-        btns.append(retryBtn, laterBtn);
-        modal.append(title, desc, btns);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-    }
-
-    function showEnableModal(mode) {
+    function showEnableModal() {
         if (!isInstalledPWA()) return;
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
@@ -249,13 +186,6 @@
         const no = document.createElement('button');
         no.id = 'eosas-push-later';
         no.textContent = 'Not now';
-
-        const promptKey = mode === 'guest' ? GUEST_PROMPT : (mode === 'admin' ? 'eosas_admin_push_prompted' : STUDENT_PROMPT);
-
-        // Mark as prompted immediately when the modal is shown.
-        // This prevents it from re-appearing if the user closes the app
-        // without tapping either button.
-        localStorage.setItem(promptKey, '1');
 
         const run = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -328,13 +258,7 @@
             }
             return;
         }
-        if (Notification.permission === 'denied') {
-            setTimeout(() => showBlockedModal('guest'), 1200);
-            return;
-        }
-        if (localStorage.getItem(GUEST_PROMPT)) return;
-
-        setTimeout(() => showEnableModal('guest'), 800);
+        setTimeout(() => showEnableModal(), 800);
     }
 
     async function initStudentPush() {
@@ -358,13 +282,7 @@
             await syncStudentSubscription();
             return;
         }
-        if (Notification.permission === 'denied') {
-            setTimeout(() => showBlockedModal('student'), 1200);
-            return;
-        }
-        if (localStorage.getItem(STUDENT_PROMPT)) return;
-
-        setTimeout(() => showEnableModal('student'), 800);
+        setTimeout(() => showEnableModal(), 800);
     }
 
     function isAdminApp() {
@@ -386,13 +304,7 @@
             }
             return;
         }
-        if (Notification.permission === 'denied') {
-            setTimeout(() => showBlockedModal('admin'), 1200);
-            return;
-        }
-        if (localStorage.getItem('eosas_admin_push_prompted')) return;
-
-        setTimeout(() => showEnableModal('admin'), 800);
+        setTimeout(() => showEnableModal(), 800);
     }
 
     function maybePromptForPush() {
@@ -407,7 +319,7 @@
         return subscribeWithScope('full');
     };
     window.upgradePushToStudent = upgradePushToStudent;
-    window.showPushEnableModal = (guest) => showEnableModal(guest ? 'guest' : 'student');
+    window.showPushEnableModal = () => showEnableModal();
     window.initPushNotifications = initStudentPush;
     window.initGuestPush = initGuestPush;
 
