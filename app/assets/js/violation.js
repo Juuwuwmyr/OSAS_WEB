@@ -170,6 +170,29 @@ function initViolationsModule() {
         let selectedFiles   = [];
         let manageView = 'types'; // kept for compatibility
 
+        /**
+         * Returns the current user's role from localStorage or cookie.
+         * Used for role-based UI visibility throughout violation.js.
+         */
+        function getCurrentUserRole() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session.role) return session.role;
+                } catch (e) {}
+            }
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            if (cookieRoleMatch) return decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            return '';
+        }
+
+        /** Returns true if the current user is an Officer or CSC Officer */
+        function isOfficerRole() {
+            const role = getCurrentUserRole();
+            return role === 'Officer' || role === 'CSC Officer';
+        }
+
         function getCurrentAdminName() {
             // Try localStorage session first
             const sessionStr = localStorage.getItem('userSession');
@@ -474,8 +497,6 @@ function initViolationsModule() {
                         .catch(err => console.warn('Background opposite-state fetch failed (non-critical):', err));
                 }
 
-                // Sync to window cache for instant restore on page revisit
-                _cache.violations = violations;
                 _cache.loaded = true;
                 console.log('Violations array:', violations);
                 
@@ -498,6 +519,9 @@ function initViolationsModule() {
                         studentImage: getImageUrl(v.studentImage, v.studentName || 'Student')
                     };
                 });
+
+                // Sync to window cache AFTER image processing so cached data has correct image URLs
+                _cache.violations = violations;
 
                 // Debug: Check first violation structure
                 if (violations.length > 0) {
@@ -687,6 +711,9 @@ function initViolationsModule() {
                     loadStudents(false),
                     loadViolationTypes()
                 ]);
+
+                // Reset to page 1 so pagination doesn't land on a now-empty page
+                currentPage = 1;
 
                 // Re-render everything
                 renderViolations();
@@ -3130,6 +3157,11 @@ function initViolationsModule() {
             if (window.refreshOfflineBadge) window.refreshOfflineBadge();
         };
 
+        // Expose refreshData globally so external callers (chatbot, PWA, etc.) can trigger a full refresh
+        window.refreshViolationsList = function() {
+            return refreshData();
+        };
+
         // ========== STUDENT DETAILS FUNCTIONS ==========
 
         // Check if search term looks like a student ID
@@ -3576,12 +3608,14 @@ function initViolationsModule() {
                     </td>
                     <td data-label="Actions">
                         <div class="Violations-action-buttons">
+                            ${isOfficerRole() ? '' : `
                             <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                 <i class='bx bx-show'></i>
-                            </button>
+                            </button>`}
+                            ${isOfficerRole() ? '' : `
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
-                            </button>
+                            </button>`}
                             ${displayStatus === 'resolved' || !isUserAdmin
                                 ? ''
                                 : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
@@ -3651,12 +3685,14 @@ function initViolationsModule() {
                                         : ''}
                                 </div>
                                 <div class="violation-card-actions">
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
-                                    </button>
+                                    </button>`}
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
-                                    </button>
+                                    </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
@@ -3691,12 +3727,14 @@ function initViolationsModule() {
                                     <span class="violation-list-id">${v.studentId}</span>
                                 </div>
                                 <div class="violation-list-actions">
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
-                                    </button>
+                                    </button>`}
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
-                                    </button>
+                                    </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
@@ -4457,9 +4495,9 @@ function initViolationsModule() {
                 }
             }
 
-            // Print Slip is always visible
+            // Print Slip — hidden for Officer and CSC Officer roles
             if (detailPrintSlipBtn) {
-                detailPrintSlipBtn.style.display = 'inline-flex';
+                detailPrintSlipBtn.style.display = isOfficerRole() ? 'none' : 'inline-flex';
             }
 
             if (detailSlipStatus) {
@@ -6206,6 +6244,35 @@ function initViolationsModule() {
                     }
                 });
             }
+        }
+
+        // Refresh students button (inside record modal) — reloads student list from server
+        const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
+        if (refreshStudentsBtn) {
+            refreshStudentsBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const icon = refreshStudentsBtn.querySelector('i');
+                    if (icon) icon.classList.add('bx-spin');
+                    refreshStudentsBtn.disabled = true;
+
+                    await loadStudents(false);
+
+                    // If there's already a search term, re-run the search with fresh data
+                    if (studentSearchInput && studentSearchInput.value.trim()) {
+                        await handleStudentSearch();
+                    }
+
+                    showNotification('Student data refreshed', 'success');
+                } catch (error) {
+                    console.error('Error refreshing students:', error);
+                    showNotification('Failed to refresh student data', 'error');
+                } finally {
+                    const icon = refreshStudentsBtn.querySelector('i');
+                    if (icon) icon.classList.remove('bx-spin');
+                    refreshStudentsBtn.disabled = false;
+                }
+            });
         }
 
         // 8. QR SCANNER BUTTON
