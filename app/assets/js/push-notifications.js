@@ -229,6 +229,10 @@
         document.body.appendChild(overlay);
     }
 
+    function isMobile() {
+        return /android|iphone|ipad|ipod/i.test(navigator.userAgent) || ('ontouchstart' in window);
+    }
+
     function showEnableModal(mode) {
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
@@ -241,7 +245,13 @@
         const title = document.createElement('h3');
         title.textContent = 'Stay updated';
         const desc = document.createElement('p');
-        desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
+
+        const mobile = isMobile();
+        if (mobile) {
+            desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
+        } else {
+            desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates.<br><br>After clicking Enable, look for the <strong>permission popup near the address bar</strong> at the top of your browser and click <strong>Allow</strong>.';
+        }
 
         const btns = document.createElement('div');
         btns.className = 'eosas-push-btns';
@@ -254,8 +264,11 @@
 
         const promptKey = mode === 'guest' ? GUEST_PROMPT : STUDENT_PROMPT;
 
+        let _running = false;
         const run = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (_running) return;
+            _running = true;
             yes.disabled = true;
             yes.textContent = 'Please wait…';
             try {
@@ -265,9 +278,16 @@
                 }
                 const perm = await requestNotificationPermission();
                 if (perm !== 'granted') {
-                    toast(perm === 'denied'
-                        ? 'Notifications blocked — enable them in your browser site settings.'
-                        : 'Permission dismissed — tap Enable to try again.', false);
+                    if (perm === 'denied') {
+                        toast('Notifications blocked — click the 🔒 lock icon in your address bar and allow notifications.', false);
+                    } else {
+                        // dismissed — remind them where to look on desktop
+                        if (!mobile) {
+                            toast('Look for the notification prompt near your browser\'s address bar and click Allow.', false);
+                        } else {
+                            toast('Tap Allow on the permission prompt to enable notifications.', false);
+                        }
+                    }
                     return;
                 }
                 // Always subscribe with 'full' scope so all notifications work
@@ -282,11 +302,15 @@
             } finally {
                 yes.disabled = false;
                 yes.textContent = 'Enable notifications';
+                _running = false;
             }
         };
 
+        // Use only 'click' on desktop, add 'touchend' only on mobile to avoid double-fire
         yes.addEventListener('click', run, { passive: false });
-        yes.addEventListener('touchend', run, { passive: false });
+        if (mobile) {
+            yes.addEventListener('touchend', run, { passive: false });
+        }
         no.addEventListener('click', (e) => {
             e.preventDefault();
             overlay.remove();
