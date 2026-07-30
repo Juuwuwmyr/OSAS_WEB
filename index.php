@@ -1185,19 +1185,14 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <section class="stats">
     <div class="stats-grid">
         <div class="stat-item fade-up">
-            <div class="stat-number" data-target="500">0</div>
+            <div class="stat-number" data-target="600">0</div>
             <div class="stat-label">Students</div>
             <div class="stat-desc">Enrolled across all departments</div>
         </div>
         <div class="stat-item fade-up">
-            <div class="stat-number" data-target="6">0</div>
+            <div class="stat-number" data-target="3">0</div>
             <div class="stat-label">Departments</div>
             <div class="stat-desc">Fully integrated system-wide</div>
-        </div>
-        <div class="stat-item fade-up">
-            <div class="stat-number" data-target="100">0</div>
-            <div class="stat-label">Paperless</div>
-            <div class="stat-desc">100% digital record management</div>
         </div>
         <div class="stat-item fade-up">
             <div class="stat-number" data-target="24">0</div>
@@ -2132,7 +2127,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             if (progress < 1) {
                 requestAnimationFrame(update);
             } else {
-                element.textContent = target + (target === 500 ? '+' : target === 100 ? '%' : target === 24 ? '/7' : '');
+                element.textContent = target + (target === 600 ? '+' : target === 24 ? '/7' : '');
             }
         }
 
