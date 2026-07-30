@@ -34,7 +34,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
     </div>
 
     <div class="Students-header-actions">
-      <div class="Students-button-group">
+      <div class="Students-button-group" style="align-items:center;">
         <button id="btnImportStudents" class="Students-btn outline small">
           <i class='bx bx-upload'></i>
           <span>Import</span>
@@ -43,12 +43,39 @@ require_once __DIR__ . '/../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
-        <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;">
-          <i class='bx bx-trash'></i>
-          <span>Delete All</span>
-        </button>
+
+        <!-- Delete All — hidden by default, toggled by the chevron -->
+        <div style="display:flex;align-items:center;gap:4px;">
+          <div id="deleteAllWrapper" style="overflow:hidden;max-width:0;opacity:0;transition:max-width 0.3s ease,opacity 0.25s ease;">
+            <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;white-space:nowrap;">
+              <i class='bx bx-trash'></i>
+              <span>Delete All</span>
+            </button>
+          </div>
+          <button id="btnToggleDeleteAll" title="Show / hide Delete All"
+            style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;padding:0;color:#9ca3af;transition:color 0.2s,border-color 0.2s;flex-shrink:0;">
+            <i id="toggleDeleteAllIcon" class='bx bx-chevron-left' style="font-size:15px;transition:transform 0.3s;"></i>
+          </button>
+        </div>
       </div>
     </div>
+
+    <script>
+    (function(){
+      var wrapper = document.getElementById('deleteAllWrapper');
+      var btn     = document.getElementById('btnToggleDeleteAll');
+      var icon    = document.getElementById('toggleDeleteAllIcon');
+      var open    = false;
+      btn.addEventListener('click', function(){
+        open = !open;
+        wrapper.style.maxWidth  = open ? '140px' : '0';
+        wrapper.style.opacity   = open ? '1'    : '0';
+        icon.style.transform    = open ? 'rotate(180deg)' : 'rotate(0deg)';
+        btn.style.color         = open ? '#ef4444' : '#9ca3af';
+        btn.style.borderColor   = open ? '#ef4444' : '#d1d5db';
+      });
+    })();
+    </script>
   </div>
 
   <!-- DELETE ALL CONFIRMATION MODAL -->

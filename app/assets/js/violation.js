@@ -2250,6 +2250,40 @@ function initViolationsModule() {
                     throw new Error(result.message || 'Unknown error occurred');
                 }
 
+                // ── Duplicate-day warning: ask user to confirm before proceeding ──
+                if (result.status === 'duplicate_day') {
+                    hideLoadingOverlay(); // clear spinner before showing dialog
+                    const proceed = typeof window.showModernAlert === 'function'
+                        ? await window.showModernAlert({
+                            type: 'warning',
+                            title: 'Violation Already Recorded Today',
+                            message: `<strong>${result.student_name}</strong> already has a <strong>${result.violation_type_name}</strong> violation recorded today by <strong>${result.reported_by}</strong>.<br><br>Do you still want to record this violation?`,
+                            confirmText: 'Yes, Record Anyway',
+                            cancelText: 'Cancel',
+                          })
+                        : confirm(`${result.student_name} already has a "${result.violation_type_name}" violation recorded today by ${result.reported_by}.\n\nDo you still want to record this violation?`);
+
+                    if (!proceed) {
+                        // User cancelled — reset state and bail out
+                        return null;
+                    }
+
+                    // User confirmed — re-submit with force flag
+                    formData.set('force', '1');
+                    const forceResponse = await fetch(API_BASE + 'violations.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const forceText = await forceResponse.text();
+                    if (!forceResponse.ok) {
+                        let msg = `HTTP error! status: ${forceResponse.status}`;
+                        try { const d = JSON.parse(forceText); if (d.message) msg = d.message; } catch(e) {}
+                        throw new Error(msg);
+                    }
+                    try { result = JSON.parse(forceText); } catch(e) { throw new Error('Invalid JSON on force save: ' + forceText.substring(0, 200)); }
+                    if (result.status === 'error') throw new Error(result.message || 'Unknown error occurred');
+                }
+
                 console.log('✅ Violation saved successfully');
 
                 // Reload violations data in background (Manual Fallback handles immediate UI)
@@ -6053,7 +6087,13 @@ function initViolationsModule() {
                             });
                         }
 
-                        await saveViolation(formData);
+                        const saveResult = await saveViolation(formData);
+                        // null means user cancelled the duplicate-day warning — keep modal open
+                        if (saveResult === null) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                            return;
+                        }
                         showNotification('Violation recorded successfully!', 'success');
                     }
 
