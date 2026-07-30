@@ -90,14 +90,29 @@
 
             if (latestV && String(latestV.id) !== String(snap.lastViolationId)) {
                 const isNew = !snap.lastViolationId || Number(latestV.id) > Number(snap.lastViolationId);
-                if (isNew && latestV.is_read != 1) {
-                    notifyUser(
-                        'New Violation Recorded',
-                        (latestV.case_id ? 'Case ' + latestV.case_id + ' — ' : '') +
-                            (latestV.violation_type_name || latestV.violation_type || 'Check your violations tab'),
-                        'violation-' + latestV.id
-                    );
-                    newCount++;
+                if (isNew) {
+                    // For admins, always notify about new violations (no is_read filter needed)
+                    // For students, only notify if unread
+                    const isAdmin = document.getElementById('notifBtn') && !document.getElementById('notificationBtn');
+                    // Don't notify admin about violations they recorded themselves
+                    const currentName = (document.cookie.split(';').find(c => c.trim().startsWith('full_name=')) || '').split('=').slice(1).join('=').trim();
+                    const recorder = latestV.reported_by || '';
+                    const isOwnRecord = isAdmin && currentName && recorder && decodeURIComponent(currentName) === recorder;
+                    if (!isOwnRecord && (isAdmin || latestV.is_read != 1)) {
+                        const violationType = latestV.violation_type_name || latestV.violation_type || 'Check violations tab';
+                        notifyUser(
+                            'New Violation Recorded',
+                            (recorder ? 'By ' + recorder + ' — ' : '') +
+                            (latestV.case_id ? 'Case ' + latestV.case_id + ' — ' : '') +
+                            violationType,
+                            'violation-' + latestV.id
+                        );
+                        newCount++;
+                        // Also refresh the admin notification modal badge
+                        if (isAdmin && typeof window.updateNotificationCount === 'function') {
+                            window.updateNotificationCount();
+                        }
+                    }
                 }
                 snap.lastViolationId = latestV.id;
             }
@@ -161,7 +176,8 @@
     }
 
     function startRealtimeAlerts() {
-        if (!document.getElementById('notificationBtn')) return;
+        // Works on both student dashboard (notificationBtn) and admin dashboard (notifBtn)
+        if (!document.getElementById('notificationBtn') && !document.getElementById('notifBtn')) return;
         checkForUpdates();
         setInterval(checkForUpdates, POLL_MS); // poll every 20s
         document.addEventListener('visibilitychange', () => {

@@ -36,6 +36,9 @@ function initAdminNotifications() {
 
     if (!notifBtn || !notifBadge || !notifModal) return;
 
+    // Expose for realtimeAlerts.js to call when new violation is detected
+    window.updateNotificationCount = updateNotificationCount;
+
     // Initial count fetch
     updateNotificationCount();
 
@@ -68,9 +71,10 @@ function initAdminNotifications() {
 
 async function updateNotificationCount() {
     try {
-        const [disciplinaryRes, slipRes] = await Promise.all([
+        const [disciplinaryRes, slipRes, recentRes] = await Promise.all([
             fetch('../api/violations.php?filter=disciplinary').then(r => r.json()).catch(() => ({ status: 'error' })),
-            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' }))
+            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' })),
+            fetch('../api/violations.php?action=get_recent&limit=10').then(r => r.json()).catch(() => ({ status: 'error' }))
         ]);
 
         let count = 0;
@@ -79,6 +83,11 @@ async function updateNotificationCount() {
         }
         if (slipRes.status === 'success' && Array.isArray(slipRes.data)) {
             count += slipRes.data.filter(r => r.status === 'pending').length;
+        }
+        // Count recent violations not yet seen by admin
+        if (recentRes.status === 'success' && Array.isArray(recentRes.data)) {
+            const seen = JSON.parse(localStorage.getItem('admin_seen_recent_violations') || '[]');
+            count += recentRes.data.filter(v => !seen.includes(String(v.id))).length;
         }
 
         const notifBadge = document.getElementById('notifBadge');
@@ -98,9 +107,10 @@ async function fetchNotifications() {
     notifList.innerHTML = '<div class="notif-loading">Loading notifications...</div>';
 
     try {
-        const [disciplinaryRes, slipRes] = await Promise.all([
+        const [disciplinaryRes, slipRes, recentRes] = await Promise.all([
             fetch('../api/violations.php?filter=disciplinary').then(r => r.json()).catch(() => ({ status: 'error' })),
-            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' }))
+            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' })),
+            fetch('../api/violations.php?action=get_recent&limit=10').then(r => r.json()).catch(() => ({ status: 'error' }))
         ]);
 
         const notifications = [];
@@ -139,11 +149,47 @@ async function fetchNotifications() {
             });
         }
 
+        // Add recent violations recorded by other staff
+        if (recentRes.status === 'success' && Array.isArray(recentRes.data)) {
+            // Mark all as seen now
+            const seenIds = recentRes.data.map(v => String(v.id));
+            localStorage.setItem('admin_seen_recent_violations', JSON.stringify(seenIds));
+
+            // Avoid duplicating violations already shown in disciplinary
+            const disciplinaryIds = new Set(
+                (disciplinaryRes.status === 'success' && Array.isArray(disciplinaryRes.data))
+                    ? disciplinaryRes.data.map(v => String(v.id))
+                    : []
+            );
+
+            recentRes.data.forEach(violation => {
+                if (disciplinaryIds.has(String(violation.id))) return; // skip duplicates
+                const studentName = (violation.studentName
+                    || [violation.first_name, violation.middle_name, violation.last_name].filter(Boolean).join(' ')
+                    || 'Unknown Student').trim();
+                const recorder = violation.reported_by || violation.recorded_by || violation.created_by || '';
+                notifications.push({
+                    type: 'recent_violation',
+                    name: studentName,
+                    desc: 'New violation recorded' + (recorder ? ' by ' + recorder : ''),
+                    violationType: violation.violation_type_name || violation.violation_type || '',
+                    date: violation.dateReported || violation.violation_date || violation.created_at || '',
+                    studentId: violation.studentId || violation.student_id || '',
+                    avatar: violation.studentImage || violation.avatar || '',
+                    id: violation.id
+                });
+            });
+        }
+
         if (notifications.length === 0) {
             notifList.innerHTML = '<div class="notif-empty">No notifications at this time.</div>';
         } else {
             renderNotifications(notifications);
         }
+
+        // Refresh badge count now that we've seen recent violations
+        updateNotificationCount();
+
     } catch (error) {
         console.error('Error fetching notifications:', error);
         notifList.innerHTML = '<div class="notif-empty">Failed to load notifications.</div>';
@@ -177,7 +223,14 @@ function renderNotifications(notifications) {
         } else if (notif.type === 'disciplinary') {
             actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">Manage</button>`;
             badgeHtml = '<span class="notif-badge-tag disciplinary"><i class="bx bx-shield-x"></i> Disciplinary</span>';
+        } else if (notif.type === 'recent_violation') {
+            actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">View</button>`;
+            badgeHtml = '<span class="notif-badge-tag recent-violation"><i class="bx bx-error-circle"></i> New</span>';
         }
+
+        const descText = notif.type === 'recent_violation' && notif.violationType
+            ? `${notif.desc} — <em>${notif.violationType}</em> ${badgeHtml}`
+            : `${notif.desc} ${badgeHtml}`;
 
         const item = document.createElement('div');
         item.className = `notif-item notif-${notif.type}`;
@@ -186,7 +239,7 @@ function renderNotifications(notifications) {
             <div class="notif-avatar-wrap">${avatarHtml}</div>
             <div class="notif-info">
                 <span class="notif-name">${notif.name}</span>
-                <span class="notif-desc">${notif.desc} ${badgeHtml}</span>
+                <span class="notif-desc">${descText}</span>
                 <span class="notif-time">${formatNotifDate(notif.date)}</span>
             </div>
             ${actionBtn}
@@ -198,7 +251,7 @@ function renderNotifications(notifications) {
             if (e.target.closest('.notif-manage-btn')) return;
             if (notif.type === 'slip_request') {
                 manageSlipRequest(notif.id);
-            } else if (notif.type === 'disciplinary') {
+            } else {
                 manageViolation(notif.studentId);
             }
         });

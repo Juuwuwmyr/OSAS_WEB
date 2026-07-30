@@ -1080,7 +1080,7 @@ class ViolationModel extends Model {
     /**
      * Get recent violations
      */
-    public function getRecent($limit = 10, $studentId = null, $reportedBy = null) {
+    public function getRecent($limit = 10, $studentId = null, $reportedBy = null, $excludeReportedBy = null) {
         $query = "
             SELECT v.id,
                    v.case_id,
@@ -1119,6 +1119,12 @@ class ViolationModel extends Model {
         if ($reportedBy) {
             $conditions[] = "v.reported_by = ?";
             $params[] = $reportedBy;
+            $types .= "s";
+        }
+
+        if ($excludeReportedBy) {
+            $conditions[] = "v.reported_by != ?";
+            $params[] = $excludeReportedBy;
             $types .= "s";
         }
 

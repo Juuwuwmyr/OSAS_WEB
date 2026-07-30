@@ -166,6 +166,11 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'get_recent') {
+            $this->get_recent_violations();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -371,19 +376,36 @@ class ViolationController extends Controller
         }
 
         try {
-            // TEMPORARILY COMMENTED OUT: Check if student already has this violation type recorded on the same day
-            /*
-            $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
-                $studentId,
-                $violationType,
-                $violationDate
-            );
-            
-            if ($existingViolation) {
-                $this->error('This violation type has already been recorded for this student today by ' . $existingViolation['reported_by'], ['existing_id' => $existingViolation['id'], 'reported_by' => $existingViolation['reported_by']]);
-                return;
+            // Check if student already has this violation type recorded on the same day
+            // Skip this check if the user confirmed they want to record anyway (force=1)
+            $force = ($input['force'] ?? $_POST['force'] ?? '') === '1';
+            if (!$force) {
+                $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
+                    $studentId,
+                    $violationType,
+                    $violationDate
+                );
+
+                if ($existingViolation) {
+                    // Get student name and violation type name for the warning message
+                    $typeInfo = $this->model->query("SELECT name FROM violation_types WHERE id = ?", [$violationType]);
+                    $studentName = trim(
+                        ($student[0]['first_name'] ?? '') . ' ' .
+                        ($student[0]['middle_name'] ?? '') . ' ' .
+                        ($student[0]['last_name'] ?? '')
+                    );
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'status'             => 'duplicate_day',
+                        'message'            => 'Violation already recorded today',
+                        'existing_id'        => $existingViolation['id'],
+                        'reported_by'        => $existingViolation['reported_by'],
+                        'student_name'       => $studentName,
+                        'violation_type_name'=> $typeInfo[0]['name'] ?? 'this violation type',
+                    ]);
+                    exit;
+                }
             }
-            */
 
             // Check for duplicate violation (Double Submission Check - same exact details)
             $existingId = $this->model->checkDuplicateSubmission(
@@ -1190,6 +1212,26 @@ class ViolationController extends Controller
         try {
             $requests = $this->model->getSlipRequests();
             $this->json(['status' => 'success', 'data' => $requests]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get recent violations recorded by any staff — for the main admin notification modal.
+     * Returns the latest N violations across all recorders (officers, OSAS staff, etc.).
+     * Excludes violations recorded by the currently logged-in admin so they don't see their own.
+     */
+    private function get_recent_violations() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can view recent violations.', 403);
+        }
+        $limit = min(50, max(1, (int)($this->getGet('limit', 10))));
+        // Exclude violations recorded by the current user — they already know what they recorded
+        $excludeReportedBy = $_SESSION['full_name'] ?? $_SESSION['username'] ?? null;
+        try {
+            $violations = $this->model->getRecent($limit, null, null, $excludeReportedBy ?: null);
+            $this->json(['status' => 'success', 'data' => $violations, 'count' => count($violations)]);
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
         }
