@@ -164,7 +164,7 @@
     }
 
     function showEnableModal() {
-        if (!isInstalledPWA()) return;
+        // Show on both installed PWA and regular desktop browsers
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
@@ -174,9 +174,12 @@
         modal.id = 'eosas-push-modal';
 
         const title = document.createElement('h3');
-        title.textContent = 'Stay updated';
+        title.textContent = '🔔 Stay updated';
         const desc = document.createElement('p');
-        desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
+        const isDesktop = !isInstalledPWA();
+        desc.innerHTML = isDesktop
+            ? 'Enable <strong>browser notifications</strong> to receive violation alerts and important updates instantly. Click Enable, then <strong>Allow</strong> when your browser asks.'
+            : 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
 
         const btns = document.createElement('div');
         btns.className = 'eosas-push-btns';
@@ -193,17 +196,21 @@
             yes.textContent = 'Please wait…';
             try {
                 if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    toast('Use Chrome and install the app for alerts.', false);
+                    // Fallback: try basic Notification API without push subscription
+                    const perm = await requestNotificationPermission();
+                    if (perm === 'granted') {
+                        toast('Browser notifications enabled!', true);
+                        overlay.remove();
+                    } else {
+                        toast('Please allow notifications in your browser settings.', false);
+                    }
                     return;
                 }
                 const perm = await requestNotificationPermission();
                 if (perm !== 'granted') {
-                    toast(perm === 'denied'
-                        ? 'Blocked — enable in Settings → Apps → E-OSAS → Notifications'
-                        : 'Tap Allow on the next screen.', false);
+                    toast('Click Allow on the browser prompt to enable notifications.', false);
                     return;
                 }
-                // Always subscribe with 'full' scope so all notifications work
                 await subscribeAfterPermission('full');
                 toast('Notifications enabled — you\'ll receive all alerts.', true);
                 overlay.remove();
@@ -289,13 +296,24 @@
         return /dashboard\.php/i.test(location.pathname) && !isStudentApp();
     }
 
+    /** Returns true if the push prompt was recently dismissed (within 24h) */
+    function wasPushRecentlyDismissed() {
+        const ts = parseInt(localStorage.getItem('eosas_push_dismissed') || '0');
+        return ts && (Date.now() - ts) < 24 * 60 * 60 * 1000;
+    }
+
     async function initAdminPush() {
         if (!isAdminApp() || !('Notification' in window)) return;
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-        if (!isInstalledPWA()) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            // No push support — still try basic Notification permission on desktop
+            if (Notification.permission === 'default') {
+                setTimeout(() => showEnableModal(), 1500);
+            }
+            return;
+        }
 
         if (Notification.permission === 'granted') {
-            // Sync admin subscription
+            // Already granted — sync subscription silently
             try {
                 const sub = await getOrCreateSubscription();
                 await saveSubscription(sub, 'full');
@@ -304,7 +322,11 @@
             }
             return;
         }
-        setTimeout(() => showEnableModal(), 800);
+
+        // Not yet granted — show prompt every time (desktop or PWA)
+        if (Notification.permission !== 'denied') {
+            setTimeout(() => showEnableModal(), 1500);
+        }
     }
 
     function maybePromptForPush() {

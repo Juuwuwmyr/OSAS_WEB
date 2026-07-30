@@ -43,7 +43,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const resolvedPage = _isOfficerDefault && lastPage === 'admin_page/dashcontent'
         ? 'admin_page/Violations'
         : lastPage;
-    loadContent(resolvedPage);
+
+    // Handle push notification deep-link (?push_page=admin_page/Violations)
+    const _pushPage = new URLSearchParams(location.search).get('push_page');
+    loadContent(_pushPage || resolvedPage);
+
+    // Listen for SW PUSH_NAVIGATE messages (notification click while page is open)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (e) => {
+            if (e.data?.type === 'PUSH_NAVIGATE' && e.data.page && typeof loadContent === 'function') {
+                loadContent(e.data.page);
+            }
+        });
+    }
 
     // Set default active nav item
     if (!localStorage.getItem('lastPage')) {
