@@ -20,6 +20,27 @@ class ViolationController extends Controller
         $this->studentModel = new StudentModel();
         $this->reportModel = new ReportModel();
 
+        // Recovery Logic: Restore session from cookies if session expired
+        if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+            $_SESSION['user_id']   = $_COOKIE['user_id'];
+            $_SESSION['username']  = $_COOKIE['username'] ?? '';
+            $_SESSION['role']      = $_COOKIE['role'];
+            $_SESSION['full_name'] = $_COOKIE['full_name'] ?? ($_COOKIE['username'] ?? '');
+        }
+
+        // Recovery Logic: If full_name is missing but cookie exists, restore it
+        if (empty($_SESSION['full_name']) && !empty($_COOKIE['full_name'])) {
+            $_SESSION['full_name'] = $_COOKIE['full_name'];
+        }
+
+        // Recovery Logic: If full_name is still empty, fetch from database
+        if (empty($_SESSION['full_name']) && !empty($_SESSION['user_id'])) {
+            $userRes = $this->model->query("SELECT full_name, username FROM users WHERE id = ?", [$_SESSION['user_id']]);
+            if (!empty($userRes)) {
+                $_SESSION['full_name'] = $userRes[0]['full_name'] ?: $userRes[0]['username'];
+            }
+        }
+
         // Recovery Logic: If session is lost but cookies exist, restore student_id_code
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !isset($_SESSION['student_id_code'])) {
             $studentIdFromCookie = $_COOKIE['student_id_code'] ?? null;
@@ -243,6 +264,11 @@ class ViolationController extends Controller
         $reportedByFilter = '';
         $role = $_SESSION['role'] ?? '';
 
+        // When a specific student_id is requested (e.g. for offense level check in the record modal),
+        // Officers/CSC Officers are allowed to see all violations for that student so the
+        // "next offense" suggestion is based on complete history, not just what they recorded.
+        $forModal = $this->getGet('for_modal', '') === '1';
+
         if ($role === 'user') {
             // Regular students only see their own violations
             $studentId = $_SESSION['student_id_code'] ?? '';
@@ -250,8 +276,26 @@ class ViolationController extends Controller
                 $this->error('Student ID not found. Please login again.', '', 401);
             }
         } elseif (in_array($role, ['Officer', 'CSC Officer'])) {
-            // Officers and CSC Officers only see violations they recorded
-            $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+            if ($forModal && !empty($studentId)) {
+                // Allow full history fetch for offense-level check — no reported_by filter
+                $reportedByFilter = '';
+            } else {
+                // Normal table view: only show violations they recorded
+                $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+
+                // If full_name is still empty after session recovery, fall back to DB lookup
+                if (empty($reportedByFilter) && !empty($_SESSION['user_id'])) {
+                    $userRes = $this->model->query("SELECT full_name, username FROM users WHERE id = ?", [$_SESSION['user_id']]);
+                    if (!empty($userRes)) {
+                        $reportedByFilter = $userRes[0]['full_name'] ?: $userRes[0]['username'];
+                    }
+                }
+
+                // Safety: if we still can't identify who this officer is, block access
+                if (empty($reportedByFilter)) {
+                    $this->error('Unable to identify user. Please login again.', '', 401);
+                }
+            }
         }
         // admin, OSAS Staff, Faculty Member → no filter, see all violations
 
@@ -293,12 +337,7 @@ class ViolationController extends Controller
             $this->error('Invalid request method');
         }
 
-        // Restore session from cookies if session expired (handles offline sync after reconnect)
-        if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
-            $_SESSION['user_id'] = $_COOKIE['user_id'];
-            $_SESSION['username'] = $_COOKIE['username'] ?? '';
-            $_SESSION['role']    = $_COOKIE['role'];
-        }
+        // Session recovery is handled in the constructor, nothing extra needed here
 
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);

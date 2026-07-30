@@ -1761,8 +1761,37 @@ function initViolationsModule() {
             checkStudentViolationHistory();
         }
 
+        // Per-student full history cache for the record modal
+        // Keyed by studentId so we don't re-fetch on every type-card click
+        const _modalStudentHistoryCache = {};
+
+        /**
+         * Fetch the complete violation history for a student from the API.
+         * Officers/CSC Officers only have their own violations in the local `violations[]`
+         * array, so we must go to the server with for_modal=1 to get the full picture.
+         * Result is cached per studentId for the lifetime of the modal session.
+         */
+        async function fetchStudentHistory(studentId) {
+            if (_modalStudentHistoryCache[studentId]) {
+                return _modalStudentHistoryCache[studentId];
+            }
+            try {
+                const url = `${API_BASE}violations.php?student_id=${encodeURIComponent(studentId)}&for_modal=1&is_archived=0&limit=all`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const list = data.violations || data.data || [];
+                _modalStudentHistoryCache[studentId] = list;
+                return list;
+            } catch (err) {
+                console.warn('fetchStudentHistory failed, falling back to local cache:', err);
+                // Fallback to local violations array (works fine for admin/OSAS Staff/Faculty)
+                return violations.filter(v => v.studentId === studentId);
+            }
+        }
+
         // Check and highlight student's violation history
-        function checkStudentViolationHistory() {
+        async function checkStudentViolationHistory() {
             // 1. Get selected student ID
             const studentIdElement = document.getElementById('modalStudentId');
             if (!studentIdElement || !studentIdElement.textContent) return;
@@ -1780,34 +1809,53 @@ function initViolationsModule() {
             
             const violationTypeId = parseInt(violationTypeInput.value);
 
-            // 3. Filter violations for this student and type
-            // Include both synced and pending/offline violations for level progression
-            const studentHistory = violations.filter(v => 
-                v.studentId === studentId && 
-                (v.violationType == violationTypeId)
+            // 3. Fetch full student history (from API — bypasses role filter for modal use)
+            const allStudentViolations = await fetchStudentHistory(studentId);
+
+            // Also merge any local offline/pending violations for this student
+            const pendingLocal = violations.filter(v =>
+                v.studentId === studentId && String(v.id).startsWith('TEMP-')
             );
+            const merged = [
+                ...allStudentViolations,
+                ...pendingLocal.filter(p => !allStudentViolations.find(a => a.id === p.id))
+            ];
+
+            const studentHistory = merged.filter(v => v.violationType == violationTypeId);
             
-            console.log(`Found ${studentHistory.length} previous violations for student ${studentId} of type ${violationTypeId}`);
+            console.log(`Found ${studentHistory.length} violations for student ${studentId} of type ${violationTypeId} (full history)`);
 
             // 4. Update UI
             updateLevelSelectionBasedOnHistory(studentHistory);
         }
 
-        function updateViolationTypeBadges(studentId) {
+        async function updateViolationTypeBadges(studentId) {
             console.log('Updating violation type badges for student:', studentId);
             
             // 1. Clear existing badges
             document.querySelectorAll('.violation-type-badge-overlay').forEach(el => el.remove());
 
-            // 2. Iterate cards
+            // 2. Fetch full student history (from API — bypasses role filter for modal use)
+            const allStudentViolations = await fetchStudentHistory(studentId);
+
+            // Also merge any local offline/pending violations for this student
+            const pendingLocal = violations.filter(v =>
+                v.studentId === studentId && String(v.id).startsWith('TEMP-')
+            );
+            const fullHistory = [
+                ...allStudentViolations,
+                ...pendingLocal.filter(p => !allStudentViolations.find(a => a.id === p.id))
+            ];
+
+            // 3. Iterate cards
             document.querySelectorAll('.violation-type-card').forEach(card => {
                 const input = card.querySelector('input[name="violationType"]');
                 if (!input) return;
                 
                 const typeId = parseInt(input.value);
                 
-                // 3. Find history for this student and type
-                const history = violations.filter(v => 
+                // Find history for this student and type (from full API history)
+                const history = fullHistory.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
                 );
@@ -1923,6 +1971,11 @@ function initViolationsModule() {
                                 // Remove from local cache
                                 const idx = violations.findIndex(x => x.id == vid);
                                 if (idx !== -1) violations.splice(idx, 1);
+
+                                // Invalidate the modal history cache so next fetch is fresh
+                                if (_modalStudentHistoryCache[studentId]) {
+                                    delete _modalStudentHistoryCache[studentId];
+                                }
 
                                 showNotification(`"${levelLabel}" offense removed. Student is now at: ${stepBackTo}.`, 'success');
 
@@ -2361,8 +2414,14 @@ function initViolationsModule() {
 
                 renderViolations();
                 
-                // Explicitly update badges for the student if applicable
+                // Invalidate the modal history cache for this student so the next
+                // time they're searched, fresh data is fetched from the API
                 const sId = formData.get('studentId');
+                if (sId && _modalStudentHistoryCache[sId]) {
+                    delete _modalStudentHistoryCache[sId];
+                }
+
+                // Explicitly update badges for the student if applicable
                 if (sId) {
                     console.log('🔄 Force updating badges for student:', sId);
                     updateViolationTypeBadges(sId);
