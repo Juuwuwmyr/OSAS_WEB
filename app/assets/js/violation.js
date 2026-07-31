@@ -3868,6 +3868,12 @@ function initViolationsModule() {
             // Clear previous attachments selection
             selectedFiles = [];
             updateAttachmentPreviews();
+
+            // Re-attach handler if the file input was recreated (SPA navigation resets dataset)
+            const fileInputCheck = document.getElementById('violationAttachment');
+            if (fileInputCheck && fileInputCheck.dataset.attachHandlerReady !== 'true') {
+                setupAttachmentHandler();
+            }
             
             // Show/hide entrance slip button
             if (modalEntranceBtn) {
@@ -4598,6 +4604,10 @@ function initViolationsModule() {
             const form = document.getElementById('ViolationRecordForm');
             if (form) form.reset();
             setDefaultViolationLocation();
+
+            // Always clear attachment state on close so the next violation starts fresh
+            selectedFiles = [];
+            updateAttachmentPreviews();
             
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
@@ -6029,27 +6039,36 @@ function initViolationsModule() {
             const browseBtn   = document.getElementById('evidenceBrowseBtn');
             if (!fileInput) return;
 
-            // Browse button click
-            if (browseBtn) browseBtn.addEventListener('click', () => {
+            // Guard: only register handlers once per element lifecycle
+            if (fileInput.dataset.attachHandlerReady === 'true') return;
+            fileInput.dataset.attachHandlerReady = 'true';
+
+            function openPicker() {
                 if (!navigator.onLine) {
                     showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
                     return;
                 }
                 fileInput.click();
-            });
-            // Clicking anywhere on dropzone also opens file picker
-            if (dropzone) dropzone.addEventListener('click', e => {
-                if (e.target !== browseBtn) {
-                    if (!navigator.onLine) {
-                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
-                        return;
-                    }
-                    fileInput.click();
-                }
-            });
+            }
 
-            // Drag & drop
+            // Browse button — stop propagation so the dropzone click handler doesn't
+            // also fire and open the picker a second time
+            if (browseBtn) {
+                browseBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    openPicker();
+                });
+            }
+
+            // Clicking anywhere on dropzone (except the browse button) also opens picker
             if (dropzone) {
+                dropzone.addEventListener('click', e => {
+                    // Ignore if the click originated from the browse button or its children
+                    if (browseBtn && browseBtn.contains(e.target)) return;
+                    openPicker();
+                });
+
+                // Drag & drop
                 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
                 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
                 dropzone.addEventListener('drop', e => {
@@ -6069,17 +6088,26 @@ function initViolationsModule() {
                     this.value = '';
                     return;
                 }
-                addFiles(this.files);
+                if (this.files && this.files.length > 0) {
+                    addFiles(this.files);
+                }
+                // Reset value so the same file can be re-selected on the next violation
                 this.value = '';
             });
 
             function addFiles(files) {
+                let added = 0;
                 for (const file of files) {
-                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    // Skip truly empty entries (e.g. drag-drop ghost items)
+                    if (!file || file.size === 0) continue;
+                    // Dedup within the same selection only — allow same file on next violation
+                    // because selectedFiles is cleared in openRecordModal before each new record
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
                         selectedFiles.push(file);
+                        added++;
                     }
                 }
-                updateAttachmentPreviews();
+                if (added > 0) updateAttachmentPreviews();
             }
         }
 
