@@ -67,8 +67,8 @@ function initViolationsModule() {
                 return getInitialsAvatar(fallbackName);
             }
             
-            // If it's already a full URL (http/https or data:), return as-is
-            if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+            // If it's already a full URL (http/https, blob:, or data:), return as-is
+            if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:') || imagePath.startsWith('blob:')) {
                 return imagePath;
             }
             
@@ -2429,7 +2429,18 @@ function initViolationsModule() {
                         status: vStatus,
                         statusLabel: vStatus.charAt(0).toUpperCase() + vStatus.slice(1),
                         notes: vNotes,
-                        attachments: result.data?.attachments || [] // Use attachments from server response if available
+                        attachments: (result.data?.attachments && result.data.attachments.length > 0)
+                            ? result.data.attachments  // use server-returned paths (most reliable)
+                            : (() => {
+                                // Fallback: build local object URLs from the uploaded File objects
+                                // so the Evidence badge appears immediately without waiting for a reload.
+                                const files = [];
+                                if (formData) {
+                                    const raw = formData.getAll('attachments[]');
+                                    raw.forEach(f => { if (f instanceof File && f.size > 0) files.push(f); });
+                                }
+                                return files.map(f => URL.createObjectURL(f));
+                              })()
                     };
                     
                     // 5. Inject at the beginning (assuming desc sort)
@@ -4433,7 +4444,11 @@ function initViolationsModule() {
                     `}).join('');
 
                     // Click handler — Evidence badge opens lightbox directly (no popup)
-                    timelineEl.addEventListener('click', function(e) {
+                    // Remove previously-bound handler to prevent stacking on repeated modal opens
+                    if (timelineEl._evidenceClickHandler) {
+                        timelineEl.removeEventListener('click', timelineEl._evidenceClickHandler);
+                    }
+                    timelineEl._evidenceClickHandler = function(e) {
                         const badge = e.target.closest('.timeline-evidence-badge');
                         if (!badge) return;
 
@@ -4441,11 +4456,17 @@ function initViolationsModule() {
                         if (!item) return;
 
                         const vid = parseInt(item.dataset.vid);
-                        const clicked = violations.find(v => v.id === vid);
+                        // Use == (loose) to handle id being string or number
+                        const clicked = violations.find(v => v.id == vid);
                         if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
                         const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
-                        const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
+                        const imageAttachments = clicked.attachments.filter(f => {
+                            const s = String(f);
+                            // blob: object URLs are always images (we only create them from File objects)
+                            if (s.startsWith('blob:')) return true;
+                            return /\.(jpg|jpeg|png|gif|webp)$/i.test(s.split('/').pop());
+                        });
 
                         if (imageAttachments.length > 0) {
                             window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
@@ -4456,7 +4477,8 @@ function initViolationsModule() {
                             // Non-image file — open in new tab
                             window.open(getImageUrl(clicked.attachments[0]), '_blank');
                         }
-                    });
+                    };
+                    timelineEl.addEventListener('click', timelineEl._evidenceClickHandler);
                 } else {
                     timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">No history available.</p>';
                 }

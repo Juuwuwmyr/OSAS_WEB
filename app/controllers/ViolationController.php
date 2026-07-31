@@ -583,8 +583,9 @@ class ViolationController extends Controller
             }
 
             $this->success('Violation recorded successfully', [
-                'id'      => $id,
-                'case_id' => $caseId
+                'id'          => $id,
+                'case_id'     => $caseId,
+                'attachments' => $attachmentPaths   // return saved paths so JS can show Evidence badge immediately
             ]);
 
         } catch (Exception $e) {
