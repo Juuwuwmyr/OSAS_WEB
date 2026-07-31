@@ -3542,21 +3542,40 @@ function initViolationsModule() {
 
             // ── Helper: compute display status ──────────────────────────────
             function getDisplayStatus(v) {
-                // Rely entirely on the status from the database/API
-                let displayStatus = v.status;
-                let displayStatusLabel = v.statusLabel || v.status;
+                let displayStatus = v.status || 'warning';
+                let displayStatusLabel = v.statusLabel || '';
 
-                // Don't override pending status — keep "Pending Sync" for offline violations
-                if (displayStatus === 'pending') {
-                    return { displayStatus, displayStatusLabel: 'Pending Sync' };
+                // Offline / pending-sync item
+                if (displayStatus === 'pending' || String(v.id).startsWith('TEMP-')) {
+                    return { displayStatus: 'pending', displayStatusLabel: 'Pending Sync' };
                 }
-                
-                // Capitalize for label if no label provided
-                if (!v.statusLabel) {
+
+                // Capitalise label if not provided
+                if (!displayStatusLabel) {
                     displayStatusLabel = displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1);
                 }
 
                 return { displayStatus, displayStatusLabel };
+            }
+
+            // ── Helper: render a status badge pill ───────────────────────────
+            function statusBadgeHtml(displayStatus, displayStatusLabel, violationId) {
+                // Offline / not-yet-synced (TEMP- id means queued offline)
+                if (String(violationId || '').startsWith('TEMP-')) {
+                    return `<span class="Violations-status-badge pending syncing">
+                                <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Syncing…
+                            </span>`;
+                }
+                // Fully resolved
+                if (displayStatus === 'resolved') {
+                    return `<span class="Violations-status-badge resolved">
+                                <i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved
+                            </span>`;
+                }
+                // Everything else = still open/unresolved = Pending
+                return `<span class="Violations-status-badge pending">
+                            <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending
+                        </span>`;
             }
 
             // ── TABLE VIEW ──────────────────────────────────────────────────
@@ -3602,9 +3621,7 @@ function initViolationsModule() {
                         ${v.sanctionName
                             ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                             : ''}
-                        ${displayStatus === 'resolved'
-                            ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;margin-left:3px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                            : ''}
+                        ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                     </td>
                     <td data-label="Actions">
                         <div class="Violations-action-buttons">
@@ -3680,9 +3697,7 @@ function initViolationsModule() {
                                     ${v.sanctionName
                                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                                         : ''}
-                                    ${displayStatus === 'resolved'
-                                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                                        : ''}
+                                    ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                                 </div>
                                 <div class="violation-card-actions">
                                     ${isOfficerRole() ? '' : `
@@ -3748,9 +3763,7 @@ function initViolationsModule() {
                                 ${v.sanctionName
                                     ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                                     : ''}
-                                ${displayStatus === 'resolved'
-                                    ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                                    : ''}
+                                ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                                 <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
                                     <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.dateReported)}
                                 </span>
