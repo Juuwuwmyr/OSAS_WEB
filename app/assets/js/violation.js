@@ -7032,9 +7032,180 @@ function initViolationsModule() {
             }
         };
 
-        // Start initialization
-        initializeData();
-        
+        // ── REALTIME POLLING ──────────────────────────────────────────────────
+        // Polls a cheap endpoint every 15 s (when online) and silently refreshes
+        // the table only when a new violation has actually been recorded by
+        // another user.  No full-page reload — just re-fetches & re-renders.
+        (function startViolationsRealtimePoll() {
+            const POLL_INTERVAL_MS  = 15000; // 15 s
+            const STORAGE_SNAP_KEY  = 'violations_rt_snapshot';
+
+            let _pollTimer    = null;
+            let _lastKnownId  = 0;
+            let _isRefreshing = false;
+
+            // Load the snapshot written by a previous session so we don't
+            // immediately fire a "new violation" alert on first visit.
+            try {
+                const saved = JSON.parse(sessionStorage.getItem(STORAGE_SNAP_KEY) || '{}');
+                if (saved.latestId) _lastKnownId = Number(saved.latestId);
+            } catch (_) { /* ignore */ }
+
+            function saveSnap(id) {
+                try {
+                    sessionStorage.setItem(STORAGE_SNAP_KEY, JSON.stringify({ latestId: id }));
+                } catch (_) { /* ignore */ }
+            }
+
+            // Show a non-intrusive "new violation" toast with a one-click refresh
+            function showNewViolationToast(reportedBy, caseId) {
+                // Avoid stacking duplicate toasts
+                if (document.getElementById('rt-new-violation-toast')) return;
+
+                const toast = document.createElement('div');
+                toast.id = 'rt-new-violation-toast';
+                toast.style.cssText = [
+                    'position:fixed', 'bottom:24px', 'right:24px', 'z-index:99999',
+                    'background:#1e2029', 'color:#fff', 'border-left:4px solid #f59e0b',
+                    'border-radius:10px', 'padding:14px 18px', 'min-width:270px',
+                    'box-shadow:0 6px 24px rgba(0,0,0,.35)', 'font-size:13px',
+                    'display:flex', 'align-items:center', 'gap:12px',
+                    'animation:rtSlideIn .3s ease', 'cursor:pointer'
+                ].join(';');
+
+                toast.innerHTML = `
+                    <i class='bx bx-bell-ring' style="font-size:22px;color:#f59e0b;flex-shrink:0;"></i>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;margin-bottom:3px;">New violation recorded</div>
+                        <div style="font-size:11px;color:#aaa;">
+                            ${reportedBy ? 'By <b style="color:#eee;">' + reportedBy + '</b>' : ''}
+                            ${caseId ? ' &bull; Case <b style="color:#f59e0b;">' + caseId + '</b>' : ''}
+                        </div>
+                    </div>
+                    <button id="rt-dismiss-toast" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;" title="Dismiss">&times;</button>
+                `;
+
+                // Inject the slide-in keyframes once
+                if (!document.getElementById('rt-toast-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'rt-toast-style';
+                    style.textContent = `
+                        @keyframes rtSlideIn {
+                            from { transform: translateX(110%); opacity: 0; }
+                            to   { transform: translateX(0);    opacity: 1; }
+                        }
+                        @keyframes rtSlideOut {
+                            from { transform: translateX(0);    opacity: 1; }
+                            to   { transform: translateX(110%); opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                function dismissToast() {
+                    toast.style.animation = 'rtSlideOut .25s ease forwards';
+                    setTimeout(() => toast.remove(), 260);
+                }
+
+                toast.addEventListener('click', async (e) => {
+                    if (e.target.id === 'rt-dismiss-toast') { dismissToast(); return; }
+                    dismissToast();
+                });
+
+                document.body.appendChild(toast);
+                // Auto-dismiss after 12 s
+                setTimeout(dismissToast, 12000);
+            }
+
+            async function poll() {
+                if (!navigator.onLine) return;               // skip when offline
+                if (_isRefreshing) return;                   // avoid overlapping
+
+                // Stop if the module DOM is gone (navigated away)
+                if (!document.getElementById('ViolationsTableBody')) { stopPoll(); return; }
+
+                try {
+                    const res  = await fetch(API_BASE + 'violations.php?action=poll_latest&t=' + Date.now(), {
+                        credentials: 'same-origin',
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.status !== 'success') return;
+
+                    const incomingId = Number(data.latest_id || 0);
+
+                    // Very first successful poll — set baseline, no alert
+                    if (_lastKnownId === 0) {
+                        _lastKnownId = incomingId;
+                        saveSnap(_lastKnownId);
+                        return;
+                    }
+
+                    if (incomingId > _lastKnownId) {
+                        console.log(`🔔 [realtime] New violation: id ${_lastKnownId} → ${incomingId}`);
+                        _lastKnownId = incomingId;
+                        saveSnap(_lastKnownId);
+
+                        // Silently reload + re-render
+                        _isRefreshing = true;
+                        try {
+                            await loadViolations(false);
+                            currentPage = 1;
+                            renderViolations();
+                            updateStats();
+                        } finally {
+                            _isRefreshing = false;
+                        }
+
+                        // Toast notification
+                        showNewViolationToast(data.latest_reported_by, data.latest_case_id);
+
+                        // Immediately bump the admin notification badge count
+                        if (typeof window.updateNotificationCount === 'function') {
+                            window.updateNotificationCount();
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[realtime violations poll]', err.message);
+                }
+            }
+
+            function onVisible() {
+                if (document.visibilityState === 'visible') poll();
+            }
+
+            function startPoll() {
+                if (_pollTimer) return;
+                _pollTimer = setInterval(poll, POLL_INTERVAL_MS);
+                document.addEventListener('visibilitychange', onVisible);
+            }
+
+            function stopPoll() {
+                if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+                document.removeEventListener('visibilitychange', onVisible);
+            }
+
+            // Baseline the last known ID from the violations already loaded, then start
+            function baselineAndStart() {
+                const top = violations.length > 0
+                    ? Math.max(...violations.map(v => Number(v.id) || 0))
+                    : 0;
+                if (_lastKnownId === 0 && top > 0) {
+                    _lastKnownId = top;
+                    saveSnap(_lastKnownId);
+                }
+                startPoll();
+            }
+
+            // Expose for debugging
+            window._violationsStopRTPoll  = stopPoll;
+            window._violationsStartRTPoll = startPoll;
+
+            // Start initialization, then baseline + begin polling
+            initializeData().then(baselineAndStart).catch(baselineAndStart);
+        })();
+
     } catch (error) {
         console.error('❌ Error initializing violations module:', error);
     }

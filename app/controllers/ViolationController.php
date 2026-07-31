@@ -192,6 +192,16 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'poll_latest') {
+            $this->poll_latest();
+            return;
+        }
+
+        if ($action === 'poll_counts') {
+            $this->poll_counts();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -1257,11 +1267,103 @@ class ViolationController extends Controller
     }
 
     /**
-     * Get recent violations recorded by any staff — for the main admin notification modal.
+     * Lightweight count-only poll for the admin notification badge.
+     * Returns disciplinary count + pending slip requests + unseen recent violations
+     * in ONE cheap round-trip so the badge can stay up-to-date without the full
+     * fetchNotifications() overhead.
+     */
+    private function poll_counts() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', '', 403);
+        }
+
+        try {
+            // 1. Disciplinary violations (status = 'disciplinary', not archived)
+            $disciplinaryRows = $this->model->query(
+                "SELECT COUNT(*) AS cnt FROM violations WHERE status = 'disciplinary' AND is_archived = 0",
+                []
+            );
+            $disciplinaryCount = (int)($disciplinaryRows[0]['cnt'] ?? 0);
+
+            // 2. Pending slip requests
+            $slipRows = $this->model->query(
+                "SELECT COUNT(*) AS cnt FROM slip_requests WHERE status = 'pending'",
+                []
+            );
+            $slipCount = (int)($slipRows[0]['cnt'] ?? 0);
+
+            // 3. Latest violation id (excluding own) so JS can detect new violations quickly
+            $excludeName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? null;
+            $latestRows  = empty($excludeName)
+                ? $this->model->query("SELECT id, reported_by FROM violations WHERE is_archived = 0 ORDER BY id DESC LIMIT 1", [])
+                : $this->model->query("SELECT id, reported_by FROM violations WHERE is_archived = 0 AND reported_by != ? ORDER BY id DESC LIMIT 1", [$excludeName]);
+
+            $latestId         = !empty($latestRows) ? (int)$latestRows[0]['id'] : 0;
+            $latestReportedBy = !empty($latestRows) ? ($latestRows[0]['reported_by'] ?? '') : '';
+
+            $this->json([
+                'status'             => 'success',
+                'disciplinary_count' => $disciplinaryCount,
+                'slip_count'         => $slipCount,
+                'latest_violation_id'=> $latestId,
+                'latest_reported_by' => $latestReportedBy,
+            ]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Returns the latest N violations across all recorders (officers, OSAS staff, etc.).
      * Excludes violations recorded by the currently logged-in admin so they don't see their own.
      */
-    private function get_recent_violations() {
+    private function poll_latest() {
+        // Any authenticated admin-side role can poll
+        $allowedRoles = ['admin', 'OSAS Staff', 'Faculty Member', 'Officer', 'CSC Officer'];
+        if (!in_array($_SESSION['role'] ?? '', $allowedRoles)) {
+            $this->error('Access denied', '', 403);
+        }
+
+        try {
+            // Return just the latest violation row (id + created_at + reported_by + case_id)
+            // cheap query — no JOINs needed
+            $role             = $_SESSION['role'] ?? '';
+            $reportedByFilter = '';
+
+            // Officers/CSC Officers only see their own violations in the table
+            // so we must check their own latest record, not the global latest
+            if (in_array($role, ['Officer', 'CSC Officer'])) {
+                $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+            }
+
+            $whereClause = 'WHERE is_archived = 0';
+            $params      = [];
+
+            if (!empty($reportedByFilter)) {
+                $whereClause .= ' AND reported_by = ?';
+                $params[]     = $reportedByFilter;
+            }
+
+            $rows = $this->model->query(
+                "SELECT id, case_id, created_at, reported_by FROM violations {$whereClause} ORDER BY id DESC LIMIT 1",
+                $params
+            );
+
+            $latest = $rows[0] ?? null;
+
+            $this->json([
+                'status' => 'success',
+                'latest_id'         => $latest ? (int)$latest['id']         : 0,
+                'latest_case_id'    => $latest ? $latest['case_id']          : null,
+                'latest_created_at' => $latest ? $latest['created_at']       : null,
+                'latest_reported_by'=> $latest ? $latest['reported_by']      : null,
+            ]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
         if (($_SESSION['role'] ?? '') !== 'admin') {
             $this->error('Access denied', 'Only Administrators can view recent violations.', 403);
         }

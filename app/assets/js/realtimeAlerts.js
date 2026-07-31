@@ -83,14 +83,20 @@
                 });
                 // Initial badge count from unread violations
                 _updateBadgeFromViolations(violations);
+                // Kick the admin badge too
+                if (typeof window.updateNotificationCount === 'function') {
+                    window.updateNotificationCount();
+                }
                 return;
             }
 
             let newCount = 0;
+            let somethingChanged = false;
 
             if (latestV && String(latestV.id) !== String(snap.lastViolationId)) {
                 const isNew = !snap.lastViolationId || Number(latestV.id) > Number(snap.lastViolationId);
                 if (isNew) {
+                    somethingChanged = true;
                     // For admins, always notify about new violations (no is_read filter needed)
                     // For students, only notify if unread
                     const isAdmin = document.getElementById('notifBtn') && !document.getElementById('notificationBtn');
@@ -108,10 +114,6 @@
                             'violation-' + latestV.id
                         );
                         newCount++;
-                        // Also refresh the admin notification modal badge
-                        if (isAdmin && typeof window.updateNotificationCount === 'function') {
-                            window.updateNotificationCount();
-                        }
                     }
                 }
                 snap.lastViolationId = latestV.id;
@@ -120,6 +122,7 @@
             if (latestA && String(latestA.id) !== String(snap.lastAnnouncementId)) {
             const isNew = !snap.lastAnnouncementId || Number(latestA.id) > Number(snap.lastAnnouncementId);
             if (isNew) {
+                somethingChanged = true;
                 notifyUser(
                     'New Announcement',
                     latestA.title || 'New campus update posted',
@@ -144,7 +147,12 @@
 
             saveSnapshot(snap);
 
-            // Always silently update the badge count
+            // Immediately refresh the admin badge whenever something changed
+            if (somethingChanged && typeof window.updateNotificationCount === 'function') {
+                window.updateNotificationCount();
+            }
+
+            // Always silently update the student badge count
             if (typeof window.refreshNotificationBadge === 'function') {
                 window.refreshNotificationBadge();
             } else {
