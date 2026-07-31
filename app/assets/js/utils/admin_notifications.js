@@ -59,28 +59,18 @@
             const data = await fetchCounts();
             if (data.status !== 'success') return;
 
-            // Seen-IDs: admins mark recent violations "seen" when they open the modal
-            const snap         = loadSnap();
-            const seenIds      = new Set(snap.seenRecentIds || []);
-            const latestId     = Number(data.latest_violation_id || 0);
-            const isNewViolation = latestId > 0 && !seenIds.has(latestId);
-
-            // Total = disciplinary violations + pending slips + 1 if there's a new unseen violation
-            const total = (data.disciplinary_count || 0)
-                        + (data.slip_count || 0)
-                        + (isNewViolation ? 1 : 0);
+            // Badge = unresolved violations + pending slip requests
+            // This is purely server-driven — no client-side seen/unseen tracking
+            const total = (data.unresolved_count || 0) + (data.slip_count || 0);
 
             setBadge(total);
 
-            // If a new violation appeared, nudge the dropdown to refresh if it's open
-            if (isNewViolation) {
-                const modal = document.getElementById('notifModal');
-                if (modal && modal.classList.contains('show')) {
-                    _fetchAndRenderList();
-                }
+            // If modal is open, keep its list fresh
+            const modal = document.getElementById('notifModal');
+            if (modal && modal.classList.contains('show')) {
+                _fetchAndRenderList();
             }
         } catch (err) {
-            // Silently ignore network errors — will retry next interval
             console.warn('[admin_notifications] badge update:', err.message);
         }
     }
@@ -151,30 +141,33 @@
                 });
             }
 
-            // ── Recent violations by other staff ──────────────────────────────
+            // ── Recent violations (own + others) ─────────────────────────────
             if (recentRes.status === 'success' && Array.isArray(recentRes.data)) {
-                // Mark all as seen so badge count resets after opening modal
-                const seenIds = recentRes.data.map(v => Number(v.id));
-                const snap    = loadSnap();
-                snap.seenRecentIds = seenIds;
-                saveSnap(snap);
-
                 const disciplinaryIds = new Set(
                     disciplinaryRes.status === 'success' && Array.isArray(disciplinaryRes.data)
                         ? disciplinaryRes.data.map(v => String(v.id))
                         : []
                 );
 
+                // Detect current user's name from cookie for "You recorded" labelling
+                const currentName = decodeURIComponent(
+                    (document.cookie.split(';').find(c => c.trim().startsWith('full_name=')) || '').split('=').slice(1).join('=').trim()
+                );
+
                 recentRes.data.forEach(v => {
-                    if (disciplinaryIds.has(String(v.id))) return; // avoid dup
+                    if (disciplinaryIds.has(String(v.id))) return; // avoid dup with disciplinary section
                     const studentName = (v.studentName
                         || [v.first_name, v.middle_name, v.last_name].filter(Boolean).join(' ')
                         || 'Unknown Student').trim();
-                    const recorder = v.reported_by || v.recorded_by || v.created_by || '';
+                    const recorder  = v.reported_by || v.recorded_by || v.created_by || '';
+                    const isOwn     = currentName && recorder && currentName === recorder;
+                    const desc      = isOwn
+                        ? 'You recorded this violation'
+                        : ('Recorded by ' + (recorder || 'staff'));
                     notifications.push({
-                        type:          'recent_violation',
+                        type:          isOwn ? 'own_violation' : 'recent_violation',
                         name:          studentName,
-                        desc:          'New violation recorded' + (recorder ? ' by ' + recorder : ''),
+                        desc,
                         violationType: v.violation_type_name || v.violation_type || '',
                         date:          v.dateReported || v.violation_date || v.created_at || '',
                         studentId:     v.studentId || v.student_id || '',
@@ -189,9 +182,6 @@
             } else {
                 _renderItems(notifications);
             }
-
-            // Refresh badge now that modal is open (recent violations are now "seen")
-            updateBadge();
 
         } catch (err) {
             console.error('[admin_notifications] fetchList:', err);
@@ -222,12 +212,15 @@
             } else if (notif.type === 'disciplinary') {
                 actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">Manage</button>`;
                 badgeHtml = '<span class="notif-badge-tag disciplinary"><i class="bx bx-shield-x"></i> Disciplinary</span>';
+            } else if (notif.type === 'own_violation') {
+                actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">View</button>`;
+                badgeHtml = '<span class="notif-badge-tag own-violation"><i class="bx bx-user-check"></i> You</span>';
             } else if (notif.type === 'recent_violation') {
                 actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">View</button>`;
                 badgeHtml = '<span class="notif-badge-tag recent-violation"><i class="bx bx-error-circle"></i> New</span>';
             }
 
-            const descText = notif.type === 'recent_violation' && notif.violationType
+            const descText = (notif.type === 'recent_violation' || notif.type === 'own_violation') && notif.violationType
                 ? `${notif.desc} — <em>${notif.violationType}</em> ${badgeHtml}`
                 : `${notif.desc} ${badgeHtml}`;
 

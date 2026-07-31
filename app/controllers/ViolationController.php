@@ -1278,12 +1278,12 @@ class ViolationController extends Controller
         }
 
         try {
-            // 1. Disciplinary violations (status = 'disciplinary', not archived)
-            $disciplinaryRows = $this->model->query(
-                "SELECT COUNT(*) AS cnt FROM violations WHERE status = 'disciplinary' AND is_archived = 0",
+            // 1. Unresolved violations (anything not resolved and not archived)
+            $unresolvedRows = $this->model->query(
+                "SELECT COUNT(*) AS cnt FROM violations WHERE status != 'resolved' AND is_archived = 0",
                 []
             );
-            $disciplinaryCount = (int)($disciplinaryRows[0]['cnt'] ?? 0);
+            $unresolvedCount = (int)($unresolvedRows[0]['cnt'] ?? 0);
 
             // 2. Pending slip requests
             $slipRows = $this->model->query(
@@ -1292,21 +1292,20 @@ class ViolationController extends Controller
             );
             $slipCount = (int)($slipRows[0]['cnt'] ?? 0);
 
-            // 3. Latest violation id (excluding own) so JS can detect new violations quickly
-            $excludeName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? null;
-            $latestRows  = empty($excludeName)
-                ? $this->model->query("SELECT id, reported_by FROM violations WHERE is_archived = 0 ORDER BY id DESC LIMIT 1", [])
-                : $this->model->query("SELECT id, reported_by FROM violations WHERE is_archived = 0 AND reported_by != ? ORDER BY id DESC LIMIT 1", [$excludeName]);
-
+            // 3. Latest violation id for change-detection in violation.js realtime poll
+            $latestRows = $this->model->query(
+                "SELECT id, reported_by FROM violations WHERE is_archived = 0 ORDER BY id DESC LIMIT 1",
+                []
+            );
             $latestId         = !empty($latestRows) ? (int)$latestRows[0]['id'] : 0;
             $latestReportedBy = !empty($latestRows) ? ($latestRows[0]['reported_by'] ?? '') : '';
 
             $this->json([
-                'status'             => 'success',
-                'disciplinary_count' => $disciplinaryCount,
-                'slip_count'         => $slipCount,
-                'latest_violation_id'=> $latestId,
-                'latest_reported_by' => $latestReportedBy,
+                'status'           => 'success',
+                'unresolved_count' => $unresolvedCount,
+                'slip_count'       => $slipCount,
+                'latest_violation_id' => $latestId,
+                'latest_reported_by'  => $latestReportedBy,
             ]);
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
@@ -1364,14 +1363,16 @@ class ViolationController extends Controller
     }
 
     /**
+     * Get recent violations (own + others) for the admin notification modal.
+     */
+    private function get_recent_violations() {
         if (($_SESSION['role'] ?? '') !== 'admin') {
             $this->error('Access denied', 'Only Administrators can view recent violations.', 403);
         }
         $limit = min(50, max(1, (int)($this->getGet('limit', 10))));
-        // Exclude violations recorded by the current user — they already know what they recorded
-        $excludeReportedBy = $_SESSION['full_name'] ?? $_SESSION['username'] ?? null;
+        // Include ALL violations — own and others — so the modal shows a full picture
         try {
-            $violations = $this->model->getRecent($limit, null, null, $excludeReportedBy ?: null);
+            $violations = $this->model->getRecent($limit, null, null, null);
             $this->json(['status' => 'success', 'data' => $violations, 'count' => count($violations)]);
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());

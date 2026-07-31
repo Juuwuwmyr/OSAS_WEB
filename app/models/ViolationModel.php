@@ -1128,9 +1128,10 @@ class ViolationModel extends Model {
             $types .= "s";
         }
 
-        if (!empty($conditions)) {
-            $query .= " WHERE " . implode(" AND ", $conditions);
-        }
+        // Always exclude archived violations
+        $conditions[] = "v.is_archived = 0";
+
+        $query .= " WHERE " . implode(" AND ", $conditions);
         
         $query .= " ORDER BY v.created_at DESC LIMIT ?";
         $params[] = $limit;
