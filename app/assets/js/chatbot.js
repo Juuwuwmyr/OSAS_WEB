@@ -1600,6 +1600,39 @@ HOW-TO FOR ADMINS:
             cleanText = cleanText.replace(block, '');
         });
 
+        // 1b. Also catch unfenced inline JSON action objects that the AI sometimes
+        //     outputs without code fences, e.g.:
+        //       Download Report:
+        //       {"action": "export_pdf", "params": {"module": "violations"}}
+        //     Match any standalone JSON object on its own line that has an "action" key.
+        const inlineJsonRegex = /(\{[^{}]*"action"\s*:\s*"[^"]+?"[^{}]*\})/g;
+        let inlineMatch;
+        while ((inlineMatch = inlineJsonRegex.exec(cleanText)) !== null) {
+            try {
+                const actionData = JSON.parse(inlineMatch[1]);
+                if (actionData.action) {
+                    actions.push(actionData);
+                    // Remove the raw JSON from the displayed text, plus any
+                    // preceding label line like "Download Report:" on the same/prev line
+                    cleanText = cleanText.replace(
+                        /[^\n]*(?:Download Report|Action|Export)[^\n]*\n?\s*/.exec(
+                            cleanText.substring(0, inlineMatch.index)
+                        )?.[0] || '',
+                        ''
+                    );
+                    cleanText = cleanText.replace(inlineMatch[1], '');
+                    console.log('🤖 Extracted inline action (unfenced):', actionData);
+                }
+            } catch (e) {
+                // Not valid JSON — strip it from display anyway
+                cleanText = cleanText.replace(inlineMatch[1], '');
+                console.warn('Inline JSON not valid action:', e);
+            }
+        }
+
+        // Also strip any leftover "Download Report:" label lines that had inline JSON removed
+        cleanText = cleanText.replace(/\*?\*?Download Report\*?\*?\s*:\s*\n?/gi, '');
+
         // 3. Guard: filter out export_pdf unless the user's own message explicitly
         //    requested a download / export / report.  This prevents the AI from
         //    triggering a report download when answering casual or essay questions.
