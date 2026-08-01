@@ -906,7 +906,7 @@ function viewViolationDetails(id) {
     // --- History Timeline (Match Admin Deduplication) ---
     const timelineEl = document.getElementById('detailTimeline');
     if (timelineEl) {
-        let studentHistory = [...userViolations];
+        let studentHistory = [...allUserViolations];
         
         // Deduplicate history for timeline
         const seenHistory = new Set();
@@ -954,6 +954,7 @@ function viewViolationDetails(id) {
                 const activeClass = isCurrent ? 'current-viewing' : '';
                 const hDateStr = formatDate(hDate);
                 const hTimeStr = formatTime(hTime);
+                const hasEvidence = h.attachments && h.attachments.length > 0;
                 
                 let itemStatus = (h.status || '').toLowerCase();
                 const hlLabel = hLevel.toLowerCase();
@@ -975,6 +976,7 @@ function viewViolationDetails(id) {
                         <span class="timeline-title">
                             ${hLevel} - ${formatViolationType(hType)}
                             ${isCurrent ? '<span style="font-size: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Current</span>' : ''}
+                            ${hasEvidence ? `<button type="button" class="timeline-evidence-badge" data-vid="${h.id}" title="View evidence"><i class='bx bx-image-alt'></i> Evidence (${h.attachments.length})</button>` : ''}
                         </span>
                         <span class="timeline-desc">
                             Reported at ${hLoc} 
@@ -983,6 +985,28 @@ function viewViolationDetails(id) {
                     </div>
                 </div>
             `}).join('');
+
+            // Evidence badge click → open lightbox
+            if (timelineEl._uvEvidenceHandler) {
+                timelineEl.removeEventListener('click', timelineEl._uvEvidenceHandler);
+            }
+            timelineEl._uvEvidenceHandler = function(e) {
+                const badge = e.target.closest('.timeline-evidence-badge');
+                if (!badge) return;
+                const vid = parseInt(badge.dataset.vid);
+                const clicked = allUserViolations.find(x => x.id == vid);
+                if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
+
+                const label = `${clicked.violation_level_name || clicked.violationLevelLabel || ''} — ${formatViolationType(clicked.violation_type_name || clicked.violationTypeLabel || '')} · ${formatDate(clicked.created_at || clicked.violation_date)}`;
+                const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(String(f)));
+
+                if (imageAttachments.length > 0) {
+                    openUvLightbox(imageAttachments.map(f => getImageUrl(f)), label);
+                } else {
+                    window.open(getImageUrl(clicked.attachments[0]), '_blank');
+                }
+            };
+            timelineEl.addEventListener('click', timelineEl._uvEvidenceHandler);
         } else {
             timelineEl.innerHTML = '<p style="color: #6c757d; font-size: 14px; text-align: center; padding: 10px;">No history available.</p>';
         }
@@ -1014,6 +1038,87 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+/*********************************************************
+ * EVIDENCE LIGHTBOX (student side)
+ *********************************************************/
+function openUvLightbox(images, label) {
+    // Remove any existing lightbox
+    const existing = document.getElementById('uvLightboxOverlay');
+    if (existing) existing.remove();
+
+    let idx = 0;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'uvLightboxOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+    `;
+
+    const close = () => overlay.remove();
+
+    // Close on backdrop click
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'width:100%;max-width:860px;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;';
+    header.innerHTML = `
+        <span style="color:#d4af37;font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label || 'Evidence'}</span>
+        <span style="color:#aaa;font-size:12px;margin:0 12px;" id="uvLbCounter">${idx + 1} / ${images.length}</span>
+        <button style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;" title="Close">&times;</button>
+    `;
+    header.querySelector('button').addEventListener('click', close);
+
+    // Image
+    const imgWrap = document.createElement('div');
+    imgWrap.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:center;width:100%;padding:0 48px;box-sizing:border-box;';
+    const img = document.createElement('img');
+    img.style.cssText = 'max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain;';
+    img.src = images[idx];
+    imgWrap.appendChild(img);
+
+    // Prev / Next
+    const makeNav = (dir) => {
+        const btn = document.createElement('button');
+        btn.style.cssText = `
+            position:absolute;top:50%;transform:translateY(-50%);
+            ${dir === 'prev' ? 'left:8px' : 'right:8px'};
+            background:rgba(255,255,255,0.12);border:none;color:#fff;
+            font-size:28px;border-radius:50%;width:44px;height:44px;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+        `;
+        btn.innerHTML = dir === 'prev' ? '&#8249;' : '&#8250;';
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            idx = dir === 'prev' ? (idx - 1 + images.length) % images.length : (idx + 1) % images.length;
+            img.src = images[idx];
+            overlay.querySelector('#uvLbCounter').textContent = `${idx + 1} / ${images.length}`;
+        });
+        return btn;
+    };
+
+    overlay.style.position = 'fixed';
+    overlay.appendChild(header);
+    overlay.appendChild(imgWrap);
+
+    if (images.length > 1) {
+        overlay.appendChild(makeNav('prev'));
+        overlay.appendChild(makeNav('next'));
+    }
+
+    // Keyboard nav
+    const onKey = e => {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+        if (e.key === 'ArrowLeft' && images.length > 1) { idx = (idx - 1 + images.length) % images.length; img.src = images[idx]; overlay.querySelector('#uvLbCounter').textContent = `${idx + 1} / ${images.length}`; }
+        if (e.key === 'ArrowRight' && images.length > 1) { idx = (idx + 1) % images.length; img.src = images[idx]; overlay.querySelector('#uvLbCounter').textContent = `${idx + 1} / ${images.length}`; }
+    };
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
+
+    document.body.appendChild(overlay);
+}
 
 // Global state for download context
 window.downloadContext = 'violations'; // 'violations' or 'dashboard'
