@@ -4397,7 +4397,22 @@ function initViolationsModule() {
                 // Fetch complete student history from the API so attachments are always present.
                 // The local `violations` array is only the current table view (filtered/paginated),
                 // so it may be missing violations — and their attachments — for this student.
-                let studentHistory = await fetchStudentHistory(violation.studentId);
+                // IMPORTANT: bypass the _modalStudentHistoryCache here — the cache may be stale
+                // (populated before the violation was saved, missing the new attachments).
+                // Always fetch fresh from the API for the details modal.
+                let studentHistory;
+                try {
+                    const url = `${API_BASE}violations.php?student_id=${encodeURIComponent(violation.studentId)}&for_modal=1&is_archived=0&limit=all`;
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const data = await res.json();
+                    studentHistory = data.violations || data.data || [];
+                    // Update the cache with fresh data now that we have it
+                    _modalStudentHistoryCache[violation.studentId] = studentHistory;
+                } catch (err) {
+                    console.warn('openDetailsModal: failed to fetch fresh history, falling back:', err);
+                    studentHistory = violations.filter(v => v.studentId === violation.studentId);
+                }
 
                 // Merge any locally-injected violations (e.g. just-recorded, not yet in API cache)
                 // so freshly recorded violations with blob: attachment URLs appear immediately.
