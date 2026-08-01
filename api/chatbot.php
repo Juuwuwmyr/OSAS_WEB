@@ -122,6 +122,7 @@ RESPONSE RULES
    WHEN TO APPEND A SIGNAL:
    - ONLY when the user EXPLICITLY commands: "download", "export", "generate report", "give me a report", "record violation for [name]", etc.
    - NEVER for essays, casual chat, how-to questions, "what is", "can you", or any non-command message.
+   - NEVER leak the signal JSON in your visible reply text. It must ONLY appear inside the fenced code block at the very end.
 
    FORMAT (append silently at the very end, after your full reply):
    ```json

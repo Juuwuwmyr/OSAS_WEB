@@ -1633,6 +1633,13 @@ HOW-TO FOR ADMINS:
         // Also strip any leftover "Download Report:" label lines that had inline JSON removed
         cleanText = cleanText.replace(/\*?\*?Download Report\*?\*?\s*:\s*\n?/gi, '');
 
+        // FINAL SAFETY NET: strip ANY remaining bare JSON action objects from display
+        // This catches cases where the AI leaks JSON on casual conversation too.
+        // We do this AFTER action extraction so legitimate actions are still processed.
+        cleanText = cleanText.replace(/\{[^{}]*"action"\s*:\s*"[^"]+?"[^{}]*\}/g, '');
+        // Also strip any orphaned label lines like "Download Report:" with nothing after
+        cleanText = cleanText.replace(/^[^\n]*(?:Download Report|Export Report|Action Signal)[^\n]*:\s*$/gmi, '');
+
         // 3. Guard: filter out export_pdf unless the user's own message explicitly
         //    requested a download / export / report.  This prevents the AI from
         //    triggering a report download when answering casual or essay questions.
