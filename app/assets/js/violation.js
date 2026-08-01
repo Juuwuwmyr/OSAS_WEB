@@ -4173,7 +4173,7 @@ function initViolationsModule() {
             }, 150);
         }
 
-        function openDetailsModal(violationId) {
+        async function openDetailsModal(violationId) {
             console.log('📖 openDetailsModal called with ID:', violationId);
             if (!detailsModal) {
                 console.error('❌ Details modal element (#ViolationDetailsModal) not found!');
@@ -4391,9 +4391,24 @@ function initViolationsModule() {
             // Populate timeline
             const timelineEl = document.getElementById('detailTimeline');
             if (timelineEl) {
-                // Filter violations for this student
-                let studentHistory = violations.filter(v => v.studentId === violation.studentId);
-                
+                // Show a loading state while we fetch fresh data from the API
+                timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">Loading history...</p>';
+
+                // Fetch complete student history from the API so attachments are always present.
+                // The local `violations` array is only the current table view (filtered/paginated),
+                // so it may be missing violations — and their attachments — for this student.
+                let studentHistory = await fetchStudentHistory(violation.studentId);
+
+                // Merge any locally-injected violations (e.g. just-recorded, not yet in API cache)
+                // so freshly recorded violations with blob: attachment URLs appear immediately.
+                const localOnly = violations.filter(lv =>
+                    lv.studentId === violation.studentId &&
+                    !studentHistory.some(sv => sv.id == lv.id)
+                );
+                if (localOnly.length > 0) {
+                    studentHistory = [...localOnly, ...studentHistory];
+                }
+
                 // Deduplicate history for timeline
                 const seenHistory = new Set();
                 studentHistory = studentHistory.filter(v => {
@@ -4462,8 +4477,9 @@ function initViolationsModule() {
                         if (!item) return;
 
                         const vid = parseInt(item.dataset.vid);
-                        // Use == (loose) to handle id being string or number
-                        const clicked = violations.find(v => v.id == vid);
+                        // Look up from the fresh studentHistory first (has server attachments),
+                        // fall back to local violations array for just-recorded blob: URLs.
+                        const clicked = studentHistory.find(v => v.id == vid) || violations.find(v => v.id == vid);
                         if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
                         const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;

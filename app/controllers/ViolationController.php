@@ -385,20 +385,43 @@ class ViolationController extends Controller
         $attachmentPaths = [];
         if (!empty($_FILES['attachments'])) {
             $uploadDir = __DIR__ . '/../../app/assets/img/violations/';
+
+            // Ensure the directory exists — create it if needed.
+            // On AWS (/var/www/html) the subfolder may not exist yet, so we
+            // create it with 0755 (not 0777) and log any failure so we can debug.
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                if (!mkdir($uploadDir, 0755, true)) {
+                    error_log('ViolationController: Failed to create upload directory: ' . $uploadDir);
+                }
+            }
+
+            // Make sure the directory is writable (important on AWS www-data)
+            if (!is_writable($uploadDir)) {
+                error_log('ViolationController: Upload directory is not writable: ' . $uploadDir);
             }
 
             foreach ($_FILES['attachments']['tmp_name'] as $key => $tmpName) {
                 if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
                     $originalName = $_FILES['attachments']['name'][$key];
-                    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                    $extension    = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+                    // Whitelist allowed image/file extensions for security
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+                    if (!in_array($extension, $allowed, true)) {
+                        error_log('ViolationController: Rejected upload with extension: ' . $extension);
+                        continue;
+                    }
+
                     $newFileName = 'viol_' . time() . '_' . uniqid() . '.' . $extension;
-                    $destPath = $uploadDir . $newFileName;
+                    $destPath    = $uploadDir . $newFileName;
 
                     if (move_uploaded_file($tmpName, $destPath)) {
                         $attachmentPaths[] = 'app/assets/img/violations/' . $newFileName;
+                    } else {
+                        error_log('ViolationController: move_uploaded_file failed for: ' . $originalName . ' → ' . $destPath);
                     }
+                } else {
+                    error_log('ViolationController: Upload error code ' . $_FILES['attachments']['error'][$key] . ' for file index ' . $key);
                 }
             }
         }
