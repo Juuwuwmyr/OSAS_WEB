@@ -6135,19 +6135,102 @@ function initViolationsModule() {
                 this.value = '';
             });
 
-            function addFiles(files) {
-                let added = 0;
-                for (const file of files) {
-                    // Skip truly empty entries (e.g. drag-drop ghost items)
-                    if (!file || file.size === 0) continue;
-                    // Dedup within the same selection only — allow same file on next violation
-                    // because selectedFiles is cleared in openRecordModal before each new record
-                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
-                        selectedFiles.push(file);
-                        added++;
+            /**
+             * Compress an image File using canvas if it exceeds maxBytes.
+             * Returns a Promise that resolves to the original File or a compressed File.
+             * Non-image files (PDF, DOC) are returned as-is.
+             */
+            function compressImageIfNeeded(file, maxBytes = 4 * 1024 * 1024) {
+                return new Promise(resolve => {
+                    // Only compress images; pass non-images straight through
+                    if (!file.type.startsWith('image/')) {
+                        resolve(file);
+                        return;
                     }
-                }
-                if (added > 0) updateAttachmentPreviews();
+                    // Already small enough — no compression needed
+                    if (file.size <= maxBytes) {
+                        resolve(file);
+                        return;
+                    }
+
+                    const img = new Image();
+                    const objectUrl = URL.createObjectURL(file);
+                    img.onload = function() {
+                        URL.revokeObjectURL(objectUrl);
+
+                        // Scale down proportionally so the longer side is at most 2048px
+                        const MAX_DIM = 2048;
+                        let { width, height } = img;
+                        if (width > MAX_DIM || height > MAX_DIM) {
+                            if (width >= height) {
+                                height = Math.round(height * MAX_DIM / width);
+                                width  = MAX_DIM;
+                            } else {
+                                width  = Math.round(width * MAX_DIM / height);
+                                height = MAX_DIM;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width  = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+                        // Start at quality 0.85 and step down until under maxBytes
+                        let quality = 0.85;
+                        const outputType = 'image/jpeg'; // always compress to JPEG
+
+                        function tryCompress() {
+                            canvas.toBlob(blob => {
+                                if (!blob) { resolve(file); return; }
+                                if (blob.size <= maxBytes || quality <= 0.4) {
+                                    // Build a proper File from the blob
+                                    const ext  = file.name.replace(/\.[^.]+$/, '') || 'photo';
+                                    const compressed = new File([blob], ext + '_compressed.jpg', {
+                                        type: outputType,
+                                        lastModified: file.lastModified
+                                    });
+                                    console.log(`📸 Compressed ${(file.size/1024/1024).toFixed(1)}MB → ${(compressed.size/1024/1024).toFixed(1)}MB (quality ${quality})`);
+                                    resolve(compressed);
+                                } else {
+                                    quality -= 0.15;
+                                    tryCompress();
+                                }
+                            }, outputType, quality);
+                        }
+                        tryCompress();
+                    };
+                    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+                    img.src = objectUrl;
+                });
+            }
+
+            function addFiles(files) {
+                const MAX_SIZE = 5 * 1024 * 1024; // 5MB hard limit (matches server)
+                Array.from(files).forEach(async file => {
+                    // Skip truly empty entries (e.g. drag-drop ghost items)
+                    if (!file || file.size === 0) return;
+
+                    // Compress images that are over 4MB before they hit the 5MB server limit
+                    const processedFile = await compressImageIfNeeded(file, 4 * 1024 * 1024);
+
+                    // After compression, reject anything still over the hard limit
+                    if (processedFile.size > MAX_SIZE) {
+                        showNotification(`"${file.name}" is too large (${(processedFile.size/1024/1024).toFixed(1)}MB). Max 5MB per file.`, 'error', 4000);
+                        return;
+                    }
+
+                    // Dedup within the same selection
+                    const alreadyAdded = selectedFiles.some(f =>
+                        f.name === processedFile.name &&
+                        f.size === processedFile.size &&
+                        f.lastModified === processedFile.lastModified
+                    );
+                    if (!alreadyAdded) {
+                        selectedFiles.push(processedFile);
+                        updateAttachmentPreviews();
+                    }
+                });
             }
         }
 
