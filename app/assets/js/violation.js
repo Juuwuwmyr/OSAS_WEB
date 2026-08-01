@@ -6136,96 +6136,119 @@ function initViolationsModule() {
             });
 
             /**
-             * Compress an image File using canvas if it exceeds maxBytes.
-             * Returns a Promise that resolves to the original File or a compressed File.
+             * Compress/normalize an image File using canvas.
+             * ALL images go through this — ensures consistent size regardless of camera.
              * Non-image files (PDF, DOC) are returned as-is.
+             * @param {File} file
+             * @param {number} maxDim  - max pixel dimension on longest side (default 1920)
+             * @param {number} maxBytes - target byte ceiling (default 4MB)
              */
-            function compressImageIfNeeded(file, maxBytes = 4 * 1024 * 1024) {
+            function compressImage(file, maxDim = 1920, maxBytes = 4 * 1024 * 1024) {
                 return new Promise(resolve => {
-                    // Only compress images; pass non-images straight through
+                    // Pass non-images straight through
                     if (!file.type.startsWith('image/')) {
                         resolve(file);
                         return;
                     }
-                    // Already small enough — no compression needed
-                    if (file.size <= maxBytes) {
-                        resolve(file);
-                        return;
-                    }
 
-                    const img = new Image();
-                    const objectUrl = URL.createObjectURL(file);
-                    img.onload = function() {
-                        URL.revokeObjectURL(objectUrl);
+                    // We need an object URL — but if size is 0 the browser may not
+                    // have finished writing the camera temp file yet. Wait one tick.
+                    const tryLoad = () => {
+                        const objectUrl = URL.createObjectURL(file);
+                        const img = new Image();
 
-                        // Scale down proportionally so the longer side is at most 2048px
-                        const MAX_DIM = 2048;
-                        let { width, height } = img;
-                        if (width > MAX_DIM || height > MAX_DIM) {
-                            if (width >= height) {
-                                height = Math.round(height * MAX_DIM / width);
-                                width  = MAX_DIM;
-                            } else {
-                                width  = Math.round(width * MAX_DIM / height);
-                                height = MAX_DIM;
-                            }
-                        }
+                        img.onload = function() {
+                            URL.revokeObjectURL(objectUrl);
 
-                        const canvas = document.createElement('canvas');
-                        canvas.width  = width;
-                        canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            let { width, height } = img;
 
-                        // Start at quality 0.85 and step down until under maxBytes
-                        let quality = 0.85;
-                        const outputType = 'image/jpeg'; // always compress to JPEG
-
-                        function tryCompress() {
-                            canvas.toBlob(blob => {
-                                if (!blob) { resolve(file); return; }
-                                if (blob.size <= maxBytes || quality <= 0.4) {
-                                    // Build a proper File from the blob
-                                    const ext  = file.name.replace(/\.[^.]+$/, '') || 'photo';
-                                    const compressed = new File([blob], ext + '_compressed.jpg', {
-                                        type: outputType,
-                                        lastModified: file.lastModified
-                                    });
-                                    console.log(`📸 Compressed ${(file.size/1024/1024).toFixed(1)}MB → ${(compressed.size/1024/1024).toFixed(1)}MB (quality ${quality})`);
-                                    resolve(compressed);
+                            // Scale down if over maxDim
+                            if (width > maxDim || height > maxDim) {
+                                if (width >= height) {
+                                    height = Math.round(height * maxDim / width);
+                                    width  = maxDim;
                                 } else {
-                                    quality -= 0.15;
-                                    tryCompress();
+                                    width  = Math.round(width * maxDim / height);
+                                    height = maxDim;
                                 }
-                            }, outputType, quality);
-                        }
-                        tryCompress();
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width  = width;
+                            canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+                            let quality = 0.85;
+                            const outputType = 'image/jpeg';
+
+                            const baseName = (file.name.replace(/\.[^.]+$/, '') || 'photo')
+                                .replace(/_compressed$/, ''); // avoid double suffix
+
+                            function tryCompress() {
+                                canvas.toBlob(blob => {
+                                    if (!blob) { resolve(file); return; }
+
+                                    if (blob.size <= maxBytes || quality <= 0.3) {
+                                        const outFile = new File([blob], baseName + '.jpg', {
+                                            type: outputType,
+                                            lastModified: Date.now()
+                                        });
+                                        console.log(
+                                            `📸 ${file.name}: ${(file.size/1024/1024).toFixed(1)}MB` +
+                                            ` → ${(outFile.size/1024/1024).toFixed(1)}MB` +
+                                            ` @ q${quality} (${width}×${height}px)`
+                                        );
+                                        resolve(outFile);
+                                    } else {
+                                        quality = Math.round((quality - 0.1) * 10) / 10;
+                                        tryCompress();
+                                    }
+                                }, outputType, quality);
+                            }
+                            tryCompress();
+                        };
+
+                        img.onerror = () => {
+                            URL.revokeObjectURL(objectUrl);
+                            // If image failed to load and file.size was 0, retry once after
+                            // a short delay (camera temp file may not be ready yet)
+                            if (file.size === 0) {
+                                console.warn('📷 Camera file size=0, retrying in 300ms…');
+                                setTimeout(tryLoad, 300);
+                            } else {
+                                resolve(file); // fallback: send original
+                            }
+                        };
+
+                        img.src = objectUrl;
                     };
-                    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
-                    img.src = objectUrl;
+
+                    tryLoad();
                 });
             }
 
             function addFiles(files) {
                 const MAX_SIZE = 5 * 1024 * 1024; // 5MB hard limit (matches server)
                 Array.from(files).forEach(async file => {
-                    // Skip truly empty entries (e.g. drag-drop ghost items)
-                    if (!file || file.size === 0) return;
+                    // Only skip truly null entries — do NOT skip size=0 files,
+                    // camera captures can report size=0 before the temp file is ready
+                    if (!file) return;
 
-                    // Compress images that are over 4MB before they hit the 5MB server limit
-                    const processedFile = await compressImageIfNeeded(file, 4 * 1024 * 1024);
+                    // All images go through canvas compression/normalization
+                    const processedFile = await compressImage(file);
 
-                    // After compression, reject anything still over the hard limit
+                    // Reject anything still over the hard limit after compression
                     if (processedFile.size > MAX_SIZE) {
-                        showNotification(`"${file.name}" is too large (${(processedFile.size/1024/1024).toFixed(1)}MB). Max 5MB per file.`, 'error', 4000);
+                        showNotification(
+                            `"${file.name}" is still too large after compression ` +
+                            `(${(processedFile.size/1024/1024).toFixed(1)}MB). Max 5MB.`,
+                            'error', 4000
+                        );
                         return;
                     }
 
-                    // Dedup within the same selection
-                    const alreadyAdded = selectedFiles.some(f =>
-                        f.name === processedFile.name &&
-                        f.size === processedFile.size &&
-                        f.lastModified === processedFile.lastModified
-                    );
+                    // Dedup by name only (size changes after compression so can't use size)
+                    const alreadyAdded = selectedFiles.some(f => f.name === processedFile.name);
                     if (!alreadyAdded) {
                         selectedFiles.push(processedFile);
                         updateAttachmentPreviews();
