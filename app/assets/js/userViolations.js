@@ -138,7 +138,7 @@ let refreshIntervalId = null;
 function startPeriodicRefresh() {
     if (refreshIntervalId) return;
 
-    // Refresh every 30 seconds to get updated violation types and sanctions
+    // Refresh every 5 seconds to get updated violation types and sanctions
     refreshIntervalId = setInterval(async () => {
         try {
             // Reload violation types first to get latest sanction info
@@ -148,7 +148,7 @@ function startPeriodicRefresh() {
         } catch (e) {
             console.error('Periodic refresh failed:', e);
         }
-    }, 30000); // 30 seconds
+    }, 5000); // 5 seconds
 }
 
 function stopPeriodicRefresh() {
