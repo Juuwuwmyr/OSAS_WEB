@@ -405,10 +405,26 @@ class ViolationController extends Controller
                     $originalName = $_FILES['attachments']['name'][$key];
                     $extension    = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
+                    // If no extension, detect from MIME type
+                    if (empty($extension)) {
+                        $mimeType = mime_content_type($tmpName);
+                        $mimeMap  = [
+                            'image/jpeg'  => 'jpg',
+                            'image/png'   => 'png',
+                            'image/gif'   => 'gif',
+                            'image/webp'  => 'webp',
+                            'image/heic'  => 'heic',
+                            'image/heif'  => 'heif',
+                            'application/pdf' => 'pdf',
+                        ];
+                        $extension = $mimeMap[$mimeType] ?? '';
+                    }
+
                     // Whitelist allowed image/file extensions for security
-                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
-                    if (!in_array($extension, $allowed, true)) {
-                        error_log('ViolationController: Rejected upload with extension: ' . $extension);
+                    // Include heic/heif for iPhone camera captures
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'heic', 'heif'];
+                    if (empty($extension) || !in_array($extension, $allowed, true)) {
+                        error_log('ViolationController: Rejected upload with extension: "' . $extension . '" for file: ' . $originalName);
                         continue;
                     }
 

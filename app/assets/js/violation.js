@@ -4502,7 +4502,7 @@ function initViolationsModule() {
                             const s = String(f);
                             // blob: object URLs are always images (we only create them from File objects)
                             if (s.startsWith('blob:')) return true;
-                            return /\.(jpg|jpeg|png|gif|webp)$/i.test(s.split('/').pop());
+                            return /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(s.split('/').pop());
                         });
 
                         if (imageAttachments.length > 0) {
