@@ -1637,8 +1637,9 @@ HOW-TO FOR ADMINS:
         // This catches cases where the AI leaks JSON on casual conversation too.
         // We do this AFTER action extraction so legitimate actions are still processed.
         cleanText = cleanText.replace(/\{[^{}]*"action"\s*:\s*"[^"]+?"[^{}]*\}/g, '');
-        // Also strip any orphaned label lines like "Download Report:" with nothing after
-        cleanText = cleanText.replace(/^[^\n]*(?:Download Report|Export Report|Action Signal)[^\n]*:\s*$/gmi, '');
+        // Also strip any orphaned label lines like "Download Report:", "for students", etc.
+        cleanText = cleanText.replace(/^[^\n]*(?:Download Report|Export Report|Action Signal|for students|for admins)[^\n]*:\s*$/gmi, '');
+        cleanText = cleanText.replace(/^\s*for\s+(?:students|admins|admin|staff)\s*$/gmi, '');
 
         // 3. Guard: filter out export_pdf unless the user's own message explicitly
         //    requested a download / export / report.  This prevents the AI from
@@ -1860,8 +1861,33 @@ HOW-TO FOR ADMINS:
                     { header: 'Students', dataKey: 'student_count' },
                     { header: 'Status', dataKey: 'status' }
                 ];
+            } else if (params.module === 'reports') {
+                // 'reports' maps to violations — it's the violations report
+                apiEndpoint = 'violations.php?limit=all';
+                columns = [
+                    { header: 'Student Name', dataKey: 'studentName' },
+                    { header: 'Student ID', dataKey: 'studentId' },
+                    { header: 'Department', dataKey: 'department' },
+                    { header: 'Violation Type', dataKey: 'violationTypeLabel' },
+                    { header: 'Level', dataKey: 'violationLevelLabel' },
+                    { header: 'Status', dataKey: 'statusLabel' },
+                    { header: 'Date', dataKey: 'dateReported' }
+                ];
+                title = 'OSAS VIOLATIONS REPORT';
             } else {
-                throw new Error(`Unknown module: ${params.module}`);
+                // Fallback: treat any unknown module as violations report
+                console.warn(`Unknown module "${params.module}" — falling back to violations report`);
+                apiEndpoint = 'violations.php?limit=all';
+                columns = [
+                    { header: 'Student Name', dataKey: 'studentName' },
+                    { header: 'Student ID', dataKey: 'studentId' },
+                    { header: 'Department', dataKey: 'department' },
+                    { header: 'Violation Type', dataKey: 'violationTypeLabel' },
+                    { header: 'Level', dataKey: 'violationLevelLabel' },
+                    { header: 'Status', dataKey: 'statusLabel' },
+                    { header: 'Date', dataKey: 'dateReported' }
+                ];
+                title = 'OSAS VIOLATIONS REPORT';
             }
             
             console.log('🤖 handleExportPDF - apiEndpoint:', this.apiBase + apiEndpoint);
