@@ -483,9 +483,21 @@ class ViolationModel extends Model {
      */
     public function generateCaseId() {
         $year = date('Y');
-        $result = $this->query("SELECT COUNT(*) as count FROM violations WHERE YEAR(created_at) = ?", [$year]);
-        $count = ($result[0]['count'] ?? 0) + 1;
-        return sprintf('VIOL-%d-%03d', $year, $count);
+
+        // Use MAX of existing sequence numbers instead of COUNT so that
+        // deleting/undoing violations never causes a collision.
+        // e.g. if VIOL-2026-010 was deleted, COUNT gives 9 → generates VIOL-2026-010 → collision.
+        $result = $this->query(
+            "SELECT MAX(CAST(SUBSTRING_INDEX(case_id, '-', -1) AS UNSIGNED)) as max_seq
+             FROM violations
+             WHERE case_id LIKE ?",
+            ["VIOL-{$year}-%"]
+        );
+
+        $maxSeq = (int)($result[0]['max_seq'] ?? 0);
+        $next   = $maxSeq + 1;
+
+        return sprintf('VIOL-%d-%03d', $year, $next);
     }
 
     /**

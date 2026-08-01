@@ -14,7 +14,7 @@ class ViolationController extends Controller
     public function __construct()
     {
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
 
         $this->model = new ViolationModel();
         $this->studentModel = new StudentModel();
@@ -495,7 +495,7 @@ class ViolationController extends Controller
             }
 
             // Generate unique case ID with retry mechanism
-            $maxRetries = 3;
+            $maxRetries = 5;
             $caseId = null;
             
             for ($attempt = 0; $attempt < $maxRetries; $attempt++) {

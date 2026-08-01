@@ -7372,6 +7372,30 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowLeft')   lightboxNav(-1);
 });
 
+// Touch swipe navigation for lightbox (mobile)
+(function() {
+    let _touchStartX = 0;
+    let _touchStartY = 0;
+
+    document.addEventListener('touchstart', function(e) {
+        const lb = document.getElementById('evidenceLightbox');
+        if (!lb || lb.style.display === 'none') return;
+        _touchStartX = e.touches[0].clientX;
+        _touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        const lb = document.getElementById('evidenceLightbox');
+        if (!lb || lb.style.display === 'none') return;
+        const dx = e.changedTouches[0].clientX - _touchStartX;
+        const dy = e.changedTouches[0].clientY - _touchStartY;
+        // Only trigger if horizontal swipe is dominant (not a scroll)
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+            lightboxNav(dx < 0 ? 1 : -1);
+        }
+    }, { passive: true });
+})();
+
 // ── Drag scroll for violation-details-grid ────────────────────────────────────
 (function initAdminDragScroll() {
     function attachDragScroll(el) {

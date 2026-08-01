@@ -11,7 +11,7 @@ class StudentController extends Controller {
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
         
         $this->model = new StudentModel();
     }
