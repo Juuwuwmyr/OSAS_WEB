@@ -16,7 +16,7 @@ if (file_exists($localFile)) {
 } elseif (getenv('DB_HOST') || getenv('DB_USER') || getenv('DB_PASS') !== false || getenv('DB_NAME')) {
     $host   = getenv('DB_HOST') ?: 'localhost';
     $user   = getenv('DB_USER') ?: 'root';
-    $pass   = getenv('DB_PASS') ?: '';
+    $pass   = getenv('DB_PASS') ?: 'osas';
     $dbname = getenv('DB_NAME') ?: 'osas';
     $conn   = @new mysqli($host, $user, $pass, $dbname);
 } else {
