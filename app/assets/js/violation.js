@@ -470,6 +470,15 @@ function initViolationsModule() {
                         );
                         await window.offlineDB.saveViolations(all);
                         console.log(`✅ IndexedDB saved immediately: ${all.length} total (${violations.length} fresh + ${kept.length} kept)`);
+
+                        // If server returned fewer violations than what was cached,
+                        // invalidate the _modalStudentHistoryCache so record modal
+                        // badges reflect deletions on other devices immediately.
+                        const prevCount = existing.filter(v => (v.is_archived || 0) == isArchived).length;
+                        if (violations.length < prevCount) {
+                            console.log(`🔄 Server has fewer violations (${violations.length} vs ${prevCount} cached) — clearing modal history cache`);
+                            Object.keys(_modalStudentHistoryCache).forEach(k => delete _modalStudentHistoryCache[k]);
+                        }
                     } catch (err) {
                         console.error('IndexedDB immediate save failed:', err);
                     }
@@ -7131,12 +7140,13 @@ function initViolationsModule() {
         // the table only when a new violation has actually been recorded by
         // another user.  No full-page reload — just re-fetches & re-renders.
         (function startViolationsRealtimePoll() {
-            const POLL_INTERVAL_MS  = 15000; // 15 s
+            const POLL_INTERVAL_MS  = 5000; // 5 s — fast enough to feel real-time on plain PHP
             const STORAGE_SNAP_KEY  = 'violations_rt_snapshot';
 
-            let _pollTimer    = null;
-            let _lastKnownId  = 0;
-            let _isRefreshing = false;
+            let _pollTimer      = null;
+            let _lastKnownId    = 0;
+            let _lastKnownCount = -1; // -1 = not yet set; tracks total for deletion detection
+            let _isRefreshing   = false;
 
             // Load the snapshot written by a previous session so we don't
             // immediately fire a "new violation" alert on first visit.
@@ -7227,18 +7237,28 @@ function initViolationsModule() {
                     const data = await res.json();
                     if (data.status !== 'success') return;
 
-                    const incomingId = Number(data.latest_id || 0);
+                    const incomingId    = Number(data.latest_id    || 0);
+                    const incomingCount = Number(data.total_count  ?? -1);
 
                     // Very first successful poll — set baseline, no alert
                     if (_lastKnownId === 0) {
-                        _lastKnownId = incomingId;
+                        _lastKnownId    = incomingId;
+                        _lastKnownCount = incomingCount;
                         saveSnap(_lastKnownId);
                         return;
                     }
 
-                    if (incomingId > _lastKnownId) {
-                        console.log(`🔔 [realtime] New violation: id ${_lastKnownId} → ${incomingId}`);
-                        _lastKnownId = incomingId;
+                    // Detect deletion on another device: count dropped
+                    const countDropped = incomingCount >= 0 && _lastKnownCount >= 0 && incomingCount < _lastKnownCount;
+
+                    if (incomingId > _lastKnownId || countDropped) {
+                        if (countDropped) {
+                            console.log(`🗑️ [realtime] Violation deleted on another device: count ${_lastKnownCount} → ${incomingCount}`);
+                        } else {
+                            console.log(`🔔 [realtime] New violation: id ${_lastKnownId} → ${incomingId}`);
+                        }
+                        _lastKnownId    = incomingId;
+                        _lastKnownCount = incomingCount;
                         saveSnap(_lastKnownId);
 
                         // Silently reload + re-render
@@ -7252,12 +7272,14 @@ function initViolationsModule() {
                             _isRefreshing = false;
                         }
 
-                        // Toast notification
-                        showNewViolationToast(data.latest_reported_by, data.latest_case_id);
+                        // Toast notification — only for new violations, not deletions
+                        if (!countDropped) {
+                            showNewViolationToast(data.latest_reported_by, data.latest_case_id);
 
-                        // Immediately bump the admin notification badge count
-                        if (typeof window.updateNotificationCount === 'function') {
-                            window.updateNotificationCount();
+                            // Immediately bump the admin notification badge count
+                            if (typeof window.updateNotificationCount === 'function') {
+                                window.updateNotificationCount();
+                            }
                         }
                     }
                 } catch (err) {

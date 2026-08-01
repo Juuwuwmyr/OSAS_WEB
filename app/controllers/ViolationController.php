@@ -1388,6 +1388,12 @@ class ViolationController extends Controller
                 $params
             );
 
+            // Also get the total count so clients can detect deletions
+            $countRows = $this->model->query(
+                "SELECT COUNT(*) as total FROM violations {$whereClause}",
+                $params
+            );
+
             $latest = $rows[0] ?? null;
 
             $this->json([
@@ -1396,6 +1402,7 @@ class ViolationController extends Controller
                 'latest_case_id'    => $latest ? $latest['case_id']          : null,
                 'latest_created_at' => $latest ? $latest['created_at']       : null,
                 'latest_reported_by'=> $latest ? $latest['reported_by']      : null,
+                'total_count'       => (int)($countRows[0]['total'] ?? 0),
             ]);
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
