@@ -22,7 +22,7 @@ if (file_exists($localFile)) {
 } else {
     $host   = 'localhost';
     $user   = 'root';
-    $pass   = '';
+    $pass   = 'osas';
     $dbname = 'osas';
     $conn   = @new mysqli($host, $user, $pass, $dbname);
 }
