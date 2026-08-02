@@ -1844,6 +1844,28 @@ function initViolationsModule() {
          * Result is cached per studentId for the lifetime of the modal session.
          */
         async function fetchStudentHistory(studentId) {
+            // When offline, always read from IndexedDB — in-memory cache is wiped on app restart
+            if (!navigator.onLine) {
+                if (window.offlineDB) {
+                    try {
+                        const allCached = await window.offlineDB.getViolations();
+                        const history = (allCached || []).filter(v =>
+                            (v.studentId || v.student_id || '') === studentId
+                        );
+                        console.log(`📦 Offline: found ${history.length} cached violations for ${studentId}`);
+                        if (history.length > 0) {
+                            _modalStudentHistoryCache[studentId] = history;
+                            return history;
+                        }
+                    } catch (dbErr) {
+                        console.warn('IndexedDB read failed:', dbErr);
+                    }
+                }
+                // Final fallback: current paginated violations array
+                return violations.filter(v => v.studentId === studentId);
+            }
+
+            // Online — check in-memory cache first
             if (_modalStudentHistoryCache[studentId]) {
                 return _modalStudentHistoryCache[studentId];
             }
@@ -1856,8 +1878,21 @@ function initViolationsModule() {
                 _modalStudentHistoryCache[studentId] = list;
                 return list;
             } catch (err) {
-                console.warn('fetchStudentHistory failed, falling back to local cache:', err);
-                // Fallback to local violations array (works fine for admin/OSAS Staff/Faculty)
+                console.warn('fetchStudentHistory failed, falling back to IndexedDB:', err);
+                if (window.offlineDB) {
+                    try {
+                        const allCached = await window.offlineDB.getViolations();
+                        const history = (allCached || []).filter(v =>
+                            (v.studentId || v.student_id || '') === studentId
+                        );
+                        if (history.length > 0) {
+                            _modalStudentHistoryCache[studentId] = history;
+                            return history;
+                        }
+                    } catch (dbErr) {
+                        console.warn('IndexedDB fallback also failed:', dbErr);
+                    }
+                }
                 return violations.filter(v => v.studentId === studentId);
             }
         }
