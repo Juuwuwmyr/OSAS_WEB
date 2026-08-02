@@ -1385,7 +1385,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 
             <div class="form-options">
                 <label class="remember-me">
-                    <input type="checkbox" id="rememberMe">
+                    <input type="checkbox" id="rememberMe" checked>
                     <span class="checkmark"></span>
                     Remember me
                 </label>

@@ -35,7 +35,7 @@ class AuthController extends Controller {
 
             $username = trim($this->getPost('username', ''));
             $password = trim($this->getPost('password', ''));
-            $remember = isset($_POST['rememberMe']) && $_POST['rememberMe'] === 'true';
+            $remember = true; // Always use 30-day session for PWA offline support
 
             if (empty($username) || empty($password)) {
                 $this->error('Please fill in all fields.');
