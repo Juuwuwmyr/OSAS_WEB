@@ -532,6 +532,42 @@ function initViolationsModule() {
                 // Sync to window cache AFTER image processing so cached data has correct image URLs
                 _cache.violations = violations;
 
+                // ── Pre-populate modal history cache for all students in current list ──
+                // This ensures offline offense badges work even without opening each student's modal.
+                // Group violations by studentId and store in _modalStudentHistoryCache.
+                if (violations.length > 0) {
+                    // Build a map: studentId → all their violations from the full IndexedDB cache
+                    // We do this async in the background so it doesn't block rendering
+                    setTimeout(async () => {
+                        try {
+                            // Get all violations from IndexedDB (includes archived)
+                            const allCached = window.offlineDB
+                                ? await window.offlineDB.getViolations()
+                                : violations;
+
+                            if (!allCached || allCached.length === 0) return;
+
+                            // Get unique student IDs from current view
+                            const studentIds = [...new Set(violations.map(v => v.studentId).filter(Boolean))];
+
+                            // Pre-populate cache for each student
+                            studentIds.forEach(sid => {
+                                if (!_modalStudentHistoryCache[sid]) {
+                                    const history = allCached.filter(v =>
+                                        (v.studentId || v.student_id || '') === sid
+                                    );
+                                    if (history.length > 0) {
+                                        _modalStudentHistoryCache[sid] = history;
+                                    }
+                                }
+                            });
+                            console.log(`✅ Pre-cached modal history for ${studentIds.length} students`);
+                        } catch (e) {
+                            console.warn('Pre-cache modal history failed (non-critical):', e);
+                        }
+                    }, 500);
+                }
+
                 // Debug: Check first violation structure
                 if (violations.length > 0) {
                     console.log('First violation sample:', violations[0]);
