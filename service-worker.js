@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-07-30-push-icon-path-fix';
+const BUILD_DATE = '2026-08-03-students-cache-key-fix';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -153,9 +153,8 @@ function getBaseKey(url) {
     return new Request(base + '?limit=all');
   }
   if (url.pathname.includes('students.php')) {
-    // Cache the full active dataset keyed by a stable URL.
-    // student.js offline handler reads this key directly.
-    return new Request(base + '?action=get&filter=active&page=1&limit=1000');
+    // Always cache under ?limit=all — matches background fetch key in student.js
+    return new Request(base + '?limit=all');
   }
   return new Request(url.href);
 }
@@ -224,8 +223,10 @@ async function serveOffline(url) {
 
   // ── students.php ──────────────────────────────────────────────────────────
   if (url.pathname.includes('students.php')) {
-    let cached = await cache.match(new Request(base + '?action=get&filter=active&page=1&limit=1000'));
+    // Try the canonical ?limit=all key first (matches getBaseKey normalization)
+    let cached = await cache.match(new Request(base + '?limit=all'));
     if (!cached) {
+      // Fallback: scan all cached keys for any students entry
       const keys = await cache.keys();
       for (const k of keys) { if (k.url.includes('students.php')) { cached = await cache.match(k); break; } }
     }
