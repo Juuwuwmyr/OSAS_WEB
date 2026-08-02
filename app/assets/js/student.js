@@ -1828,6 +1828,22 @@ function initStudentsModule() {
             // Initial load - only active students
             await fetchStudents();
 
+            // Background full-dataset fetch — caches ALL students for offline use.
+            // The SW stores this under ?limit=all so offline fallback can serve
+            // the complete list regardless of which page the user was on.
+            if (navigator.onLine) {
+                setTimeout(() => {
+                    fetch(`${apiBase}?action=get&filter=active&limit=all`)
+                        .then(r => r.ok ? r.json() : null)
+                        .then(data => {
+                            if (data && data.status === 'success') {
+                                console.log(`✅ Background cached ${(data.data?.students || data.data || []).length} students for offline`);
+                            }
+                        })
+                        .catch(() => {}); // silent — this is best-effort
+                }, 1500); // slight delay so it doesn't compete with the initial page load
+            }
+
             // Search functionality with debounce and page reset
             if (searchInput) {
                 let searchTimeout;
