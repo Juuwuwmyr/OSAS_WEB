@@ -36,6 +36,53 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+    // Early session check — runs before any HTML renders.
+    // Handles the case where PHP session expired but localStorage is still valid.
+    // OFFLINE: redirect immediately. ONLINE: verify with server first (401/403 = clear session).
+    (function() {
+        try {
+            var s = JSON.parse(localStorage.getItem('userSession') || 'null');
+            if (!s || !s.expires || s.expires <= Date.now() || !s.role) return;
+
+            var parts = window.location.pathname.split('/').filter(Boolean);
+            var appDirs = ['app','api','includes','assets','public'];
+            var root = (parts.length === 0 || appDirs.indexOf(parts[0]) !== -1) ? '' : '/' + parts[0];
+            var adminRoles = ['admin','OSAS Staff','Officer','CSC Officer','Faculty Member'];
+            var target = adminRoles.indexOf(s.role) !== -1
+                ? root + '/includes/dashboard.php'
+                : s.role === 'user' ? root + '/includes/user_dashboard.php' : null;
+
+            if (!target) return;
+
+            if (!navigator.onLine) {
+                // Offline — redirect immediately, no server check
+                window.location.replace(target);
+                return;
+            }
+
+            // Online — check if PHP session is still alive (3s timeout)
+            var xhr = new XMLHttpRequest();
+            xhr.timeout = 3000;
+            xhr.open('GET', root + '/api/user_info.php', true);
+            xhr.withCredentials = true;
+            xhr.onload = function() {
+                if (xhr.status === 401 || xhr.status === 403) {
+                    // PHP session expired — clear localStorage, stay on login page
+                    localStorage.removeItem('userSession');
+                } else {
+                    // Session valid (or server error) — redirect
+                    window.location.replace(target);
+                }
+            };
+            xhr.ontimeout = xhr.onerror = function() {
+                // Can't reach server — treat as offline, redirect anyway
+                window.location.replace(target);
+            };
+            xhr.send();
+        } catch(e) {}
+    })();
+    </script>
     <title>E-OSAS — Student Affairs Portal | Colegio de Naujan</title>
     <meta name="description" content="The official digital student affairs management system of Colegio de Naujan. One platform for every student, zero paperwork.">
     <link rel="manifest" href="manifest.json">
