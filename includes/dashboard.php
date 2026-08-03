@@ -44,7 +44,11 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
   <link rel="manifest" href="<?= View::url('manifest.json') ?>">
   <meta name="theme-color" content="#D4AF37">
   <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
-  <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
+  <!-- iOS PWA support -->
+  <link rel="apple-touch-icon" sizes="180x180" href="<?= View::asset('img/default.png') ?>">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="E-OSAS">
   <link rel="stylesheet" href="<?= View::asset('styles/splash.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/topnav.css') ?>?v=<?= time() ?>">

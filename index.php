@@ -90,7 +90,11 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <link rel="icon" type="image/png" sizes="32x32" href="app/assets/img/default.png">
     <link rel="icon" type="image/png" sizes="192x192" href="app/assets/img/default.png">
     <link rel="shortcut icon" href="app/assets/img/default.png">
-    <link rel="apple-touch-icon" href="app/assets/img/default.png">
+    <!-- iOS PWA support -->
+    <link rel="apple-touch-icon" sizes="180x180" href="app/assets/img/default.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="E-OSAS">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

@@ -238,56 +238,174 @@ function showIOSInstallPrompt() {
         if (Date.now() - dismissed < 7 * 24 * 60 * 60 * 1000) return; // 7 days
     }
 
-    const banner = document.createElement('div');
-    banner.id = 'ios-install-banner';
-    banner.innerHTML = `
-        <div style="
-            position:fixed; bottom:0; left:0; right:0; z-index:999998;
-            background:#1a1a1a; border-top:2px solid #D4AF37;
-            padding:16px 20px; display:flex; align-items:center; gap:14px;
-            box-shadow:0 -4px 20px rgba(0,0,0,0.3);
-            animation: iosSlideUp 0.4s ease-out;
-        ">
-            <div style="
-                width:44px; height:44px; border-radius:12px;
-                background:linear-gradient(135deg, #D4AF37, #A07820);
-                display:flex; align-items:center; justify-content:center;
-                flex-shrink:0;
-            ">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                    <polyline points="16 6 12 2 8 6"/>
-                    <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-            </div>
-            <div style="flex:1; min-width:0;">
-                <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:3px;">Install E-OSAS</div>
-                <div style="font-size:11px; color:#aaa; line-height:1.4;">
-                    Tap <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2.5" style="vertical-align:middle; margin:0 2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 
-                    then <strong style="color:#D4AF37;">"Add to Home Screen"</strong>
-                </div>
-            </div>
-            <button id="ios-install-dismiss" style="
-                background:rgba(255,255,255,0.08); border:none; color:#888;
-                width:28px; height:28px; border-radius:8px;
-                display:flex; align-items:center; justify-content:center;
-                cursor:pointer; font-size:16px; flex-shrink:0;
-            ">✕</button>
-        </div>
-    `;
-
-    document.body.appendChild(banner);
-
-    // Add animation
+    // Inject styles once
     const style = document.createElement('style');
-    style.textContent = `@keyframes iosSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`;
+    style.textContent = `
+        @keyframes iosSlideUp { from { transform: translateY(100%); opacity:0; } to { transform: translateY(0); opacity:1; } }
+        @keyframes iosSlideDown { from { transform: translateY(0); opacity:1; } to { transform: translateY(100%); opacity:0; } }
+        @keyframes iosFadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+        #ios-install-banner * { box-sizing: border-box; }
+    `;
     document.head.appendChild(style);
 
-    // Dismiss handler
-    document.getElementById('ios-install-dismiss').addEventListener('click', () => {
-        banner.remove();
+    // ── Collapsed banner (always visible at bottom) ───────────────────────
+    const banner = document.createElement('div');
+    banner.id = 'ios-install-banner';
+    banner.style.cssText = `
+        position:fixed; bottom:0; left:0; right:0; z-index:999998;
+        background:#1a1a1a; border-top:2px solid #D4AF37;
+        padding:14px 16px; display:flex; align-items:center; gap:12px;
+        box-shadow:0 -4px 20px rgba(0,0,0,0.35);
+        animation: iosSlideUp 0.4s ease-out;
+        cursor:pointer;
+    `;
+    banner.innerHTML = `
+        <div style="
+            width:40px; height:40px; border-radius:10px; flex-shrink:0;
+            background:linear-gradient(135deg,#D4AF37,#A07820);
+            display:flex; align-items:center; justify-content:center;
+        ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/>
+                <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+            <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:2px;">Install E-OSAS</div>
+            <div style="font-size:11px; color:#aaa;">Tap here to see how →</div>
+        </div>
+        <button id="ios-install-dismiss" style="
+            background:rgba(255,255,255,0.08); border:none; color:#888;
+            width:28px; height:28px; border-radius:8px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            font-size:15px; flex-shrink:0;
+        ">✕</button>
+    `;
+    document.body.appendChild(banner);
+
+    // ── Full instruction modal ────────────────────────────────────────────
+    const modal = document.createElement('div');
+    modal.id = 'ios-install-modal';
+    modal.style.cssText = `
+        position:fixed; inset:0; z-index:999999;
+        background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+        display:none; align-items:flex-end; justify-content:center;
+    `;
+    modal.innerHTML = `
+        <div style="
+            background:#1a1a1a; border-top:2px solid #D4AF37;
+            border-radius:20px 20px 0 0; width:100%; max-width:520px;
+            padding:24px 24px 36px; animation: iosFadeIn 0.3s ease-out;
+        ">
+            <!-- Handle bar -->
+            <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <div style="
+                    width:48px;height:48px;border-radius:12px;flex-shrink:0;
+                    background:linear-gradient(135deg,#D4AF37,#A07820);
+                    display:flex;align-items:center;justify-content:center;
+                ">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-size:16px;font-weight:700;color:#fff;">Install E-OSAS</div>
+                    <div style="font-size:12px;color:#aaa;">Add to your Home Screen for the best experience</div>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px;">
+                <!-- Step 1 -->
+                <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.04);border-radius:12px;padding:12px 14px;">
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;flex-shrink:0;
+                        background:#D4AF37;color:#000;font-weight:700;font-size:13px;
+                        display:flex;align-items:center;justify-content:center;
+                    ">1</div>
+                    <div style="font-size:13px;color:#ddd;line-height:1.5;">
+                        Tap the <strong style="color:#fff;">Share</strong> button
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin:0 3px;">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                            <polyline points="16 6 12 2 8 6"/>
+                            <line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                        at the <strong style="color:#fff;">bottom</strong> of Safari
+                    </div>
+                </div>
+                <!-- Step 2 -->
+                <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.04);border-radius:12px;padding:12px 14px;">
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;flex-shrink:0;
+                        background:#D4AF37;color:#000;font-weight:700;font-size:13px;
+                        display:flex;align-items:center;justify-content:center;
+                    ">2</div>
+                    <div style="font-size:13px;color:#ddd;line-height:1.5;">
+                        Scroll down and tap <strong style="color:#D4AF37;">"Add to Home Screen"</strong>
+                    </div>
+                </div>
+                <!-- Step 3 -->
+                <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.04);border-radius:12px;padding:12px 14px;">
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;flex-shrink:0;
+                        background:#D4AF37;color:#000;font-weight:700;font-size:13px;
+                        display:flex;align-items:center;justify-content:center;
+                    ">3</div>
+                    <div style="font-size:13px;color:#ddd;line-height:1.5;">
+                        Tap <strong style="color:#D4AF37;">"Add"</strong> in the top-right corner
+                    </div>
+                </div>
+            </div>
+
+            <button id="ios-modal-close" style="
+                width:100%;padding:14px;border:none;border-radius:12px;
+                background:rgba(255,255,255,0.08);color:#aaa;
+                font-size:14px;font-weight:600;cursor:pointer;
+            ">Got it</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // ── Event handlers ────────────────────────────────────────────────────
+    function openModal() {
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    function dismissBanner() {
+        banner.style.animation = 'iosSlideDown 0.3s ease-in forwards';
+        setTimeout(() => { banner.remove(); }, 310);
+        modal.remove();
         style.remove();
         localStorage.setItem('eosas_ios_install_dismissed', String(Date.now()));
+    }
+
+    // Tap anywhere on banner (except dismiss button) → open modal
+    banner.addEventListener('click', (e) => {
+        if (e.target.closest('#ios-install-dismiss')) return;
+        openModal();
+    });
+
+    // Dismiss "✕" button
+    document.getElementById('ios-install-dismiss').addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissBanner();
+    });
+
+    // "Got it" button in modal
+    document.getElementById('ios-modal-close').addEventListener('click', closeModal);
+
+    // Tap backdrop to close modal (but keep banner)
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
     });
 }
 
