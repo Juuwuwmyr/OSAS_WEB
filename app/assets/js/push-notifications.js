@@ -95,12 +95,61 @@
         return a;
     }
 
-    async function getOrCreateSubscription() {
-        const vkRes = await fetch(apiBase() + 'push.php?action=vapid-key', { credentials: 'same-origin' });
-        const vk = await vkRes.json();
-        if (!vkRes.ok || vk.status !== 'success') throw new Error(vk.message || 'Push not configured');
+    /**
+     * navigator.serviceWorker.ready can hang forever on some desktops if the
+     * SW is stuck installing/waiting (e.g. another tab holds an old SW open).
+     * We race it against a 10-second timeout and fall back to the current
+     * registration if available.
+     */
+    function swReady(timeoutMs = 10000) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                // Timed out — try to use whatever registration we have right now
+                const cur = navigator.serviceWorker.controller;
+                if (cur) {
+                    // We have a controlling SW — resolve with the current registration
+                    navigator.serviceWorker.getRegistration()
+                        .then(reg => reg ? resolve(reg) : reject(new Error('sw_timeout')))
+                        .catch(() => reject(new Error('sw_timeout')));
+                } else {
+                    reject(new Error('sw_timeout'));
+                }
+            }, timeoutMs);
 
-        const reg = await navigator.serviceWorker.ready;
+            navigator.serviceWorker.ready
+                .then(reg => { clearTimeout(timer); resolve(reg); })
+                .catch(err => { clearTimeout(timer); reject(err); });
+        });
+    }
+
+    async function getOrCreateSubscription() {
+        let vk;
+        try {
+            const vkRes = await fetch(apiBase() + 'push.php?action=vapid-key', { credentials: 'same-origin' });
+            const text = await vkRes.text();
+            try {
+                vk = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Push server returned an unexpected response. Please try again later.');
+            }
+            if (!vkRes.ok || vk.status !== 'success') {
+                throw new Error(vk.message || 'Push not configured on this server.');
+            }
+        } catch (e) {
+            if (e.message && !e.message.includes('JSON')) throw e;
+            throw new Error('Could not reach the push server. Check your connection and try again.');
+        }
+
+        let reg;
+        try {
+            reg = await swReady(10000);
+        } catch (e) {
+            if (e.message === 'sw_timeout') {
+                throw new Error('The browser is still setting up notifications. Please refresh the page and try again.');
+            }
+            throw e;
+        }
+
         let sub = await reg.pushManager.getSubscription();
         if (!sub) {
             sub = await reg.pushManager.subscribe({
@@ -119,7 +168,12 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            throw new Error('Subscription failed — server returned an unexpected response.');
+        }
         if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Subscribe failed');
     }
 
@@ -139,7 +193,8 @@
     async function upgradePushToStudent() {
         if (Notification.permission !== 'granted') return false;
         try {
-            const reg = await navigator.serviceWorker.ready;
+            let reg;
+            try { reg = await swReady(10000); } catch (e) { return false; }
             const sub = await reg.pushManager.getSubscription();
             if (!sub) return subscribeWithScope('full');
 
@@ -149,7 +204,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(sub.toJSON())
             });
-            const data = await res.json();
+            let data;
+            try { data = await res.json(); } catch (e) { return subscribeWithScope('full'); }
             if (res.ok && data.status === 'success') return true;
             return subscribeWithScope('full');
         } catch (e) {
@@ -209,19 +265,37 @@
                 const perm = await requestNotificationPermission();
                 if (perm !== 'granted') {
                     toast('Click Allow on the browser prompt to enable notifications.', false);
+                    yes.disabled = false;
+                    yes.textContent = 'Enable notifications';
                     return;
                 }
-                await subscribeAfterPermission('full');
+                // Permission granted — attempt server subscription
+                // If it fails, close the modal anyway (OS permission is what matters most)
+                try {
+                    await subscribeAfterPermission('full');
+                } catch (subErr) {
+                    console.warn('Push subscription save failed (non-critical):', subErr.message);
+                    overlay.remove();
+                    // Tell the user to refresh if the SW timed out
+                    if (subErr.message && subErr.message.includes('refresh')) {
+                        toast('Almost there! Please refresh the page once, then enable notifications.', false);
+                    } else {
+                        toast('Notifications enabled! You\'ll receive alerts shortly.', true);
+                    }
+                    return;
+                }
                 toast('Notifications enabled — you\'ll receive all alerts.', true);
                 overlay.remove();
                 if (typeof window.showLatestAnnouncementNotifications === 'function') {
                     await window.showLatestAnnouncementNotifications(true);
                 }
             } catch (err) {
-                toast(err.message || 'Failed', false);
+                // Only show error toast for unexpected top-level failures
+                console.error('Push enable error:', err);
+                toast('Could not enable notifications. Please try again.', false);
+                yes.disabled = false;
+                yes.textContent = 'Enable notifications';
             }
-            yes.disabled = false;
-            yes.textContent = 'Enable notifications';
         };
 
         yes.addEventListener('click', run, { passive: false });
