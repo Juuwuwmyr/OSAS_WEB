@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../../core/View.php';
+$currentRole = $_SESSION['role'] ?? 'admin';
+$canImportExport = in_array($currentRole, ['admin', 'OSAS Staff']);
 ?>
 <?php
 require_once __DIR__ . '/../../config/db_connect.php';
@@ -19,7 +21,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
 <body>
   
 <!-- Students.html -->
-<main id="Students-page">
+<main id="Students-page" data-can-import-export="<?= $canImportExport ? '1' : '0' ?>">
 
   <!-- HEADER -->
   <div class="Students-head-title">
@@ -35,6 +37,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
 
     <div class="Students-header-actions">
       <div class="Students-button-group" style="align-items:center;">
+        <?php if ($canImportExport): ?>
         <button id="btnImportStudents" class="Students-btn outline small">
           <i class='bx bx-upload'></i>
           <span>Import</span>
@@ -43,8 +46,10 @@ require_once __DIR__ . '/../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
+        <?php endif; ?>
 
-        <!-- Delete All — hidden by default, toggled by the chevron -->
+        <!-- Delete All — hidden by default, toggled by the chevron (admin/OSAS Staff only) -->
+        <?php if ($canImportExport): ?>
         <div class="delete-all-toggle-group">
           <div id="deleteAllWrapper" style="overflow:hidden;max-width:0;opacity:0;transition:max-width 0.3s ease,opacity 0.25s ease;">
             <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;white-space:nowrap;">
@@ -57,6 +62,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
             <i id="toggleDeleteAllIcon" class='bx bx-chevron-left' style="font-size:15px;transition:transform 0.3s;"></i>
           </button>
         </div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -404,10 +410,14 @@ require_once __DIR__ . '/../../config/db_connect.php';
       <i class='bx bx-user'></i>
     </div>
     <h3>No Students Found</h3>
+    <?php if ($canImportExport): ?>
     <p>Get started by importing students data</p>
     <button class="Students-btn-primary" id="btnImportFirstStudents">
       <i class='bx bx-upload'></i> Import Students
     </button>
+    <?php else: ?>
+    <p>No student records are available yet.</p>
+    <?php endif; ?>
   </div>
 
   <!-- Export Modal -->

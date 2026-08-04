@@ -4,8 +4,11 @@ require_once __DIR__ . '/../../core/View.php';
 $username = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Admin';
 $role     = $_SESSION['role'] ?? 'admin';
 
-// Only admin and OSAS Staff can access these restricted pages
+// Only admin and OSAS Staff can access these restricted pages (Dept, Sections)
 $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
+
+// Students page is now accessible to Officers and CSC Officers (read-only)
+$canAccessStudents = in_array($role, ['admin', 'OSAS Staff', 'Officer', 'CSC Officer']);
 
 // Dashboard is restricted to admin, OSAS Staff, and Faculty Member
 $canAccessDashboard = in_array($role, ['admin', 'OSAS Staff', 'Faculty Member']);
@@ -88,24 +91,14 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
         <i class='bx bxs-layer'></i><span>Sections</span>
       </a>
     </li>
+    <?php endif; ?>
+    <?php if ($canAccessStudents): ?>
     <li class="mobile-sidebar-item" data-page="admin_page/Students">
       <a href="#" data-page="admin_page/Students">
         <i class='bx bxs-group'></i><span>Students</span>
       </a>
     </li>
     <?php else: ?>
-    <li class="mobile-sidebar-item nav-restricted">
-      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
-        <i class='bx bxs-building'></i><span>Department</span>
-        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
-      </a>
-    </li>
-    <li class="mobile-sidebar-item nav-restricted">
-      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
-        <i class='bx bxs-layer'></i><span>Sections</span>
-        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
-      </a>
-    </li>
     <li class="mobile-sidebar-item nav-restricted">
       <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
         <i class='bx bxs-group'></i><span>Students</span>
@@ -203,8 +196,8 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
         </a>
       <?php endif; ?>
     </li>
-    <li class="nav-item<?= !$canAccessRestricted ? ' nav-restricted' : '' ?>">
-      <?php if ($canAccessRestricted): ?>
+    <li class="nav-item<?= !$canAccessStudents ? ' nav-restricted' : '' ?>">
+      <?php if ($canAccessStudents): ?>
         <a href="#" data-page="admin_page/Students" class="nav-link" title="Students">
           <i class='bx bxs-group'></i><span>Students</span>
         </a>
