@@ -3477,7 +3477,7 @@ function initViolationsModule() {
                 return;
             }
 
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase().replace(/\s+/g, ' ') : '';
             const deptValue = deptFilter ? deptFilter.value : 'all';
             const statusValue = statusFilter ? statusFilter.value : 'all';
             const dateFromValue = dateFromFilter ? dateFromFilter.value : '';
@@ -3496,7 +3496,7 @@ function initViolationsModule() {
             const currentYear = currentView === 'archive' && archiveYearFilter ? archiveYearFilter.value : 'all';
             const currentDateFrom = currentView === 'current' ? dateFromValue : (archiveDateFromFilter ? archiveDateFromFilter.value : '');
             const currentDateTo = currentView === 'current' ? dateToValue : (archiveDateToFilter ? archiveDateToFilter.value : '');
-            const currentSearchTerm = currentView === 'current' ? searchTerm : (archiveSearchInput ? archiveSearchInput.value.toLowerCase() : searchTerm);
+            const currentSearchTerm = currentView === 'current' ? searchTerm : (archiveSearchInput ? archiveSearchInput.value.trim().toLowerCase().replace(/\s+/g, ' ') : searchTerm);
 
             console.log('🔍 Filter values:', { currentSearchTerm, currentDept, currentMonth, currentDateFrom, currentDateTo, currentView });
 
@@ -3521,7 +3521,8 @@ function initViolationsModule() {
                     return false;
                 }
 
-                const matchesSearch = v.studentName.toLowerCase().includes(currentSearchTerm) ||
+                const matchesSearch = !currentSearchTerm ||
+                                    v.studentName.toLowerCase().replace(/\s+/g, ' ').includes(currentSearchTerm) ||
                                     v.caseId.toLowerCase().includes(currentSearchTerm) ||
                                     v.studentId.toLowerCase().includes(currentSearchTerm) ||
                                     v.violationTypeLabel.toLowerCase().includes(currentSearchTerm);
