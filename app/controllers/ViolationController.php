@@ -58,8 +58,8 @@ class ViolationController extends Controller
             }
         }
 
-        // Automatically check and trigger monthly reset if needed
-        $this->model->checkAndTriggerAutoArchive();
+        // Auto-archive disabled — violations accumulate permanently across months
+        // $this->model->checkAndTriggerAutoArchive();
     }
 
     /**
