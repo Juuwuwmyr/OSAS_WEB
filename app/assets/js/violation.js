@@ -729,13 +729,14 @@ function initViolationsModule() {
                 const firstName  = student.firstName  || student.first_name  || '';
                 const lastName   = student.lastName   || student.last_name   || '';
                 const middleName = student.middleName || student.middle_name || '';
-                const fullName   = `${firstName} ${lastName}`.trim();
+                const fullName   = `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`.replace(/\s+/g, ' ').trim();
                 return {
                     ...student,
                     studentId:  student.studentId  || student.student_id  || '',
                     firstName,
                     lastName,
                     middleName,
+                    fullName,
                     department: student.department  || student.department_name || 'N/A',
                     section:    student.section     || student.section_code    || student.section_name || 'N/A',
                     yearlevel:  student.yearlevel   || student.year_level      || 'N/A',
@@ -3277,30 +3278,26 @@ function initViolationsModule() {
         function findStudentBySearchTerm(searchTerm) {
             if (!searchTerm || !students.length) return null;
 
-            const term = searchTerm.trim().toLowerCase().replace(/\s+/g, ' ');
+            const term   = searchTerm.trim().toLowerCase().replace(/\s+/g, ' ');
+            const tokens = term.split(' ').filter(Boolean);
 
-            // First try exact student ID match
+            // 1. Student ID match first
             let student = students.find(s =>
                 s.studentId.toLowerCase() === term ||
                 s.studentId.toLowerCase().includes(term)
             );
-
             if (student) return student;
 
-            // Then try name match — include middle name variants
+            // 2. Fuzzy token match — every token must appear in the name pool
             student = students.find(s => {
-                const fn  = (s.firstName  || '').toLowerCase().trim();
-                const mn  = (s.middleName || '').toLowerCase().trim();
-                const ln  = (s.lastName   || '').toLowerCase().trim();
-                const fullWithMiddle    = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
-                const fullWithoutMiddle = `${fn} ${ln}`.replace(/\s+/g, ' ').trim();
-                const firstInitialLast  = mn ? `${fn} ${mn.charAt(0)} ${ln}`.replace(/\s+/g, ' ').trim() : '';
+                const namePool = [
+                    s.firstName  || '',
+                    s.middleName || '',
+                    s.lastName   || ''
+                ].join(' ').toLowerCase().replace(/\s+/g, ' ').trim();
 
-                return fn.includes(term) ||
-                       ln.includes(term) ||
-                       fullWithMiddle.includes(term) ||
-                       fullWithoutMiddle.includes(term) ||
-                       (firstInitialLast && firstInitialLast.includes(term));
+                if (tokens.length === 1) return namePool.includes(tokens[0]);
+                return tokens.every(token => namePool.includes(token));
             });
 
             return student;
@@ -4920,30 +4917,36 @@ function initViolationsModule() {
                 hideLoadingOverlay();
             }
 
-            // More robust search logic — handle both camelCase and snake_case field names
+            // ── Smart fuzzy search (Google/Facebook style) ────────────────────────
+            // Split the query into tokens — every token must appear somewhere in
+            // the student's full name pool (first + middle + last, any order).
+            // This means "patrick romasanta", "romasanta patrick", "pat rom",
+            // "patrick james romasanta" all find "Patrick James V Romasanta".
             const student = students.find(s => {
                 if (!s) return false;
                 const sid = (s.studentId || s.student_id || '').toLowerCase();
-                if (!sid) return false;
 
                 const searchLower = searchTerm.toLowerCase().replace(/\s+/g, ' ').trim();
-                const fn  = (s.firstName  || s.first_name   || '').toLowerCase().trim();
-                const mn  = (s.middleName || s.middle_name  || '').toLowerCase().trim();
-                const ln  = (s.lastName   || s.last_name    || '').toLowerCase().trim();
 
-                // Build multiple name variants to match how users type
-                const fullWithMiddle    = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
-                const fullWithoutMiddle = `${fn} ${ln}`.replace(/\s+/g, ' ').trim();
-                // "first middleinitial last" e.g. "patrick v romasanta"
-                const firstInitialLast  = mn ? `${fn} ${mn.charAt(0)} ${ln}`.replace(/\s+/g, ' ').trim() : '';
+                // 1. Student ID — exact or partial
+                if (sid === searchLower || sid.includes(searchLower) || searchLower.includes(sid)) return true;
 
-                if (sid === searchLower)                        return true;
-                if (sid.includes(searchLower))                  return true;
-                if (fullWithMiddle.includes(searchLower))       return true;
-                if (fullWithoutMiddle.includes(searchLower))    return true;
-                if (firstInitialLast && firstInitialLast.includes(searchLower)) return true;
-                if (searchLower.includes(sid))                  return true;
-                return false;
+                // 2. Build a single name pool from ALL name parts
+                const fn = (s.firstName  || s.first_name  || '').toLowerCase().trim();
+                const mn = (s.middleName || s.middle_name || '').toLowerCase().trim();
+                const ln = (s.lastName   || s.last_name   || '').toLowerCase().trim();
+                // "patrick james v romasanta" — all words in one string
+                const namePool = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
+
+                // 3. If query is a single word, check if it appears anywhere in namePool
+                const tokens = searchLower.split(' ').filter(Boolean);
+                if (tokens.length === 1) {
+                    return namePool.includes(tokens[0]);
+                }
+
+                // 4. Multi-word query: every token must appear somewhere in namePool
+                //    Order doesn't matter — "romasanta patrick" still matches
+                return tokens.every(token => namePool.includes(token));
             });
             
             if (student) {
