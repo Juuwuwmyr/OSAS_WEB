@@ -129,7 +129,7 @@ def parse_excel():
             col0_is_num = r[0].isdigit() if r[0] else False
             col2_raw    = r[2] if len(r) > 2 else ""
             col2_norm   = normalize_student_id(col2_raw)
-            is_student  = col0_is_num and bool(re.match(r'^\d{4}-\d+$', col2_norm))
+            is_student  = col0_is_num and bool(re.match(r'^[A-Za-z]?\d{4}-\d+$', col2_norm))
 
             if is_student:
                 # Parse name: "LASTNAME, FIRSTNAME M."
