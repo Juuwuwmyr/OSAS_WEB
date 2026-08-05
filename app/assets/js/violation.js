@@ -3277,7 +3277,7 @@ function initViolationsModule() {
         function findStudentBySearchTerm(searchTerm) {
             if (!searchTerm || !students.length) return null;
 
-            const term = searchTerm.trim().toLowerCase();
+            const term = searchTerm.trim().toLowerCase().replace(/\s+/g, ' ');
 
             // First try exact student ID match
             let student = students.find(s =>
@@ -3287,12 +3287,21 @@ function initViolationsModule() {
 
             if (student) return student;
 
-            // Then try name match
-            student = students.find(s =>
-                s.firstName.toLowerCase().includes(term) ||
-                s.lastName.toLowerCase().includes(term) ||
-                `${s.firstName} ${s.lastName}`.toLowerCase().includes(term)
-            );
+            // Then try name match — include middle name variants
+            student = students.find(s => {
+                const fn  = (s.firstName  || '').toLowerCase().trim();
+                const mn  = (s.middleName || '').toLowerCase().trim();
+                const ln  = (s.lastName   || '').toLowerCase().trim();
+                const fullWithMiddle    = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
+                const fullWithoutMiddle = `${fn} ${ln}`.replace(/\s+/g, ' ').trim();
+                const firstInitialLast  = mn ? `${fn} ${mn.charAt(0)} ${ln}`.replace(/\s+/g, ' ').trim() : '';
+
+                return fn.includes(term) ||
+                       ln.includes(term) ||
+                       fullWithMiddle.includes(term) ||
+                       fullWithoutMiddle.includes(term) ||
+                       (firstInitialLast && firstInitialLast.includes(term));
+            });
 
             return student;
         }
@@ -4917,15 +4926,23 @@ function initViolationsModule() {
                 const sid = (s.studentId || s.student_id || '').toLowerCase();
                 if (!sid) return false;
 
-                const searchLower = searchTerm.toLowerCase();
-                const fn = (s.firstName || s.first_name || '').toLowerCase();
-                const ln = (s.lastName  || s.last_name  || '').toLowerCase();
-                const fullName = `${fn} ${ln}`.trim();
+                const searchLower = searchTerm.toLowerCase().replace(/\s+/g, ' ').trim();
+                const fn  = (s.firstName  || s.first_name   || '').toLowerCase().trim();
+                const mn  = (s.middleName || s.middle_name  || '').toLowerCase().trim();
+                const ln  = (s.lastName   || s.last_name    || '').toLowerCase().trim();
 
-                if (sid === searchLower)          return true;
-                if (sid.includes(searchLower))    return true;
-                if (fullName.includes(searchLower)) return true;
-                if (searchLower.includes(sid))    return true;
+                // Build multiple name variants to match how users type
+                const fullWithMiddle    = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
+                const fullWithoutMiddle = `${fn} ${ln}`.replace(/\s+/g, ' ').trim();
+                // "first middleinitial last" e.g. "patrick v romasanta"
+                const firstInitialLast  = mn ? `${fn} ${mn.charAt(0)} ${ln}`.replace(/\s+/g, ' ').trim() : '';
+
+                if (sid === searchLower)                        return true;
+                if (sid.includes(searchLower))                  return true;
+                if (fullWithMiddle.includes(searchLower))       return true;
+                if (fullWithoutMiddle.includes(searchLower))    return true;
+                if (firstInitialLast && firstInitialLast.includes(searchLower)) return true;
+                if (searchLower.includes(sid))                  return true;
                 return false;
             });
             
