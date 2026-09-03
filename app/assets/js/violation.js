@@ -4926,15 +4926,26 @@ function initViolationsModule() {
                 if (!s) return false;
                 const sid = (s.studentId || s.student_id || '').toLowerCase();
 
-                const searchLower = searchTerm.toLowerCase().replace(/\s+/g, ' ').trim();
+                // Normalize a string: lowercase, strip accents (ñ→n, é→e, etc.),
+                // remove punctuation, collapse whitespace.
+                const normalize = str => str
+                    .toLowerCase()
+                    .normalize('NFD')                                          // decompose accents
+                    .replace(/[\u0300-\u036f]/g, '')                          // strip combining marks
+                    .replace(/[.,;:!?'"()\[\]{}\-_\/\\|@#$%^&*+=~`]/g, ' ') // strip punctuation
+                    .replace(/\s+/g, ' ').trim();
+
+                // Apply normalization to the search term so:
+                // "niño" == "nino", "ROMASANTA, PATRICK JAMES V." == "romasanta patrick james v"
+                const searchLower = normalize(searchTerm);
 
                 // 1. Student ID — exact or partial
                 if (sid === searchLower || sid.includes(searchLower) || searchLower.includes(sid)) return true;
 
-                // 2. Build a single name pool from ALL name parts
-                const fn = (s.firstName  || s.first_name  || '').toLowerCase().trim();
-                const mn = (s.middleName || s.middle_name || '').toLowerCase().trim();
-                const ln = (s.lastName   || s.last_name   || '').toLowerCase().trim();
+                // 2. Build a single name pool from ALL name parts (also normalized)
+                const fn = normalize(s.firstName  || s.first_name  || '');
+                const mn = normalize(s.middleName || s.middle_name || '');
+                const ln = normalize(s.lastName   || s.last_name   || '');
                 // "patrick james v romasanta" — all words in one string
                 const namePool = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
 
