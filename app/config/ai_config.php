@@ -45,7 +45,7 @@ if (!defined('AI_API_KEY')) {
 // You can also manually override these if needed
 if (AI_API_TYPE === 'groq') {
     define('AI_API_URL', 'https://api.groq.com/openai/v1/chat/completions');
-    define('AI_MODEL', 'llama-3.1-8b-instant'); // or 'mixtral-8x7b-32768', 'llama-3.1-70b-versatile'
+    define('AI_MODEL', 'openai/gpt-oss-20b'); // or 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b'
 } elseif (AI_API_TYPE === 'huggingface') {
     define('AI_API_URL', 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct');
     define('AI_MODEL', 'meta-llama/Meta-Llama-3-8B-Instruct');
