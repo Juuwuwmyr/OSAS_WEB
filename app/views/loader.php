@@ -43,9 +43,11 @@ $pathMap = [
     'admin_page/Announcements' => 'admin/Announcements',
     'admin_page/settings' => 'admin/settings',
     'admin_page/Settings' => 'admin/settings',
+    'admin_page/Messages'  => 'admin/Messages',
     'user-page/user_dashcontent' => 'user/dashcontent',
     'user-page/my_violations' => 'user/my_violations',
     'user-page/announcements' => 'user/announcements',
+    'user-page/messages'   => 'user/messages',
 ];
 
 // Check if we need to map the path

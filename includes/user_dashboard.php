@@ -160,6 +160,8 @@ if (!$student_id) {
     <?php View::partial('logout_modal'); ?>
     <script src="<?= View::asset('js/pwa.js') ?>"></script>
     <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>"></script>
+    <!-- Messaging module: loaded globally so the sidebar badge poller starts immediately -->
+    <script src="<?= View::asset('js/messages.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= View::asset('js/realtimeAlerts.js') ?>?v=<?= time() ?>"></script>
 
     <div id="DownloadFormatModal" class="download-modal" style="display:none;">

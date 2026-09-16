@@ -128,6 +128,14 @@ $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer',
       <?php endif; ?>
     </li>
   </ul>
+    <li>
+      <a href="#" data-page="admin_page/Messages">
+        <i class='bx bxs-message-rounded-dots'></i>
+        <span class="text">Messages</span>
+        <!-- unread badge injected by messages.js -->
+      </a>
+    </li>
+  </ul>
   <!-- Logout Fixed at Bottom -->
   <div class="sidebar-logout">
     <a href="#" class="logout" onclick="logout()">

@@ -79,6 +79,13 @@ if (isset($student) && $student) {
       </a>
     </li>
     <li>
+      <a href="#" data-page="user-page/messages">
+        <i class='bx bxs-message-rounded-dots'></i>
+        <span class="text">Messages</span>
+        <!-- unread badge injected by messages.js -->
+      </a>
+    </li>
+    <li>
       <a href="#" class="settings-link">
         <i class='bx bxs-cog'></i>
         <span class="text">Settings</span>
