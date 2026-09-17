@@ -127,7 +127,6 @@ $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer',
         </a>
       <?php endif; ?>
     </li>
-  </ul>
     <li>
       <a href="#" data-page="admin_page/Messages">
         <i class='bx bxs-message-rounded-dots'></i>

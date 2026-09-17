@@ -671,6 +671,19 @@ HOW-TO FOR ADMINS:
         const chatbotPanel = document.createElement('div');
         chatbotPanel.id = 'chatbot-panel';
         chatbotPanel.innerHTML = `
+            <!-- TAB BAR -->
+            <div class="cb-tab-bar">
+                <button class="cb-tab-btn active" id="cb-tab-chat" data-tab="chat">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3.04 1.05 4.38L2 22l5.62-1.05C8.96 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.34 0-2.65-.26-3.86-.76L5 20l.76-3.14C5.26 15.65 5 14.34 5 13c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7z"/></svg>
+                    AI Chat
+                </button>
+                <button class="cb-tab-btn" id="cb-tab-msg" data-tab="messages">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    Messages
+                    <span class="cb-tab-unread" id="cb-tab-unread" style="display:none"></span>
+                </button>
+            </div>
+
             <!-- HISTORY SIDEBAR -->
             <div class="cb-history-sidebar" id="cb-history-sidebar">
                 <div class="cb-history-header">
@@ -733,6 +746,66 @@ HOW-TO FOR ADMINS:
                 <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
                 <div class="cb-typing-dots"><span></span><span></span><span></span></div>
             </div>
+
+            <!-- ══════════════════════════════════════════════════
+                 MESSAGES TAB PANE
+                 ══════════════════════════════════════════════════ -->
+            <div class="cb-msg-pane" id="cb-msg-pane" style="display:none">
+
+                <!-- MSG: Conversation list view -->
+                <div class="cb-msg-list-view" id="cb-msg-list-view">
+                    <!-- Admin: new conversation button + search -->
+                    ${!isUser ? `
+                    <div class="cb-msg-new-wrap">
+                        <button class="cb-msg-new-btn" id="cb-msg-new-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Conversation
+                        </button>
+                    </div>
+                    <div class="cb-msg-search-wrap" id="cb-msg-search-wrap" style="display:none">
+                        <div class="cb-msg-search-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="cb-msg-search-input" placeholder="Search student by name or ID…" autocomplete="off">
+                        </div>
+                        <div class="cb-msg-search-results" id="cb-msg-search-results"></div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Conversation list -->
+                    <div class="cb-msg-convs" id="cb-msg-convs">
+                        <div class="cb-msg-empty" id="cb-msg-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" opacity=".3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <p>${isUser ? 'No messages yet.<br><small>OSAS staff will contact you here.</small>' : 'No conversations yet.<br><small>Click New Conversation to start.</small>'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MSG: Active chat view -->
+                <div class="cb-msg-chat-view" id="cb-msg-chat-view" style="display:none">
+                    <div class="cb-msg-chat-header">
+                        <button class="cb-msg-back" id="cb-msg-back">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <img class="cb-msg-peer-avatar" id="cb-msg-peer-avatar" src="" alt="">
+                        <div class="cb-msg-peer-info">
+                            <span class="cb-msg-peer-name" id="cb-msg-peer-name"></span>
+                            <span class="cb-msg-peer-sub"  id="cb-msg-peer-sub"></span>
+                        </div>
+                    </div>
+                    <div class="cb-msg-bubbles" id="cb-msg-bubbles">
+                        <div class="cb-msg-bubbles-loader" id="cb-msg-bubbles-loader" style="display:none">
+                            <div class="cb-msg-spinner"></div>
+                        </div>
+                    </div>
+                    <div class="cb-msg-input-row">
+                        <textarea id="cb-msg-input" class="cb-msg-input" placeholder="Type a message…" rows="1" maxlength="5000"></textarea>
+                        <button class="cb-msg-send" id="cb-msg-send">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div><!-- /cb-msg-pane -->
         `;
         document.body.appendChild(chatbotPanel);
     }
@@ -1186,6 +1259,59 @@ HOW-TO FOR ADMINS:
                 if (e.target.id === 'prompt-selector-modal') this.closePromptSelector();
             });
         }
+
+        // ── TAB SWITCHING ─────────────────────────────────────────────────
+        const tabChat = document.getElementById('cb-tab-chat');
+        const tabMsg  = document.getElementById('cb-tab-msg');
+        if (tabChat) tabChat.addEventListener('click', () => this.cbSwitchTab('chat'));
+        if (tabMsg)  tabMsg.addEventListener('click',  () => this.cbSwitchTab('messages'));
+
+        // ── MESSAGES TAB: new conversation (admin) ────────────────────────
+        const msgNewBtn = document.getElementById('cb-msg-new-btn');
+        if (msgNewBtn) {
+            msgNewBtn.addEventListener('click', () => {
+                const wrap = document.getElementById('cb-msg-search-wrap');
+                if (!wrap) return;
+                const open = wrap.style.display !== 'none';
+                wrap.style.display = open ? 'none' : 'block';
+                if (!open) {
+                    const si = document.getElementById('cb-msg-search-input');
+                    if (si) { si.value = ''; si.focus(); }
+                    document.getElementById('cb-msg-search-results').innerHTML = '';
+                }
+            });
+        }
+
+        // ── MESSAGES TAB: student search input ───────────────────────────
+        const msgSearchInput = document.getElementById('cb-msg-search-input');
+        if (msgSearchInput) {
+            let _debounce;
+            msgSearchInput.addEventListener('input', () => {
+                clearTimeout(_debounce);
+                _debounce = setTimeout(() => this.cbMsgSearchStudents(msgSearchInput.value.trim()), 300);
+            });
+        }
+
+        // ── MESSAGES TAB: back button ─────────────────────────────────────
+        const msgBack = document.getElementById('cb-msg-back');
+        if (msgBack) msgBack.addEventListener('click', () => this.cbMsgShowList());
+
+        // ── MESSAGES TAB: send button ─────────────────────────────────────
+        const msgSend  = document.getElementById('cb-msg-send');
+        const msgInput = document.getElementById('cb-msg-input');
+        if (msgSend)  msgSend.addEventListener('click', () => this.cbMsgSend());
+        if (msgInput) {
+            msgInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.cbMsgSend(); }
+            });
+            msgInput.addEventListener('input', () => {
+                msgInput.style.height = 'auto';
+                msgInput.style.height = Math.min(msgInput.scrollHeight, 96) + 'px';
+            });
+        }
+
+        // Start badge poller immediately
+        this.cbMsgStartBadgePoller();
 
         this.initDrag();
     }
@@ -2409,6 +2535,384 @@ HOW-TO FOR ADMINS:
             modal.classList.remove('show');
             document.body.style.overflow = '';
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  MESSAGES TAB — embedded Messenger inside the chatbot widget
+    // ══════════════════════════════════════════════════════════════════════
+
+    cbMsgApiBase() {
+        return this.apiBase.replace('/api/', '/api/').replace('chatbot.php','').replace(/\/$/, '') + '/../api/messages.php'
+            .replace('/api/../api/', '/api/');
+    }
+
+    async cbApiFetch(params, body) {
+        const base = this.apiBase.replace('chatbot.php', 'messages.php');
+        const qs   = new URLSearchParams(params).toString();
+        const url  = base + (qs ? '?' + qs : '');
+        const opts = body
+            ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) }
+            : { method: 'GET', credentials: 'include' };
+        const res = await fetch(url, opts);
+        return res.json();
+    }
+
+    // ── Tab switcher ───────────────────────────────────────────────────────
+    cbSwitchTab(tab) {
+        // Chat parts that need to hide when Messages tab is active
+        // cb-history-sidebar only shown if historyOpen, so we skip it in the restore
+        const chatParts  = ['cb-header','chatbot-messages','cb-input-bar','chatbot-loading'];
+        const msgPane    = document.getElementById('cb-msg-pane');
+        const tabChat    = document.getElementById('cb-tab-chat');
+        const tabMsg     = document.getElementById('cb-tab-msg');
+        const historySidebar = document.getElementById('cb-history-sidebar');
+
+        if (tab === 'chat') {
+            chatParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+            // Only restore history sidebar if it was open
+            if (historySidebar && this.historyOpen) historySidebar.style.display = '';
+            if (msgPane)  msgPane.style.display  = 'none';
+            if (tabChat)  tabChat.classList.add('active');
+            if (tabMsg)   tabMsg.classList.remove('active');
+            this._cbMsgStopPoll();
+        } else {
+            chatParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+            if (historySidebar) historySidebar.style.display = 'none';
+            if (msgPane)  msgPane.style.display  = 'flex';
+            if (tabMsg)   tabMsg.classList.add('active');
+            if (tabChat)  tabChat.classList.remove('active');
+            this.cbMsgLoadConversations();
+        }
+        this._cbMsgActiveTab = tab;
+    }
+
+    // ── Load conversation list ─────────────────────────────────────────────
+    async cbMsgLoadConversations() {
+        try {
+            const data = await this.cbApiFetch({ action: 'conversations' });
+            if (!data.success) return;
+            this._cbMsgAllConvs = data.conversations || [];
+            this.cbMsgRenderList();
+        } catch(e) { console.warn('cbMsgLoadConversations:', e); }
+    }
+
+    cbMsgRenderList() {
+        const list  = document.getElementById('cb-msg-convs');
+        const empty = document.getElementById('cb-msg-empty');
+        if (!list) return;
+
+        // Remove old items (keep empty div)
+        list.querySelectorAll('.cb-msg-conv-item').forEach(el => el.remove());
+
+        const convs = this._cbMsgAllConvs || [];
+        const isUser = window.location.pathname.includes('user_dashboard') || window.location.pathname.includes('/user/');
+
+        if (convs.length === 0) {
+            if (empty) empty.style.display = 'flex';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        convs.forEach(conv => {
+            const name    = isUser ? (conv.admin_name || 'OSAS Admin') : (conv.student_name || 'Student');
+            const sub     = isUser ? 'OSAS Staff' : (conv.student_code || '');
+            const preview = conv.last_message ? (conv.last_message.length > 38 ? conv.last_message.slice(0,38)+'…' : conv.last_message) : 'No messages yet';
+            const unread  = parseInt(conv.unread) || 0;
+            const avatar  = this._cbMsgResolveAvatar(isUser ? conv.admin_avatar : conv.student_avatar);
+
+            const div = document.createElement('div');
+            div.className = 'cb-msg-conv-item' + (unread > 0 ? ' cb-msg-has-unread' : '');
+            div.dataset.convId = conv.id;
+            div.innerHTML = `
+                <img class="cb-msg-conv-avatar" src="${avatar}" alt="" onerror="this.src='${this._cbMsgDefaultAvatar()}'">
+                <div class="cb-msg-conv-body">
+                    <div class="cb-msg-conv-name">${this._cbEsc(name)}</div>
+                    <div class="cb-msg-conv-preview">${this._cbEsc(preview)}</div>
+                </div>
+                ${unread > 0 ? `<span class="cb-msg-conv-badge">${unread > 9 ? '9+' : unread}</span>` : ''}
+            `;
+            div.addEventListener('click', () => this.cbMsgOpenConv(conv));
+            list.appendChild(div);
+        });
+    }
+
+    // ── Open a conversation ────────────────────────────────────────────────
+    async cbMsgOpenConv(conv) {
+        this._cbMsgStopPoll();
+        this._cbMsgCurrentConvId = parseInt(conv.id);
+        this._cbMsgLastId = 0;
+
+        const isUser = window.location.pathname.includes('user_dashboard') || window.location.pathname.includes('/user/');
+        const name   = isUser ? (conv.admin_name || 'OSAS Admin') : (conv.student_name || 'Student');
+        const sub    = isUser ? 'OSAS Staff' : (conv.student_code || '');
+        const avatar = this._cbMsgResolveAvatar(isUser ? conv.admin_avatar : conv.student_avatar);
+
+        const listView = document.getElementById('cb-msg-list-view');
+        const chatView = document.getElementById('cb-msg-chat-view');
+        if (listView) listView.style.display = 'none';
+        if (chatView) chatView.style.display  = 'flex';
+
+        const nameEl   = document.getElementById('cb-msg-peer-name');
+        const subEl    = document.getElementById('cb-msg-peer-sub');
+        const avatarEl = document.getElementById('cb-msg-peer-avatar');
+        if (nameEl)   nameEl.textContent   = name;
+        if (subEl)    subEl.textContent    = sub;
+        if (avatarEl) { avatarEl.src = avatar; avatarEl.onerror = () => { avatarEl.src = this._cbMsgDefaultAvatar(); }; }
+
+        const loader = document.getElementById('cb-msg-bubbles-loader');
+        if (loader) loader.style.display = 'flex';
+
+        const bubbles = document.getElementById('cb-msg-bubbles');
+        if (bubbles) { Array.from(bubbles.children).forEach(el => { if (el !== loader) el.remove(); }); }
+
+        await this.cbMsgLoadMessages(conv.id);
+        this._cbMsgStartPoll();
+
+        // Mark read in local state
+        conv.unread = 0;
+        this.cbMsgRenderList();
+        document.querySelectorAll('.cb-msg-conv-item').forEach(el => {
+            el.classList.toggle('active', parseInt(el.dataset.convId) === this._cbMsgCurrentConvId);
+        });
+    }
+
+    async cbMsgLoadMessages(convId) {
+        try {
+            const data = await this.cbApiFetch({ action: 'messages', conv_id: convId });
+            const loader = document.getElementById('cb-msg-bubbles-loader');
+            if (loader) loader.style.display = 'none';
+            if (!data.success) return;
+
+            const msgs = data.messages || [];
+            if (msgs.length === 0) { this._cbMsgAppendSep('No messages yet — say hello!'); return; }
+
+            let lastDate = '';
+            msgs.forEach(m => {
+                const d = this._cbMsgFormatDate(m.created_at);
+                if (d !== lastDate) { this._cbMsgAppendSep(d); lastDate = d; }
+                this._cbMsgAppendBubble(m);
+            });
+            if (msgs.length) this._cbMsgLastId = parseInt(msgs[msgs.length-1].id);
+            this._cbMsgScrollBottom();
+        } catch(e) {
+            const loader = document.getElementById('cb-msg-bubbles-loader');
+            if (loader) loader.style.display = 'none';
+        }
+    }
+
+    // ── Back to list ───────────────────────────────────────────────────────
+    cbMsgShowList() {
+        this._cbMsgStopPoll();
+        this._cbMsgCurrentConvId = null;
+        const listView = document.getElementById('cb-msg-list-view');
+        const chatView = document.getElementById('cb-msg-chat-view');
+        if (listView) listView.style.display = 'flex';
+        if (chatView) chatView.style.display  = 'none';
+    }
+
+    // ── Send message ───────────────────────────────────────────────────────
+    async cbMsgSend() {
+        const input = document.getElementById('cb-msg-input');
+        const body  = (input ? input.value : '').trim();
+        if (!body || !this._cbMsgCurrentConvId) return;
+
+        const sendBtn = document.getElementById('cb-msg-send');
+        if (sendBtn) sendBtn.disabled = true;
+        if (input)   input.value = '';
+
+        try {
+            const data = await this.cbApiFetch({}, { action: 'send', conv_id: this._cbMsgCurrentConvId, body });
+            if (data.success) {
+                const myId = window.OSAS_MSG_USER_ID || 0;
+                const fakeMsg = {
+                    id: data.msg_id,
+                    sender_id: myId,
+                    body,
+                    is_read: 0,
+                    created_at: data.sent_at || new Date().toISOString(),
+                };
+                const d = this._cbMsgFormatDate(fakeMsg.created_at);
+                const lastSep = document.querySelector('#cb-msg-bubbles .cb-msg-sep:last-of-type');
+                if (!lastSep || lastSep.textContent !== d) this._cbMsgAppendSep(d);
+                this._cbMsgAppendBubble(fakeMsg);
+                this._cbMsgLastId = parseInt(data.msg_id);
+                this._cbMsgScrollBottom();
+                this.cbMsgLoadConversations();
+            }
+        } catch(e) { /* silent */ }
+        finally {
+            if (sendBtn) sendBtn.disabled = false;
+            if (input)   input.focus();
+        }
+    }
+
+    // ── Polling ────────────────────────────────────────────────────────────
+    _cbMsgStartPoll() {
+        this._cbMsgStopPoll();
+        this._cbMsgPollTimer = setInterval(() => this._cbMsgPoll(), 3000);
+    }
+
+    _cbMsgStopPoll() {
+        if (this._cbMsgPollTimer) { clearInterval(this._cbMsgPollTimer); this._cbMsgPollTimer = null; }
+    }
+
+    async _cbMsgPoll() {
+        if (!this._cbMsgCurrentConvId) return;
+        try {
+            const data = await this.cbApiFetch({ action: 'poll', conv_id: this._cbMsgCurrentConvId, after: this._cbMsgLastId || 0 });
+            if (!data.success || !data.messages || !data.messages.length) return;
+            let lastDate = this._cbMsgLastDateInBubbles();
+            data.messages.forEach(m => {
+                const d = this._cbMsgFormatDate(m.created_at);
+                if (d !== lastDate) { this._cbMsgAppendSep(d); lastDate = d; }
+                this._cbMsgAppendBubble(m);
+            });
+            this._cbMsgLastId = parseInt(data.messages[data.messages.length-1].id);
+            this._cbMsgScrollBottom();
+            this.cbMsgLoadConversations();
+        } catch(e) { /* silent */ }
+    }
+
+    // ── Badge poller ───────────────────────────────────────────────────────
+    cbMsgStartBadgePoller() {
+        this._cbMsgUpdateBadge();
+        this._cbMsgBadgeTimer = setInterval(() => this._cbMsgUpdateBadge(), 8000);
+    }
+
+    async _cbMsgUpdateBadge() {
+        try {
+            const data = await this.cbApiFetch({ action: 'unread_count' });
+            if (!data.success) return;
+            const count = parseInt(data.unread) || 0;
+            const badge = document.getElementById('cb-tab-unread');
+            if (badge) {
+                badge.textContent    = count > 9 ? '9+' : count;
+                badge.style.display  = count > 0 ? 'inline-flex' : 'none';
+            }
+        } catch(e) { /* silent */ }
+    }
+
+    // ── Admin: search students ─────────────────────────────────────────────
+    async cbMsgSearchStudents(q) {
+        const results = document.getElementById('cb-msg-search-results');
+        if (!results) return;
+        if (!q) { results.innerHTML = ''; return; }
+        results.innerHTML = '<div class="cb-msg-search-empty">Searching…</div>';
+        try {
+            const data = await this.cbApiFetch({ action: 'search_students', q });
+            if (!data.success || !data.students.length) {
+                results.innerHTML = '<div class="cb-msg-search-empty">No students found.</div>'; return;
+            }
+            results.innerHTML = '';
+            data.students.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'cb-msg-search-item';
+                const av = this._cbMsgResolveAvatar(s.avatar);
+                item.innerHTML = `
+                    <img src="${av}" class="cb-msg-search-avatar" onerror="this.src='${this._cbMsgDefaultAvatar()}'">
+                    <div>
+                        <strong>${this._cbEsc(s.full_name)}</strong>
+                        <small>${this._cbEsc(s.student_code||'')}${s.department?' · '+this._cbEsc(s.department):''}</small>
+                    </div>`;
+                item.addEventListener('click', () => this.cbMsgStartConversation(parseInt(s.user_id), s));
+                results.appendChild(item);
+            });
+        } catch(e) { results.innerHTML = '<div class="cb-msg-search-empty">Error.</div>'; }
+    }
+
+    async cbMsgStartConversation(studentUserId, studentInfo) {
+        try {
+            const data = await this.cbApiFetch({}, { action: 'start', student_user_id: studentUserId });
+            if (!data.success) return;
+            const wrap = document.getElementById('cb-msg-search-wrap');
+            if (wrap) wrap.style.display = 'none';
+            await this.cbMsgLoadConversations();
+            const conv = (this._cbMsgAllConvs || []).find(c => parseInt(c.id) === parseInt(data.conv_id));
+            if (conv) {
+                this.cbMsgOpenConv(conv);
+            } else {
+                this.cbMsgOpenConv({
+                    id: data.conv_id, student_user_id: studentUserId,
+                    student_name: studentInfo.full_name || 'Student',
+                    student_code: studentInfo.student_code || '',
+                    student_avatar: studentInfo.avatar || null,
+                    last_message: null, unread: 0,
+                });
+            }
+        } catch(e) { console.warn('cbMsgStartConversation:', e); }
+    }
+
+    // ── DOM helpers ────────────────────────────────────────────────────────
+    _cbMsgAppendSep(label) {
+        const bubbles = document.getElementById('cb-msg-bubbles');
+        const loader  = document.getElementById('cb-msg-bubbles-loader');
+        if (!bubbles) return;
+        const sep = document.createElement('div');
+        sep.className   = 'cb-msg-sep';
+        sep.textContent = label;
+        bubbles.insertBefore(sep, loader);
+    }
+
+    _cbMsgLastDateInBubbles() {
+        const seps = document.querySelectorAll('#cb-msg-bubbles .cb-msg-sep');
+        return seps.length ? seps[seps.length-1].textContent : '';
+    }
+
+    _cbMsgAppendBubble(msg) {
+        const bubbles = document.getElementById('cb-msg-bubbles');
+        const loader  = document.getElementById('cb-msg-bubbles-loader');
+        if (!bubbles) return;
+        const myId  = parseInt(window.OSAS_MSG_USER_ID) || 0;
+        const isMine = parseInt(msg.sender_id) === myId;
+        const row = document.createElement('div');
+        row.className    = 'cb-msg-bubble-row ' + (isMine ? 'cb-msg-sent' : 'cb-msg-recv');
+        row.dataset.msgId = msg.id;
+        const time  = this._cbMsgFormatTimeShort(msg.created_at);
+        const read  = isMine && parseInt(msg.is_read) === 1;
+        row.innerHTML = `
+            <div class="cb-msg-bwrap">
+                <div class="cb-msg-bubble">${this._cbEscHtml(msg.body)}</div>
+                <div class="cb-msg-bmeta">${isMine ? `<span class="cb-msg-tick ${read?'read':''}">✓✓</span>` : ''}<span>${this._cbEsc(time)}</span></div>
+            </div>`;
+        bubbles.insertBefore(row, loader);
+    }
+
+    _cbMsgScrollBottom() {
+        const b = document.getElementById('cb-msg-bubbles');
+        if (b) b.scrollTop = b.scrollHeight;
+    }
+
+    _cbMsgDefaultAvatar() {
+        return this.apiBase.replace('/api/', '/app/assets/img/default.png');
+    }
+
+    _cbMsgResolveAvatar(path) {
+        if (!path) return this._cbMsgDefaultAvatar();
+        if (path.startsWith('http') || path.startsWith('/')) return path;
+        return this.apiBase.replace('/api/', '/app/assets/') + path;
+    }
+
+    _cbEsc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    _cbEscHtml(s) { return this._cbEsc(s).replace(/\n/g,'<br>'); }
+
+    _cbMsgFormatDate(dt) {
+        if (!dt) return '';
+        const d = new Date(dt), now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const diff = today - msgDay;
+        if (diff === 0) return 'Today';
+        if (diff === 86400000) return 'Yesterday';
+        return d.toLocaleDateString([], { month:'short', day:'numeric', year:'numeric' });
+    }
+
+    _cbMsgFormatTimeShort(dt) {
+        if (!dt) return '';
+        return new Date(dt).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
     }
 }
 
