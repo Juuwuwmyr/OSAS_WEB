@@ -671,19 +671,6 @@ HOW-TO FOR ADMINS:
         const chatbotPanel = document.createElement('div');
         chatbotPanel.id = 'chatbot-panel';
         chatbotPanel.innerHTML = `
-            <!-- TAB BAR -->
-            <div class="cb-tab-bar">
-                <button class="cb-tab-btn active" id="cb-tab-chat" data-tab="chat">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3.04 1.05 4.38L2 22l5.62-1.05C8.96 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.34 0-2.65-.26-3.86-.76L5 20l.76-3.14C5.26 15.65 5 14.34 5 13c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7z"/></svg>
-                    AI Chat
-                </button>
-                <button class="cb-tab-btn" id="cb-tab-msg" data-tab="messages">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                    Messages
-                    <span class="cb-tab-unread" id="cb-tab-unread" style="display:none"></span>
-                </button>
-            </div>
-
             <!-- HISTORY SIDEBAR -->
             <div class="cb-history-sidebar" id="cb-history-sidebar">
                 <div class="cb-history-header">
@@ -721,6 +708,19 @@ HOW-TO FOR ADMINS:
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
+                </button>
+            </div>
+
+            <!-- TAB BAR — below header -->
+            <div class="cb-tab-bar">
+                <button class="cb-tab-btn active" id="cb-tab-chat" data-tab="chat">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3.04 1.05 4.38L2 22l5.62-1.05C8.96 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                    AI Chat
+                </button>
+                <button class="cb-tab-btn" id="cb-tab-msg" data-tab="messages">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    Messages
+                    <span class="cb-tab-unread" id="cb-tab-unread" style="display:none"></span>
                 </button>
             </div>
 
@@ -2541,13 +2541,9 @@ HOW-TO FOR ADMINS:
     //  MESSAGES TAB — embedded Messenger inside the chatbot widget
     // ══════════════════════════════════════════════════════════════════════
 
-    cbMsgApiBase() {
-        return this.apiBase.replace('/api/', '/api/').replace('chatbot.php','').replace(/\/$/, '') + '/../api/messages.php'
-            .replace('/api/../api/', '/api/');
-    }
-
     async cbApiFetch(params, body) {
-        const base = this.apiBase.replace('chatbot.php', 'messages.php');
+        // this.apiBase = '/api/' (or '/OSAS_WEB/api/')
+        const base = this.apiBase + 'messages.php';
         const qs   = new URLSearchParams(params).toString();
         const url  = base + (qs ? '?' + qs : '');
         const opts = body

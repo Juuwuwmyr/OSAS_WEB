@@ -948,8 +948,8 @@ body.dark .cb-history-banner {
 /* ── Tab bar ──────────────────────────────────────────────── */
 .cb-tab-bar {
     display: flex;
-    gap: 4px;
-    padding: 8px 10px 0;
+    gap: 0;
+    padding: 0 10px;
     background: #fff;
     border-bottom: 1px solid #f0f0f0;
     flex-shrink: 0;
@@ -966,28 +966,27 @@ body.dark .cb-tab-bar {
     align-items: center;
     justify-content: center;
     gap: 5px;
-    padding: 7px 4px;
+    padding: 9px 4px;
     border: none;
     background: transparent;
-    border-radius: 8px 8px 0 0;
+    border-bottom: 2.5px solid transparent;
     font-size: 12.5px;
     font-weight: 600;
     color: #9ca3af;
     cursor: pointer;
     position: relative;
-    transition: color .15s, background .15s;
+    transition: color .15s, border-color .15s;
     white-space: nowrap;
 }
 
 .cb-tab-btn.active {
     color: #7a5c00;
-    background: rgba(255,215,0,.1);
-    box-shadow: inset 0 -2px 0 var(--gold, #D4AF37);
+    border-bottom-color: var(--gold, #D4AF37);
 }
 
 body.dark .cb-tab-btn.active { color: #ffd700; }
 
-.cb-tab-btn:hover:not(.active) { color: #6b7280; background: rgba(0,0,0,.04); }
+.cb-tab-btn:hover:not(.active) { color: #6b7280; }
 
 .cb-tab-unread {
     display: inline-flex;
