@@ -1424,6 +1424,8 @@ HOW-TO FOR ADMINS:
         const input = document.getElementById('chatbot-input');
         if (input) input.focus();
         this.fetchDatabaseContext(true).catch(() => {});
+        // Always refresh conversations when panel opens so recent chats are up to date
+        this.cbMsgLoadConversations();
     }
 
     close() {
@@ -2805,7 +2807,9 @@ HOW-TO FOR ADMINS:
     // ── Badge poller ───────────────────────────────────────────────────────
     cbMsgStartBadgePoller() {
         this._cbMsgUpdateBadge();
-        this._cbMsgBadgeTimer = setInterval(() => this._cbMsgUpdateBadge(), 8000);
+        this._cbMsgBadgeTimer = setInterval(() => { this._cbMsgUpdateBadge(); this.cbMsgLoadConversations(); }, 8000);
+        // Pre-load conversations so they're ready when Messages tab opens
+        this.cbMsgLoadConversations();
     }
 
     async _cbMsgUpdateBadge() {
