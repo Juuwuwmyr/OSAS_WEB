@@ -153,7 +153,7 @@ switch ($action) {
             $stmt = $conn->prepare("
                 SELECT c.id, c.student_user_id,
                        u.full_name  AS student_name,
-                       s.avatar     AS student_avatar,
+                       COALESCE(s.avatar, u.profile_picture) AS student_avatar,
                        s.student_id AS student_code,
                        s.department, s.year_level,
                        (SELECT dm.body FROM direct_messages dm
@@ -397,7 +397,9 @@ switch ($action) {
         $like = '%' . $conn->real_escape_string($q) . '%';
         $stmt = $conn->prepare("
             SELECT u.id AS user_id, u.full_name, u.student_id AS student_code,
-                   s.department, s.year_level, s.avatar, s.section_id
+                   s.department, s.year_level,
+                   COALESCE(s.avatar, u.profile_picture) AS avatar,
+                   s.section_id
             FROM users u
             LEFT JOIN students s ON s.student_id = u.student_id
             WHERE u.role = 'user' AND u.is_active = 1
