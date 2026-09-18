@@ -2809,10 +2809,7 @@ HOW-TO FOR ADMINS:
     cbMsgStartBadgePoller() {
         this._cbMsgUpdateBadge();
         this._cbMsgBadgeTimer = setInterval(() => { this._cbMsgUpdateBadge(); this.cbMsgLoadConversations(); }, 8000);
-        // Pre-load conversations so they're ready when Messages tab opens
-        this.cbMsgLoadConversations();
     }
-
     async _cbMsgUpdateBadge() {
         try {
             const data = await this.cbApiFetch({ action: 'unread_count' });

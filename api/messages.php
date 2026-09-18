@@ -183,10 +183,11 @@ switch ($action) {
                           AND dm.sender_id != ? AND dm.is_read = 0) AS unread
                 FROM conversations c
                 INNER JOIN users u ON u.id = c.student_user_id
-                LEFT JOIN students s ON s.student_id = u.student_id
+                LEFT JOIN students s ON CONVERT(s.student_id USING utf8mb4) = CONVERT(u.student_id USING utf8mb4)
                 WHERE c.admin_user_id = ?
                 ORDER BY last_at DESC, c.id DESC
             ");
+                        if (!$stmt) fail('Conversations prepare failed: ' . $conn->error, 500);
             $stmt->bind_param('ii', $userId, $userId);
         } else {
             // Student: see all conversations where they are the student side
