@@ -236,12 +236,9 @@ switch ($action) {
             $adminUserId = isset($input['admin_user_id']) ? (int) $input['admin_user_id'] : 0;
             if (!$adminUserId) fail('admin_user_id required');
 
-            // Verify the target is admin/staff
-            $adminRoles = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'];
-            $placeholders = implode(',', array_fill(0, count($adminRoles), '?'));
-            $chk = $conn->prepare("SELECT id FROM users WHERE id = ? AND role IN ($placeholders) AND is_active = 1 LIMIT 1");
-            $types = 'i' . str_repeat('s', count($adminRoles));
-            $chk->bind_param($types, $adminUserId, ...$adminRoles);
+            // Verify the target is an admin (only 'admin' role can receive student messages)
+            $chk = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'admin' AND is_active = 1 LIMIT 1");
+            $chk->bind_param('i', $adminUserId);
             $chk->execute();
             if (!$chk->get_result()->fetch_assoc()) fail('Admin not found', 404);
             $chk->close();
@@ -458,22 +455,20 @@ switch ($action) {
     case 'get_admins':
         if (!$isStudent) fail('Student only', 403);
 
-        $adminRoles = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'];
-        $placeholders = implode(',', array_fill(0, count($adminRoles), '?'));
+        // Students can only message users with the 'admin' role
         $stmt = $conn->prepare("
             SELECT id AS user_id, full_name, role, profile_picture AS avatar
             FROM users
-            WHERE role IN ($placeholders) AND is_active = 1
-            ORDER BY FIELD(role,'admin','OSAS Staff','CSC Officer','Officer','Faculty Member'), full_name ASC
+            WHERE role = 'admin' AND is_active = 1
+            ORDER BY full_name ASC
             LIMIT 20
         ");
-        $stmt->bind_param(str_repeat('s', count($adminRoles)), ...$adminRoles);
         $stmt->execute();
         $admins = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
         ok(['admins' => $admins]);
 
-    default:
+        default:
         fail('Unknown action');
 }
 
