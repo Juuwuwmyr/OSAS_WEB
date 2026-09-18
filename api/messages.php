@@ -23,7 +23,21 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
+
+// Convert uncaught exceptions to JSON so client always gets a parseable response.
+set_exception_handler(function($e) {
+    if (!headers_sent()) http_response_code(500);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    exit;
+});
 require_once __DIR__ . '/../app/config/db_connect.php';
+
+// Guard: ensure DB is available
+if (!isset($conn) || ($conn instanceof mysqli && $conn->connect_errno)) {
+    http_response_code(503);
+    echo json_encode(['success' => false, 'error' => 'Database unavailable']);
+    exit;
+}
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -394,7 +408,7 @@ switch ($action) {
         $q = trim($_GET['q'] ?? '');
         if (strlen($q) < 1) ok(['students' => []]);
 
-        $like = '%' . $conn->real_escape_string($q) . '%';
+        $like = '%' . $q . '%';
         $stmt = $conn->prepare("
             SELECT u.id AS user_id, u.full_name, u.student_id AS student_code,
                    s.department, s.year_level,
