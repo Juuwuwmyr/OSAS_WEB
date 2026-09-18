@@ -645,7 +645,7 @@ HOW-TO FOR ADMINS:
         chatbotButton.id = 'chatbot-button';
         chatbotButton.setAttribute('aria-label', 'Open chat');
         chatbotButton.title = 'Chat with OSAS Bot';
-        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chat" class="chatbot-btn-img">`;
+        chatbotButton.innerHTML = `<img src="${botImgPath}" alt="Chat" class="chatbot-btn-img"><span class="cb-btn-unread" id="cb-btn-unread" style="display:none"></span>`;
         document.body.appendChild(chatbotButton);
 
         // Role-specific welcome content
@@ -755,7 +755,7 @@ HOW-TO FOR ADMINS:
                 <!-- MSG PANE: Header (mirrors the AI Chat header style) -->
                 <div class="cb-msg-pane-header">
                     <div class="cb-msg-pane-header-icon">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="msgIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffffff;stop-opacity:1"/><stop offset="100%" style="stop-color:#fffbe6;stop-opacity:0.9"/></linearGradient></defs><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#msgIconGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="0.5"/><circle cx="8" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/><circle cx="12" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/><circle cx="16" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/></svg>
                         <span class="cb-online-dot"></span>
                     </div>
                     <div class="cb-msg-pane-header-info">
@@ -2817,6 +2817,12 @@ HOW-TO FOR ADMINS:
             if (badge) {
                 badge.textContent    = count > 9 ? '9+' : count;
                 badge.style.display  = count > 0 ? 'inline-flex' : 'none';
+            }
+            // Also update the floating chatbot button badge
+            const btnBadge = document.getElementById('cb-btn-unread');
+            if (btnBadge) {
+                btnBadge.textContent   = count > 99 ? '99+' : count;
+                btnBadge.style.display = count > 0 ? 'flex' : 'none';
             }
         } catch(e) { /* silent */ }
     }
