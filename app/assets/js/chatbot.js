@@ -752,6 +752,21 @@ HOW-TO FOR ADMINS:
                  ══════════════════════════════════════════════════ -->
             <div class="cb-msg-pane" id="cb-msg-pane" style="display:none">
 
+                <!-- MSG PANE: Header (mirrors the AI Chat header style) -->
+                <div class="cb-msg-pane-header">
+                    <div class="cb-msg-pane-header-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                        <span class="cb-online-dot"></span>
+                    </div>
+                    <div class="cb-msg-pane-header-info">
+                        <span class="cb-msg-pane-header-name">Messages</span>
+                        <span class="cb-msg-pane-header-sub">Direct messaging</span>
+                    </div>
+                    <button class="cb-close-btn" id="cb-msg-pane-close" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+
                 <!-- MSG: Conversation list view -->
                 <div class="cb-msg-list-view" id="cb-msg-list-view">
                     <!-- Admin: new conversation button + search -->
@@ -1207,6 +1222,7 @@ HOW-TO FOR ADMINS:
     attachEventListeners() {
         document.getElementById('chatbot-button').addEventListener('click', () => this.toggle());
         document.getElementById('chatbot-close').addEventListener('click',  () => this.close());
+        document.getElementById('cb-msg-pane-close').addEventListener('click', () => this.close());
 
         const sendBtn = document.getElementById('chatbot-send');
         const input   = document.getElementById('chatbot-input');
@@ -1326,7 +1342,7 @@ HOW-TO FOR ADMINS:
         let startX, startY, startLeft, startTop;
 
         const onStart = (e) => {
-            if (e.target.closest('#chatbot-close') || e.target.closest('#cb-history-toggle')) return;
+            if (e.target.closest('#chatbot-close') || e.target.closest('#cb-msg-pane-close') || e.target.closest('#cb-history-toggle')) return;
             if (!panel.classList.contains('open')) return;
             dragging = true;
             const touch = e.touches ? e.touches[0] : e;
