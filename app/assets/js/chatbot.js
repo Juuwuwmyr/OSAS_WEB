@@ -692,7 +692,7 @@ HOW-TO FOR ADMINS:
             </div>
 
             <!-- HEADER -->
-            <div class="cb-header">
+            <div class="cb-header" id="cb-header">
                 <button class="cb-history-btn" id="cb-history-toggle" aria-label="Chat history" title="Chat History">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </button>
@@ -734,7 +734,7 @@ HOW-TO FOR ADMINS:
             </div>
 
             <!-- INPUT BAR -->
-            <div class="cb-input-bar">
+            <div class="cb-input-bar" id="cb-input-bar">
                 <input type="text" id="chatbot-input" class="cb-input" placeholder="Write a reply…" autocomplete="off">
                 <button id="chatbot-send" class="cb-send-btn" aria-label="Send">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
