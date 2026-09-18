@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 0); // Never leak PHP errors into JSON responses
+error_reporting(0);
 /**
  * Messages API
  * Direct messaging between admin/staff and students.
@@ -415,12 +417,13 @@ switch ($action) {
                    COALESCE(s.avatar, u.profile_picture) AS avatar,
                    s.section_id
             FROM users u
-            LEFT JOIN students s ON s.student_id = u.student_id
+            LEFT JOIN students s ON CONVERT(s.student_id USING utf8mb4) = CONVERT(u.student_id USING utf8mb4)
             WHERE u.role = 'user' AND u.is_active = 1
               AND (u.full_name LIKE ? OR u.student_id LIKE ? OR u.email LIKE ?)
             ORDER BY u.full_name ASC
             LIMIT 20
         ");
+        if (!$stmt) fail('Search prepare failed: ' . $conn->error, 500);
         $stmt->bind_param('sss', $like, $like, $like);
         $stmt->execute();
         $students = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
