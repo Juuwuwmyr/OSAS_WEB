@@ -1424,8 +1424,9 @@ HOW-TO FOR ADMINS:
         const input = document.getElementById('chatbot-input');
         if (input) input.focus();
         this.fetchDatabaseContext(true).catch(() => {});
-        // Always refresh conversations when panel opens so recent chats are up to date
+        // Refresh conversations: DOM is visible so render won't exit early
         this.cbMsgLoadConversations();
+        this.cbMsgRenderList();
     }
 
     close() {
