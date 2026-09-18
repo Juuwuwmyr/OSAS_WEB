@@ -17,6 +17,14 @@ $_studentName   = htmlspecialchars($_SESSION['full_name'] ?? ($_SESSION['usernam
         <span>Messages</span>
         <span class="msg-unread-badge" id="msgTotalBadge" style="display:none"></span>
       </div>
+      <button class="msg-new-btn" id="msgNewBtn" title="Message OSAS Staff">
+        <i class='bx bx-edit'></i>
+      </button>
+    </div>
+
+    <!-- Staff picker panel (shown when New is clicked) -->
+    <div class="msg-search-wrap" id="msgSearchWrap" style="display:none">
+      <div class="msg-search-results" id="msgSearchResults"></div>
     </div>
 
     <!-- Filter tabs -->
@@ -30,7 +38,7 @@ $_studentName   = htmlspecialchars($_SESSION['full_name'] ?? ($_SESSION['usernam
       <div class="msg-conv-empty" id="msgConvEmpty">
         <i class='bx bxs-message-square-dots'></i>
         <p>No messages yet.</p>
-        <small>An OSAS staff will contact you here.</small>
+        <small>Click the edit icon to message OSAS staff.</small>
       </div>
     </div>
 

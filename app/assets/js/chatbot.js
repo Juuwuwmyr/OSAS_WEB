@@ -786,11 +786,24 @@ HOW-TO FOR ADMINS:
                     </div>
                     ` : ''}
 
+                    <!-- Student: message OSAS button -->
+                    ${isUser ? `
+                    <div class="cb-msg-new-wrap">
+                        <button class="cb-msg-new-btn" id="cb-msg-new-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Message OSAS Staff
+                        </button>
+                    </div>
+                    <div class="cb-msg-search-wrap" id="cb-msg-search-wrap" style="display:none">
+                        <div class="cb-msg-search-results" id="cb-msg-search-results"></div>
+                    </div>
+                    ` : ''}
+
                     <!-- Conversation list -->
                     <div class="cb-msg-convs" id="cb-msg-convs">
                         <div class="cb-msg-empty" id="cb-msg-empty">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" opacity=".3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            <p>${isUser ? 'No messages yet.<br><small>OSAS staff will contact you here.</small>' : 'No conversations yet.<br><small>Click New Conversation to start.</small>'}</p>
+                            <p>${isUser ? 'No messages yet.<br><small>Click the button above to message OSAS staff.</small>' : 'No conversations yet.<br><small>Click New Conversation to start.</small>'}</p>
                         </div>
                     </div>
                 </div>
@@ -1282,7 +1295,7 @@ HOW-TO FOR ADMINS:
         if (tabChat) tabChat.addEventListener('click', () => this.cbSwitchTab('chat'));
         if (tabMsg)  tabMsg.addEventListener('click',  () => this.cbSwitchTab('messages'));
 
-        // ── MESSAGES TAB: new conversation (admin) ────────────────────────
+        // ── MESSAGES TAB: new conversation button ─────────────────────────
         const msgNewBtn = document.getElementById('cb-msg-new-btn');
         if (msgNewBtn) {
             msgNewBtn.addEventListener('click', () => {
@@ -1291,9 +1304,13 @@ HOW-TO FOR ADMINS:
                 const open = wrap.style.display !== 'none';
                 wrap.style.display = open ? 'none' : 'block';
                 if (!open) {
-                    const si = document.getElementById('cb-msg-search-input');
-                    if (si) { si.value = ''; si.focus(); }
-                    document.getElementById('cb-msg-search-results').innerHTML = '';
+                    const isUserPage = window.location.pathname.includes('user_dashboard') || window.location.pathname.includes('/user/');
+                    if (isUserPage) {
+                        this.cbMsgLoadAdminList();
+                    } else {
+                        const inp = document.getElementById('cb-msg-search-input');
+                        if (inp) inp.focus();
+                    }
                 }
             });
         }
@@ -2805,8 +2822,7 @@ HOW-TO FOR ADMINS:
     }
 
     // ── Admin: search students ─────────────────────────────────────────────
-    async cbMsgSearchStudents(q) {
-        const results = document.getElementById('cb-msg-search-results');
+    async cbMsgSearchStudents(q) {        const results = document.getElementById('cb-msg-search-results');
         if (!results) return;
         if (!q) { results.innerHTML = ''; return; }
         results.innerHTML = '<div class="cb-msg-search-empty">Searching…</div>';
@@ -2832,8 +2848,7 @@ HOW-TO FOR ADMINS:
         } catch(e) { results.innerHTML = '<div class="cb-msg-search-empty">Error.</div>'; }
     }
 
-    async cbMsgStartConversation(studentUserId, studentInfo) {
-        try {
+    async cbMsgStartConversation(studentUserId, studentInfo) {        try {
             const data = await this.cbApiFetch({}, { action: 'start', student_user_id: studentUserId });
             if (!data.success) return;
             const wrap = document.getElementById('cb-msg-search-wrap');

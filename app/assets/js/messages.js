@@ -112,14 +112,19 @@
       });
     });
 
-    // New conversation button (admin only)
+    // New conversation button (admin: search students / student: pick admin)
     if ($newBtn) {
       $newBtn.addEventListener('click', () => {
         const open = $searchWrap.style.display !== 'none';
         $searchWrap.style.display = open ? 'none' : 'block';
-        if (!open && $searchInput) {
-          $searchInput.focus();
-          $searchResults.innerHTML = '';
+        if (!open) {
+          if (isAdmin()) {
+            if ($searchInput) { $searchInput.focus(); }
+            if ($searchResults) $searchResults.innerHTML = '';
+          } else {
+            // Student: load admin list immediately
+            loadAdminList();
+          }
         }
       });
     }
@@ -522,6 +527,69 @@
       });
     } catch (e) {
       $searchResults.innerHTML = '<div class="msg-search-empty">Network error.</div>';
+    }
+  }
+
+  // ── Student: load admin/staff list to start a conversation ───────────────
+  async function loadAdminList() {
+    if (!$searchResults) return;
+    $searchResults.innerHTML = '<div class="msg-search-empty">Loading staff…</div>';
+
+    try {
+      const data = await apiFetch({ action: 'get_admins' });
+      if (!data.success || !data.admins || data.admins.length === 0) {
+        $searchResults.innerHTML = '<div class="msg-search-empty">No staff available.</div>';
+        return;
+      }
+
+      $searchResults.innerHTML = '';
+      data.admins.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'msg-search-item';
+        const avatar = a.avatar ? resolveAsset(a.avatar) : defaultAvatar();
+        item.innerHTML = `
+          <img class="msg-search-item-avatar" src="${esc(avatar)}" alt="${esc(a.full_name)}"
+               onerror="this.src='${defaultAvatar()}'">
+          <div class="msg-search-item-info">
+            <strong>${esc(a.full_name)}</strong>
+            <small>${esc(a.role)}</small>
+          </div>
+        `;
+        item.addEventListener('click', () => startConversationWithAdmin(parseInt(a.user_id), a));
+        $searchResults.appendChild(item);
+      });
+    } catch (e) {
+      $searchResults.innerHTML = '<div class="msg-search-empty">Network error.</div>';
+    }
+  }
+
+  // ── Student: start or resume a conversation with an admin ────────────────
+  async function startConversationWithAdmin(adminUserId, adminInfo) {
+    try {
+      const data = await apiFetch({}, { action: 'start', admin_user_id: adminUserId });
+      if (!data.success) { showToastMsg(data.error || 'Error starting conversation.', false); return; }
+
+      if ($searchWrap)  $searchWrap.style.display = 'none';
+      if ($searchResults) $searchResults.innerHTML = '';
+
+      await loadConversations();
+
+      const conv = allConversations.find(c => parseInt(c.id) === parseInt(data.conv_id));
+      if (conv) {
+        openConversation(conv);
+      } else {
+        openConversation({
+          id: data.conv_id,
+          admin_user_id: adminUserId,
+          admin_name: adminInfo.full_name || 'OSAS Staff',
+          admin_avatar: adminInfo.avatar || null,
+          last_message: null,
+          last_at: null,
+          unread: 0,
+        });
+      }
+    } catch (e) {
+      showToastMsg('Network error.', false);
     }
   }
 

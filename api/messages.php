@@ -217,22 +217,46 @@ switch ($action) {
 
     // ── Start / get conversation (admin only) ─────────────────────────────
     case 'start':
-        if (!$isAdmin) fail('Admin only', 403);
-        $studentUserId = isset($input['student_user_id']) ? (int) $input['student_user_id'] : 0;
-        if (!$studentUserId) fail('student_user_id required');
+        if ($isAdmin) {
+            // Admin starts a conversation with a student
+            $studentUserId = isset($input['student_user_id']) ? (int) $input['student_user_id'] : 0;
+            if (!$studentUserId) fail('student_user_id required');
 
-        // Verify the target is a student
-        $chk = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'user' LIMIT 1");
-        $chk->bind_param('i', $studentUserId);
-        $chk->execute();
-        if (!$chk->get_result()->fetch_assoc()) fail('Student not found', 404);
-        $chk->close();
+            // Verify the target is a student
+            $chk = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'user' LIMIT 1");
+            $chk->bind_param('i', $studentUserId);
+            $chk->execute();
+            if (!$chk->get_result()->fetch_assoc()) fail('Student not found', 404);
+            $chk->close();
+
+            $adminUserId = $userId;
+
+        } elseif ($isStudent) {
+            // Student starts a conversation with an admin
+            $adminUserId = isset($input['admin_user_id']) ? (int) $input['admin_user_id'] : 0;
+            if (!$adminUserId) fail('admin_user_id required');
+
+            // Verify the target is admin/staff
+            $adminRoles = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'];
+            $placeholders = implode(',', array_fill(0, count($adminRoles), '?'));
+            $chk = $conn->prepare("SELECT id FROM users WHERE id = ? AND role IN ($placeholders) AND is_active = 1 LIMIT 1");
+            $types = 'i' . str_repeat('s', count($adminRoles));
+            $chk->bind_param($types, $adminUserId, ...$adminRoles);
+            $chk->execute();
+            if (!$chk->get_result()->fetch_assoc()) fail('Admin not found', 404);
+            $chk->close();
+
+            $studentUserId = $userId;
+
+        } else {
+            fail('Not authorized', 403);
+        }
 
         // Get or create conversation
         $stmt = $conn->prepare(
             "SELECT id FROM conversations WHERE admin_user_id = ? AND student_user_id = ? LIMIT 1"
         );
-        $stmt->bind_param('ii', $userId, $studentUserId);
+        $stmt->bind_param('ii', $adminUserId, $studentUserId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -244,7 +268,7 @@ switch ($action) {
         $ins = $conn->prepare(
             "INSERT INTO conversations (admin_user_id, student_user_id) VALUES (?, ?)"
         );
-        $ins->bind_param('ii', $userId, $studentUserId);
+        $ins->bind_param('ii', $adminUserId, $studentUserId);
         $ins->execute();
         $convId = (int) $conn->insert_id;
         $ins->close();
@@ -429,6 +453,25 @@ switch ($action) {
         $students = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
         ok(['students' => $students]);
+
+    // ── Get available admins/staff (student only) ─────────────────────────
+    case 'get_admins':
+        if (!$isStudent) fail('Student only', 403);
+
+        $adminRoles = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'];
+        $placeholders = implode(',', array_fill(0, count($adminRoles), '?'));
+        $stmt = $conn->prepare("
+            SELECT id AS user_id, full_name, role, profile_picture AS avatar
+            FROM users
+            WHERE role IN ($placeholders) AND is_active = 1
+            ORDER BY FIELD(role,'admin','OSAS Staff','CSC Officer','Officer','Faculty Member'), full_name ASC
+            LIMIT 20
+        ");
+        $stmt->bind_param(str_repeat('s', count($adminRoles)), ...$adminRoles);
+        $stmt->execute();
+        $admins = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        ok(['admins' => $admins]);
 
     default:
         fail('Unknown action');
