@@ -1314,6 +1314,71 @@ body.dark .cb-msg-has-unread .cb-msg-conv-preview { color: #f3f4f6; }
     flex-shrink: 0;
 }
 
+/* ── Delete buttons in chatbot Messages tab ──────────────────── */
+.cb-msg-bwrap {
+  position: relative;
+}
+
+.cb-msg-del-btn {
+  position: absolute;
+  top: 50%;
+  right: -26px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(239,68,68,.1);
+  border-radius: 50%;
+  color: #dc2626;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 11px;
+  transition: background .15s;
+}
+
+.cb-msg-sent:hover .cb-msg-del-btn {
+  display: flex;
+}
+
+.cb-msg-del-btn:hover {
+  background: rgba(239,68,68,.25);
+}
+
+.cb-msg-conv-item {
+  position: relative;
+}
+
+.cb-msg-conv-del-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(239,68,68,.08);
+  border-radius: 50%;
+  color: #dc2626;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 2;
+  transition: background .15s;
+}
+
+.cb-msg-conv-item:hover .cb-msg-conv-del-btn {
+  display: flex;
+}
+
+.cb-msg-conv-del-btn:hover {
+  background: rgba(239,68,68,.2);
+}
+
 /* ── Active chat view ────────────────────────────────────── */
 .cb-msg-chat-view {
     flex: 1;

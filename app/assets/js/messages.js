@@ -257,7 +257,24 @@
       </div>
     `;
 
-    div.addEventListener('click', () => openConversation(conv));
+    div.addEventListener('click', (e) => {
+      if (e.target.closest('.msg-conv-delete-btn')) return;
+      openConversation(conv);
+    });
+
+    if (isAdmin()) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'msg-conv-delete-btn';
+      delBtn.title = 'Delete conversation';
+      delBtn.setAttribute('aria-label', 'Delete conversation');
+      delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteConversation(parseInt(conv.id));
+      });
+      div.appendChild(delBtn);
+    }
+
     return div;
   }
 
@@ -400,6 +417,9 @@
 
     row.innerHTML = `
       <div class="msg-bubble-wrap">
+        ${isMine ? `<button class="msg-delete-btn" title="Delete message" aria-label="Delete message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>` : ''}
         <div class="msg-bubble">${escHtml(msg.body)}</div>
         <div class="msg-bubble-meta">
           ${tick}
@@ -407,6 +427,15 @@
         </div>
       </div>
     `;
+    if (isMine) {
+      const delBtn = row.querySelector('.msg-delete-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteMessage(parseInt(msg.id), row);
+        });
+      }
+    }
     $bubbles.insertBefore(row, $bubblesLoading);
   }
 
@@ -451,6 +480,44 @@
     } finally {
       if ($sendBtn) $sendBtn.disabled = false;
       $input.focus();
+    }
+  }
+
+  // ── Delete a message ─────────────────────────────────────────────────────
+  async function deleteMessage(msgId, rowEl) {
+    if (!confirm('Delete this message for everyone?')) return;
+    try {
+      const data = await apiFetch({}, { action: 'delete_message', msg_id: msgId });
+      if (data.success) {
+        rowEl.remove();
+        loadConversations(); // refresh preview
+      } else {
+        showToastMsg(data.error || 'Could not delete message.', false);
+      }
+    } catch (e) {
+      showToastMsg('Network error.', false);
+    }
+  }
+
+  // ── Delete a conversation (admin only) ───────────────────────────────────
+  async function deleteConversation(convId) {
+    if (!confirm('Delete this entire conversation and all messages? This cannot be undone.')) return;
+    try {
+      const data = await apiFetch({}, { action: 'delete_conversation', conv_id: convId });
+      if (data.success) {
+        // If this was the open conversation, go back to empty state
+        if (currentConvId === convId) {
+          stopPoll();
+          currentConvId = null;
+          if ($chatInner) $chatInner.style.display = 'none';
+          if ($chatEmpty) $chatEmpty.style.display  = 'flex';
+        }
+        loadConversations();
+      } else {
+        showToastMsg(data.error || 'Could not delete conversation.', false);
+      }
+    } catch (e) {
+      showToastMsg('Network error.', false);
     }
   }
 

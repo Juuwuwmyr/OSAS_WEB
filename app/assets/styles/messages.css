@@ -767,3 +767,76 @@ body.dark .msg-input { background: #2a2a30; }
   .msg-bubbles { padding: 12px 10px 8px; }
   .msg-input-bar { padding: 8px 10px; }
 }
+
+/* ── Delete message button (appears on bubble hover) ────────── */
+.msg-bubble-wrap {
+  position: relative;
+}
+
+.msg-delete-btn {
+  position: absolute;
+  top: 50%;
+  left: -28px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(0,0,0,0.08);
+  border-radius: 50%;
+  color: #6b7280;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+
+.msg-row.sent .msg-delete-btn {
+  left: auto;
+  right: -28px;
+}
+
+.msg-row:hover .msg-delete-btn {
+  display: flex;
+}
+
+.msg-delete-btn:hover {
+  background: rgba(239,68,68,.15);
+  color: #dc2626;
+}
+
+/* ── Delete conversation button (appears on conv item hover) ─── */
+.msg-conv-item {
+  position: relative;
+}
+
+.msg-conv-delete-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: rgba(239,68,68,.08);
+  border-radius: 50%;
+  color: #dc2626;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background .15s;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.msg-conv-item:hover .msg-conv-delete-btn {
+  display: flex;
+}
+
+.msg-conv-delete-btn:hover {
+  background: rgba(239,68,68,.2);
+}

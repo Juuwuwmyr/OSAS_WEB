@@ -15,7 +15,9 @@ error_reporting(0);
  * Actions (POST):
  *   ?action=send         { conv_id, body }  — send a message
  *   ?action=start        { student_user_id } — start / get a conversation (admin)
- *   ?action=mark_read    { conv_id }         — mark all messages in conv as read
+ *   ?action=mark_read           { conv_id }         — mark all messages in conv as read
+ *   ?action=delete_message      { msg_id }           — delete own message for everyone
+ *   ?action=delete_conversation { conv_id }          — delete entire conversation (admin only)
  */
 
 header('Content-Type: application/json');
@@ -469,7 +471,46 @@ switch ($action) {
         $stmt->close();
         ok(['admins' => $admins]);
 
-        default:
+    // ── Delete a single message (sender only, deletes for everyone) ───────
+    case 'delete_message':
+        $msgId = isset($input['msg_id']) ? (int) $input['msg_id'] : 0;
+        if (!$msgId) fail('msg_id required');
+
+        // Verify the message belongs to the current user
+        $chk = $conn->prepare("SELECT id, conversation_id FROM direct_messages WHERE id = ? AND sender_id = ? LIMIT 1");
+        $chk->bind_param('ii', $msgId, $userId);
+        $chk->execute();
+        $msgRow = $chk->get_result()->fetch_assoc();
+        $chk->close();
+        if (!$msgRow) fail('Message not found or not yours', 403);
+
+        $del = $conn->prepare("DELETE FROM direct_messages WHERE id = ?");
+        $del->bind_param('i', $msgId);
+        $del->execute();
+        $del->close();
+        ok(['deleted' => $msgId]);
+
+    // ── Delete a conversation (admin only, cascades all messages) ─────────
+    case 'delete_conversation':
+        if (!$isAdmin) fail('Admin only', 403);
+        $convId = isset($input['conv_id']) ? (int) $input['conv_id'] : 0;
+        if (!$convId) fail('conv_id required');
+
+        // Verify admin owns this conversation
+        $chk = $conn->prepare("SELECT id FROM conversations WHERE id = ? AND admin_user_id = ? LIMIT 1");
+        $chk->bind_param('ii', $convId, $userId);
+        $chk->execute();
+        if (!$chk->get_result()->fetch_assoc()) fail('Conversation not found or not yours', 403);
+        $chk->close();
+
+        // FK cascade deletes all direct_messages too
+        $del = $conn->prepare("DELETE FROM conversations WHERE id = ?");
+        $del->bind_param('i', $convId);
+        $del->execute();
+        $del->close();
+        ok(['deleted' => $convId]);
+
+    default:
         fail('Unknown action');
 }
 

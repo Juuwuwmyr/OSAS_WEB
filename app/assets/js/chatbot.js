@@ -2663,7 +2663,23 @@ HOW-TO FOR ADMINS:
                 </div>
                 ${unread > 0 ? `<span class="cb-msg-conv-badge">${unread > 9 ? '9+' : unread}</span>` : ''}
             `;
-            div.addEventListener('click', () => this.cbMsgOpenConv(conv));
+            div.addEventListener('click', (e) => {
+                if (e.target.closest('.cb-msg-conv-del-btn')) return;
+                this.cbMsgOpenConv(conv);
+            });
+
+            if (!isUser) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'cb-msg-conv-del-btn';
+                delBtn.title = 'Delete conversation';
+                delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._cbMsgDeleteConversation(parseInt(conv.id));
+                });
+                div.appendChild(delBtn);
+            }
+
             list.appendChild(div);
         });
     }
@@ -2906,10 +2922,49 @@ HOW-TO FOR ADMINS:
         const read  = isMine && parseInt(msg.is_read) === 1;
         row.innerHTML = `
             <div class="cb-msg-bwrap">
+                ${isMine ? `<button class="cb-msg-del-btn" title="Delete" aria-label="Delete message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="11" height="11"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
                 <div class="cb-msg-bubble">${this._cbEscHtml(msg.body)}</div>
                 <div class="cb-msg-bmeta">${isMine ? `<span class="cb-msg-tick ${read?'read':''}">✓✓</span>` : ''}<span>${this._cbEsc(time)}</span></div>
             </div>`;
+        if (isMine) {
+            const delBtn = row.querySelector('.cb-msg-del-btn');
+            if (delBtn) {
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._cbMsgDeleteMessage(parseInt(msg.id), row);
+                });
+            }
+        }
         bubbles.insertBefore(row, loader);
+    }
+
+    async _cbMsgDeleteMessage(msgId, bubbleEl) {
+        if (!confirm('Delete this message for everyone?')) return;
+        try {
+            const data = await this.cbApiFetch({}, { action: 'delete_message', msg_id: msgId });
+            if (data.success) {
+                bubbleEl.remove();
+                this.cbMsgLoadConversations();
+            }
+        } catch(e) { console.warn('_cbMsgDeleteMessage:', e); }
+    }
+
+    async _cbMsgDeleteConversation(convId) {
+        if (!confirm('Delete this entire conversation? This cannot be undone.')) return;
+        try {
+            const data = await this.cbApiFetch({}, { action: 'delete_conversation', conv_id: convId });
+            if (data.success) {
+                if (this._cbMsgCurrentConvId === convId) {
+                    this._cbMsgStopPoll();
+                    this._cbMsgCurrentConvId = null;
+                    const listView = document.getElementById('cb-msg-list-view');
+                    const chatView = document.getElementById('cb-msg-chat-view');
+                    if (chatView) chatView.style.display = 'none';
+                    if (listView) listView.style.display = 'flex';
+                }
+                this.cbMsgLoadConversations();
+            }
+        } catch(e) { console.warn('_cbMsgDeleteConversation:', e); }
     }
 
     _cbMsgScrollBottom() {
