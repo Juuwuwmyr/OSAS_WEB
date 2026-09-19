@@ -111,6 +111,12 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
   <script src="<?= View::asset('js/violation.js') ?>"></script>
   <script src="<?= View::asset('js/reports.js') ?>"></script>
   <script src="<?= View::asset('js/announcement.js') ?>"></script>
+  <script>
+  // Global messaging identity — used by the chatbot widget Messages tab
+  window.OSAS_MSG_USER_ID = <?= json_encode((int)($_SESSION['user_id'] ?? 0)) ?>;
+  window.OSAS_MSG_ROLE    = 'admin';
+  window.OSAS_MSG_NAME    = <?= json_encode(htmlspecialchars_decode($_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Admin'))) ?>;
+  </script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>

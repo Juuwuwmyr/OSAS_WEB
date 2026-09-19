@@ -156,6 +156,12 @@ if (!$student_id) {
     <script src="<?= View::asset('js/userDashboardData.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= View::asset('js/userViolations.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
+    <script>
+    // Global messaging identity — used by the chatbot widget Messages tab
+    window.OSAS_MSG_USER_ID = <?= json_encode((int)($_SESSION['user_id'] ?? 0)) ?>;
+    window.OSAS_MSG_ROLE    = 'user';
+    window.OSAS_MSG_NAME    = <?= json_encode(htmlspecialchars_decode($_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Student'))) ?>;
+    </script>
     <script src="<?= View::asset('js/chatbot.js') ?>"></script>
     <?php View::partial('logout_modal'); ?>
     <script src="<?= View::asset('js/pwa.js') ?>"></script>
