@@ -752,21 +752,6 @@ HOW-TO FOR ADMINS:
                  ══════════════════════════════════════════════════ -->
             <div class="cb-msg-pane" id="cb-msg-pane" style="display:none">
 
-                <!-- MSG PANE: Header (mirrors the AI Chat header style) -->
-                <div class="cb-msg-pane-header">
-                    <div class="cb-msg-pane-header-icon">
-                        <svg viewBox="0 0 24 24" fill="none" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="msgIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffffff;stop-opacity:1"/><stop offset="100%" style="stop-color:#fffbe6;stop-opacity:0.9"/></linearGradient></defs><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#msgIconGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="0.5"/><circle cx="8" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/><circle cx="12" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/><circle cx="16" cy="10" r="1.2" fill="rgba(212,175,55,0.9)"/></svg>
-                        <span class="cb-online-dot"></span>
-                    </div>
-                    <div class="cb-msg-pane-header-info">
-                        <span class="cb-msg-pane-header-name">Messages</span>
-                        <span class="cb-msg-pane-header-sub">Direct messaging</span>
-                    </div>
-                    <button class="cb-close-btn" id="cb-msg-pane-close" aria-label="Close">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-
                 <!-- MSG: Conversation list view -->
                 <div class="cb-msg-list-view" id="cb-msg-list-view">
                     <!-- Admin: new conversation button + search -->
@@ -1235,7 +1220,6 @@ HOW-TO FOR ADMINS:
     attachEventListeners() {
         document.getElementById('chatbot-button').addEventListener('click', () => this.toggle());
         document.getElementById('chatbot-close').addEventListener('click',  () => this.close());
-        document.getElementById('cb-msg-pane-close').addEventListener('click', () => this.close());
 
         const sendBtn = document.getElementById('chatbot-send');
         const input   = document.getElementById('chatbot-input');
@@ -1359,7 +1343,7 @@ HOW-TO FOR ADMINS:
         let startX, startY, startLeft, startTop;
 
         const onStart = (e) => {
-            if (e.target.closest('#chatbot-close') || e.target.closest('#cb-msg-pane-close') || e.target.closest('#cb-history-toggle')) return;
+            if (e.target.closest('#chatbot-close') || e.target.closest('#cb-history-toggle')) return;
             if (!panel.classList.contains('open')) return;
             dragging = true;
             const touch = e.touches ? e.touches[0] : e;
@@ -2591,28 +2575,44 @@ HOW-TO FOR ADMINS:
 
     // ── Tab switcher ───────────────────────────────────────────────────────
     cbSwitchTab(tab) {
-        // Chat parts that need to hide when Messages tab is active
-        // cb-history-sidebar only shown if historyOpen, so we skip it in the restore
-        const chatParts  = ['cb-header','chatbot-messages','cb-input-bar','chatbot-loading'];
-        const msgPane    = document.getElementById('cb-msg-pane');
-        const tabChat    = document.getElementById('cb-tab-chat');
-        const tabMsg     = document.getElementById('cb-tab-msg');
+        // The cb-header stays visible always � we just update its content
+        // Only hide the AI chat body parts, not the header
+        const chatBodyParts = ['chatbot-messages','cb-input-bar','chatbot-loading'];
+        const msgPane       = document.getElementById('cb-msg-pane');
+        const tabChat       = document.getElementById('cb-tab-chat');
+        const tabMsg        = document.getElementById('cb-tab-msg');
         const historySidebar = document.getElementById('cb-history-sidebar');
+        const header         = document.getElementById('cb-header');
+
+        // Header avatar / name / sub elements
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        const nameEl  = header ? header.querySelector('.cb-header-name') : null;
+        const subEl   = header ? header.querySelector('.cb-header-sub') : null;
+        const avatarEl = header ? header.querySelector('.cb-avatar-img') : null;
+        const historyBtn = document.getElementById('cb-history-toggle');
 
         if (tab === 'chat') {
-            chatParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
-            // Only restore history sidebar if it was open
+            chatBodyParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
             if (historySidebar && this.historyOpen) historySidebar.style.display = '';
             if (msgPane)  msgPane.style.display  = 'none';
             if (tabChat)  tabChat.classList.add('active');
             if (tabMsg)   tabMsg.classList.remove('active');
             this._cbMsgStopPoll();
+            // Restore bot header content
+            if (nameEl)   nameEl.textContent  = 'OSAS Bot';
+            if (subEl)    subEl.textContent   = 'AI \u00b7 Always here to help';
+            if (avatarEl) { avatarEl.src = botImgPath; avatarEl.style.borderRadius = '0'; avatarEl.style.width = '42px'; avatarEl.style.height = '42px'; }
+            if (historyBtn) historyBtn.style.display = '';
         } else {
-            chatParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+            chatBodyParts.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
             if (historySidebar) historySidebar.style.display = 'none';
             if (msgPane)  msgPane.style.display  = 'flex';
             if (tabMsg)   tabMsg.classList.add('active');
             if (tabChat)  tabChat.classList.remove('active');
+            // Update header to show Messages info
+            if (nameEl)   nameEl.textContent  = 'Messages';
+            if (subEl)    subEl.textContent   = 'Direct messaging';
+            if (historyBtn) historyBtn.style.display = 'none';
             this.cbMsgLoadConversations();
         }
         this._cbMsgActiveTab = tab;
