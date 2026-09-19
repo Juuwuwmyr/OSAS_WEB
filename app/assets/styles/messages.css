@@ -584,6 +584,7 @@ body.dark .msg-bubbles::-webkit-scrollbar-thumb { background: #3f3f46; }
 }
 
 .msg-bubble-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   max-width: 65%;
@@ -775,10 +776,11 @@ body.dark .msg-input { background: #2a2a30; }
 
 .msg-delete-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 22px;
-  height: 22px;
+  top: 50%;
+  left: -32px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
   border: none;
   background: #ef4444;
   border-radius: 50%;
@@ -791,10 +793,6 @@ body.dark .msg-input { background: #2a2a30; }
   transition: background .15s, transform .12s;
   box-shadow: 0 2px 6px rgba(239,68,68,.45);
   z-index: 5;
-}
-.msg-row.sent .msg-delete-btn {
-  right: auto;
-  left: -8px;
 }
 .msg-row:hover .msg-delete-btn {
   display: flex;
