@@ -1281,15 +1281,24 @@ HOW-TO FOR ADMINS:
 
         // ── MESSAGES TAB: new conversation button ─────────────────────────
         const msgNewBtn = document.getElementById('cb-msg-new-btn');
+        const _isUserPage = window.location.pathname.includes('user_dashboard') || window.location.pathname.includes('/user/');
+        const _cbNewBtnDefault = _isUserPage
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Message OSAS Staff'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Conversation';
+        const _cbNewBtnCancel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancel';
         if (msgNewBtn) {
             msgNewBtn.addEventListener('click', () => {
                 const wrap = document.getElementById('cb-msg-search-wrap');
                 if (!wrap) return;
                 const open = wrap.style.display !== 'none';
                 wrap.style.display = open ? 'none' : 'block';
-                if (!open) {
-                    const isUserPage = window.location.pathname.includes('user_dashboard') || window.location.pathname.includes('/user/');
-                    if (isUserPage) {
+                if (open) {
+                    msgNewBtn.innerHTML = _cbNewBtnDefault;
+                    msgNewBtn.classList.remove('cb-msg-new-btn--cancel');
+                } else {
+                    msgNewBtn.innerHTML = _cbNewBtnCancel;
+                    msgNewBtn.classList.add('cb-msg-new-btn--cancel');
+                    if (_isUserPage) {
                         this.cbMsgLoadAdminList();
                     } else {
                         const inp = document.getElementById('cb-msg-search-input');
@@ -2877,6 +2886,8 @@ HOW-TO FOR ADMINS:
             if (!data.success) return;
             const wrap = document.getElementById('cb-msg-search-wrap');
             if (wrap) wrap.style.display = 'none';
+            const _newBtn = document.getElementById('cb-msg-new-btn');
+            if (_newBtn) { _newBtn.innerHTML = _cbNewBtnDefault || _newBtn.dataset.defaultLabel || 'New Conversation'; _newBtn.classList.remove('cb-msg-new-btn--cancel'); }
             await this.cbMsgLoadConversations();
             const conv = (this._cbMsgAllConvs || []).find(c => parseInt(c.id) === parseInt(data.conv_id));
             if (conv) {

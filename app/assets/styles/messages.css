@@ -836,3 +836,17 @@ body.dark .msg-input { background: #2a2a30; }
 .msg-conv-delete-btn:hover {
   background: rgba(239,68,68,.2);
 }
+
+/* -- New conversation button cancel state -------------------- */
+.msg-new-btn--cancel,
+.cb-msg-new-btn--cancel {
+    background: rgba(239,68,68,.08) !important;
+    border-color: rgba(239,68,68,.4) !important;
+    color: #dc2626 !important;
+}
+
+.msg-new-btn--cancel:hover,
+.cb-msg-new-btn--cancel:hover {
+    background: rgba(239,68,68,.15) !important;
+    border-color: #ef4444 !important;
+}

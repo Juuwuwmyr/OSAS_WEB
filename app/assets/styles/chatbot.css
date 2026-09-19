@@ -1746,3 +1746,16 @@ body.dark .osas-confirm-cancel:hover { background: #2a2a30; }
     color: #fff;
     box-shadow: 0 3px 10px rgba(245,158,11,.35);
 }
+/* -- New conversation button cancel state -------------------- */
+.msg-new-btn--cancel,
+.cb-msg-new-btn--cancel {
+    background: rgba(239,68,68,.08) !important;
+    border-color: rgba(239,68,68,.4) !important;
+    color: #dc2626 !important;
+}
+
+.msg-new-btn--cancel:hover,
+.cb-msg-new-btn--cancel:hover {
+    background: rgba(239,68,68,.15) !important;
+    border-color: #ef4444 !important;
+}
