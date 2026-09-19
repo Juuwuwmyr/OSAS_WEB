@@ -485,7 +485,7 @@
 
   // ── Delete a message ─────────────────────────────────────────────────────
   async function deleteMessage(msgId, rowEl) {
-    if (!confirm('Delete this message for everyone?')) return;
+    if (!await osasConfirm('Delete Message', 'Delete this message for everyone?', 'Delete', 'danger')) return;
     try {
       const data = await apiFetch({}, { action: 'delete_message', msg_id: msgId });
       if (data.success) {
@@ -501,7 +501,7 @@
 
   // ── Delete a conversation (admin only) ───────────────────────────────────
   async function deleteConversation(convId) {
-    if (!confirm('Delete this entire conversation and all messages? This cannot be undone.')) return;
+    if (!await osasConfirm('Delete Conversation', 'Delete this entire conversation and all messages? This cannot be undone.', 'Delete', 'danger')) return;
     try {
       const data = await apiFetch({}, { action: 'delete_conversation', conv_id: convId });
       if (data.success) {
@@ -813,6 +813,43 @@
   // ── Bootstrap ─────────────────────────────────────────────────────────────
   // On load: always start badge poller globally (sidebar badge),
   // then try to init the full view if already in DOM.
+  // -- Custom confirm dialog -------------------------------------------------
+  function osasConfirm(title, message, confirmLabel, type) {
+    confirmLabel = confirmLabel || 'Confirm';
+    type = type || 'danger';
+    return new Promise(function(resolve) {
+      var existing = document.getElementById('osas-confirm-modal');
+      if (existing) existing.remove();
+      var modal = document.createElement('div');
+      modal.id = 'osas-confirm-modal';
+      modal.className = 'osas-confirm-overlay';
+      var icon = type === 'danger'
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="24" height="24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="24" height="24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      modal.innerHTML = '<div class="osas-confirm-box">'
+        + '<div class="osas-confirm-icon osas-confirm-icon--' + type + '">' + icon + '</div>'
+        + '<div class="osas-confirm-body">'
+        + '<div class="osas-confirm-title">' + title + '</div>'
+        + '<div class="osas-confirm-msg">' + message + '</div>'
+        + '</div>'
+        + '<div class="osas-confirm-actions">'
+        + '<button class="osas-confirm-cancel">Cancel</button>'
+        + '<button class="osas-confirm-ok osas-confirm-ok--' + type + '">' + confirmLabel + '</button>'
+        + '</div></div>';
+      document.body.appendChild(modal);
+      requestAnimationFrame(function() { modal.classList.add('osas-confirm-visible'); });
+      function cleanup(result) {
+        modal.classList.remove('osas-confirm-visible');
+        setTimeout(function() { if (modal.parentNode) modal.remove(); }, 200);
+        resolve(result);
+      }
+      modal.querySelector('.osas-confirm-cancel').addEventListener('click', function() { cleanup(false); });
+      modal.querySelector('.osas-confirm-ok').addEventListener('click', function() { cleanup(true); });
+      modal.addEventListener('click', function(e) { if (e.target === modal) cleanup(false); });
+    });
+  }
+  // Expose globally so chatbot.js (loaded separately) can also use it
+  window.osasConfirm = osasConfirm;
   function bootstrap() {
     window.initMessagesBadge();   // sidebar badge — works even without the view
     window.initMessagesModule();  // full view init — exits early if view not in DOM

@@ -2939,7 +2939,7 @@ HOW-TO FOR ADMINS:
     }
 
     async _cbMsgDeleteMessage(msgId, bubbleEl) {
-        if (!confirm('Delete this message for everyone?')) return;
+        if (!await window.osasConfirm('Delete Message', 'Delete this message for everyone?', 'Delete', 'danger')) return;
         try {
             const data = await this.cbApiFetch({}, { action: 'delete_message', msg_id: msgId });
             if (data.success) {
@@ -2950,7 +2950,7 @@ HOW-TO FOR ADMINS:
     }
 
     async _cbMsgDeleteConversation(convId) {
-        if (!confirm('Delete this entire conversation? This cannot be undone.')) return;
+        if (!await window.osasConfirm('Delete Conversation', 'Delete this entire conversation? This cannot be undone.', 'Delete', 'danger')) return;
         try {
             const data = await this.cbApiFetch({}, { action: 'delete_conversation', conv_id: convId });
             if (data.success) {
