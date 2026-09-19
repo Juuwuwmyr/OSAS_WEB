@@ -835,18 +835,8 @@ HOW-TO FOR ADMINS:
 
     async openHistory() {
         this.historyOpen = true;
-        
-        // Fetch from DB first, then update localStorage
-        try {
-            const res = await fetch(this.apiBase + 'chatbot_history.php');
-            const data = await res.json();
-            if (data.success && data.sessions) {
-                localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(data.sessions));
-            }
-        } catch (e) {
-            console.warn('Could not fetch history from DB:', e);
-        }
 
+        // Show sidebar immediately from localStorage — no visible delay
         const sidebar = document.getElementById('cb-history-sidebar');
         if (sidebar) {
             this.renderHistoryList();
@@ -854,6 +844,18 @@ HOW-TO FOR ADMINS:
         }
         const btn = document.getElementById('cb-history-toggle');
         if (btn) btn.classList.add('active');
+
+        // Fetch fresh data from DB in background and re-render if updated
+        try {
+            const res = await fetch(this.apiBase + 'chatbot_history.php', { credentials: 'include' });
+            const data = await res.json();
+            if (data.success && data.sessions) {
+                localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(data.sessions));
+                this.renderHistoryList();
+            }
+        } catch (e) {
+            console.warn('Could not fetch history from DB:', e);
+        }
     }
 
     closeHistory() {
@@ -995,6 +997,7 @@ HOW-TO FOR ADMINS:
             await fetch(this.apiBase + 'chatbot_history.php', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ session_id: sessionId })
             });
             const all = this.loadAllSessions();
