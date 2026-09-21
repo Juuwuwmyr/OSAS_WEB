@@ -19,6 +19,7 @@
   let currentTab       = 'all';
   let allConversations = [];
   let isMobile         = window.innerWidth <= 768;
+  let _newBtnDefaultLabel = '';
 
   // ── DOM refs (resolved per init) ─────────────────────────────────────────
   let $convList, $convEmpty, $chatEmpty, $chatInner, $bubbles,
@@ -113,7 +114,7 @@
     });
 
     // New conversation button (admin: search students / student: pick admin)
-    const _newBtnDefaultLabel = isAdmin()
+    _newBtnDefaultLabel = isAdmin()
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Conversation'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Message OSAS Staff';
     const _newBtnCancelLabel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancel';
@@ -649,6 +650,8 @@
 
       if ($searchWrap)  $searchWrap.style.display = 'none';
       if ($searchResults) $searchResults.innerHTML = '';
+      if ($searchInput) $searchInput.value = '';
+      if ($newBtn) { $newBtn.innerHTML = _newBtnDefaultLabel; $newBtn.classList.remove('msg-new-btn--cancel'); }
 
       await loadConversations();
 
