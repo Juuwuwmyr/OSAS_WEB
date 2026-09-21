@@ -318,8 +318,8 @@
     if ($chatSub)    $chatSub.textContent    = sub;
     if ($chatAvatar) { $chatAvatar.src = avatar; $chatAvatar.onerror = () => { $chatAvatar.src = defaultAvatar(); }; }
 
-    // Mobile: show chat, hide sidebar
-    if (isMobile) showChat();
+    // Always show chat panel when a conversation is opened
+    showChat();
 
     // Show loading
     if ($bubblesLoading) $bubblesLoading.style.display = 'flex';
