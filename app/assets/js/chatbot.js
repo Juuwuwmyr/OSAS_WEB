@@ -650,8 +650,8 @@ HOW-TO FOR ADMINS:
 
         // Role-specific welcome content
         const welcomeText = isUser
-            ? `<p>Hi there ðŸ‘‹ I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or anything about the student portal.</p>`
-            : `<p>Hi there ðŸ‘‹ I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, reports, departments, or how to use the system.</p>`;
+            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or anything about the student portal.</p>`
+            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, reports, departments, or how to use the system.</p>`;
 
         const chips = isUser
             ? `<button class="cb-chip" data-prompt="Show me my current violations and their status">My violations</button>
@@ -1014,8 +1014,8 @@ HOW-TO FOR ADMINS:
         const currentPath = window.location.pathname;
         const isUser = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/');
         const welcomeText = isUser
-            ? `<p>Hi there ðŸ‘‹ I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or how to use the student portal.</p>`
-            : `<p>Hi there ðŸ‘‹ I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
+            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or how to use the student portal.</p>`
+            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
 
         // Save current before resetting
         this.saveCurrentSession();

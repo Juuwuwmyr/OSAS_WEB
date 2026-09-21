@@ -1,4 +1,4 @@
-/**
+﻿/**
  * User Dashboard Data Loader
  * Connects user dashboard features to database APIs
  */
@@ -344,7 +344,7 @@ class UserDashboardData {
             container.innerHTML = `
                 <div class="violation-type" style="justify-content:center; text-align:center;">
                     <div class="violation-details">
-                        <h4 style="color:var(--green)">🎉 No Violations</h4>
+                        <h4 style="color:var(--green)"><i class='bx bxs-shield-check' style='font-size:20px;color:var(--green);vertical-align:middle;margin-right:5px'></i> No Violations</h4>
                         <p>You're in good standing. Keep it up!</p>
                     </div>
                 </div>`;
@@ -731,3 +731,4 @@ window.showLatestViolationsNotifications = (force) => {
         window.userDashboardData.showLatestViolationsNotifications(force);
     }
 };
+

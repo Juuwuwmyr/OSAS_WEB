@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Push: announcements = guest (no login, after install).
  *         violations = student only (after login, scope full).
  */
@@ -67,7 +67,7 @@
         s.id = STYLE_ID;
         s.textContent = `
           #eosas-push-overlay{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px}
-          #eosas-push-modal{max-width:360px;width:100%;background:#1e293b;color:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+          #eosas-push-modal{max-width:360px;width:100%;background:#1e293b;color:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.45);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
           #eosas-push-modal h3{margin:0 0 8px;font-size:18px}
           #eosas-push-modal p{margin:0 0 16px;font-size:14px;line-height:1.45;color:#cbd5e1}
           #eosas-push-modal .eosas-push-btns{display:flex;flex-direction:column;gap:10px}
@@ -430,3 +430,4 @@
         if (document.visibilityState === 'visible') setTimeout(maybePromptForPush, 400);
     });
 })();
+
