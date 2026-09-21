@@ -1,5 +1,5 @@
 ﻿/**
- * Chatbot Module â€” OSAS Bot v2.1
+ * Chatbot Module — OSAS Bot v2.1
  * Handles chatbot UI and API interactions
  */
 
@@ -116,7 +116,7 @@ class Chatbot {
         const firstUser = (session.messages || []).find(m => m.role === 'user');
         if (firstUser && firstUser.content) {
             return firstUser.content.length > 45
-                ? firstUser.content.substring(0, 45) + 'â€¦'
+                ? firstUser.content.substring(0, 45) + '…'
                 : firstUser.content;
         }
         return 'Chat session';
@@ -421,7 +421,7 @@ class Chatbot {
      * Build advanced system prompt based on user role
      */
     buildAdvancedSystemPrompt(userRole) {
-        let prompt = `You are **OSAS Bot**, the intelligent virtual assistant for the **E-OSAS (Electronic Office of Student Affairs System)** â€” a web-based student discipline and records management platform.
+        let prompt = `You are **OSAS Bot**, the intelligent virtual assistant for the **E-OSAS (Electronic Office of Student Affairs System)** — a web-based student discipline and records management platform.
 
 IDENTITY & PERSONALITY:
 - Name: OSAS Bot
@@ -430,27 +430,27 @@ IDENTITY & PERSONALITY:
 - System Owner/Administrator/Head: Cedrick H. Almarez
 
 CORE CAPABILITIES:
-1. Student Records â€” Look up student info, counts, departments, sections
-2. Violations & Discipline â€” Explain violation types, levels, statuses, sanctions, and processes
-3. Announcements â€” Summarize active announcements, explain how to create/manage them
-4. Reports â€” Explain report generation, types, and how to export data
-5. Departments & Sections â€” List, explain, and help manage organizational units
-6. System Navigation â€” Guide users on how to use each module/page of E-OSAS
-7. Policies & Procedures â€” Explain the student discipline process, due process, and sanctions
-8. Troubleshooting â€” Help with common issues (login problems, data not showing, etc.)
+1. Student Records — Look up student info, counts, departments, sections
+2. Violations & Discipline — Explain violation types, levels, statuses, sanctions, and processes
+3. Announcements — Summarize active announcements, explain how to create/manage them
+4. Reports — Explain report generation, types, and how to export data
+5. Departments & Sections — List, explain, and help manage organizational units
+6. System Navigation — Guide users on how to use each module/page of E-OSAS
+7. Policies & Procedures — Explain the student discipline process, due process, and sanctions
+8. Troubleshooting — Help with common issues (login problems, data not showing, etc.)
 
 VIOLATION LEVELS & SANCTIONS:
-- 1st Offense: Verbal reminder â€” please comply with dress code
-- 2nd Offense: Written reminder â€” dress code must be followed
-- 3rd Offense: First formal warning â€” counseling referral possible
-- 4th Offense: Second formal warning â€” parent conference required
-- 5th Offense: Final warning â€” automatically triggers Disciplinary Action
+- 1st Offense: Verbal reminder — please comply with dress code
+- 2nd Offense: Written reminder — dress code must be followed
+- 3rd Offense: First formal warning — counseling referral possible
+- 4th Offense: Second formal warning — parent conference required
+- 5th Offense: Final warning — automatically triggers Disciplinary Action
 - Disciplinary Action: Referral to discipline office; suspension or serious sanctions apply
 - Due process: Notice â†’ Hearing â†’ Decision â†’ Appeal (if applicable)
 - Records tracked per semester; may be archived at semester end
 
 SYSTEM MODULES:
-- Dashboard: Statistics overview â€” students, violations, departments, recent activity
+- Dashboard: Statistics overview — students, violations, departments, recent activity
 - Students: Add, import (Excel), edit, search, view profiles with photos
 - Violations: Record violations, assign types/levels, track status (pending â†’ resolved â†’ archived), generate entrance slips
 - Departments: Create/manage academic departments with codes
@@ -476,9 +476,9 @@ RESPONSE RULES:
             prompt += `CURRENT USER ROLE: Student
 
 STUDENT PORTAL PAGES (these are the ONLY pages available to students):
-1. **My Dashboard** â€” Shows a compliance overview with total violations, permitted count, warning count, and a recent violations list. Also shows "Tips to Stay Compliant".
-2. **My Violations** â€” Full list of the student's own violation records. Can filter by time period (this month / all history), violation type, and status. Has table, list, and grid view modes. Can download a personal violation report.
-3. **Announcements** â€” Read-only list of announcements published by OSAS. Can filter by category and status.
+1. **My Dashboard** — Shows a compliance overview with total violations, permitted count, warning count, and a recent violations list. Also shows "Tips to Stay Compliant".
+2. **My Violations** — Full list of the student's own violation records. Can filter by time period (this month / all history), violation type, and status. Has table, list, and grid view modes. Can download a personal violation report.
+3. **Announcements** — Read-only list of announcements published by OSAS. Can filter by category and status.
 
 WHAT STUDENTS CAN DO:
 - View their own violations and check status (Pending, Permitted, Warning, Disciplinary, Resolved)
@@ -506,7 +506,7 @@ HOW-TO FOR STUDENTS:
 - Download your report: Click the "Download Report" button on the My Violations page
 - Read announcements: Click "Announcements" in the top navigation
 - Understand your status: Ask me what "Permitted", "Warning", or "Disciplinary" means
-- Entrance slip: If you received a violation, an entrance slip may be generated â€” show it to your instructor to return to class
+- Entrance slip: If you received a violation, an entrance slip may be generated — show it to your instructor to return to class
 - Appeal a violation: Contact the OSAS office directly to file an appeal
 
 `;
@@ -514,14 +514,14 @@ HOW-TO FOR STUDENTS:
             prompt += `CURRENT USER ROLE: Admin/Staff (${userRole})
 
 ADMIN PORTAL PAGES:
-1. **Dashboard** â€” System overview with total students, active violations, departments, recent activity
-2. **Students** â€” Add, edit, search, import (Excel), view student profiles with photos
-3. **Violations** â€” Record new violations, assign types/levels, track status, generate entrance slips, archive records
-4. **Departments** â€” Create and manage academic departments with codes
-5. **Sections** â€” Create sections linked to departments
-6. **Announcements** â€” Create, edit, publish announcements with audience targeting
-7. **Reports** â€” Generate PDF/Excel reports filtered by date, department, violation type
-8. **Settings** â€” System config, user management, backup/restore
+1. **Dashboard** — System overview with total students, active violations, departments, recent activity
+2. **Students** — Add, edit, search, import (Excel), view student profiles with photos
+3. **Violations** — Record new violations, assign types/levels, track status, generate entrance slips, archive records
+4. **Departments** — Create and manage academic departments with codes
+5. **Sections** — Create sections linked to departments
+6. **Announcements** — Create, edit, publish announcements with audience targeting
+7. **Reports** — Generate PDF/Excel reports filtered by date, department, violation type
+8. **Settings** — System config, user management, backup/restore
 
 HOW-TO FOR ADMINS:
 - Record a violation: Violations â†’ Add Violation â†’ Select student â†’ Choose type/level â†’ Save
@@ -592,7 +592,7 @@ HOW-TO FOR ADMINS:
         if (context.recent_violations && context.recent_violations.length > 0) {
             formatted += 'âš ï¸ RECENT VIOLATIONS (actual records):\n';
             context.recent_violations.forEach(violation => {
-                formatted += `- Case ${violation.case_id || violation.id}: ${violation.student_name} (ID: ${violation.student_id}) â€” Type: ${violation.violation_type}, Level: ${violation.violation_level}, Status: ${violation.status}, Date: ${violation.date}\n`;
+                formatted += `- Case ${violation.case_id || violation.id}: ${violation.student_name} (ID: ${violation.student_id}) — Type: ${violation.violation_type}, Level: ${violation.violation_level}, Status: ${violation.status}, Date: ${violation.date}\n`;
             });
             formatted += '\n';
         }
@@ -658,9 +658,9 @@ HOW-TO FOR ADMINS:
                <button class="cb-chip" data-prompt="Show me the latest school announcements">Announcements</button>
                <button class="cb-chip" data-prompt="Explain each violation level from 1st offense to disciplinary action and what sanctions I could face">Sanctions info</button>
                <button class="cb-chip" data-prompt="What pages are available to me in the student portal and how do I use each one?">Portal help</button>
-               <button class="cb-chip" data-prompt="I received an entrance slip â€” what does it mean and what do I do with it?">Entrance slip</button>
+               <button class="cb-chip" data-prompt="I received an entrance slip — what does it mean and what do I do with it?">Entrance slip</button>
                <button class="cb-chip" data-prompt="How do I appeal a violation or contest a record I disagree with?">Appeal process</button>`
-            : `<button class="cb-chip" data-prompt="Give me a summary of the current system stats â€” total students, active violations, and departments">System summary</button>
+            : `<button class="cb-chip" data-prompt="Give me a summary of the current system stats — total students, active violations, and departments">System summary</button>
                <button class="cb-chip" data-prompt="Show me the current violation statistics broken down by type and level">Violation stats</button>
                <button class="cb-chip" data-prompt="How do I record a new student violation? Walk me through it step by step.">Record violation</button>
                <button class="cb-chip" data-prompt="List all departments and sections currently in the system">Departments</button>
@@ -702,7 +702,7 @@ HOW-TO FOR ADMINS:
                 </div>
                 <div class="cb-header-info">
                     <span class="cb-header-name">OSAS Bot</span>
-                    <span class="cb-header-sub">AI Â· Always here to help</span>
+                    <span class="cb-header-sub">AI · Always here to help</span>
                 </div>
                 <button class="cb-close-btn" id="chatbot-close" aria-label="Close">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18">
@@ -711,7 +711,7 @@ HOW-TO FOR ADMINS:
                 </button>
             </div>
 
-            <!-- TAB BAR â€” below header -->
+            <!-- TAB BAR — below header -->
             <div class="cb-tab-bar">
                 <button class="cb-tab-btn active" id="cb-tab-chat" data-tab="chat">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3.04 1.05 4.38L2 22l5.62-1.05C8.96 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
@@ -735,7 +735,7 @@ HOW-TO FOR ADMINS:
 
             <!-- INPUT BAR -->
             <div class="cb-input-bar" id="cb-input-bar">
-                <input type="text" id="chatbot-input" class="cb-input" placeholder="Write a replyâ€¦" autocomplete="off">
+                <input type="text" id="chatbot-input" class="cb-input" placeholder="Write a reply…" autocomplete="off">
                 <button id="chatbot-send" class="cb-send-btn" aria-label="Send">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
@@ -765,7 +765,7 @@ HOW-TO FOR ADMINS:
                     <div class="cb-msg-search-wrap" id="cb-msg-search-wrap" style="display:none">
                         <div class="cb-msg-search-inner">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input type="text" id="cb-msg-search-input" placeholder="Search student by name or IDâ€¦" autocomplete="off">
+                            <input type="text" id="cb-msg-search-input" placeholder="Search student by name or ID…" autocomplete="off">
                         </div>
                         <div class="cb-msg-search-results" id="cb-msg-search-results"></div>
                     </div>
@@ -811,7 +811,7 @@ HOW-TO FOR ADMINS:
                         </div>
                     </div>
                     <div class="cb-msg-input-row">
-                        <textarea id="cb-msg-input" class="cb-msg-input" placeholder="Type a messageâ€¦" rows="1" maxlength="5000"></textarea>
+                        <textarea id="cb-msg-input" class="cb-msg-input" placeholder="Type a message…" rows="1" maxlength="5000"></textarea>
                         <button class="cb-msg-send" id="cb-msg-send">
                             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                         </button>
@@ -978,14 +978,14 @@ HOW-TO FOR ADMINS:
         const sendBtn = document.getElementById('chatbot-send');
         if (input) { 
             input.disabled = false; 
-            input.placeholder = 'Write a replyâ€¦'; 
+            input.placeholder = 'Write a reply…'; 
             input.focus(); 
         }
         if (sendBtn) {
             sendBtn.disabled = false;
         }
 
-        // Back button â€” start fresh
+        // Back button — start fresh
         const backBtn = document.getElementById('cb-history-back');
         if (backBtn) {
             backBtn.addEventListener('click', () => this.startNewConversation());
@@ -1037,7 +1037,7 @@ HOW-TO FOR ADMINS:
         // Re-enable input
         const input = document.getElementById('chatbot-input');
         const sendBtn = document.getElementById('chatbot-send');
-        if (input) { input.disabled = false; input.placeholder = 'Write a replyâ€¦'; input.focus(); }
+        if (input) { input.disabled = false; input.placeholder = 'Write a reply…'; input.focus(); }
         if (sendBtn) sendBtn.disabled = false;
 
         this.closeHistory();
@@ -1068,7 +1068,7 @@ HOW-TO FOR ADMINS:
     }
 
     loadQuickPrompts() {
-        // Chips are now inline in the welcome HTML â€” nothing to do here
+        // Chips are now inline in the welcome HTML — nothing to do here
     }
 
     loadPromptCategories() {
@@ -1100,9 +1100,9 @@ HOW-TO FOR ADMINS:
                 title: 'Violations & Discipline',
                 icon: 'bx-shield-x',
                 prompts: [
-                    { title: 'Violation Stats', desc: 'Current violation overview', text: 'Show me the current violation statistics â€” how many active violations, by type and level.' },
+                    { title: 'Violation Stats', desc: 'Current violation overview', text: 'Show me the current violation statistics — how many active violations, by type and level.' },
                     { title: 'Record a Violation', desc: 'Step-by-step guide', text: 'How do I record a new student violation? Walk me through the process.' },
-                    { title: 'Violation Levels', desc: '1stâ€“5th Offense explained', text: 'Explain the different violation levels (1st to 5th Offense and Disciplinary Action) and their corresponding sanctions.' },
+                    { title: 'Violation Levels', desc: '1st–5th Offense explained', text: 'Explain the different violation levels (1st to 5th Offense and Disciplinary Action) and their corresponding sanctions.' },
                     { title: 'Due Process', desc: 'Discipline procedure', text: 'What is the due process for student discipline? Explain the steps from notice to resolution.' },
                     { title: 'Entrance Slip', desc: 'How entrance slips work', text: 'How does the entrance slip system work? When is it generated and what does the student do with it?' },
                     { title: 'Resolve Violations', desc: 'Closing a case', text: 'How do I resolve or close a violation case? What are the possible statuses?' }
@@ -1133,7 +1133,7 @@ HOW-TO FOR ADMINS:
                 prompts: [
                     { title: 'Generate Report', desc: 'Create PDF/Excel reports', text: 'How do I generate a report? What types of reports are available and what filters can I use?' },
                     { title: 'Export Data', desc: 'Download system data', text: 'How do I export data from the system? What formats are supported?' },
-                    { title: 'Monthly Summary', desc: 'This month overview', text: 'Give me a summary of this month â€” violations recorded, students affected, and any trends.' },
+                    { title: 'Monthly Summary', desc: 'This month overview', text: 'Give me a summary of this month — violations recorded, students affected, and any trends.' },
                     { title: 'Backup System', desc: 'Database backup', text: 'How do I backup the system database? How often should I do it?' }
                 ]
             }
@@ -1174,7 +1174,7 @@ HOW-TO FOR ADMINS:
                 title: 'Portal Help',
                 icon: 'bx-help-circle',
                 prompts: [
-                    { title: 'How to Use Portal', desc: 'Navigate the student portal', text: 'How do I use the student portal? What pages are available to me as a student â€” My Dashboard, My Violations, and Announcements?' },
+                    { title: 'How to Use Portal', desc: 'Navigate the student portal', text: 'How do I use the student portal? What pages are available to me as a student — My Dashboard, My Violations, and Announcements?' },
                     { title: 'Check My Violations', desc: 'View and filter your records', text: 'How do I check my violations? How do I filter by type, status, or time period?' },
                     { title: 'Download My Report', desc: 'Get your personal report', text: 'How do I download my own violation report?' },
                     { title: 'Login Issues', desc: 'Cannot access account', text: 'I am having trouble logging in. What should I do?' },
@@ -1492,7 +1492,7 @@ HOW-TO FOR ADMINS:
                 }
             } catch (fetchErr) {
                 if (fetchErr instanceof TypeError) {
-                    throw new Error('Network error â€” cannot reach server.');
+                    throw new Error('Network error — cannot reach server.');
                 }
                 throw fetchErr;
             }
@@ -1641,8 +1641,8 @@ HOW-TO FOR ADMINS:
                 continue;
             }
 
-            // Check for bullet points (-, *, â€¢, or - )
-            const bulletMatch = line.match(/^[-*â€¢]\s+(.+)$/);
+            // Check for bullet points (-, *, •, or - )
+            const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
             if (bulletMatch) {
                 if (!inBulletList) {
                     // Close previous numbered list if open
@@ -1722,14 +1722,14 @@ HOW-TO FOR ADMINS:
 
     /**
      * Extract JSON actions from AI response.
-     * Only fenced ```json â€¦ ``` blocks are parsed â€” loose JSON matching is intentionally
+     * Only fenced ```json … ``` blocks are parsed — loose JSON matching is intentionally
      * removed because it caused false-positive action triggers on casual / essay responses.
      */
     extractActions(text, userMessage) {
         const actions = [];
         let cleanText = text;
 
-        // 1. Find ALL fenced code blocks (```json â€¦ ``` or ``` â€¦ ```)
+        // 1. Find ALL fenced code blocks (```json … ``` or ``` … ```)
         const allCodeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
         let match;
         const matchesToRemove = [];
@@ -1747,7 +1747,7 @@ HOW-TO FOR ADMINS:
                     console.log('ðŸ¤– Extracted action from code block:', actionData);
                 }
             } catch (e) {
-                // Not valid JSON â€” remove the block from display anyway so raw ``` blocks
+                // Not valid JSON — remove the block from display anyway so raw ``` blocks
                 // don't appear in the chat bubble.
                 matchesToRemove.push(match[0]);
                 console.warn('Code block not valid action JSON:', e);
@@ -1783,7 +1783,7 @@ HOW-TO FOR ADMINS:
                     console.log('ðŸ¤– Extracted inline action (unfenced):', actionData);
                 }
             } catch (e) {
-                // Not valid JSON â€” strip it from display anyway
+                // Not valid JSON — strip it from display anyway
                 cleanText = cleanText.replace(inlineMatch[1], '');
                 console.warn('Inline JSON not valid action:', e);
             }
@@ -1808,7 +1808,7 @@ HOW-TO FOR ADMINS:
 
         const filteredActions = actions.filter(a => {
             if (a.action === 'export_pdf' && !userWantsExport) {
-                console.warn('ðŸ¤– export_pdf action suppressed â€” user message did not request a download/export:', userMessage);
+                console.warn('ðŸ¤– export_pdf action suppressed — user message did not request a download/export:', userMessage);
                 return false;
             }
             return true;
@@ -1938,7 +1938,7 @@ HOW-TO FOR ADMINS:
     }
 
     /**
-     * Handle reset_system action â€” deletes all students, sections, and departments.
+     * Handle reset_system action — deletes all students, sections, and departments.
      * Triggered by the AI chatbot after explicit user confirmation.
      */
     async handleResetSystem(params) {
@@ -2021,7 +2021,7 @@ HOW-TO FOR ADMINS:
                     { header: 'Status', dataKey: 'status' }
                 ];
             } else if (params.module === 'reports') {
-                // 'reports' maps to violations â€” it's the violations report
+                // 'reports' maps to violations — it's the violations report
                 apiEndpoint = 'violations.php?limit=all';
                 columns = [
                     { header: 'Student Name', dataKey: 'studentName' },
@@ -2035,7 +2035,7 @@ HOW-TO FOR ADMINS:
                 title = 'OSAS VIOLATIONS REPORT';
             } else {
                 // Fallback: treat any unknown module as violations report
-                console.warn(`Unknown module "${params.module}" â€” falling back to violations report`);
+                console.warn(`Unknown module "${params.module}" — falling back to violations report`);
                 apiEndpoint = 'violations.php?limit=all';
                 columns = [
                     { header: 'Student Name', dataKey: 'studentName' },
@@ -2539,7 +2539,7 @@ HOW-TO FOR ADMINS:
         }
     }
 
-    togglePrompts() { /* no-op â€” prompts are now inline chips */ }
+    togglePrompts() { /* no-op — prompts are now inline chips */ }
 
     usePrompt(promptText) {
         const input = document.getElementById('chatbot-input');
@@ -2571,7 +2571,7 @@ HOW-TO FOR ADMINS:
     }
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  MESSAGES TAB â€” embedded Messenger inside the chatbot widget
+    //  MESSAGES TAB — embedded Messenger inside the chatbot widget
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     async cbApiFetch(params, body) {
@@ -2661,7 +2661,7 @@ HOW-TO FOR ADMINS:
         convs.forEach(conv => {
             const name    = isUser ? (conv.admin_name || 'OSAS Admin') : (conv.student_name || 'Student');
             const sub     = isUser ? 'OSAS Staff' : (conv.student_code || '');
-            const preview = conv.last_message ? (conv.last_message.length > 38 ? conv.last_message.slice(0,38)+'â€¦' : conv.last_message) : 'No messages yet';
+            const preview = conv.last_message ? (conv.last_message.length > 38 ? conv.last_message.slice(0,38)+'…' : conv.last_message) : 'No messages yet';
             const unread  = parseInt(conv.unread) || 0;
             const avatar  = this._cbMsgResolveAvatar(isUser ? conv.admin_avatar : conv.student_avatar);
 
@@ -2745,7 +2745,7 @@ HOW-TO FOR ADMINS:
             if (!data.success) return;
 
             const msgs = data.messages || [];
-            if (msgs.length === 0) { this._cbMsgAppendSep('No messages yet â€” say hello!'); return; }
+            if (msgs.length === 0) { this._cbMsgAppendSep('No messages yet — say hello!'); return; }
 
             let lastDate = '';
             msgs.forEach(m => {
@@ -2862,7 +2862,7 @@ HOW-TO FOR ADMINS:
     async cbMsgSearchStudents(q) {        const results = document.getElementById('cb-msg-search-results');
         if (!results) return;
         if (!q) { results.innerHTML = ''; return; }
-        results.innerHTML = '<div class="cb-msg-search-empty">Searchingâ€¦</div>';
+        results.innerHTML = '<div class="cb-msg-search-empty">Searching…</div>';
         try {
             const data = await this.cbApiFetch({ action: 'search_students', q });
             if (!data.success || !data.students.length) {
@@ -2877,7 +2877,7 @@ HOW-TO FOR ADMINS:
                     <img src="${av}" class="cb-msg-search-avatar" onerror="this.src='${this._cbMsgDefaultAvatar()}'">
                     <div>
                         <strong>${this._cbEsc(s.full_name)}</strong>
-                        <small>${this._cbEsc(s.student_code||'')}${s.department?' Â· '+this._cbEsc(s.department):''}</small>
+                        <small>${this._cbEsc(s.student_code||'')}${s.department?' · '+this._cbEsc(s.department):''}</small>
                     </div>`;
                 item.addEventListener('click', () => this.cbMsgStartConversation(parseInt(s.user_id), s));
                 results.appendChild(item);
@@ -3056,6 +3056,8 @@ window.addEventListener('load', function() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = Chatbot;
 }
+
+
 
 
 
