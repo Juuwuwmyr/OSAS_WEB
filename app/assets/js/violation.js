@@ -4940,7 +4940,9 @@ function initViolationsModule() {
                 const searchLower = normalize(searchTerm);
 
                 // 1. Student ID — exact or partial
-                if (sid === searchLower || sid.includes(searchLower) || searchLower.includes(sid)) return true;
+                // Raw match first — preserves hyphens so "2023-0206" isn't normalized to "2023 0206"
+                const rawSearch = searchTerm.trim().toLowerCase();
+                if (sid === rawSearch || sid.includes(rawSearch) || rawSearch.includes(sid)) return true;
 
                 // 2. Build a single name pool from ALL name parts (also normalized)
                 const fn = normalize(s.firstName  || s.first_name  || '');
