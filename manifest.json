@@ -1,37 +1,45 @@
 {
-  "name": "E-OSAS — Student Affairs System",
-  "short_name": "E-OSAS",
-  "description": "Office of Student Affairs and Services — Colegio de Naujan",
-  "id": "/",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
-  "orientation": "portrait-primary",
-  "background_color": "#ffffff",
-  "theme_color": "#D4AF37",
-  "categories": ["education", "productivity"],
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
-  "icons": [
-    {
-      "src": "app/assets/img/default.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "app/assets/img/default.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "app/assets/img/default.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+    "name":  "E-OSAS — Student Affairs System",
+    "short_name":  "E-OSAS",
+    "description":  "Office of Student Affairs and Services — Colegio de Naujan",
+    "id":  "/",
+    "start_url":  "/",
+    "scope":  "/",
+    "display":  "standalone",
+    "display_override":  [
+                             "standalone",
+                             "fullscreen",
+                             "minimal-ui",
+                             "browser"
+                         ],
+    "orientation":  "portrait-primary",
+    "background_color":  "#ffffff",
+    "theme_color":  "#D4AF37",
+    "categories":  [
+                       "education",
+                       "productivity"
+                   ],
+    "launch_handler":  {
+                           "client_mode":  "navigate-existing"
+                       },
+    "icons":  [
+                  {
+                      "src":  "app/assets/img/default.png",
+                      "sizes":  "180x180",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "app/assets/img/default.png",
+                      "sizes":  "192x192",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  },
+                  {
+                      "src":  "app/assets/img/default.png",
+                      "sizes":  "512x512",
+                      "type":  "image/png",
+                      "purpose":  "any"
+                  }
+              ]
 }
