@@ -1454,6 +1454,22 @@ HOW-TO FOR ADMINS:
             time: new Date().toISOString()
         });
 
+        // ── Client-side export intent detection ──────────────────────────────────
+        // Detect export/download requests directly so we never depend on the AI
+        // to output a JSON action block (LLMs are unreliable about that).
+        const _exportMatch = (function(msg) {
+            const m = msg.toLowerCase();
+            const wantsExport = /\b(download|export|generate|give me|create|make|pdf|docx|report|summary)\b/.test(m);
+            if (!wantsExport) return null;
+            if (/\b(student|students|enroll)\b/.test(m))    return 'students';
+            if (/\b(violation|violations|offense)\b/.test(m)) return 'violations';
+            if (/\b(department|departments)\b/.test(m))      return 'departments';
+            if (/\b(section|sections)\b/.test(m))            return 'sections';
+            // generic download/report request — default to violations
+            if (/\b(report|summary|file|docx|pdf)\b/.test(m)) return 'violations';
+            return null;
+        })(message);
+
         // Show loading
         this.showLoading();
 
@@ -1518,6 +1534,15 @@ HOW-TO FOR ADMINS:
             // Execute actions if any
             if (actions && actions.length > 0) {
                 this.executeActions(actions);
+            } else if (_exportMatch) {
+                // ── Fallback: AI didn't emit a JSON action — trigger export directly ──
+                // This fires when the user clearly asked for a download but the LLM
+                // forgot / refused to append the signal block.
+                const _hasExportAction = actions && actions.some(a => a.action === 'export_pdf');
+                if (!_hasExportAction) {
+                    console.log('ðŸ¤– Client-side export fallback triggered for module:', _exportMatch);
+                    this.handleExportPDF({ module: _exportMatch });
+                }
             }
 
             // Add to conversation history
