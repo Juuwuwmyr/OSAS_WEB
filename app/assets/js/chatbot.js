@@ -2121,7 +2121,7 @@ HOW-TO FOR ADMINS:
                 <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
                 <div class="cb-bubble cb-bot-bubble">
                     <div class="cb-bubble-text">
-                        <div style="margin-bottom: 10px;">ðŸ“„ Your <strong>${moduleName}</strong> report is ready:</div>
+                        <div style="margin-bottom: 10px;">Your <strong>${moduleName}</strong> report is ready:</div>
                         <button class="cb-download-btn" id="dl-btn-${Date.now()}" style="display: flex; align-items: center; gap: 8px; background: var(--gold); color: #1a1a1a; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; justify-content: center; transition: opacity 0.2s;">
                             <i class='bx bxs-file-pdf' style="font-size: 18px;"></i>
                             Download PDF
