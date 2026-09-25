@@ -761,7 +761,20 @@ class DashboardData {
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: textColor }
+                        ticks: {
+                            color: textColor,
+                            maxRotation: 45,
+                            minRotation: 0,
+                            autoSkip: false,
+                            font: { size: 10 },
+                            callback: function(val) {
+                                const label = this.getLabelForValue(val);
+                                if (typeof label !== 'string' || label.length <= 10) return label;
+                                const words = label.split(' ').filter(w => w.length > 2);
+                                const acronym = words.map(w => w[0].toUpperCase()).join('');
+                                return acronym || label.substring(0, 8) + '\u2026';
+                            }
+                        }
                     }
                 }
             }
