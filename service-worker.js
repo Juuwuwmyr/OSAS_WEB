@@ -153,8 +153,8 @@ function getBaseKey(url) {
     return new Request(base + '?limit=all');
   }
   if (url.pathname.includes('students.php')) {
-    // Always cache under ?limit=all — matches background fetch key in student.js
-    return new Request(base + '?limit=all');
+    // Canonical key — limit=all returns ALL students, no pagination
+    return new Request(base + '?action=get&filter=active&limit=all');
   }
   return new Request(url.href);
 }
@@ -224,7 +224,8 @@ async function serveOffline(url) {
   // ── students.php ──────────────────────────────────────────────────────────
   if (url.pathname.includes('students.php')) {
     // Try the canonical ?limit=all key first (matches getBaseKey normalization)
-    let cached = await cache.match(new Request(base + '?limit=all'));
+    let cached = await cache.match(new Request(base + '?action=get&filter=active&limit=all'));
+    if (!cached) cached = await cache.match(new Request(base + '?limit=all')); // legacy fallback
     if (!cached) {
       // Fallback: scan all cached keys for any students entry
       const keys = await cache.keys();

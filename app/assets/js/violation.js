@@ -628,7 +628,7 @@ function initViolationsModule() {
                         if (apiCacheName) {
                             const cache = await caches.open(apiCacheName);
                             // Use the exact canonical key the SW stores (no timestamp)
-                            const canonicalKey = API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000';
+                            const canonicalKey = API_BASE + 'students.php?action=get&filter=active&limit=all';
                             let cached = await cache.match(new Request(canonicalKey));
                             if (!cached) {
                                 // Scan for any students.php entry
@@ -660,8 +660,8 @@ function initViolationsModule() {
 
                 // ── ONLINE: fetch without timestamp so SW can cache the response ──
                 // Do NOT append &t= here — the SW needs to match the URL to its
-                // canonical cache key (students.php?action=get&filter=active&page=1&limit=1000).
-                const response = await fetch(API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000');
+                // canonical cache key (students.php?action=get&filter=active&limit=all).
+                const response = await fetch(API_BASE + 'students.php?action=get&filter=active&limit=all');
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('Students API Error Response:', errorText);
