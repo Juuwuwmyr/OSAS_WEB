@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Chatbot Module — OSAS Bot v2.1
  * Handles chatbot UI and API interactions
  */
@@ -1986,7 +1986,7 @@ HOW-TO FOR ADMINS:
             let title = `OSAS ${params.module.toUpperCase()} REPORT`;
 
             if (params.module === 'violations') {
-                apiEndpoint = 'violations.php?action=get&filter=active&limit=all';
+                apiEndpoint = 'violations.php?is_archived=0&limit=all';
                 columns = [
                     { header: 'Student', dataKey: 'studentName' },
                     { header: 'Type', dataKey: 'violationType' },
@@ -2022,7 +2022,7 @@ HOW-TO FOR ADMINS:
                 ];
             } else if (params.module === 'reports') {
                 // 'reports' maps to violations — it's the violations report
-                apiEndpoint = 'violations.php?limit=all';
+                apiEndpoint = 'violations.php?is_archived=0&limit=all';
                 columns = [
                     { header: 'Student Name', dataKey: 'studentName' },
                     { header: 'Student ID', dataKey: 'studentId' },
@@ -2036,7 +2036,7 @@ HOW-TO FOR ADMINS:
             } else {
                 // Fallback: treat any unknown module as violations report
                 console.warn(`Unknown module "${params.module}" — falling back to violations report`);
-                apiEndpoint = 'violations.php?limit=all';
+                apiEndpoint = 'violations.php?is_archived=0&limit=all';
                 columns = [
                     { header: 'Student Name', dataKey: 'studentName' },
                     { header: 'Student ID', dataKey: 'studentId' },
@@ -2070,7 +2070,7 @@ HOW-TO FOR ADMINS:
                 <div class="cb-bubble cb-bot-bubble">
                     <div class="cb-bubble-text">
                         <div style="margin-bottom: 10px;">ðŸ“„ Your <strong>${moduleName}</strong> report is ready:</div>
-                        <button class="cb-download-btn" id="dl-btn-${Date.now()}" style="display: flex; align-items: center; gap: 8px; background: var(--gold); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; justify-content: center; transition: opacity 0.2s;">
+                        <button class="cb-download-btn" id="dl-btn-${Date.now()}" style="display: flex; align-items: center; gap: 8px; background: var(--gold); color: #1a1a1a; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; justify-content: center; transition: opacity 0.2s;">
                             <i class='bx bxs-file-pdf' style="font-size: 18px;"></i>
                             Download PDF
                         </button>
@@ -2098,18 +2098,27 @@ HOW-TO FOR ADMINS:
                     const responseData = await res.json();
                     console.log('ðŸ¤– handleExportPDF - API response:', responseData);
                     
-                    // Standardize data extraction based on our API structure
+                    // Standardize data extraction — handle actual API response shapes:
+                    // violations.php => { violations: [...] } or { data: [...] }
+                    // students.php   => { data: { students: [...] } }
+                    // departments.php => { data: [...] }
                     let exportData = [];
                     if (responseData.status === 'success') {
                         if (params.module === 'departments') {
-                            exportData = responseData.data.departments || [];
-                        } else if (params.module === 'violations') {
-                            exportData = responseData.data.violations || responseData.data || [];
+                            const d = responseData.data;
+                            exportData = Array.isArray(d) ? d : (d && d.departments ? d.departments : []);
+                        } else if (params.module === 'violations' || params.module === 'reports') {
+                            exportData = responseData.violations
+                                || (responseData.data && responseData.data.violations ? responseData.data.violations : null)
+                                || (Array.isArray(responseData.data) ? responseData.data : []);
                         } else if (params.module === 'students') {
-                            exportData = responseData.data.students || responseData.data || [];
+                            const d = responseData.data;
+                            exportData = (d && d.students) ? d.students : (Array.isArray(d) ? d : []);
                         } else if (params.module === 'sections') {
-                            exportData = responseData.data.sections || [];
+                            const d = responseData.data;
+                            exportData = (d && d.sections) ? d.sections : (Array.isArray(d) ? d : []);
                         }
+                        if (!Array.isArray(exportData)) exportData = [];
                     }
 
                     // Apply any filters from params
