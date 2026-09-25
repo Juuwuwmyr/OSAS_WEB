@@ -1454,20 +1454,47 @@ HOW-TO FOR ADMINS:
             time: new Date().toISOString()
         });
 
-        // ── Client-side export intent detection ──────────────────────────────────
-        // Detect export/download requests directly so we never depend on the AI
-        // to output a JSON action block (LLMs are unreliable about that).
+        // ── Universal client-side export / download intent detection ────────────
+        // Broad natural-language matching — works for Tagalog, Taglish, and English.
+        // Returns { module, date } or null.
         const _exportMatch = (function(msg) {
             const m = msg.toLowerCase();
-            const wantsExport = /\b(download|export|generate|give me|create|make|pdf|docx|report|summary)\b/.test(m);
-            if (!wantsExport) return null;
-            if (/\b(student|students|enroll)\b/.test(m))    return 'students';
-            if (/\b(violation|violations|offense)\b/.test(m)) return 'violations';
-            if (/\b(department|departments)\b/.test(m))      return 'departments';
-            if (/\b(section|sections)\b/.test(m))            return 'sections';
-            // generic download/report request — default to violations
-            if (/\b(report|summary|file|docx|pdf)\b/.test(m)) return 'violations';
-            return null;
+
+            // Must want some kind of file or output
+            if (!/\b(download|export|generate|give|create|make|get|produce|print|save|show|list|summarize|summary|report|pdf|docx|word|excel|csv|file|doc|i-download|i-export|gawa|gawin|kumuha|bigyan|ibigay|ipakita)\b/.test(m)) return null;
+
+            // Optional date filter
+            let dateFilter = null;
+            if (/today/.test(m))                              dateFilter = 'today';
+            else if (/yesterday/.test(m))                    dateFilter = 'yesterday';
+            else if (/this\s+week/.test(m))                  dateFilter = 'last 7 days';
+            else if (/last\s+week/.test(m))                  dateFilter = 'last week';
+            else if (/this\s+month/.test(m))                 dateFilter = 'last month';
+            else if (/last\s+month/.test(m))                 dateFilter = 'last month';
+            else { const dm = m.match(/(\d+)\s*days?\s*ago/); if (dm) dateFilter = dm[0]; }
+
+            // VIOLATIONS — any offense / discipline / dress-code related phrasing
+            if (/\b(violation|violations|violator|violators|offender|offenders|offense|offenses|disciplinary|disciplined|dress.?code|uniform|footwear|no.?id|case|cases|incident|incidents|sanction|sanctions|warned|warning|most.*violat|violat.*most|top.*offend|offend.*top|who.*violat|violat.*who|student.*offend|offend.*student|highest.*violat|violat.*highest)\b/.test(m)) {
+                return { module: 'violations', date: dateFilter };
+            }
+
+            // STUDENTS — roster / enrollment related
+            if (/\b(student|students|enroll|enrollment|enrolled|roster|class.?list|all.*student|student.*list|learner|learners|mag.?aaral)\b/.test(m)) {
+                return { module: 'students', date: dateFilter };
+            }
+
+            // DEPARTMENTS
+            if (/\b(department|departments|dept|college|colleges|program|programs|faculty|faculties|course|kurso)\b/.test(m)) {
+                return { module: 'departments', date: dateFilter };
+            }
+
+            // SECTIONS
+            if (/\b(section|sections|block|blocks|klase|class|classes|group|groups|pangkat)\b/.test(m)) {
+                return { module: 'sections', date: dateFilter };
+            }
+
+            // Generic request with no specific module → default to violations
+            return { module: 'violations', date: dateFilter };
         })(message);
 
         // Show loading
@@ -1540,9 +1567,8 @@ HOW-TO FOR ADMINS:
                 // forgot / refused to append the signal block.
                 const _hasExportAction = actions && actions.some(a => a.action === 'export_pdf');
                 if (!_hasExportAction) {
-                    console.log('ðŸ¤– Client-side export fallback triggered for module:', _exportMatch);
-                    this.handleExportPDF({ module: _exportMatch });
-                }
+                    console.log('ðŸ¤– Client-side export fallback triggered:', _exportMatch);
+                    this.handleExportPDF({ module: _exportMatch.module, date: _exportMatch.date });
             }
 
             // Add to conversation history
