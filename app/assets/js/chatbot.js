@@ -1570,6 +1570,7 @@ HOW-TO FOR ADMINS:
                     console.log('ðŸ¤– Client-side export fallback triggered:', _exportMatch);
                     this.handleExportPDF({ module: _exportMatch.module, date: _exportMatch.date });
             }
+            }
 
             // Add to conversation history
             this.conversationHistory.push({
