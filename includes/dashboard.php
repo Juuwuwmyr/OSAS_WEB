@@ -58,7 +58,8 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
   <link rel="stylesheet" href="<?= View::asset('styles/section.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/students.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>?v=<?= time() ?>">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js loaded async, only when needed -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
 </head>
 <body>
@@ -93,35 +94,44 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
     <div id="main-content"></div>
   </section>
 
+  <!-- Core framework - must load first -->
   <script src="<?= View::asset('js/dashboard.js') ?>?v=<?= time() ?>"></script>
-  <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
-  <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
-  <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
-  <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
-  <script src="<?= View::asset('js/utils/admin_notifications.js') ?>?v=<?= time() ?>"></script>
-  <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/dashboardData.js') ?>"></script>
-  <script src="<?= View::asset('js/modules/dashboardModule.js') ?>"></script>
+  <script src="<?= View::asset('js/utils/notification.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= View::asset('js/utils/theme.js') ?>"></script>
-  <script src="<?= View::asset('js/utils/eyeCare.js') ?>"></script>
-  <script src="<?= View::asset('js/department.js') ?>"></script>
-  <script src="<?= View::asset('js/section.js') ?>"></script>
-  <script src="<?= View::asset('js/student.js') ?>"></script>
-  <script src="<?= View::asset('js/violation.js') ?>"></script>
-  <script src="<?= View::asset('js/reports.js') ?>"></script>
-  <script src="<?= View::asset('js/announcement.js') ?>"></script>
+  
+  <!-- Chatbot - load early for instant availability -->
   <script>
-  // Global messaging identity — used by the chatbot widget Messages tab
+  // Global messaging identity ï¿½ used by the chatbot widget Messages tab
   window.OSAS_MSG_USER_ID = <?= json_encode((int)($_SESSION['user_id'] ?? 0)) ?>;
   window.OSAS_MSG_ROLE    = 'admin';
   window.OSAS_MSG_NAME    = <?= json_encode(htmlspecialchars_decode($_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Admin'))) ?>;
   </script>
-  <script src="<?= View::asset('js/chatbot.js') ?>"></script>
+  <script src="<?= View::asset('js/chatbot.js') ?>" defer></script>
+  
+  <!-- Document generation libraries - defer until needed -->
+  <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>" defer></script>
+  <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>" defer></script>
+  <script src="<?= View::asset('js/lib/docx.js') ?>" defer></script>
+  <script src="<?= View::asset('js/lib/FileSaver.js') ?>" defer></script>
+  
+  <!-- Module scripts - defer for faster initial load -->
+  <script src="<?= View::asset('js/utils/admin_notifications.js') ?>?v=<?= time() ?>" defer></script>
+  <script src="<?= View::asset('js/utils/offlineDB.js') ?>" defer></script>
+  <script src="<?= View::asset('js/modules/dashboardModule.js') ?>" defer></script>
+  <script src="<?= View::asset('js/utils/eyeCare.js') ?>" defer></script>
+  <script src="<?= View::asset('js/department.js') ?>" defer></script>
+  <script src="<?= View::asset('js/section.js') ?>" defer></script>
+  <script src="<?= View::asset('js/student.js') ?>" defer></script>
+  <script src="<?= View::asset('js/violation.js') ?>" defer></script>
+  <script src="<?= View::asset('js/reports.js') ?>" defer></script>
+  <script src="<?= View::asset('js/announcement.js') ?>" defer></script>
+  <script src="<?= View::asset('js/messages.js') ?>?v=<?= time() ?>" defer></script>
+  
   <?php View::partial('logout_modal'); ?>
-  <script src="<?= View::asset('js/pwa.js') ?>"></script>
-  <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>"></script>
-  <!-- Messaging module: loaded globally so the sidebar badge poller starts immediately -->
-  <script src="<?= View::asset('js/messages.js') ?>?v=<?= time() ?>"></script>
+  
+  <!-- PWA functionality -->
+  <script src="<?= View::asset('js/pwa.js') ?>" defer></script>
+  <script src="<?= View::asset('js/push-notifications.js') ?>?v=<?= time() ?>" defer></script>
 </body>
 </html>
