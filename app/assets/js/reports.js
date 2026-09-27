@@ -64,10 +64,12 @@ function initReportsModule() {
         
         // ========== DATA ==========
         
-        // Reports data loaded from API
+        // Reports data loaded from API - with timestamp for cache management
         let reports = [];
         let allReports = []; // Store all reports for client-side filtering
         let reportViolationTypes = [];
+        let reportsLastLoaded = 0; // Timestamp of last data load
+        const REPORTS_CACHE_DURATION = 60000; // 60 seconds cache
 
         let currentPage = 1;
         let itemsPerPage = 10;
@@ -365,8 +367,18 @@ function initReportsModule() {
 
         // ========== API FUNCTIONS ==========
         
-        async function loadReports(showLoading = true) {
+        async function loadReports(showLoading = true, forceRefresh = false) {
             try {
+                // Check if we have cached data and it's still fresh
+                const now = Date.now();
+                const isCacheFresh = (now - reportsLastLoaded) < REPORTS_CACHE_DURATION;
+                
+                if (!forceRefresh && isCacheFresh && reports.length > 0) {
+                    console.log('✅ Using cached reports data (age: ' + Math.round((now - reportsLastLoaded) / 1000) + 's)');
+                    renderReports();
+                    return;
+                }
+                
                 if (showLoading) {
                     if (tableBody) {
                         tableBody.innerHTML = `<tr><td colspan="${getReportsTableColspan()}" style="text-align: center; padding: 20px;">Loading reports...</td></tr>`;
@@ -419,9 +431,10 @@ function initReportsModule() {
                     throw new Error(data.message || 'API returned error status');
                 }
                 
-                // Store all reports
+                // Store all reports and update timestamp
                 allReports = data.reports || data.data || [];
                 reports = [...allReports];
+                reportsLastLoaded = Date.now(); // Cache timestamp
 
                 if (data.violationTypes && data.violationTypes.length) {
                     setReportViolationTypes(data.violationTypes);
@@ -1081,7 +1094,7 @@ function initReportsModule() {
         // 4. REFRESH REPORTS
         if (btnRefreshReports) {
             btnRefreshReports.addEventListener('click', function() {
-                loadReports(true);
+                loadReports(true, true); // Force refresh
             });
         }
 
@@ -1134,28 +1147,28 @@ function initReportsModule() {
         if (deptFilter) {
             deptFilter.addEventListener('change', function() {
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on filter change
             });
         }
 
         if (sectionFilter) {
             sectionFilter.addEventListener('change', function() {
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on filter change
             });
         }
 
         if (statusFilter) {
             statusFilter.addEventListener('change', function() {
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on filter change
             });
         }
 
         if (violationTypeFilter) {
             violationTypeFilter.addEventListener('change', function() {
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on filter change
             });
         }
 
