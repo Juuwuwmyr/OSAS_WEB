@@ -1185,7 +1185,7 @@ function initReportsModule() {
                 } else {
                     if (dateRangeGroup) dateRangeGroup.style.display = 'none';
                     currentPage = 1;
-                    loadReports(true);
+                    loadReports(true, true); // Force refresh on time filter change
                 }
             });
         }
@@ -1198,7 +1198,7 @@ function initReportsModule() {
         if (applyFiltersBtn) {
             applyFiltersBtn.addEventListener('click', function() {
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on filter apply
             });
         }
 
@@ -1214,7 +1214,7 @@ function initReportsModule() {
                 if (dateRangeGroup) dateRangeGroup.style.display = 'none';
                 if (searchInput) searchInput.value = '';
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on clear
             });
         }
 
@@ -1226,7 +1226,7 @@ function initReportsModule() {
                 if (statusFilter) statusFilter.value = 'all';
                 if (violationTypeFilter) violationTypeFilter.value = 'all';
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on reset
             });
         }
 
@@ -1334,7 +1334,7 @@ function initReportsModule() {
                 updateFilterActiveDot();
                 closeFilterModal();
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on modal filter apply
             });
         }
 
@@ -1360,7 +1360,7 @@ function initReportsModule() {
                 updateFilterActiveDot();
                 closeFilterModal();
                 currentPage = 1;
-                loadReports(true);
+                loadReports(true, true); // Force refresh on modal filter apply
             });
         }
 
@@ -1455,7 +1455,7 @@ function initReportsModule() {
                     
                     closeGenerateModal();
                     // Reload reports
-                    loadReports(true);
+                    loadReports(true, true); // Force refresh after generating report
                 } else {
                     showError('Error generating reports: ' + (data.message || 'Unknown error'));
                 }
@@ -2869,7 +2869,7 @@ function initReportsModule() {
         initCharts();
         loadDepartments();
         loadSections();
-        loadViolationTypes().then(() => loadReports(true));
+        loadViolationTypes().then(() => loadReports(false, false)); // Don't force, use cache if fresh
         console.log('✅ Reports module initialized successfully!');
         
     } catch (error) {
