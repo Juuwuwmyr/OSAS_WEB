@@ -352,7 +352,7 @@ window.executeLogout = function() {
 // Page cache — stores loaded HTML so switching back is instant
 const _pageCache = {};
 const _CACHE_PAGES = ['admin_page/department', 'admin_page/Sections', 'admin_page/Students',
-                      'admin_page/Violations', 'admin_page/Reports', 'admin_page/Announcements'];
+                      'admin_page/Violations', 'admin_page/Reports', 'admin_page/Announcements', 'admin_page/dashcontent'];
 
 function loadContent(page) {
     // Save current page to localStorage for refresh persistence
@@ -368,7 +368,10 @@ function loadContent(page) {
         mainContent.scrollTop = 0;
         updateThemeColor();
         initializeModule(page);
-        if (page === 'admin_page/dashcontent') _triggerDashboardData();
+        // For dashboard, only reload data if it's stale or missing
+        if (page === 'admin_page/dashcontent') {
+            _checkAndRefreshDashboardData();
+        }
         return;
     }
 
@@ -508,9 +511,10 @@ function loadContent(page) {
                     mainContent.innerHTML = bodyClone.innerHTML;
 
                     // Cache the rendered HTML for instant restore on revisit
-                    // Don't cache dashcontent (it has live charts) or pages that mutate heavily
+                    // Cache all pages including dashcontent for instant navigation
                     if (_CACHE_PAGES.some(p => page.toLowerCase().includes(p.toLowerCase().replace('admin_page/', '')))) {
                         _pageCache[page] = bodyClone.innerHTML;
+                        console.log(`💾 Cached page: ${page}`);
                     }
                 } else {
                     // If no body tag, try to get main content
@@ -588,7 +592,7 @@ function loadContent(page) {
 
             // Initialize dashboard data if dashboard page is loaded
             if (page === 'admin_page/dashcontent') {
-                _triggerDashboardData();
+                _checkAndRefreshDashboardData();
             }
 
             console.log(`✅ ${page} loaded successfully`);
@@ -647,6 +651,43 @@ function _triggerDashboardData() {
             setTimeout(() => window.dashboardDataInstance.loadAllData().catch(e => console.error('❌', e)), 500);
         }
     }, 600);
+}
+
+// ── Smart dashboard data refresh (only if stale or missing) ───────────────────
+function _checkAndRefreshDashboardData() {
+    const CACHE_DURATION = 60000; // 60 seconds
+    const lastUpdate = window.dashboardLastUpdate || 0;
+    const now = Date.now();
+    const isStale = (now - lastUpdate) > CACHE_DURATION;
+    const hasData = window.dashboardDataInstance && 
+                    window.dashboardDataInstance.stats && 
+                    window.dashboardDataInstance.stats.students > 0;
+
+    console.log('📊 Dashboard cache check:', {
+        hasData,
+        isStale,
+        timeSinceUpdate: Math.round((now - lastUpdate) / 1000) + 's'
+    });
+
+    // If data exists and is fresh, just update the UI with cached data
+    if (hasData && !isStale) {
+        console.log('✅ Using cached dashboard data');
+        setTimeout(() => {
+            if (window.dashboardDataInstance) {
+                window.dashboardDataInstance.updateStats();
+                window.dashboardDataInstance.updateCharts();
+                window.dashboardDataInstance.updateRecentViolators();
+                window.dashboardDataInstance.updateTopViolators();
+                window.dashboardDataInstance.updateDashcontents();
+                window.dashboardDataInstance.updateAnnouncements();
+            }
+        }, 100);
+        return;
+    }
+
+    // Otherwise, trigger a full reload
+    console.log('🔄 Dashboard data is stale or missing, reloading...');
+    _triggerDashboardData();
 }
 
 // ── Count-up animation for stat numbers ───────────────────────────────────────

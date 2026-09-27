@@ -306,9 +306,10 @@ class DashboardData {
                 violationsArrayLength: this.violations.length
             });
             
-            // Mark data as loaded
+            // Mark data as loaded and set timestamp
             if (typeof window !== 'undefined') {
                 window.dashboardDataLoaded = true;
+                window.dashboardLastUpdate = Date.now();
             }
             
             // Update UI with real data (with retry logic)
