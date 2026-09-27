@@ -655,7 +655,7 @@ function _triggerDashboardData() {
 
 // ── Smart dashboard data refresh (only if stale or missing) ───────────────────
 function _checkAndRefreshDashboardData() {
-    const CACHE_DURATION = 60000; // 60 seconds
+    const CACHE_DURATION = 30000; // 30 seconds (shorter for more real-time dashboard)
     const lastUpdate = window.dashboardLastUpdate || 0;
     const now = Date.now();
     const isStale = (now - lastUpdate) > CACHE_DURATION;
@@ -689,6 +689,12 @@ function _checkAndRefreshDashboardData() {
     console.log('🔄 Dashboard data is stale or missing, reloading...');
     _triggerDashboardData();
 }
+
+// ── Invalidate dashboard cache (call when data changes) ──────────────────────
+window.invalidateDashboardCache = function() {
+    console.log('🔄 Dashboard cache invalidated');
+    window.dashboardLastUpdate = 0; // Force reload on next visit
+};
 
 // ── Count-up animation for stat numbers ───────────────────────────────────────
 function animateCountUp(el, target, duration = 800) {

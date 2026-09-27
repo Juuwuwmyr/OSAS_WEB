@@ -69,7 +69,13 @@ function initReportsModule() {
         let allReports = []; // Store all reports for client-side filtering
         let reportViolationTypes = [];
         let reportsLastLoaded = 0; // Timestamp of last data load
-        const REPORTS_CACHE_DURATION = 60000; // 60 seconds cache
+        const REPORTS_CACHE_DURATION = 30000; // 30 seconds cache (shorter for real-time data)
+        
+        // Global cache invalidation function
+        window.invalidateReportsCache = function() {
+            console.log('🔄 Reports cache invalidated');
+            reportsLastLoaded = 0; // Force reload on next visit
+        };
 
         let currentPage = 1;
         let itemsPerPage = 10;

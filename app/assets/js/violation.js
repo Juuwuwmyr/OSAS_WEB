@@ -2447,6 +2447,14 @@ function initViolationsModule() {
 
                 console.log('✅ Violation saved successfully');
 
+                // Invalidate dashboard and reports cache to show new data immediately
+                if (typeof window.invalidateDashboardCache === 'function') {
+                    window.invalidateDashboardCache();
+                }
+                if (typeof window.invalidateReportsCache === 'function') {
+                    window.invalidateReportsCache();
+                }
+
                 // Reload violations data in background (Manual Fallback handles immediate UI)
                 loadViolations(false).catch(console.error);
                 
