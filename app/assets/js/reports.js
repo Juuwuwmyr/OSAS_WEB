@@ -1,4 +1,13 @@
 // reports.js - Complete working version
+
+// ========== GLOBAL CACHE (persists across module reinitializations) ==========
+window.reportsGlobalCache = window.reportsGlobalCache || {
+    reports: [],
+    allReports: [],
+    reportViolationTypes: [],
+    reportsLastLoaded: 0
+};
+
 function initReportsModule() {
     console.log('🛠 Reports module initializing...');
     
@@ -64,17 +73,18 @@ function initReportsModule() {
         
         // ========== DATA ==========
         
-        // Reports data loaded from API - with timestamp for cache management
-        let reports = [];
-        let allReports = []; // Store all reports for client-side filtering
-        let reportViolationTypes = [];
-        let reportsLastLoaded = 0; // Timestamp of last data load
+        // Reports data loaded from API - use global cache that persists
+        let reports = window.reportsGlobalCache.reports;
+        let allReports = window.reportsGlobalCache.allReports;
+        let reportViolationTypes = window.reportsGlobalCache.reportViolationTypes;
+        let reportsLastLoaded = window.reportsGlobalCache.reportsLastLoaded;
         const REPORTS_CACHE_DURATION = 30000; // 30 seconds cache (shorter for real-time data)
         
         // Global cache invalidation function
         window.invalidateReportsCache = function() {
             console.log('🔄 Reports cache invalidated');
-            reportsLastLoaded = 0; // Force reload on next visit
+            window.reportsGlobalCache.reportsLastLoaded = 0;
+            reportsLastLoaded = 0;
         };
 
         let currentPage = 1;
@@ -440,7 +450,12 @@ function initReportsModule() {
                 // Store all reports and update timestamp
                 allReports = data.reports || data.data || [];
                 reports = [...allReports];
-                reportsLastLoaded = Date.now(); // Cache timestamp
+                reportsLastLoaded = Date.now();
+                
+                // Update global cache
+                window.reportsGlobalCache.reports = reports;
+                window.reportsGlobalCache.allReports = allReports;
+                window.reportsGlobalCache.reportsLastLoaded = reportsLastLoaded;
 
                 if (data.violationTypes && data.violationTypes.length) {
                     setReportViolationTypes(data.violationTypes);
