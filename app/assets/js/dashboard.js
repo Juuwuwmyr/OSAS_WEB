@@ -225,32 +225,55 @@ function fetchAndUpdateTopnavAvatar() {
                 const avatarPath = resolvePath(data.data.profile.profile_picture);
                 
                 // 1. Update topnav pill avatar
-                const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
-                if (tnInitials && tnInitials.style.display !== 'none') {
+                const tnRing = document.querySelector('.tn-avatar-ring');
+                if (tnRing) {
+                    // Remove any existing img
+                    const existingImg = tnRing.querySelector('.tn-avatar-img');
+                    if (existingImg) existingImg.remove();
+                    
+                    const tnInitials = tnRing.querySelector('.tn-avatar-initials');
                     const tnImg = document.createElement('img');
                     tnImg.src = avatarPath + '?t=' + Date.now();
                     tnImg.alt = 'Avatar';
                     tnImg.className = 'tn-avatar-img';
                     tnImg.onerror = function() { this.remove(); if(tnInitials) tnInitials.style.display='flex'; };
-                    tnInitials.style.display = 'none';
-                    tnInitials.parentNode.insertBefore(tnImg, tnInitials);
+                    if (tnInitials) tnInitials.style.display = 'none';
+                    if (tnInitials) {
+                        tnRing.insertBefore(tnImg, tnInitials);
+                    } else {
+                        tnRing.appendChild(tnImg);
+                    }
                 }
 
                 // 2. Update dropdown avatar
-                const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
-                if (ddInitials && ddInitials.style.display !== 'none') {
+                const ddHeader = document.querySelector('.tn-dropdown-header');
+                if (ddHeader) {
+                    // Remove any existing img
+                    const existingDdImg = ddHeader.querySelector('.tn-dropdown-avatar');
+                    if (existingDdImg) existingDdImg.remove();
+                    
+                    const ddInitials = ddHeader.querySelector('.tn-dropdown-avatar-initials');
                     const ddImg = document.createElement('img');
                     ddImg.src = avatarPath + '?t=' + Date.now();
                     ddImg.alt = 'Avatar';
                     ddImg.className = 'tn-dropdown-avatar';
                     ddImg.onerror = function() { this.remove(); if(ddInitials) ddInitials.style.display='flex'; };
-                    ddInitials.style.display = 'none';
-                    ddInitials.parentNode.insertBefore(ddImg, ddInitials);
+                    if (ddInitials) ddInitials.style.display = 'none';
+                    if (ddInitials) {
+                        ddHeader.insertBefore(ddImg, ddInitials);
+                    } else {
+                        ddHeader.appendChild(ddImg);
+                    }
                 }
 
                 // 3. Update mobile sidebar profile avatar (.msb-avatar-wrap)
-                const msbInitials = document.querySelector('.msb-avatar-wrap .msb-avatar-initials');
-                if (msbInitials) {
+                const msbWrap = document.querySelector('.msb-avatar-wrap');
+                if (msbWrap) {
+                    // Remove any existing img
+                    const existingMsbImg = msbWrap.querySelector('.msb-avatar-img');
+                    if (existingMsbImg) existingMsbImg.remove();
+                    
+                    const msbInitials = msbWrap.querySelector('.msb-avatar-initials');
                     const msbImg = document.createElement('img');
                     msbImg.src = avatarPath + '?t=' + Date.now();
                     msbImg.alt = 'Profile';
@@ -259,8 +282,60 @@ function fetchAndUpdateTopnavAvatar() {
                         this.remove();
                         if (msbInitials) msbInitials.style.display = 'flex';
                     };
-                    msbInitials.style.display = 'none';
-                    msbInitials.parentNode.insertBefore(msbImg, msbInitials);
+                    if (msbInitials) msbInitials.style.display = 'none';
+                    if (msbInitials) {
+                        msbWrap.insertBefore(msbImg, msbInitials);
+                    } else {
+                        msbWrap.appendChild(msbImg);
+                    }
+                }
+                
+                // 4. Update mobile profile button (.mpb-ring)
+                const mpbRing = document.querySelector('.mpb-ring');
+                if (mpbRing) {
+                    // Remove any existing img
+                    const existingMpbImg = mpbRing.querySelector('.mpb-img');
+                    if (existingMpbImg) existingMpbImg.remove();
+                    
+                    const mpbInitials = mpbRing.querySelector('.mpb-initials');
+                    const mpbImg = document.createElement('img');
+                    mpbImg.src = avatarPath + '?t=' + Date.now();
+                    mpbImg.alt = 'Profile';
+                    mpbImg.className = 'mpb-img';
+                    mpbImg.onerror = function() {
+                        this.remove();
+                        if (mpbInitials) mpbInitials.style.display = 'flex';
+                    };
+                    if (mpbInitials) mpbInitials.style.display = 'none';
+                    if (mpbInitials) {
+                        mpbRing.insertBefore(mpbImg, mpbInitials);
+                    } else {
+                        mpbRing.appendChild(mpbImg);
+                    }
+                }
+                
+                // 5. Update mobile profile dropdown header (.mpb-hd-ring)
+                const mpbHdRing = document.querySelector('.mpb-hd-ring');
+                if (mpbHdRing) {
+                    // Remove any existing img
+                    const existingMpbHdImg = mpbHdRing.querySelector('.mpb-hd-img');
+                    if (existingMpbHdImg) existingMpbHdImg.remove();
+                    
+                    const mpbHdInitials = mpbHdRing.querySelector('.mpb-hd-initials');
+                    const mpbHdImg = document.createElement('img');
+                    mpbHdImg.src = avatarPath + '?t=' + Date.now();
+                    mpbHdImg.alt = 'Profile';
+                    mpbHdImg.className = 'mpb-hd-img';
+                    mpbHdImg.onerror = function() {
+                        this.remove();
+                        if (mpbHdInitials) mpbHdInitials.style.display = 'flex';
+                    };
+                    if (mpbHdInitials) mpbHdInitials.style.display = 'none';
+                    if (mpbHdInitials) {
+                        mpbHdRing.insertBefore(mpbHdImg, mpbHdInitials);
+                    } else {
+                        mpbHdRing.appendChild(mpbHdImg);
+                    }
                 }
 
                 // Also update localStorage so next load is instant
