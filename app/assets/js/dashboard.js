@@ -211,9 +211,63 @@ function checkAuthentication() {
     if (s) {
         try { updateUserInfo(JSON.parse(s)); } catch(e) {}
     }
-    // Also fetch fresh profile data to ensure topnav avatar is up to date
-    fetchAndUpdateTopnavAvatar();
+    // Fetch profile data in background (non-blocking) to update avatar
+    // Use cached data if available, only fetch if missing or old
+    const lastAvatarFetch = parseInt(localStorage.getItem('lastAvatarFetch') || '0');
+    const now = Date.now();
+    const AVATAR_CACHE_DURATION = 300000; // 5 minutes
+    
+    if ((now - lastAvatarFetch) > AVATAR_CACHE_DURATION) {
+        // Fetch in background, don't block page load
+        setTimeout(() => fetchAndUpdateTopnavAvatar(), 500);
+    } else {
+        // Use cached avatar from session
+        const session = s ? JSON.parse(s) : null;
+        if (session && session.profile_picture) {
+            updateAvatarFromCache(session.profile_picture);
+        }
+    }
     return true;
+}
+
+// Update avatar from cached data (instant, no API call)
+function updateAvatarFromCache(profilePicture) {
+    const avatarPath = resolvePath(profilePicture) + '?t=' + Date.now();
+    
+    // Update all avatar locations with cached data
+    const updates = [
+        { selector: '.tn-avatar-ring', imgClass: 'tn-avatar-img', initialsClass: 'tn-avatar-initials' },
+        { selector: '.tn-dropdown-header', imgClass: 'tn-dropdown-avatar', initialsClass: 'tn-dropdown-avatar-initials' },
+        { selector: '.msb-avatar-wrap', imgClass: 'msb-avatar-img', initialsClass: 'msb-avatar-initials' },
+        { selector: '.mpb-ring', imgClass: 'mpb-img', initialsClass: 'mpb-initials' },
+        { selector: '.mpb-hd-ring', imgClass: 'mpb-hd-img', initialsClass: 'mpb-hd-initials' }
+    ];
+    
+    updates.forEach(({ selector, imgClass, initialsClass }) => {
+        const container = document.querySelector(selector);
+        if (!container) return;
+        
+        let img = container.querySelector(`.${imgClass}`);
+        const initials = container.querySelector(`.${initialsClass}`);
+        
+        if (!img) {
+            img = document.createElement('img');
+            img.className = imgClass;
+            img.alt = 'Avatar';
+            if (initials) {
+                container.insertBefore(img, initials);
+            } else {
+                container.appendChild(img);
+            }
+        }
+        
+        img.src = avatarPath;
+        if (initials) initials.style.display = 'none';
+        img.onerror = function() { 
+            this.remove(); 
+            if (initials) initials.style.display = 'flex';
+        };
+    });
 }
 
 // Fetch profile picture from API and update topnav avatar
@@ -222,127 +276,17 @@ function fetchAndUpdateTopnavAvatar() {
         .then(r => r.json())
         .then(data => {
             if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
-                const avatarPath = resolvePath(data.data.profile.profile_picture);
+                const profilePicture = data.data.profile.profile_picture;
                 
-                // 1. Update topnav pill avatar
-                const tnRing = document.querySelector('.tn-avatar-ring');
-                if (tnRing) {
-                    // Remove any existing img
-                    const existingImg = tnRing.querySelector('.tn-avatar-img');
-                    if (existingImg) existingImg.remove();
-                    
-                    const tnInitials = tnRing.querySelector('.tn-avatar-initials');
-                    const tnImg = document.createElement('img');
-                    tnImg.src = avatarPath + '?t=' + Date.now();
-                    tnImg.alt = 'Avatar';
-                    tnImg.className = 'tn-avatar-img';
-                    tnImg.onerror = function() { this.remove(); if(tnInitials) tnInitials.style.display='flex'; };
-                    if (tnInitials) tnInitials.style.display = 'none';
-                    if (tnInitials) {
-                        tnRing.insertBefore(tnImg, tnInitials);
-                    } else {
-                        tnRing.appendChild(tnImg);
-                    }
-                }
+                // Update avatar with fresh data
+                updateAvatarFromCache(profilePicture);
 
-                // 2. Update dropdown avatar
-                const ddHeader = document.querySelector('.tn-dropdown-header');
-                if (ddHeader) {
-                    // Remove any existing img
-                    const existingDdImg = ddHeader.querySelector('.tn-dropdown-avatar');
-                    if (existingDdImg) existingDdImg.remove();
-                    
-                    const ddInitials = ddHeader.querySelector('.tn-dropdown-avatar-initials');
-                    const ddImg = document.createElement('img');
-                    ddImg.src = avatarPath + '?t=' + Date.now();
-                    ddImg.alt = 'Avatar';
-                    ddImg.className = 'tn-dropdown-avatar';
-                    ddImg.onerror = function() { this.remove(); if(ddInitials) ddInitials.style.display='flex'; };
-                    if (ddInitials) ddInitials.style.display = 'none';
-                    if (ddInitials) {
-                        ddHeader.insertBefore(ddImg, ddInitials);
-                    } else {
-                        ddHeader.appendChild(ddImg);
-                    }
-                }
-
-                // 3. Update mobile sidebar profile avatar (.msb-avatar-wrap)
-                const msbWrap = document.querySelector('.msb-avatar-wrap');
-                if (msbWrap) {
-                    // Remove any existing img
-                    const existingMsbImg = msbWrap.querySelector('.msb-avatar-img');
-                    if (existingMsbImg) existingMsbImg.remove();
-                    
-                    const msbInitials = msbWrap.querySelector('.msb-avatar-initials');
-                    const msbImg = document.createElement('img');
-                    msbImg.src = avatarPath + '?t=' + Date.now();
-                    msbImg.alt = 'Profile';
-                    msbImg.className = 'msb-avatar-img';
-                    msbImg.onerror = function() {
-                        this.remove();
-                        if (msbInitials) msbInitials.style.display = 'flex';
-                    };
-                    if (msbInitials) msbInitials.style.display = 'none';
-                    if (msbInitials) {
-                        msbWrap.insertBefore(msbImg, msbInitials);
-                    } else {
-                        msbWrap.appendChild(msbImg);
-                    }
-                }
-                
-                // 4. Update mobile profile button (.mpb-ring)
-                const mpbRing = document.querySelector('.mpb-ring');
-                if (mpbRing) {
-                    // Remove any existing img
-                    const existingMpbImg = mpbRing.querySelector('.mpb-img');
-                    if (existingMpbImg) existingMpbImg.remove();
-                    
-                    const mpbInitials = mpbRing.querySelector('.mpb-initials');
-                    const mpbImg = document.createElement('img');
-                    mpbImg.src = avatarPath + '?t=' + Date.now();
-                    mpbImg.alt = 'Profile';
-                    mpbImg.className = 'mpb-img';
-                    mpbImg.onerror = function() {
-                        this.remove();
-                        if (mpbInitials) mpbInitials.style.display = 'flex';
-                    };
-                    if (mpbInitials) mpbInitials.style.display = 'none';
-                    if (mpbInitials) {
-                        mpbRing.insertBefore(mpbImg, mpbInitials);
-                    } else {
-                        mpbRing.appendChild(mpbImg);
-                    }
-                }
-                
-                // 5. Update mobile profile dropdown header (.mpb-hd-ring)
-                const mpbHdRing = document.querySelector('.mpb-hd-ring');
-                if (mpbHdRing) {
-                    // Remove any existing img
-                    const existingMpbHdImg = mpbHdRing.querySelector('.mpb-hd-img');
-                    if (existingMpbHdImg) existingMpbHdImg.remove();
-                    
-                    const mpbHdInitials = mpbHdRing.querySelector('.mpb-hd-initials');
-                    const mpbHdImg = document.createElement('img');
-                    mpbHdImg.src = avatarPath + '?t=' + Date.now();
-                    mpbHdImg.alt = 'Profile';
-                    mpbHdImg.className = 'mpb-hd-img';
-                    mpbHdImg.onerror = function() {
-                        this.remove();
-                        if (mpbHdInitials) mpbHdInitials.style.display = 'flex';
-                    };
-                    if (mpbHdInitials) mpbHdInitials.style.display = 'none';
-                    if (mpbHdInitials) {
-                        mpbHdRing.insertBefore(mpbHdImg, mpbHdInitials);
-                    } else {
-                        mpbHdRing.appendChild(mpbHdImg);
-                    }
-                }
-
-                // Also update localStorage so next load is instant
+                // Update localStorage and timestamp
                 try {
                     const stored = JSON.parse(localStorage.getItem('userSession') || '{}');
-                    stored.profile_picture = data.data.profile.profile_picture;
+                    stored.profile_picture = profilePicture;
                     localStorage.setItem('userSession', JSON.stringify(stored));
+                    localStorage.setItem('lastAvatarFetch', Date.now().toString());
                 } catch(e) {}
             }
         })
