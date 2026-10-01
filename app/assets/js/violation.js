@@ -4469,10 +4469,19 @@ function initViolationsModule() {
                 // Use the full unfiltered history for this student, not the deduped latest-per-type
                 const allStudentViolations = violations
                     .filter(v => v.studentId === violation.studentId && v.sanctionName)
+                    .map(v => ({
+                        ...v,
+                        // Ensure level_order is available
+                        violationLevelOrder: v.violationLevelOrder || v.violation_level_order || 0
+                    }))
                     .sort((a, b) => {
+                        // Sort by level_order first, then by date
+                        const levelDiff = (a.violationLevelOrder || 0) - (b.violationLevelOrder || 0);
+                        if (levelDiff !== 0) return levelDiff;
+                        
                         const dateA = new Date((a.dateReported || '') + ' ' + (a.violationTime || '00:00'));
                         const dateB = new Date((b.dateReported || '') + ' ' + (b.violationTime || '00:00'));
-                        return dateA - dateB; // oldest first so offenses read in order
+                        return dateA - dateB; // oldest first
                     });
 
                 if (allStudentViolations.length > 0) {
