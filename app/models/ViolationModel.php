@@ -141,6 +141,7 @@ class ViolationModel extends Model {
                     v.*, 
                     vt.name as violation_type_name,
                     vl.name as violation_level_name,
+                    vl.level_order as violation_level_order,
                     vl.status_color as level_color,
                     vl.sanction_name as level_sanction_name,
                     vl.sanction_description as level_sanction_description,

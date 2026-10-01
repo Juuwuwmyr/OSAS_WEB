@@ -380,6 +380,43 @@ class ViolationController extends Controller
         if ($status === 'resolved' && ($_SESSION['role'] ?? '') !== 'admin') {
             $this->error('Access denied', 'Only Administrators can record resolved violations.', 403);
         }
+        
+        // SEQUENTIAL RESOLUTION ENFORCEMENT: When recording a new violation as 'resolved'
+        if ($status === 'resolved') {
+            // Get the level_order of this new violation
+            $newLevelInfo = $this->model->query(
+                "SELECT level_order FROM violation_levels WHERE id = ? LIMIT 1",
+                [$violationLevel]
+            );
+            $newLevelOrder = $newLevelInfo[0]['level_order'] ?? 0;
+            
+            // Check if there are any unresolved violations with lower level_order for this student
+            $unresolvedLowerOffenses = $this->model->query(
+                "SELECT v.id, v.case_id, vl.name as level_name, vl.level_order
+                 FROM violations v
+                 JOIN violation_levels vl ON v.violation_level_id = vl.id
+                 WHERE v.student_id = ?
+                   AND v.status != 'resolved'
+                   AND v.is_archived = 0
+                   AND vl.level_order < ?
+                 ORDER BY vl.level_order ASC
+                 LIMIT 5",
+                [$studentId, $newLevelOrder]
+            );
+            
+            if (!empty($unresolvedLowerOffenses)) {
+                $offensesList = array_map(function($v) {
+                    return "{$v['level_name']} (Case #{$v['case_id']})";
+                }, $unresolvedLowerOffenses);
+                
+                $offensesText = implode(', ', $offensesList);
+                $this->error(
+                    'Sequential Resolution Required',
+                    "Cannot record this violation as resolved. The following lower-level offenses must be resolved first: {$offensesText}. Violations must be resolved in order from 1st offense to higher offenses.",
+                    400
+                );
+            }
+        }
 
         // Handle attachments (File Upload)
         $attachmentPaths = [];
@@ -676,6 +713,45 @@ class ViolationController extends Controller
         if ($newStatus === 'resolved' && ($current['status'] ?? '') !== 'resolved') {
             if (($_SESSION['role'] ?? '') !== 'admin') {
                 $this->error('Access denied', 'Only Administrators can resolve violations.', 403);
+            }
+            
+            // SEQUENTIAL RESOLUTION ENFORCEMENT: Ensure lower offenses are resolved first
+            $studentId = $current['student_id'] ?? '';
+            if ($studentId) {
+                // Get the level_order of the current violation
+                $currentLevelInfo = $this->model->query(
+                    "SELECT level_order FROM violation_levels WHERE id = ? LIMIT 1",
+                    [$newLevelId]
+                );
+                $currentLevelOrder = $currentLevelInfo[0]['level_order'] ?? 0;
+                
+                // Check if there are any unresolved violations with lower level_order for this student
+                $unresolvedLowerOffenses = $this->model->query(
+                    "SELECT v.id, v.case_id, vl.name as level_name, vl.level_order
+                     FROM violations v
+                     JOIN violation_levels vl ON v.violation_level_id = vl.id
+                     WHERE v.student_id = ?
+                       AND v.id != ?
+                       AND v.status != 'resolved'
+                       AND v.is_archived = 0
+                       AND vl.level_order < ?
+                     ORDER BY vl.level_order ASC
+                     LIMIT 5",
+                    [$studentId, $id, $currentLevelOrder]
+                );
+                
+                if (!empty($unresolvedLowerOffenses)) {
+                    $offensesList = array_map(function($v) {
+                        return "{$v['level_name']} (Case #{$v['case_id']})";
+                    }, $unresolvedLowerOffenses);
+                    
+                    $offensesText = implode(', ', $offensesList);
+                    $this->error(
+                        'Sequential Resolution Required',
+                        "Cannot resolve this violation. The following lower-level offenses must be resolved first: {$offensesText}. Violations must be resolved in order from 1st offense to higher offenses.",
+                        400
+                    );
+                }
             }
         }
 

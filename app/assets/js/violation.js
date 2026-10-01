@@ -525,7 +525,8 @@ function initViolationsModule() {
                 violations = violations.map(v => {
                     return {
                         ...v,
-                        studentImage: getImageUrl(v.studentImage, v.studentName || 'Student')
+                        studentImage: getImageUrl(v.studentImage, v.studentName || 'Student'),
+                        violationLevelOrder: v.violation_level_order || v.violationLevelOrder || 0
                     };
                 });
 
@@ -3463,6 +3464,39 @@ function initViolationsModule() {
             renderViolations();
         };
         
+        // Helper function to check if a violation can be resolved
+        // Returns { canResolve: boolean, reason: string }
+        function canResolveViolation(violation) {
+            if (!violation) return { canResolve: false, reason: 'Invalid violation' };
+            
+            // Get the level_order of current violation
+            const currentLevelOrder = violation.violationLevelOrder || 0;
+            
+            // Find all unresolved violations for the same student with lower level_order
+            const studentId = violation.studentId;
+            const unresolvedLowerOffenses = violations.filter(v => 
+                v.studentId === studentId &&
+                v.id !== violation.id &&
+                v.status !== 'resolved' &&
+                !v.isArchived &&
+                (v.violationLevelOrder || 0) < currentLevelOrder
+            );
+            
+            if (unresolvedLowerOffenses.length > 0) {
+                const offenseNames = unresolvedLowerOffenses
+                    .slice(0, 3)
+                    .map(v => `${v.violationLevelLabel} (${v.caseId})`)
+                    .join(', ');
+                    
+                return {
+                    canResolve: false,
+                    reason: `Cannot resolve: Lower offenses must be resolved first: ${offenseNames}${unresolvedLowerOffenses.length > 3 ? '...' : ''}`
+                };
+            }
+            
+            return { canResolve: true, reason: '' };
+        }
+        
         function renderViolations() {
             // RBAC: Only 'admin' role can see the Resolve button
             let isUserAdmin = false;
@@ -3741,9 +3775,16 @@ function initViolationsModule() {
                             </button>`}
                             ${displayStatus === 'resolved' || !isUserAdmin
                                 ? ''
-                                : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
-                                    <i class='bx bx-check'></i>
-                                </button>`
+                                : (() => {
+                                    const resolveCheck = canResolveViolation(v);
+                                    return resolveCheck.canResolve
+                                        ? `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
+                                            <i class='bx bx-check'></i>
+                                        </button>`
+                                        : `<button class="Violations-action-btn resolve disabled" data-id="${v.id}" title="${resolveCheck.reason}" disabled style="opacity:0.5;cursor:not-allowed;">
+                                            <i class='bx bx-lock-alt'></i>
+                                        </button>`;
+                                })()
                             }
                         </div>
                     </td>
@@ -3816,7 +3857,12 @@ function initViolationsModule() {
                                     </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
-                                        : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
+                                        : (() => {
+                                            const resolveCheck = canResolveViolation(v);
+                                            return resolveCheck.canResolve
+                                                ? `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
+                                                : `<button class="Violations-action-btn resolve disabled" data-id="${v.id}" title="${resolveCheck.reason}" disabled style="opacity:0.5;cursor:not-allowed;"><i class='bx bx-lock-alt'></i></button>`;
+                                        })()
                                     }
                                 </div>
                             </div>
@@ -3858,7 +3904,12 @@ function initViolationsModule() {
                                     </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
-                                        : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
+                                        : (() => {
+                                            const resolveCheck = canResolveViolation(v);
+                                            return resolveCheck.canResolve
+                                                ? `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
+                                                : `<button class="Violations-action-btn resolve disabled" data-id="${v.id}" title="${resolveCheck.reason}" disabled style="opacity:0.5;cursor:not-allowed;"><i class='bx bx-lock-alt'></i></button>`;
+                                        })()
                                     }
                                 </div>
                             </div>
