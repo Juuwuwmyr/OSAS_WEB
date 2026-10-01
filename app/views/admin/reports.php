@@ -32,7 +32,7 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-header-actions">
       <div class="Reports-button-group">
         <button id="btnExportReports" class="Reports-btn outline small" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
-          <i class='bx bx-upload' style="font-size:14px;"></i>
+          <i class='bx bx-download' style="font-size:14px;"></i>
           <span>Export</span>
         </button>
         <button id="btnRefreshReports" class="Reports-btn outline small" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;">
@@ -392,7 +392,7 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
         <div class="modal-actions">
           <button class="Reports-action-btn export" id="detailExportBtn">
-            <i class='bx bx-upload'></i> Export
+            <i class='bx bx-download'></i> Export
           </button>
           <button class="Reports-close-btn" id="closeDetailsModal">
             <i class='bx bx-x'></i>
@@ -576,7 +576,7 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-modal-container" style="max-width: 360px;">
       <div class="Reports-modal-header">
         <h2>
-          <i class='bx bx-upload'></i>
+          <i class='bx bx-download'></i>
           <span>Export Reports Data</span>
         </h2>
         <button class="Reports-close-btn" id="closeExportModal">

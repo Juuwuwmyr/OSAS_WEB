@@ -25,12 +25,12 @@ $_canManage = in_array($_normalizedRole, ['admin', 'osas staff', 'osass staff', 
                 <div class="announcement-btn-group">
                     <?php if ($_canManage): ?>
                     <button class="btn-export" onclick="exportAnnouncements()">
-                        <i class='bx bx-upload'></i>
+                        <i class='bx bx-download'></i>
                         <span>Export</span>
                     </button>
                     <?php else: ?>
                     <button class="btn-export" disabled title="Only Admin and OSAS Staff can export" style="opacity:.45;cursor:not-allowed;">
-                        <i class='bx bx-upload'></i>
+                        <i class='bx bx-download'></i>
                         <span>Export</span>
                     </button>
                     <?php endif; ?>
