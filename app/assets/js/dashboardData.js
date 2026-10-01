@@ -548,7 +548,17 @@ class DashboardData {
             };
         }
         
-        this.violations.forEach(violation => {
+        // Deduplicate violations by ID before counting
+        const seen = new Set();
+        const unique = this.violations.filter(v => {
+            const id = v.id || v.case_id || v.caseId;
+            if (!id) return true;
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+        });
+        
+        unique.forEach(violation => {
             const dept = violation.studentDept || violation.student_dept || violation.department || 'Unknown';
             deptViolations[dept] = (deptViolations[dept] || 0) + 1;
         });
@@ -767,14 +777,7 @@ class DashboardData {
                             maxRotation: 45,
                             minRotation: 0,
                             autoSkip: false,
-                            font: { size: 10 },
-                            callback: function(val) {
-                                const label = this.getLabelForValue(val);
-                                if (typeof label !== 'string' || label.length <= 10) return label;
-                                const words = label.split(' ').filter(w => w.length > 2);
-                                const acronym = words.map(w => w[0].toUpperCase()).join('');
-                                return acronym || label.substring(0, 8) + '\u2026';
-                            }
+                            font: { size: 9 }
                         }
                     }
                 }
