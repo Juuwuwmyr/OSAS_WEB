@@ -33,7 +33,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="Violations-button-group">
         <!-- Import button removed -->
         <button id="btnExportViolations" class="Violations-btn outline small">
-          <i class='bx bx-download'></i>
+          <i class='bx bx-upload'></i>
           <span>Export</span>
         </button>
       </div>
@@ -802,7 +802,7 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Violations-modal-container" style="max-width: 360px;">
       <div class="Violations-modal-header">
         <h2>
-          <i class='bx bx-download'></i>
+          <i class='bx bx-upload'></i>
           <span>Export Violations Data</span>
         </h2>
         <button class="Violations-close-btn" id="closeExportModal">

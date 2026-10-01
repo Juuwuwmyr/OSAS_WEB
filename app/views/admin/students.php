@@ -39,11 +39,11 @@ require_once __DIR__ . '/../../config/db_connect.php';
       <div class="Students-button-group" style="align-items:center;">
         <?php if ($canImportExport): ?>
         <button id="btnImportStudents" class="Students-btn outline small">
-          <i class='bx bx-upload'></i>
+          <i class='bx bx-download'></i>
           <span>Import</span>
         </button>
         <button id="btnExportStudents" class="Students-btn outline small">
-          <i class='bx bx-download'></i>
+          <i class='bx bx-upload'></i>
           <span>Export</span>
         </button>
         <?php endif; ?>
@@ -413,7 +413,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
     <?php if ($canImportExport): ?>
     <p>Get started by importing students data</p>
     <button class="Students-btn-primary" id="btnImportFirstStudents">
-      <i class='bx bx-upload'></i> Import Students
+      <i class='bx bx-download'></i> Import Students
     </button>
     <?php else: ?>
     <p>No student records are available yet.</p>
@@ -426,7 +426,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
     <div class="modal-container" style="max-width: 360px;">
       <div class="modal-header">
         <h2>
-          <i class='bx bx-download'></i>
+          <i class='bx bx-upload'></i>
           <span>Export Students</span>
         </h2>
         <button class="close-btn" id="closeExportModal">
@@ -528,7 +528,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
     <div class="Students-modal-container" style="max-width: 500px;">
       <div class="Students-modal-header">
         <h2>
-          <i class='bx bx-upload'></i>
+          <i class='bx bx-download'></i>
           <span>Import Students Data</span>
         </h2>
         <button class="Students-close-btn" id="closeImportModal">

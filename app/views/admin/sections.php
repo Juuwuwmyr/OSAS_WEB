@@ -46,7 +46,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
       <div class="sections-header-actions">
         <div class="sections-button-group">
           <button id="btnExportSections" class="sections-btn outline small">
-            <i class='bx bx-download'></i>
+            <i class='bx bx-upload'></i>
             <span>Export</span>
           </button>
         </div>
@@ -263,7 +263,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
       <div class="sections-modal-container" style="max-width: 360px;">
         <div class="sections-modal-header">
           <h2>
-            <i class='bx bx-download'></i>
+            <i class='bx bx-upload'></i>
             <span>Export Sections</span>
           </h2>
           <button class="sections-close-btn" id="closeExportModal">

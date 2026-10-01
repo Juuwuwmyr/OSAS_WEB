@@ -41,11 +41,11 @@ require_once __DIR__ . '/../../config/db_connect.php';
       <div class="header-actions">
         <div class="button-group">
           <button class="action-btn outline small" id="btnImport" title="Import Departments">
-            <i class='bx bx-upload'></i>
+            <i class='bx bx-download'></i>
             <span>Import</span>
           </button>
           <button class="action-btn outline small" id="btnExport" title="Export Departments">
-            <i class='bx bx-download'></i>
+            <i class='bx bx-upload'></i>
             <span>Export</span>
           </button>
         </div>
@@ -260,7 +260,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
       <div class="modal-container" style="max-width: 360px;">
         <div class="modal-header">
           <h2>
-            <i class='bx bx-download'></i>
+            <i class='bx bx-upload'></i>
             <span>Export Departments</span>
           </h2>
           <button class="close-btn" id="closeExportModal">
