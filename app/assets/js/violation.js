@@ -4519,12 +4519,17 @@ function initViolationsModule() {
                                 const isResolved = sv.status === 'resolved';
                                 
                                 // Check if this sanction can be resolved (sequential check)
-                                const svLevel = sv.violationLevelOrder || 0;
+                                const svLevel = sv.violationLevelOrder || sv.violation_level_order || 0;
+                                console.log(`Sanction ${idx + 1}: ${levelName}, level_order: ${svLevel}, status: ${sv.status}`);
+                                
                                 const unresolvedLower = allStudentViolations.filter(v => 
                                     v.id !== sv.id &&
                                     v.status !== 'resolved' &&
-                                    (v.violationLevelOrder || 0) < svLevel
+                                    ((v.violationLevelOrder || v.violation_level_order || 0) < svLevel)
                                 );
+                                
+                                console.log(`  - Unresolved lower: ${unresolvedLower.length}`, unresolvedLower.map(v => v.violationLevelLabel));
+                                
                                 const canResolve = unresolvedLower.length === 0;
                                 const resolveTooltip = canResolve 
                                     ? 'Mark as Resolved' 
@@ -4754,13 +4759,8 @@ function initViolationsModule() {
             }
             
             if (detailResolveBtn) {
-                // Show Resolve on all violations; show Reopen if already resolved
-                if (violation.status === 'resolved' || !isUserAdmin) {
-                    detailResolveBtn.style.display = 'none';
-                } else {
-                    detailResolveBtn.style.display = 'inline-flex';
-                    detailResolveBtn.innerHTML = '<i class=\'bx bx-check\'></i> Mark Resolved';
-                }
+                // Hide Mark Resolved button since we have inline resolve in sanction section
+                detailResolveBtn.style.display = 'none';
             }
 
             // Print Slip — hidden for Officer and CSC Officer roles
