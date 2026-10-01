@@ -4484,23 +4484,73 @@ function initViolationsModule() {
                     if (allStudentViolations.length === 1) {
                         const sv = allStudentViolations[0];
                         const typeName = sv.violationTypeLabel || '';
+                        const isResolved = sv.status === 'resolved';
+                        
                         if (snEl) snEl.textContent = typeName ? `${sv.sanctionName} — ${typeName}` : sv.sanctionName;
-                        if (sdEl) sdEl.textContent = sv.sanctionDescription || 'No description provided.';
+                        if (sdEl) {
+                            const resolveBtn = !isResolved && isUserAdmin 
+                                ? `<button class="sanction-resolve-btn" data-violation-id="${sv.id}" style="margin-top:8px;">
+                                    <i class='bx bx-check'></i> Resolve
+                                   </button>`
+                                : (isResolved 
+                                    ? `<span class="sanction-resolved-badge" style="margin-top:8px;"><i class='bx bx-check-circle'></i> Resolved</span>`
+                                    : '');
+                            sdEl.innerHTML = `<span>${escapeHtml(sv.sanctionDescription || 'No description provided.')}</span>${resolveBtn}`;
+                        }
                     } else {
                         if (snEl) snEl.textContent = `${allStudentViolations.length} Sanctions`;
                         if (sdEl) {
+                            // Check if this is admin
+                            let isUserAdmin = false;
+                            const sessionStr = localStorage.getItem('userSession');
+                            if (sessionStr) {
+                                try {
+                                    const session = JSON.parse(sessionStr);
+                                    isUserAdmin = (session.role || '').toLowerCase() === 'admin';
+                                } catch(e) {}
+                            }
+                            
                             sdEl.innerHTML = allStudentViolations.map((sv, idx) => {
                                 const typeName = sv.violationTypeLabel || '';
                                 const levelName = sv.violationLevelLabel || '';
                                 const desc = sv.sanctionDescription || 'No description provided.';
                                 const date = sv.dateReported ? `<span style="font-size:10px;color:#9ca3af;margin-left:6px;">${formatDate(sv.dateReported)}</span>` : '';
                                 const isLast = idx === allStudentViolations.length - 1;
+                                const isResolved = sv.status === 'resolved';
+                                
+                                // Check if this sanction can be resolved (sequential check)
+                                const svLevel = sv.violationLevelOrder || 0;
+                                const unresolvedLower = allStudentViolations.filter(v => 
+                                    v.id !== sv.id &&
+                                    v.status !== 'resolved' &&
+                                    (v.violationLevelOrder || 0) < svLevel
+                                );
+                                const canResolve = unresolvedLower.length === 0;
+                                const resolveTooltip = canResolve 
+                                    ? 'Mark as Resolved' 
+                                    : `Cannot resolve: ${unresolvedLower.map(v => v.violationLevelLabel).slice(0,2).join(', ')} must be resolved first`;
+                                
+                                const resolveBtn = isResolved 
+                                    ? `<span class="sanction-resolved-badge"><i class='bx bx-check-circle'></i> Resolved</span>`
+                                    : (isUserAdmin 
+                                        ? (canResolve 
+                                            ? `<button class="sanction-resolve-btn" data-violation-id="${sv.id}" title="${resolveTooltip}">
+                                                <i class='bx bx-check'></i> Resolve
+                                               </button>`
+                                            : `<button class="sanction-resolve-btn disabled" disabled title="${resolveTooltip}">
+                                                <i class='bx bx-lock-alt'></i> Locked
+                                               </button>`)
+                                        : '');
+                                
                                 return `<div style="margin-bottom:${isLast ? '0' : '10px'};padding-bottom:${isLast ? '0' : '8px'};${isLast ? '' : 'border-bottom:1px solid rgba(212,175,55,0.2);'}">
-                                    <strong style="font-size:12px;color:#b8860b;display:block;margin-bottom:3px;">
-                                        ${escapeHtml(sv.sanctionName)}${typeName ? ` — ${escapeHtml(typeName)}` : ''}
-                                        ${levelName ? `<span style="font-weight:400;color:#6b7280;font-size:11px;">(${escapeHtml(levelName)})</span>` : ''}
-                                        ${date}
-                                    </strong>
+                                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px;">
+                                        <strong style="font-size:12px;color:#b8860b;flex:1;">
+                                            ${escapeHtml(sv.sanctionName)}${typeName ? ` — ${escapeHtml(typeName)}` : ''}
+                                            ${levelName ? `<span style="font-weight:400;color:#6b7280;font-size:11px;">(${escapeHtml(levelName)})</span>` : ''}
+                                            ${date}
+                                        </strong>
+                                        ${resolveBtn}
+                                    </div>
                                     <span style="font-size:12px;color:#374151;">${escapeHtml(desc)}</span>
                                 </div>`;
                             }).join('');
@@ -5565,6 +5615,62 @@ function initViolationsModule() {
                 }
             });
         }
+        
+        // Event delegation for resolve buttons in Sanction section
+        document.addEventListener('click', async function(e) {
+            const resolveBtn = e.target.closest('.sanction-resolve-btn');
+            if (!resolveBtn || resolveBtn.disabled) return;
+            
+            const violationId = resolveBtn.getAttribute('data-violation-id');
+            if (!violationId) return;
+            
+            const violation = violations.find(v => v.id == violationId);
+            if (!violation) {
+                showNotification('Violation not found', 'error');
+                return;
+            }
+            
+            if (violation.status === 'resolved') {
+                showNotification('This violation is already resolved', 'warning');
+                return;
+            }
+            
+            const confirmed = typeof window.showModernAlert === 'function'
+                ? await window.showModernAlert({
+                    title: 'Mark as Resolved',
+                    message: `Mark ${violation.sanctionName || 'this violation'} (${violation.violationLevelLabel}) as resolved? This will update the student's record and unlock the next offense level if applicable.`,
+                    icon: 'check',
+                    confirmText: 'Resolve'
+                  })
+                : confirm(`Mark ${violation.sanctionName || 'this violation'} as resolved?`);
+            
+            if (confirmed) {
+                try {
+                    // Disable button during request
+                    resolveBtn.disabled = true;
+                    resolveBtn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Resolving...';
+                    
+                    await updateViolation(violationId, { status: 'resolved' });
+                    showNotification('Sanction marked as resolved!', 'success');
+                    
+                    // Refresh the modal to show updated state
+                    const currentModalId = detailsModal?.dataset?.viewingId;
+                    if (currentModalId) {
+                        setTimeout(async () => {
+                            await loadViolations();
+                            openDetailsModal(currentModalId);
+                        }, 500);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error resolving violation:', error);
+                    showNotification(error.message || 'Failed to resolve violation. Please try again.', 'error');
+                    // Re-enable button on error
+                    resolveBtn.disabled = false;
+                    resolveBtn.innerHTML = '<i class="bx bx-check"></i> Resolve';
+                }
+            }
+        });
 
         if (detailPrintSlipBtn) {
             detailPrintSlipBtn.addEventListener('click', function() {

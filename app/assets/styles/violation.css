@@ -6330,3 +6330,75 @@ body.dark .vt-manage-item-delete:hover {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Sanction Section Resolve Buttons */
+.sanction-resolve-btn {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sanction-resolve-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.sanction-resolve-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sanction-resolve-btn.disabled,
+.sanction-resolve-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sanction-resolve-btn i {
+  font-size: 11px;
+}
+
+/* Resolved Badge in Sanction Section */
+.sanction-resolved-badge {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #16a34a;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sanction-resolved-badge i {
+  font-size: 11px;
+}
+
+/* Dark Mode for Sanction Resolve Buttons */
+body.dark .sanction-resolve-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+body.dark .sanction-resolve-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.4);
+}
+
+body.dark .sanction-resolved-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
