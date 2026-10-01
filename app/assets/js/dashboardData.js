@@ -558,8 +558,20 @@ class DashboardData {
             return true;
         });
         
+        
+        // Normalize department names to acronyms to group them together
+        const normalizeDept = (dept) => {
+            if (!dept || dept === 'Unknown') return dept;
+            // Map full names to acronyms
+            if (dept.includes('Bachelor of Science in Information Systems')) return 'BSIS';
+            if (dept.includes('Bachelor of Public Administration')) return 'BPA';
+            if (dept.includes('Bachelor of Technical-Vocational Teacher Education')) return 'BTVTED';
+            // Already an acronym or other format
+            return dept;
+        };
+        
         unique.forEach(violation => {
-            const dept = violation.studentDept || violation.student_dept || violation.department || 'Unknown';
+            const dept = normalizeDept(violation.studentDept || violation.student_dept || violation.department || 'Unknown');
             deptViolations[dept] = (deptViolations[dept] || 0) + 1;
         });
 
