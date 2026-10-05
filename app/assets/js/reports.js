@@ -99,7 +99,8 @@ function initReportsModule() {
             const n = (name || '').toLowerCase();
             const prefix = solid ? 'bxs-' : 'bx-';
             if (n.includes('uniform')) return prefix + 't-shirt';
-            if (n.includes('footwear') || n.includes('shoe')) return prefix + 'walk';
+            // Note: bxs-walk doesn't exist in Boxicons 2.0.9, always use regular
+            if (n.includes('footwear') || n.includes('shoe')) return 'bx-walk';
             if (n.includes('id')) return prefix + 'id-card';
             if (n.includes('misconduct') || n.includes('behavior')) return prefix + 'error';
             return prefix + 'error-circle';
