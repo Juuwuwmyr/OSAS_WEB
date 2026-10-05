@@ -458,13 +458,14 @@ switch ($action) {
     case 'get_admins':
         if (!$isStudent) fail('Student only', 403);
 
-        // Students can only message users with the 'admin' role
+        // Students can message any admin/staff role
         $stmt = $conn->prepare("
             SELECT id AS user_id, full_name, role, profile_picture AS avatar
             FROM users
-            WHERE role = 'admin' AND is_active = 1
+            WHERE role IN ('admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member')
+              AND is_active = 1
             ORDER BY full_name ASC
-            LIMIT 20
+            LIMIT 50
         ");
         $stmt->execute();
         $admins = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
