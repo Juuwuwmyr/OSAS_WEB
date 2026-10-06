@@ -2970,6 +2970,59 @@ HOW-TO FOR ADMINS:
         } catch(e) { console.warn('cbMsgStartConversation:', e); }
     }
 
+    // ── Student: load admin/staff list ─────────────────────────────────────
+    async cbMsgLoadAdminList() {
+        const results = document.getElementById('cb-msg-search-results');
+        if (!results) return;
+        results.innerHTML = '<div class="cb-msg-search-empty">Loading staff…</div>';
+        try {
+            const data = await this.cbApiFetch({ action: 'get_admins' });
+            if (!data.success || !data.admins || data.admins.length === 0) {
+                results.innerHTML = '<div class="cb-msg-search-empty">No staff available.</div>';
+                return;
+            }
+            results.innerHTML = '';
+            data.admins.forEach(a => {
+                const item = document.createElement('div');
+                item.className = 'cb-msg-search-item';
+                const av = this._cbMsgResolveAvatar(a.avatar);
+                item.innerHTML = `
+                    <img src="${av}" class="cb-msg-search-avatar" onerror="this.src='${this._cbMsgDefaultAvatar()}'">
+                    <div>
+                        <strong>${this._cbEsc(a.full_name)}</strong>
+                        <small>${this._cbEsc(a.role)}</small>
+                    </div>`;
+                item.addEventListener('click', () => this.cbMsgStartConversationWithAdmin(parseInt(a.user_id), a));
+                results.appendChild(item);
+            });
+        } catch(e) {
+            results.innerHTML = '<div class="cb-msg-search-empty">Network error.</div>';
+        }
+    }
+
+    async cbMsgStartConversationWithAdmin(adminUserId, adminInfo) {
+        try {
+            const data = await this.cbApiFetch({}, { action: 'start', admin_user_id: adminUserId });
+            if (!data.success) { console.warn('cbMsgStartConversationWithAdmin: API error', data); return; }
+            const wrap = document.getElementById('cb-msg-search-wrap');
+            if (wrap) wrap.style.display = 'none';
+            const _newBtn = document.getElementById('cb-msg-new-btn');
+            if (_newBtn) { _newBtn.innerHTML = this._cbNewBtnDefault || 'Message OSAS Staff'; _newBtn.classList.remove('cb-msg-new-btn--cancel'); }
+            await this.cbMsgLoadConversations();
+            const conv = (this._cbMsgAllConvs || []).find(c => parseInt(c.id) === parseInt(data.conv_id));
+            if (conv) {
+                this.cbMsgOpenConv(conv);
+            } else {
+                this.cbMsgOpenConv({
+                    id: data.conv_id, admin_user_id: adminUserId,
+                    admin_name: adminInfo.full_name || 'OSAS Staff',
+                    admin_avatar: adminInfo.avatar || null,
+                    last_message: null, unread: 0,
+                });
+            }
+        } catch(e) { console.warn('cbMsgStartConversationWithAdmin:', e); }
+    }
+
     // â”€â”€ DOM helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     _cbMsgAppendSep(label) {
         const bubbles = document.getElementById('cb-msg-bubbles');
