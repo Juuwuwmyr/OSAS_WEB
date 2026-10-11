@@ -1501,27 +1501,31 @@ function attachSettingsModalEvents() {
             modal.style.display = 'flex';
             setTimeout(() => input.focus(), 100);
             
-            // Input validation
-            const inputHandler = () => {
-                const isValid = input.value === 'DELETE';
-                confirmBtn.disabled = !isValid;
-                confirmBtn.style.opacity = isValid ? '1' : '0.5';
-                confirmBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
-            };
-            input.removeEventListener('input', inputHandler);
-            input.addEventListener('input', inputHandler);
+            // Input validation — replace input to wipe old listeners
+            const freshInput = input.cloneNode(true);
+            input.parentNode.replaceChild(freshInput, input);
+            const liveInput = document.getElementById('settingsDeleteAllConfirmInput');
+            liveInput.addEventListener('input', () => {
+                const isValid = liveInput.value.trim() === 'DELETE';
+                const btn = document.getElementById('btnSettingsDeleteAllConfirm');
+                btn.disabled = !isValid;
+                btn.style.opacity = isValid ? '1' : '0.5';
+                btn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            });
             
             // Cancel button
             const cancelHandler = () => {
                 modal.style.display = 'none';
-                input.value = '';
+                const liveInput2 = document.getElementById('settingsDeleteAllConfirmInput');
+                if (liveInput2) liveInput2.value = '';
             };
             cancelBtn.replaceWith(cancelBtn.cloneNode(true));
             document.getElementById('btnSettingsDeleteAllCancel').addEventListener('click', cancelHandler);
             
             // Confirm button
             const confirmHandler = async () => {
-                if (input.value !== 'DELETE') return;
+                const liveInput2 = document.getElementById('settingsDeleteAllConfirmInput');
+                if (!liveInput2 || liveInput2.value.trim() !== 'DELETE') return;
                 
                 modal.style.display = 'none';
                 deleteAllBtn.disabled = true;
@@ -1557,7 +1561,8 @@ function attachSettingsModalEvents() {
             const overlayHandler = (e) => {
                 if (e.target === modal) {
                     modal.style.display = 'none';
-                    input.value = '';
+                    const liveInput2 = document.getElementById('settingsDeleteAllConfirmInput');
+                    if (liveInput2) liveInput2.value = '';
                 }
             };
             modal.removeEventListener('click', overlayHandler);
