@@ -380,7 +380,7 @@ function initViolationsModule() {
                                 studentName:         d.studentName || 'Unknown',
                                 studentImage:        '',
                                 violationTypeLabel:  d.violationTypeName || 'Pending Sync',
-                                violationLevelLabel: d.violationLevelName || 'â€”',
+                                violationLevelLabel: d.violationLevelName || '"”',
                                 department:          d.department || 'N/A',
                                 section:             d.section || 'N/A',
                                 studentYearlevel:    d.yearlevel || 'N/A',
@@ -411,7 +411,7 @@ function initViolationsModule() {
                     if (allCached.length > 0) {
                         violations = allCached
                             .filter(v => (v.is_archived || 0) == isArchived)
-                            // Sort by created_at DESC â€” matches DB ORDER BY so the
+                            // Sort by created_at DESC "” matches DB ORDER BY so the
                             // "latest violation per student" grouping picks the newest record.
                             .sort((a, b) => {
                                 const safeDate = s => { const d = new Date(s || 0); return isNaN(d) ? 0 : d.getTime(); };
@@ -476,7 +476,7 @@ function initViolationsModule() {
                         // badges reflect deletions on other devices immediately.
                         const prevCount = existing.filter(v => (v.is_archived || 0) == isArchived).length;
                         if (violations.length < prevCount) {
-                            console.log(`ðŸ”„ Server has fewer violations (${violations.length} vs ${prevCount} cached) â€” clearing modal history cache`);
+                            console.log(`ðŸ”„ Server has fewer violations (${violations.length} vs ${prevCount} cached) "” clearing modal history cache`);
                             Object.keys(_modalStudentHistoryCache).forEach(k => delete _modalStudentHistoryCache[k]);
                         }
                     } catch (err) {
@@ -594,7 +594,7 @@ function initViolationsModule() {
                 if (showLoading) hideLoadingOverlay();
             }
         }
-        // In-flight promise guard â€” prevents duplicate concurrent fetches
+        // In-flight promise guard "” prevents duplicate concurrent fetches
         let _studentsLoadPromise = null;
 
         async function loadStudents(showLoading = false) {
@@ -660,7 +660,7 @@ function initViolationsModule() {
                 }
 
                 // â”€â”€ ONLINE: fetch without timestamp so SW can cache the response â”€â”€
-                // Do NOT append &t= here â€” the SW needs to match the URL to its
+                // Do NOT append &t= here "” the SW needs to match the URL to its
                 // canonical cache key (students.php?action=get&filter=active&limit=all).
                 const response = await fetch(API_BASE + 'students.php?action=get&filter=active&limit=all');
                 if (!response.ok) {
@@ -704,7 +704,7 @@ function initViolationsModule() {
                 // Offline mid-request? Try the cache as a last resort
                 if (!navigator.onLine || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                     if (_cache.students && _cache.students.length > 0) {
-                        console.log('ðŸ” Network failed â€” using window cache as fallback');
+                        console.log('ðŸ” Network failed "” using window cache as fallback');
                         students = _cache.students;
                         return students;
                     }
@@ -798,7 +798,7 @@ function initViolationsModule() {
         }
 
         function renderMainStatusFilter() {
-            // Status filter is now static â€” sanction-based options set in HTML
+            // Status filter is now static "” sanction-based options set in HTML
         }
 
         function renderManageStatusesList() {
@@ -977,7 +977,7 @@ function initViolationsModule() {
             finally { hideLoadingOverlay(); }
         }
 
-        // toggleManageView removed â€” Global Statuses panel replaced by per-level sanctions
+        // toggleManageView removed "” Global Statuses panel replaced by per-level sanctions
 
         function initNewStatusColorPresets() {
             const container = document.getElementById('vtNewStatusColorPresets');
@@ -1233,7 +1233,7 @@ function initViolationsModule() {
 
             const levels = type.levels || [];
             if (countEl) countEl.textContent = String(levels.length);
-            if (titleEl) titleEl.textContent = `Levels â€” ${type.name}`;
+            if (titleEl) titleEl.textContent = `Levels "” ${type.name}`;
             if (addForm) addForm.style.display = 'flex';
             if (saveAllBtn) saveAllBtn.style.display = levels.length > 0 ? 'block' : 'none';
 
@@ -1281,10 +1281,10 @@ function initViolationsModule() {
                         <input type="text" class="vt-level-sanction-name-input"
                             value="${escapeHtml(level.sanction_name || '')}"
                             style="font-size:12px;border:1px solid #e5e7eb;border-radius:5px;padding:3px 7px;width:100%;margin-bottom:4px;background:#fafafa;"
-                            placeholder="Sanction name (e.g. Sanction 1 â€” Verbal Warning)">
+                            placeholder="Sanction name (e.g. Sanction 1 "” Verbal Warning)">
                         <textarea class="vt-level-sanction-desc-input"
                             style="font-size:11px;border:1px solid #e5e7eb;border-radius:5px;padding:4px 7px;width:100%;resize:vertical;min-height:44px;background:#fafafa;margin-bottom:6px;"
-                            placeholder="Sanction description â€” what this means for the student...">${escapeHtml(level.sanction_description || '')}</textarea>
+                            placeholder="Sanction description "” what this means for the student...">${escapeHtml(level.sanction_description || '')}</textarea>
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
                             <span style="font-size:10px;color:#6b7280;flex-shrink:0;">Color:</span>
                             <div class="vt-level-presets-row" style="display:flex;gap:4px;align-items:center;">${colorDotsHtml}</div>
@@ -1846,7 +1846,7 @@ function initViolationsModule() {
          * Result is cached per studentId for the lifetime of the modal session.
          */
         async function fetchStudentHistory(studentId) {
-            // When offline, always read from IndexedDB â€” in-memory cache is wiped on app restart
+            // When offline, always read from IndexedDB "” in-memory cache is wiped on app restart
             if (!navigator.onLine) {
                 if (window.offlineDB) {
                     try {
@@ -1867,7 +1867,7 @@ function initViolationsModule() {
                 return violations.filter(v => v.studentId === studentId);
             }
 
-            // Online â€” check in-memory cache first
+            // Online "” check in-memory cache first
             if (_modalStudentHistoryCache[studentId]) {
                 return _modalStudentHistoryCache[studentId];
             }
@@ -1918,7 +1918,7 @@ function initViolationsModule() {
             
             const violationTypeId = parseInt(violationTypeInput.value);
 
-            // 3. Fetch full student history (from API â€” bypasses role filter for modal use)
+            // 3. Fetch full student history (from API "” bypasses role filter for modal use)
             const allStudentViolations = await fetchStudentHistory(studentId);
 
             // Also merge any local offline/pending violations for this student
@@ -1944,7 +1944,7 @@ function initViolationsModule() {
             // 1. Clear existing badges
             document.querySelectorAll('.violation-type-badge-overlay').forEach(el => el.remove());
 
-            // 2. Fetch full student history (from API â€” bypasses role filter for modal use)
+            // 2. Fetch full student history (from API "” bypasses role filter for modal use)
             const allStudentViolations = await fetchStudentHistory(studentId);
 
             // Also merge any local offline/pending violations for this student
@@ -2048,7 +2048,7 @@ function initViolationsModule() {
 
                     pill.addEventListener('click', e => e.stopPropagation());
 
-                    // Wire the remove button â€” always removes highest offense (step back by one)
+                    // Wire the remove button "” always removes highest offense (step back by one)
                     const removeBtn = pill.querySelector('[data-remove-vid]');
                     if (removeBtn) {
                         removeBtn.addEventListener('click', async (e) => {
@@ -2303,7 +2303,7 @@ function initViolationsModule() {
                     
                     // â”€â”€ Persist the pending violation to IndexedDB so it survives app restart â”€â”€
                     
-                    // Optimistic UI update â€” fill in real values from form data
+                    // Optimistic UI update "” fill in real values from form data
                     // Use 'TEMP-' + queuedItem.tempId so the safety-net in loadViolations
                     // can match this cache entry to its sync-queue item by id.
                     const tempId    = 'TEMP-' + queuedItem.tempId;
@@ -2329,7 +2329,7 @@ function initViolationsModule() {
                         violationType:       vtypeId,
                         violationTypeLabel:  vtype ? vtype.name : (formData.get('violationTypeName') || 'Pending Sync'),
                         violationLevel:      vlevelId,
-                        violationLevelLabel: vlevelLabel || formData.get('violationLevelName') || 'â€”',
+                        violationLevelLabel: vlevelLabel || formData.get('violationLevelName') || '"”',
                         department:          formData.get('department') || student?.department || 'N/A',
                         section:             student?.section || formData.get('section') || 'N/A',
                         studentYearlevel:    student?.yearlevel || 'N/A',
@@ -2426,11 +2426,11 @@ function initViolationsModule() {
                         : confirm(`${result.student_name} already has a "${result.violation_type_name}" violation recorded today by ${result.reported_by}.\n\nDo you still want to record this violation?`);
 
                     if (!proceed) {
-                        // User cancelled â€” reset state and bail out
+                        // User cancelled "” reset state and bail out
                         return null;
                     }
 
-                    // User confirmed â€” re-submit with force flag
+                    // User confirmed "” re-submit with force flag
                     formData.set('force', '1');
                     const forceResponse = await fetch(API_BASE + 'violations.php', {
                         method: 'POST',
@@ -3239,7 +3239,7 @@ function initViolationsModule() {
             }
         }
 
-        // SYNC OFFLINE ACTIONS (legacy wrapper â€” actual sync handled by pwa.js)
+        // SYNC OFFLINE ACTIONS (legacy wrapper "” actual sync handled by pwa.js)
         // This is kept for backward compatibility but now just triggers global sync
         window.syncOfflineActions = async function() {
             if (!navigator.onLine || !window.offlineDB) return;
@@ -3297,7 +3297,7 @@ function initViolationsModule() {
             );
             if (student) return student;
 
-            // 2. Fuzzy token match â€” every token must appear in the name pool
+            // 2. Fuzzy token match "” every token must appear in the name pool
             student = students.find(s => {
                 const namePool = [
                     s.firstName  || '',
@@ -3703,7 +3703,7 @@ function initViolationsModule() {
                 // Offline / not-yet-synced (TEMP- id means queued offline)
                 if (String(violationId || '').startsWith('TEMP-')) {
                     return `<span class="Violations-status-badge pending syncing">
-                                <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Syncingâ€¦
+                                <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Syncing"¦
                             </span>`;
                 }
                 // Fully resolved
@@ -3738,7 +3738,7 @@ function initViolationsModule() {
                             </div>
                             <div class="violation-student-name">
                                 <strong>${v.studentName}</strong>
-                                <small>${v.section || 'N/A'} â€¢ ${v.studentYearlevel || 'N/A'}</small>
+                                <small>${v.section || 'N/A'} "¢ ${v.studentYearlevel || 'N/A'}</small>
                             </div>
                         </div>
                     </td>
@@ -4061,7 +4061,7 @@ function initViolationsModule() {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Edit Violation</span>';
                 }
 
-                // Hide student search in edit mode â€” student cannot be changed
+                // Hide student search in edit mode "” student cannot be changed
                 const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
                 if (studentSearchSection) studentSearchSection.style.display = 'none';
 
@@ -4352,10 +4352,10 @@ function initViolationsModule() {
                 if (el) el.className = className;
             };
             
-            // Case header â€” show sanction name if defined, otherwise status
+            // Case header "” show sanction name if defined, otherwise status
             const currentSanctionName = violation.sanctionName || null;
             let displayStatus = violation.status;
-            let displayStatusLabel = violation.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'â€”');
+            let displayStatusLabel = violation.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : '"”');
 
             const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
             if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
@@ -4449,13 +4449,13 @@ function initViolationsModule() {
             // Reported By
             renderList('detailReportedBy', studentViolations, v => v.reportedBy || '-');
             
-            // Status / Sanction column â€” show sanction if defined, fall back to status
+            // Status / Sanction column "” show sanction if defined, fall back to status
             renderList('detailStatus', studentViolations, v => {
                 if (v.sanctionName) {
                     return `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`;
                 }
                 let itemStatus = v.status;
-                let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'â€”');
+                let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : '"”');
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
                 if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                     itemStatus = 'disciplinary'; itemStatusLabel = 'Disciplinary';
@@ -4482,7 +4482,7 @@ function initViolationsModule() {
             }
             
             isUserAdmin = (currentRole.toLowerCase() === 'admin');
-            // Sanction description block â€” show ALL sanctions from the student's full violation history
+            // Sanction description block "” show ALL sanctions from the student's full violation history
             const sanctionSection = document.getElementById('detailAdminSanctionSection');
             if (sanctionSection) {
                 // Use the full unfiltered history for this student, not the deduped latest-per-type
@@ -4514,7 +4514,7 @@ function initViolationsModule() {
                         const typeName = sv.violationTypeLabel || '';
                         const isResolved = sv.status === 'resolved';
                         
-                        if (snEl) snEl.textContent = typeName ? `${sv.sanctionName} â€” ${typeName}` : sv.sanctionName;
+                        if (snEl) snEl.textContent = typeName ? `${sv.sanctionName} - ${typeName}` : sv.sanctionName;
                         if (sdEl) {
                             const resolveBtn = !isResolved && isUserAdmin 
                                 ? `<button class="sanction-resolve-btn" data-violation-id="${sv.id}" style="margin-top:8px;">
@@ -4569,7 +4569,7 @@ function initViolationsModule() {
                                 return `<div style="margin-bottom:${isLast ? '0' : '10px'};padding-bottom:${isLast ? '0' : '8px'};${isLast ? '' : 'border-bottom:1px solid rgba(212,175,55,0.2);'}">
                                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px;">
                                         <strong style="font-size:12px;color:#b8860b;flex:1;">
-                                            ${escapeHtml(sv.sanctionName)}${typeName ? ` â€” ${escapeHtml(typeName)}` : ''}
+                                            ${escapeHtml(sv.sanctionName)}${typeName ? ` - ${escapeHtml(typeName)}` : ``}
                                             ${levelName ? `<span style="font-weight:400;color:#6b7280;font-size:11px;">(${escapeHtml(levelName)})</span>` : ''}
                                             ${date}
                                         </strong>
@@ -4604,7 +4604,7 @@ function initViolationsModule() {
             }
 
             // Attachments display
-             // Evidence is now shown via the Evidence badge in Violation History â€” not here
+             // Evidence is now shown via the Evidence badge in Violation History "” not here
              const attachmentsContainer = document.getElementById('detailAttachments');
              if (attachmentsContainer) attachmentsContainer.innerHTML = '';
             
@@ -4616,8 +4616,8 @@ function initViolationsModule() {
 
                 // Fetch complete student history from the API so attachments are always present.
                 // The local `violations` array is only the current table view (filtered/paginated),
-                // so it may be missing violations â€” and their attachments â€” for this student.
-                // IMPORTANT: bypass the _modalStudentHistoryCache here â€” the cache may be stale
+                // so it may be missing violations "” and their attachments "” for this student.
+                // IMPORTANT: bypass the _modalStudentHistoryCache here "” the cache may be stale
                 // (populated before the violation was saved, missing the new attachments).
                 // Always fetch fresh from the API for the details modal.
                 let studentHistory;
@@ -4677,7 +4677,7 @@ function initViolationsModule() {
                         <div class="timeline-item ${activeClass}" data-vid="${v.id}">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
-                                <span class="timeline-date">${dateStr} ${timeStr ? 'â€¢ ' + timeStr : ''}</span>
+                                <span class="timeline-date">${dateStr} ${timeStr ? '"¢ ' + timeStr : ''}</span>
                                 <span class="timeline-title">
                                     ${v.violationLevelLabel || v.level || 'Level'} - ${v.violationTypeLabel || v.type || 'Type'}
                                     ${isCurrent ? '<span style="font-size:10px;background:#eee;padding:2px 6px;border-radius:4px;margin-left:5px;">Viewing</span>' : ''}
@@ -4699,7 +4699,7 @@ function initViolationsModule() {
                         </div>
                     `}).join('');
 
-                    // Click handler â€” Evidence badge opens lightbox directly (no popup)
+                    // Click handler "” Evidence badge opens lightbox directly (no popup)
                     // Remove previously-bound handler to prevent stacking on repeated modal opens
                     if (timelineEl._evidenceClickHandler) {
                         timelineEl.removeEventListener('click', timelineEl._evidenceClickHandler);
@@ -4717,7 +4717,7 @@ function initViolationsModule() {
                         const clicked = studentHistory.find(v => v.id == vid) || violations.find(v => v.id == vid);
                         if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
-                        const label = `${clicked.violationLevelLabel || ''} â€” ${clicked.violationTypeLabel || ''} Â· ${formatDate(clicked.dateReported || clicked.date)}`;
+                        const label = `${clicked.violationLevelLabel || ''} "” ${clicked.violationTypeLabel || ''} Â· ${formatDate(clicked.dateReported || clicked.date)}`;
                         const imageAttachments = clicked.attachments.filter(f => {
                             const s = String(f);
                             // blob: object URLs are always images (we only create them from File objects)
@@ -4731,7 +4731,7 @@ function initViolationsModule() {
                             window._lightboxLabel  = label;
                             openLightbox(0);
                         } else {
-                            // Non-image file â€” open in new tab
+                            // Non-image file "” open in new tab
                             window.open(getImageUrl(clicked.attachments[0]), '_blank');
                         }
                     };
@@ -4764,7 +4764,7 @@ function initViolationsModule() {
                 detailResolveBtn.style.display = 'none';
             }
 
-            // Print Slip â€” hidden for Officer and CSC Officer roles
+            // Print Slip "” hidden for Officer and CSC Officer roles
             if (detailPrintSlipBtn) {
                 detailPrintSlipBtn.style.display = isOfficerRole() ? 'none' : 'inline-flex';
             }
@@ -5013,7 +5013,7 @@ function initViolationsModule() {
             }
 
             // If students aren't loaded yet (background load still in flight or not started),
-            // wait for them â€” loadStudents deduplicates concurrent calls via the promise guard
+            // wait for them "” loadStudents deduplicates concurrent calls via the promise guard
             if (students.length === 0) {
                 showLoadingOverlay('Loading students...');
                 try {
@@ -5028,7 +5028,7 @@ function initViolationsModule() {
             }
 
             // â”€â”€ Smart fuzzy search (Google/Facebook style) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            // Split the query into tokens â€” every token must appear somewhere in
+            // Split the query into tokens "” every token must appear somewhere in
             // the student's full name pool (first + middle + last, any order).
             // This means "patrick romasanta", "romasanta patrick", "pat rom",
             // "patrick james romasanta" all find "Patrick James V Romasanta".
@@ -5049,8 +5049,8 @@ function initViolationsModule() {
                 // "niÃ±o" == "nino", "ROMASANTA, PATRICK JAMES V." == "romasanta patrick james v"
                 const searchLower = normalize(searchTerm);
 
-                // 1. Student ID â€” exact or partial
-                // Raw match first â€” preserves hyphens so "2023-0206" isn't normalized to "2023 0206"
+                // 1. Student ID "” exact or partial
+                // Raw match first "” preserves hyphens so "2023-0206" isn't normalized to "2023 0206"
                 const rawSearch = searchTerm.trim().toLowerCase();
                 if (sid === rawSearch || sid.includes(rawSearch) || rawSearch.includes(sid)) return true;
 
@@ -5058,7 +5058,7 @@ function initViolationsModule() {
                 const fn = normalize(s.firstName  || s.first_name  || '');
                 const mn = normalize(s.middleName || s.middle_name || '');
                 const ln = normalize(s.lastName   || s.last_name   || '');
-                // "patrick james v romasanta" â€” all words in one string
+                // "patrick james v romasanta" "” all words in one string
                 const namePool = `${fn} ${mn} ${ln}`.replace(/\s+/g, ' ').trim();
 
                 // 3. If query is a single word, check if it appears anywhere in namePool
@@ -5068,12 +5068,12 @@ function initViolationsModule() {
                 }
 
                 // 4. Multi-word query: every token must appear somewhere in namePool
-                //    Order doesn't matter â€” "romasanta patrick" still matches
+                //    Order doesn't matter "” "romasanta patrick" still matches
                 return tokens.every(token => namePool.includes(token));
             });
             
             if (student) {
-                // Normalize field names â€” handle both camelCase (from API) and snake_case (raw DB)
+                // Normalize field names "” handle both camelCase (from API) and snake_case (raw DB)
                 const firstName   = student.firstName   || student.first_name   || '';
                 const middleName  = student.middleName  || student.middle_name  || '';
                 const lastName    = student.lastName    || student.last_name    || '';
@@ -5149,7 +5149,7 @@ function initViolationsModule() {
                 return;
             }
 
-            // Enable transitions on first open â€” this prevents the flash-on-load
+            // Enable transitions on first open "” this prevents the flash-on-load
             // caused by CSS transitions firing during initial page render.
             if (!modal.classList.contains('qr-scanner-modal--ready')) {
                 // Force a reflow so the browser registers the initial transform/opacity
@@ -5160,7 +5160,7 @@ function initViolationsModule() {
 
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            setQRStatus('loading', 'Starting cameraâ€¦');
+            setQRStatus('loading', 'Starting camera"¦');
 
             // Small delay so the modal transition completes before the camera boots
             setTimeout(() => startQRCamera(), 300);
@@ -5258,7 +5258,7 @@ function initViolationsModule() {
                     cam.id,
                     config,
                     (decodedText) => onQRDecoded(decodedText),
-                    () => {} // per-frame error â€” ignore
+                    () => {} // per-frame error "” ignore
                 );
 
                 setQRStatus('idle', 'Align QR code inside the frame');
@@ -5495,7 +5495,7 @@ function initViolationsModule() {
             });
         }
 
-        // Revert button â€” restores the violation to the state before the last edit
+        // Revert button "” restores the violation to the state before the last edit
         const detailRevertBtn = document.getElementById('detailRevertBtn');
         if (detailRevertBtn) {
             detailRevertBtn.addEventListener('click', async function() {
@@ -5528,7 +5528,7 @@ function initViolationsModule() {
                         confirmText: 'Yes, Revert',
                         cancelText: 'Cancel'
                     })
-                    : confirm(`Revert to: ${prevTypeName} â€” ${prevLevelName} (${prev.violation_date || '?'})?`);
+                    : confirm(`Revert to: ${prevTypeName} "” ${prevLevelName} (${prev.violation_date || '?'})?`);
 
                 if (!confirmed) return;
 
@@ -5757,7 +5757,7 @@ function initViolationsModule() {
                                     </table>
                                 </div>
                                 <div class="report-footer">
-                                    <span>E-OSAS System â€” Violation Report</span>
+                                    <span>E-OSAS System "” Violation Report</span>
                                     <span>Printed by: ${getCurrentAdminName()}</span>
                                 </div>
                             </body>
@@ -6362,7 +6362,7 @@ function initViolationsModule() {
                 fileInput.click();
             }
 
-            // Browse button â€” stop propagation so the dropzone click handler doesn't
+            // Browse button "” stop propagation so the dropzone click handler doesn't
             // also fire and open the picker a second time
             if (browseBtn) {
                 browseBtn.addEventListener('click', e => {
@@ -6408,7 +6408,7 @@ function initViolationsModule() {
 
             /**
              * Compress/normalize an image File using canvas.
-             * ALL images go through this â€” ensures consistent size regardless of camera.
+             * ALL images go through this "” ensures consistent size regardless of camera.
              * Non-image files (PDF, DOC) are returned as-is.
              * @param {File} file
              * @param {number} maxDim  - max pixel dimension on longest side (default 1920)
@@ -6422,7 +6422,7 @@ function initViolationsModule() {
                         return;
                     }
 
-                    // We need an object URL â€” but if size is 0 the browser may not
+                    // We need an object URL "” but if size is 0 the browser may not
                     // have finished writing the camera temp file yet. Wait one tick.
                     const tryLoad = () => {
                         const objectUrl = URL.createObjectURL(file);
@@ -6484,7 +6484,7 @@ function initViolationsModule() {
                             // If image failed to load and file.size was 0, retry once after
                             // a short delay (camera temp file may not be ready yet)
                             if (file.size === 0) {
-                                console.warn('ðŸ“· Camera file size=0, retrying in 300msâ€¦');
+                                console.warn('ðŸ“· Camera file size=0, retrying in 300ms"¦');
                                 setTimeout(tryLoad, 300);
                             } else {
                                 resolve(file); // fallback: send original
@@ -6501,7 +6501,7 @@ function initViolationsModule() {
             function addFiles(files) {
                 const MAX_SIZE = 5 * 1024 * 1024; // 5MB hard limit (matches server)
                 Array.from(files).forEach(async file => {
-                    // Only skip truly null entries â€” do NOT skip size=0 files,
+                    // Only skip truly null entries "” do NOT skip size=0 files,
                     // camera captures can report size=0 before the temp file is ready
                     if (!file) return;
 
@@ -6665,7 +6665,7 @@ function initViolationsModule() {
                         }
 
                         const saveResult = await saveViolation(formData);
-                        // null means user cancelled the duplicate-day warning â€” keep modal open
+                        // null means user cancelled the duplicate-day warning "” keep modal open
                         if (saveResult === null) {
                             submitBtn.disabled = false;
                             submitBtn.textContent = originalText;
@@ -6726,7 +6726,7 @@ function initViolationsModule() {
             }
         }
 
-        // Refresh students button (inside record modal) â€” reloads student list from server
+        // Refresh students button (inside record modal) "” reloads student list from server
         const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
         if (refreshStudentsBtn) {
             refreshStudentsBtn.addEventListener('click', async (e) => {
@@ -6773,7 +6773,7 @@ function initViolationsModule() {
             });
         }
 
-        // QR modal backdrop click â€” close
+        // QR modal backdrop click "” close
         const qrScannerBackdrop = document.getElementById('qrScannerBackdrop');
         if (qrScannerBackdrop) {
             qrScannerBackdrop.addEventListener('click', () => closeQRScannerModal());
@@ -6800,7 +6800,7 @@ function initViolationsModule() {
             });
         }
 
-        // Manual input â€” Enter key
+        // Manual input "” Enter key
         const qrManualInputEl = document.getElementById('qrManualInput');
         if (qrManualInputEl) {
             qrManualInputEl.addEventListener('keypress', (e) => {
@@ -7067,7 +7067,7 @@ function initViolationsModule() {
                     <div style="display:flex; gap:5px; align-items:center;">
                         <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
                         <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>
-                    </div>` : `<span style="color:#aaa; font-size:10px;">â€”</span>`;
+                    </div>` : `<span style="color:#aaa; font-size:10px;">"”</span>`;
 
                 return `<tr>
                     <td>${req.first_name || ''} ${req.last_name || ''}</td>
@@ -7467,7 +7467,7 @@ function initViolationsModule() {
                     section: 'BSIT-1A',
                     dateReported: '2024-02-15',
                     violationTime: '08:15:00',
-                    dateTime: 'Feb 15, 2024 â€¢ 08:15 AM',
+                    dateTime: 'Feb 15, 2024 "¢ 08:15 AM',
                     location: 'campus',
                     locationLabel: 'Campus',
                     reportedBy: 'Officer Maria Santos',
@@ -7515,9 +7515,9 @@ function initViolationsModule() {
         // â”€â”€ REALTIME POLLING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Polls a cheap endpoint every 15 s (when online) and silently refreshes
         // the table only when a new violation has actually been recorded by
-        // another user.  No full-page reload â€” just re-fetches & re-renders.
+        // another user.  No full-page reload "” just re-fetches & re-renders.
         (function startViolationsRealtimePoll() {
-            const POLL_INTERVAL_MS  = 5000; // 5 s â€” fast enough to feel real-time on plain PHP
+            const POLL_INTERVAL_MS  = 5000; // 5 s "” fast enough to feel real-time on plain PHP
             const STORAGE_SNAP_KEY  = 'violations_rt_snapshot';
 
             let _pollTimer      = null;
@@ -7617,7 +7617,7 @@ function initViolationsModule() {
                     const incomingId    = Number(data.latest_id    || 0);
                     const incomingCount = Number(data.total_count  ?? -1);
 
-                    // Very first successful poll â€” set baseline, no alert
+                    // Very first successful poll "” set baseline, no alert
                     if (_lastKnownId === 0) {
                         _lastKnownId    = incomingId;
                         _lastKnownCount = incomingCount;
@@ -7649,7 +7649,7 @@ function initViolationsModule() {
                             _isRefreshing = false;
                         }
 
-                        // Toast notification â€” only for new violations, not deletions
+                        // Toast notification "” only for new violations, not deletions
                         if (!countDropped) {
                             showNewViolationToast(data.latest_reported_by, data.latest_case_id);
 
