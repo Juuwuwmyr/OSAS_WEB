@@ -1204,18 +1204,20 @@ function createSettingsModal() {
         </div>
         
         <!-- DELETE ALL CONFIRMATION MODAL -->
-        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;">
-            <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;font-family:'Poppins',sans-serif;">
-                <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                    <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
+        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;font-family:var(--poppins,'Poppins',sans-serif);">
+            <div style="background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.18);text-align:center;font-family:var(--poppins,'Poppins',sans-serif);">
+                <div style="width:64px;height:64px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 4px 16px rgba(239,68,68,0.2);">
+                    <i class='bx bx-trash' style="font-size:30px;color:#ef4444;"></i>
                 </div>
-                <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111;font-family:'Poppins',sans-serif;">Delete All Students?</h3>
-                <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.6;font-family:'Poppins',sans-serif;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
-                <p style="margin:0 0 16px;font-size:13px;font-weight:500;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;font-family:'Poppins',sans-serif;">Type <strong>DELETE</strong> to confirm</p>
-                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;margin-bottom:16px;box-sizing:border-box;text-align:center;outline:none;transition:border-color 0.2s;">
-                <div style="display:flex;gap:10px;justify-content:center;">
-                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-family:'Poppins',sans-serif;font-weight:500;color:#444;">Cancel</button>
-                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;font-family:'Poppins',sans-serif;" disabled>Delete All</button>
+                <h3 style="margin:0 0 10px;font-size:19px;font-weight:700;color:#111827;font-family:var(--poppins,'Poppins',sans-serif);letter-spacing:-0.2px;">Delete All Students?</h3>
+                <p style="margin:0 0 20px;color:#6b7280;font-size:13.5px;line-height:1.65;font-family:var(--poppins,'Poppins',sans-serif);">This will permanently delete <strong style="color:#374151;">all student records</strong>, their <strong style="color:#374151;">login accounts</strong>, all <strong style="color:#374151;">sections</strong>, and all <strong style="color:#374151;">departments</strong>. This action <strong style="color:#ef4444;">cannot be undone</strong>.</p>
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 16px;margin-bottom:18px;">
+                    <p style="margin:0;font-size:12.5px;font-weight:600;color:#dc2626;font-family:var(--poppins,'Poppins',sans-serif);">Type <code style="background:#fee2e2;padding:1px 6px;border-radius:4px;letter-spacing:1px;">DELETE</code> to confirm</p>
+                </div>
+                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:var(--poppins,'Poppins',sans-serif);margin-bottom:18px;box-sizing:border-box;text-align:center;outline:none;transition:border-color 0.2s;color:#111827;background:#fafafa;">
+                <div style="display:flex;gap:10px;">
+                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:11px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;font-size:13.5px;font-family:var(--poppins,'Poppins',sans-serif);font-weight:600;color:#6b7280;transition:all 0.18s;">Cancel</button>
+                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:11px;border:none;border-radius:10px;background:#ef4444;color:#fff;cursor:pointer;font-size:13.5px;font-weight:600;font-family:var(--poppins,'Poppins',sans-serif);box-shadow:0 4px 12px rgba(239,68,68,0.3);transition:all 0.18s;" disabled>Delete All</button>
                 </div>
             </div>
         </div>
@@ -1409,71 +1411,128 @@ function attachSettingsModalEvents() {
         const existing = document.getElementById('dataManagementSuccessModal');
         if (existing) existing.remove();
 
-        const modal = document.createElement('div');
-        modal.id = 'dataManagementSuccessModal';
-        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;';
-
-        let statsHTML = '';
-        if (stats) {
-            statsHTML = `
-                <div style="display: flex; gap: 16px; margin-top: 24px; justify-content: center;">
-                    <div style="text-align: center; padding: 16px; background: #f0fdf4; border-radius: 8px; flex: 1;">
-                        <div style="font-size: 24px; font-weight: 700; color: #15803d;">${stats.created || 0}</div>
-                        <div style="font-size: 12px; color: #166534; margin-top: 4px;">Created</div>
-                    </div>
-                    <div style="text-align: center; padding: 16px; background: #fffbeb; border-radius: 8px; flex: 1;">
-                        <div style="font-size: 24px; font-weight: 700; color: #b45309;">${stats.updated || 0}</div>
-                        <div style="font-size: 12px; color: #92400e; margin-top: 4px;">Updated</div>
-                    </div>
-                    <div style="text-align: center; padding: 16px; background: #f9fafb; border-radius: 8px; flex: 1;">
-                        <div style="font-size: 24px; font-weight: 700; color: #6b7280;">${stats.skipped || 0}</div>
-                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Skipped</div>
-                    </div>
-                </div>
+        // Inject keyframe animations once
+        if (!document.getElementById('dmModalStyles')) {
+            const style = document.createElement('style');
+            style.id = 'dmModalStyles';
+            style.textContent = `
+                @keyframes dmFadeIn {
+                    from { opacity: 0; }
+                    to   { opacity: 1; }
+                }
+                @keyframes dmSlideUp {
+                    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+                    to   { opacity: 1; transform: translateY(0)   scale(1); }
+                }
+                @keyframes dmCheckPop {
+                    0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+                    70%  { transform: scale(1.15) rotate(4deg); opacity: 1; }
+                    100% { transform: scale(1) rotate(0deg); }
+                }
+                #dataManagementSuccessModal { font-family: var(--poppins, 'Poppins', sans-serif); }
+                #dataManagementSuccessModal .dm-card {
+                    background: #fff;
+                    border-radius: 20px;
+                    padding: 40px 36px 32px;
+                    max-width: 420px;
+                    width: 90%;
+                    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+                    animation: dmSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+                    text-align: center;
+                }
+                #dataManagementSuccessModal .dm-icon-ring {
+                    width: 72px;
+                    height: 72px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #f6c90e 0%, #ffd84d 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 24px;
+                    animation: dmCheckPop 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
+                    box-shadow: 0 8px 24px rgba(212,175,55,0.35);
+                }
+                #dataManagementSuccessModal .dm-icon-ring i {
+                    font-size: 38px;
+                    color: #fff;
+                    line-height: 1;
+                }
+                #dataManagementSuccessModal .dm-title {
+                    margin: 0 0 10px;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #111827;
+                    letter-spacing: -0.3px;
+                }
+                #dataManagementSuccessModal .dm-msg {
+                    margin: 0 0 28px;
+                    font-size: 13.5px;
+                    color: #6b7280;
+                    line-height: 1.65;
+                }
+                #dataManagementSuccessModal .dm-done-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: linear-gradient(135deg, #d4af37 0%, #ffd84d 100%);
+                    color: #fff;
+                    border: none;
+                    padding: 11px 36px;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    font-family: var(--poppins, 'Poppins', sans-serif);
+                    cursor: pointer;
+                    box-shadow: 0 4px 14px rgba(212,175,55,0.4);
+                    transition: transform 0.18s ease, box-shadow 0.18s ease;
+                    letter-spacing: 0.2px;
+                }
+                #dataManagementSuccessModal .dm-done-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 7px 20px rgba(212,175,55,0.45);
+                }
+                #dataManagementSuccessModal .dm-done-btn:active {
+                    transform: translateY(0);
+                }
             `;
+            document.head.appendChild(style);
         }
 
+        const modal = document.createElement('div');
+        modal.id = 'dataManagementSuccessModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:center;justify-content:center;animation:dmFadeIn 0.2s ease;';
+
         modal.innerHTML = `
-            <div style="background: white; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;">
-                <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--gold) 0%, #FFCC00 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                    <i class='bx bx-check' style="font-size: 36px; color: white;"></i>
+            <div class="dm-card">
+                <div class="dm-icon-ring">
+                    <i class='bx bx-check-double'></i>
                 </div>
-                <h3 style="margin: 0 0 12px; font-size: 22px; text-align: center; color: #1a1a1a; font-weight: 700;">${title}</h3>
-                <p style="margin: 0; color: #666; font-size: 14px; text-align: center; line-height: 1.6;">${message}</p>
-                ${statsHTML}
-                <div style="margin-top: 28px; text-align: center;">
-                    <button onclick="document.getElementById('dataManagementSuccessModal').remove()" style="background: linear-gradient(135deg, var(--gold) 0%, #FFCC00 100%); color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); transition: transform 0.2s;">
-                        Done
-                    </button>
-                </div>
+                <h3 class="dm-title">${title}</h3>
+                <p class="dm-msg">${message}</p>
+                <button class="dm-done-btn" id="dmDoneBtn">
+                    <i class='bx bx-check'></i> Done
+                </button>
             </div>
         `;
 
-        // Add animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            @keyframes slideUp {
-                from { transform: translateY(30px); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-
         document.body.appendChild(modal);
+
+        const closeModal = () => {
+            modal.style.animation = 'dmFadeIn 0.15s ease reverse forwards';
+            setTimeout(() => modal.remove(), 150);
+        };
+
+        document.getElementById('dmDoneBtn').addEventListener('click', closeModal);
 
         // Close on overlay click
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
+            if (e.target === modal) closeModal();
         });
 
         // Close on Escape key
         const escHandler = (e) => {
             if (e.key === 'Escape') {
-                modal.remove();
+                closeModal();
                 document.removeEventListener('keydown', escHandler);
             }
         };
