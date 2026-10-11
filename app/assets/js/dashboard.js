@@ -843,7 +843,7 @@ function createSettingsModal() {
                     </button>
                     <button type="button" class="settings-sidebar-item" data-section="import">
                         <i class='bx bx-import'></i>
-                        <span>Import Masterlist</span>
+                        <span>Data Management</span>
                     </button>
                     <button type="button" class="settings-sidebar-item" data-section="export">
                         <i class='bx bx-data'></i>
@@ -1082,47 +1082,74 @@ function createSettingsModal() {
                 </div>
                 
                 <div class="settings-section" data-section="import">
-                    <h3 class="settings-section-title">Import Masterlist</h3>
+                    <h3 class="settings-section-title">Data Management</h3>
                     <p class="settings-section-description">
-                        Upload an enrollment list (Excel or CSV) to import all departments, sections, and students data.
+                        Manage system-wide data operations: import enrollment lists and manage all records.
                     </p>
                     <div id="importMasterlistAlert" class="settings-alert"></div>
                     
-                    <form id="importMasterlistForm" enctype="multipart/form-data" style="margin-top: 20px;">
-                        <div class="settings-form-group">
-                            <label class="settings-label">Select Enrollment List File</label>
-                            <div class="file-upload-wrapper" style="border: 2px dashed #ddd; padding: 40px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f9f9f9;" id="masterlistDropZone">
-                                <i class='bx bx-cloud-upload' style="font-size: 48px; color: #aaa; margin-bottom: 10px; display: block;"></i>
-                                <span style="color: #888; display: block; margin-bottom: 10px; font-size: 14px;">Drag and drop or click to browse</span>
-                                <span style="color: #999; font-size: 12px; display: block;">Supported formats: .xlsx, .xls, .csv</span>
-                                <span id="masterlistFileName" style="color: var(--gold); font-weight: 600; display: none; margin-top: 12px;"></span>
-                                <input type="file" id="masterlistFileInput" name="enrollmentList" accept=".csv, .xlsx, .xls" style="display: none;">
+                    <!-- Import Section -->
+                    <div style="margin-bottom: 40px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 16px; color: #1a1a1a; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class='bx bx-import' style="font-size: 20px;"></i>
+                            <span>Import Masterlist</span>
+                        </h4>
+                        <p style="margin: 0 0 16px 0; color: #666; font-size: 13px;">Upload an enrollment list (Excel or CSV) to import all departments, sections, and students data.</p>
+                        
+                        <form id="importMasterlistForm" enctype="multipart/form-data">
+                            <div class="settings-form-group">
+                                <label class="settings-label">Select Enrollment List File</label>
+                                <div class="file-upload-wrapper" style="border: 2px dashed #ddd; padding: 40px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f9f9f9;" id="masterlistDropZone">
+                                    <i class='bx bx-cloud-upload' style="font-size: 48px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+                                    <span style="color: #888; display: block; margin-bottom: 10px; font-size: 14px;">Drag and drop or click to browse</span>
+                                    <span style="color: #999; font-size: 12px; display: block;">Supported formats: .xlsx, .xls, .csv</span>
+                                    <span id="masterlistFileName" style="color: var(--gold); font-weight: 600; display: none; margin-top: 12px;"></span>
+                                    <input type="file" id="masterlistFileInput" name="enrollmentList" accept=".csv, .xlsx, .xls" style="display: none;">
+                                </div>
                             </div>
+                            
+                            <div class="settings-actions" style="margin-top: 16px;">
+                                <button type="submit" class="settings-btn settings-btn-primary" id="importMasterlistBtn" disabled>
+                                    <i class='bx bx-upload'></i>
+                                    <span>Start Import</span>
+                                </button>
+                                <button type="button" class="settings-btn settings-btn-secondary" id="clearMasterlistBtn" style="display: none;">
+                                    <i class='bx bx-x'></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
+                            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #1e40af; line-height: 1.6;">
+                                <li>Automatically extracts departments, sections, and students</li>
+                                <li>Updates existing records, creates new ones</li>
+                                <li>May take a few moments for large files</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Delete All Section -->
+                    <div style="border-top: 1px solid #e5e5e5; padding-top: 32px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 16px; color: #dc2626; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class='bx bx-trash' style="font-size: 20px;"></i>
+                            <span>Delete All Data</span>
+                        </h4>
+                        <p style="margin: 0 0 16px 0; color: #666; font-size: 13px;">Permanently delete all student records, sections, and departments. This action cannot be undone.</p>
+                        
+                        <div style="padding: 16px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 8px; margin-bottom: 16px;">
+                            <p style="margin: 0; font-size: 13px; color: #991b1b; font-weight: 500;">
+                                <i class='bx bx-error' style="font-size: 16px; vertical-align: middle;"></i>
+                                Warning: This will delete all students, their login accounts, all sections, and all departments.
+                            </p>
                         </div>
                         
-                        <div class="settings-actions" style="margin-top: 20px;">
-                            <button type="submit" class="settings-btn settings-btn-primary" id="importMasterlistBtn" disabled>
-                                <i class='bx bx-upload'></i>
-                                <span>Start Import</span>
-                            </button>
-                            <button type="button" class="settings-btn settings-btn-secondary" id="clearMasterlistBtn" style="display: none;">
-                                <i class='bx bx-x'></i>
-                                <span>Clear</span>
+                        <div class="settings-actions">
+                            <button type="button" class="settings-btn" id="btnDeleteAllData" style="background: #dc2626; color: white; border-color: #dc2626;">
+                                <i class='bx bx-trash'></i>
+                                <span>Delete All Data</span>
                             </button>
                         </div>
-                    </form>
-                    
-                    <div style="margin-top: 30px; padding: 16px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
-                            <i class='bx bx-info-circle'></i>
-                            <span>Import Information</span>
-                        </h4>
-                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #1e40af; line-height: 1.6;">
-                            <li>The file will automatically extract departments, sections, and students</li>
-                            <li>Existing records will be updated, new records will be created</li>
-                            <li>This operation may take a few moments for large files</li>
-                            <li>Ensure your file follows the standard enrollment format</li>
-                        </ul>
                     </div>
                 </div>
                 
@@ -1357,6 +1384,53 @@ function attachSettingsModalEvents() {
         setTimeout(() => {
             alertBox.style.display = 'none';
         }, 5000);
+    }
+
+    // Delete All Data Button
+    const deleteAllBtn = document.getElementById('btnDeleteAllData');
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', async () => {
+            const confirmed = confirm(
+                'DELETE ALL DATA?\n\n' +
+                'This will permanently delete:\n' +
+                '• All student records\n' +
+                '• All student login accounts\n' +
+                '• All sections\n' +
+                '• All departments\n\n' +
+                'Type "DELETE" in the next prompt to confirm.'
+            );
+
+            if (!confirmed) return;
+
+            const verification = prompt('Type DELETE to confirm:');
+            if (verification !== 'DELETE') {
+                showImportAlert('Deletion cancelled - verification failed.', 'info');
+                return;
+            }
+
+            deleteAllBtn.disabled = true;
+            deleteAllBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Deleting...</span>';
+
+            try {
+                const response = await fetch(getProjectRoot() + '/api/students.php?action=deleteAll', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showImportAlert('All data has been deleted successfully.', 'success');
+                } else {
+                    showImportAlert(result.message || 'Failed to delete data.', 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showImportAlert('Failed to delete data. Please try again.', 'error');
+            } finally {
+                deleteAllBtn.disabled = false;
+                deleteAllBtn.innerHTML = '<i class="bx bx-trash"></i><span>Delete All Data</span>';
+            }
+        });
     }
 
     // Search Events
