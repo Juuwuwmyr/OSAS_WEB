@@ -1204,22 +1204,18 @@ function createSettingsModal() {
         </div>
         
         <!-- DELETE ALL CONFIRMATION MODAL -->
-        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            <div style="background:#fff;border-radius:16px;padding:48px;max-width:540px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                <div style="width:80px;height:80px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 32px;">
-                    <i class='bx bx-trash' style="font-size:40px;color:#ef4444;"></i>
+        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+                <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
                 </div>
-                <h3 style="margin:0 0 20px;font-size:32px;color:#1a1a1a;font-weight:700;text-align:center;font-family:inherit;">Delete All Students?</h3>
-                <p style="margin:0 0 32px;color:#666;font-size:16px;line-height:1.6;text-align:center;font-family:inherit;">
-                    This will permanently delete <strong style="color:#1a1a1a;font-weight:600;">all student records</strong>, their <strong style="color:#1a1a1a;font-weight:600;">login accounts</strong>, all <strong style="color:#1a1a1a;font-weight:600;">sections</strong>, and all <strong style="color:#1a1a1a;font-weight:600;">departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.
-                </p>
-                <div style="margin:0 0 24px;font-size:15px;color:#ef4444;background:#fee2e2;padding:16px 24px;border-radius:12px;text-align:center;font-family:inherit;">
-                    Type <strong style="font-weight:700;">DELETE</strong> to confirm
-                </div>
-                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:16px 20px;border:2px solid #333;border-radius:12px;font-size:16px;margin-bottom:24px;box-sizing:border-box;text-align:center;font-family:inherit;transition:border-color 0.2s;" onfocus="this.style.borderColor='#000'" onblur="this.style.borderColor='#333'">
-                <div style="display:flex;gap:16px;">
-                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:16px 24px;border:2px solid #ddd;border-radius:12px;background:#fff;cursor:pointer;font-size:16px;font-weight:600;color:#555;transition:all 0.2s;font-family:inherit;">Cancel</button>
-                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:16px 24px;border:none;border-radius:12px;background:#ef4444;color:#fff;cursor:pointer;font-size:16px;font-weight:700;transition:all 0.2s;opacity:0.5;font-family:inherit;" disabled>Delete All</button>
+                <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Delete All Students?</h3>
+                <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
+                <p style="margin:0 0 24px;font-size:13px;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;">Type <strong>DELETE</strong> to confirm</p>
+                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;text-align:center;">
+                <div style="display:flex;gap:10px;justify-content:center;">
+                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;">Cancel</button>
+                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;" disabled>Delete All</button>
                 </div>
             </div>
         </div>

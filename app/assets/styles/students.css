@@ -290,6 +290,12 @@ body.dark {
   display: none !important; /* Hidden - Import moved to Settings */
 }
 
+/* Hide Delete All - moved to Settings */
+#btnDeleteAllStudents,
+.delete-all-toggle-group {
+  display: none !important;
+}
+
 #btnImportStudents:hover {
   background: #2563eb !important;
   transform: translateY(-2px);
