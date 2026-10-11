@@ -1202,6 +1202,27 @@ function createSettingsModal() {
                 ` : ''}
             </div>
         </div>
+        
+        <!-- DELETE ALL CONFIRMATION MODAL -->
+        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:16px;padding:40px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+                <div style="width:72px;height:72px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+                    <i class='bx bx-trash' style="font-size:36px;color:#ef4444;"></i>
+                </div>
+                <h3 style="margin:0 0 16px;font-size:24px;color:#1a1a1a;font-weight:700;">Delete All Students?</h3>
+                <p style="margin:0 0 24px;color:#666;font-size:15px;line-height:1.7;">
+                    This will permanently delete <strong style="color:#1a1a1a;">all student records</strong>, their <strong style="color:#1a1a1a;">login accounts</strong>, all <strong style="color:#1a1a1a;">sections</strong>, and all <strong style="color:#1a1a1a;">departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.
+                </p>
+                <div style="margin:0 0 20px;font-size:14px;color:#ef4444;background:#fee2e2;padding:14px 20px;border-radius:10px;">
+                    Type <strong>DELETE</strong> to confirm
+                </div>
+                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:14px 18px;border:2px solid #e5e5e5;border-radius:10px;font-size:15px;margin-bottom:20px;box-sizing:border-box;text-align:center;transition:border-color 0.2s;" onfocus="this.style.borderColor='#ef4444'" onblur="this.style.borderColor='#e5e5e5'">
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:14px 24px;border:2px solid #e5e5e5;border-radius:10px;background:#fff;cursor:pointer;font-size:15px;font-weight:600;color:#666;transition:all 0.2s;">Cancel</button>
+                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:14px 24px;border:none;border-radius:10px;background:#ef4444;color:#fff;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.2s;opacity:0.5;" disabled>Delete All</button>
+                </div>
+            </div>
+        </div>
     `;
 
     document.body.appendChild(overlay);
@@ -1467,187 +1488,85 @@ function attachSettingsModalEvents() {
     const deleteAllBtn = document.getElementById('btnDeleteAllData');
     if (deleteAllBtn) {
         deleteAllBtn.addEventListener('click', () => {
-            showDeleteConfirmModal();
-        });
-    }
-
-    // Delete Confirmation Modal
-    function showDeleteConfirmModal() {
-        // Remove existing modal if any
-        const existing = document.getElementById('deleteConfirmModal');
-        if (existing) existing.remove();
-
-        const modal = document.createElement('div');
-        modal.id = 'deleteConfirmModal';
-        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;';
-
-        modal.innerHTML = `
-            <div style="background: #2d2d2d; border-radius: 12px; padding: 28px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideUp 0.3s ease; color: white;">
-                <div style="margin-bottom: 8px; font-size: 14px; color: #aaa;">osas-sys.duckdns.org says</div>
-                <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: white;">DELETE ALL DATA?</h3>
-                
-                <p style="margin: 0 0 12px; color: #e0e0e0; font-size: 14px;">This will permanently delete:</p>
-                <ul style="margin: 0 0 16px; padding-left: 20px; color: #e0e0e0; font-size: 14px; line-height: 1.8;">
-                    <li>All student records</li>
-                    <li>All student login accounts</li>
-                    <li>All sections</li>
-                    <li>All departments</li>
-                </ul>
-                
-                <p style="margin: 0 0 20px; color: #ffeb3b; font-size: 13px; font-weight: 500;">
-                    Type "DELETE" in the next prompt to confirm.
-                </p>
-                
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button id="deleteCancelBtn" style="padding: 10px 24px; border: none; border-radius: 6px; background: #444; color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s;">
-                        Cancel
-                    </button>
-                    <button id="deleteOkBtn" style="padding: 10px 24px; border: none; border-radius: 6px; background: #3b82f6; color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s;">
-                        OK
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        const cancelBtn = modal.querySelector('#deleteCancelBtn');
-        const okBtn = modal.querySelector('#deleteOkBtn');
-
-        cancelBtn.addEventListener('click', () => modal.remove());
-        cancelBtn.addEventListener('mouseenter', function() { this.style.background = '#555'; });
-        cancelBtn.addEventListener('mouseleave', function() { this.style.background = '#444'; });
-
-        okBtn.addEventListener('mouseenter', function() { this.style.background = '#2563eb'; });
-        okBtn.addEventListener('mouseleave', function() { this.style.background = '#3b82f6'; });
-
-        okBtn.addEventListener('click', () => {
-            modal.remove();
-            showDeleteVerificationModal();
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
-        });
-
-        const escHandler = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
-    }
-
-    // Delete Verification Modal (Type DELETE)
-    function showDeleteVerificationModal() {
-        const existing = document.getElementById('deleteVerifyModal');
-        if (existing) existing.remove();
-
-        const modal = document.createElement('div');
-        modal.id = 'deleteVerifyModal';
-        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;';
-
-        modal.innerHTML = `
-            <div style="background: #2d2d2d; border-radius: 12px; padding: 28px; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideUp 0.3s ease; color: white;">
-                <div style="margin-bottom: 8px; font-size: 14px; color: #aaa;">osas-sys.duckdns.org says</div>
-                <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 600; color: white;">Type DELETE to confirm</h3>
-                
-                <input type="text" id="deleteVerifyInput" placeholder="Type DELETE here" style="width: 100%; padding: 12px; border: 1px solid #555; border-radius: 6px; background: #1a1a1a; color: white; font-size: 14px; box-sizing: border-box; margin-bottom: 20px;" autocomplete="off">
-                
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button id="verifyCancelBtn" style="padding: 10px 24px; border: none; border-radius: 6px; background: #444; color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s;">
-                        Cancel
-                    </button>
-                    <button id="verifyOkBtn" style="padding: 10px 24px; border: none; border-radius: 6px; background: #dc2626; color: white; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s;" disabled>
-                        Confirm Delete
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        const input = modal.querySelector('#deleteVerifyInput');
-        const cancelBtn = modal.querySelector('#verifyCancelBtn');
-        const okBtn = modal.querySelector('#verifyOkBtn');
-
-        input.focus();
-
-        input.addEventListener('input', () => {
-            okBtn.disabled = input.value !== 'DELETE';
-            okBtn.style.opacity = input.value === 'DELETE' ? '1' : '0.5';
-            okBtn.style.cursor = input.value === 'DELETE' ? 'pointer' : 'not-allowed';
-        });
-
-        cancelBtn.addEventListener('click', () => modal.remove());
-        cancelBtn.addEventListener('mouseenter', function() { this.style.background = '#555'; });
-        cancelBtn.addEventListener('mouseleave', function() { this.style.background = '#444'; });
-
-        okBtn.addEventListener('mouseenter', function() { 
-            if (!this.disabled) this.style.background = '#b91c1c'; 
-        });
-        okBtn.addEventListener('mouseleave', function() { 
-            if (!this.disabled) this.style.background = '#dc2626'; 
-        });
-
-        okBtn.addEventListener('click', async () => {
-            if (input.value !== 'DELETE') return;
+            const modal = document.getElementById('SettingsDeleteAllModal');
+            const input = document.getElementById('settingsDeleteAllConfirmInput');
+            const cancelBtn = document.getElementById('btnSettingsDeleteAllCancel');
+            const confirmBtn = document.getElementById('btnSettingsDeleteAllConfirm');
             
-            modal.remove();
-            await performDeleteAll();
+            if (!modal || !input || !cancelBtn || !confirmBtn) return;
+            
+            // Reset modal
+            input.value = '';
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = '0.5';
+            confirmBtn.style.cursor = 'not-allowed';
+            
+            // Show modal
+            modal.style.display = 'flex';
+            setTimeout(() => input.focus(), 100);
+            
+            // Input validation
+            const inputHandler = () => {
+                const isValid = input.value === 'DELETE';
+                confirmBtn.disabled = !isValid;
+                confirmBtn.style.opacity = isValid ? '1' : '0.5';
+                confirmBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+            };
+            input.removeEventListener('input', inputHandler);
+            input.addEventListener('input', inputHandler);
+            
+            // Cancel button
+            const cancelHandler = () => {
+                modal.style.display = 'none';
+                input.value = '';
+            };
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            document.getElementById('btnSettingsDeleteAllCancel').addEventListener('click', cancelHandler);
+            
+            // Confirm button
+            const confirmHandler = async () => {
+                if (input.value !== 'DELETE') return;
+                
+                modal.style.display = 'none';
+                deleteAllBtn.disabled = true;
+                deleteAllBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Deleting...</span>';
+                
+                try {
+                    const response = await fetch(getProjectRoot() + '/api/students.php?action=deleteAll', {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        showSuccessModal(
+                            'Data Deleted Successfully',
+                            'All student records, sections, and departments have been permanently removed from the system.',
+                            null
+                        );
+                    } else {
+                        showImportAlert(result.message || 'Failed to delete data.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showImportAlert('Failed to delete data. Please try again.', 'error');
+                } finally {
+                    deleteAllBtn.disabled = false;
+                    deleteAllBtn.innerHTML = '<i class="bx bx-trash"></i><span>Delete All Data</span>';
+                }
+            };
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            document.getElementById('btnSettingsDeleteAllConfirm').addEventListener('click', confirmHandler);
+            
+            // Close on overlay click
+            const overlayHandler = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    input.value = '';
+                }
+            };
+            modal.removeEventListener('click', overlayHandler);
+            modal.addEventListener('click', overlayHandler);
         });
-
-        input.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter' && input.value === 'DELETE') {
-                modal.remove();
-                await performDeleteAll();
-            }
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
-        });
-
-        const escHandler = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
-    }
-
-    async function performDeleteAll() {
-        const deleteAllBtn = document.getElementById('btnDeleteAllData');
-        if (!deleteAllBtn) return;
-
-        deleteAllBtn.disabled = true;
-        deleteAllBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Deleting...</span>';
-
-        try {
-            const response = await fetch(getProjectRoot() + '/api/students.php?action=deleteAll', {
-                method: 'POST'
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                showSuccessModal(
-                    'Data Deleted Successfully',
-                    'All student records, sections, and departments have been permanently removed from the system.',
-                    null
-                );
-            } else {
-                showImportAlert(result.message || 'Failed to delete data.', 'error');
-            }
-        } catch (error) {
-            console.error('Delete error:', error);
-            showImportAlert('Failed to delete data. Please try again.', 'error');
-        } finally {
-            deleteAllBtn.disabled = false;
-            deleteAllBtn.innerHTML = '<i class="bx bx-trash"></i><span>Delete All Data</span>';
-        }
     }
 
     // Search Events
