@@ -1204,18 +1204,18 @@ function createSettingsModal() {
         </div>
         
         <!-- DELETE ALL CONFIRMATION MODAL -->
-        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;">
-            <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+        <div id="SettingsDeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;">
+            <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;font-family:'Poppins',sans-serif;">
                 <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
                     <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
                 </div>
-                <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Delete All Students?</h3>
-                <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
-                <p style="margin:0 0 24px;font-size:13px;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;">Type <strong>DELETE</strong> to confirm</p>
-                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;text-align:center;">
+                <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111;font-family:'Poppins',sans-serif;">Delete All Students?</h3>
+                <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.6;font-family:'Poppins',sans-serif;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
+                <p style="margin:0 0 16px;font-size:13px;font-weight:500;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;font-family:'Poppins',sans-serif;">Type <strong>DELETE</strong> to confirm</p>
+                <input id="settingsDeleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;margin-bottom:16px;box-sizing:border-box;text-align:center;outline:none;transition:border-color 0.2s;">
                 <div style="display:flex;gap:10px;justify-content:center;">
-                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;">Cancel</button>
-                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;" disabled>Delete All</button>
+                    <button id="btnSettingsDeleteAllCancel" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-family:'Poppins',sans-serif;font-weight:500;color:#444;">Cancel</button>
+                    <button id="btnSettingsDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;font-family:'Poppins',sans-serif;" disabled>Delete All</button>
                 </div>
             </div>
         </div>
