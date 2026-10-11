@@ -841,6 +841,10 @@ function createSettingsModal() {
                         <i class='bx bx-archive'></i>
                         <span>Archive</span>
                     </button>
+                    <button type="button" class="settings-sidebar-item" data-section="import">
+                        <i class='bx bx-import'></i>
+                        <span>Import Masterlist</span>
+                    </button>
                     <button type="button" class="settings-sidebar-item" data-section="export">
                         <i class='bx bx-data'></i>
                         <span>Export Database</span>
@@ -1076,6 +1080,52 @@ function createSettingsModal() {
                     </div>
                     <div id="settingsArchivePagination" class="settings-pagination"></div>
                 </div>
+                
+                <div class="settings-section" data-section="import">
+                    <h3 class="settings-section-title">Import Masterlist</h3>
+                    <p class="settings-section-description">
+                        Upload an enrollment list (Excel or CSV) to import all departments, sections, and students data.
+                    </p>
+                    <div id="importMasterlistAlert" class="settings-alert"></div>
+                    
+                    <form id="importMasterlistForm" enctype="multipart/form-data" style="margin-top: 20px;">
+                        <div class="settings-form-group">
+                            <label class="settings-label">Select Enrollment List File</label>
+                            <div class="file-upload-wrapper" style="border: 2px dashed #ddd; padding: 40px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f9f9f9;" id="masterlistDropZone">
+                                <i class='bx bx-cloud-upload' style="font-size: 48px; color: #aaa; margin-bottom: 10px; display: block;"></i>
+                                <span style="color: #888; display: block; margin-bottom: 10px; font-size: 14px;">Drag and drop or click to browse</span>
+                                <span style="color: #999; font-size: 12px; display: block;">Supported formats: .xlsx, .xls, .csv</span>
+                                <span id="masterlistFileName" style="color: var(--gold); font-weight: 600; display: none; margin-top: 12px;"></span>
+                                <input type="file" id="masterlistFileInput" name="enrollmentList" accept=".csv, .xlsx, .xls" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="settings-actions" style="margin-top: 20px;">
+                            <button type="submit" class="settings-btn settings-btn-primary" id="importMasterlistBtn" disabled>
+                                <i class='bx bx-upload'></i>
+                                <span>Start Import</span>
+                            </button>
+                            <button type="button" class="settings-btn settings-btn-secondary" id="clearMasterlistBtn" style="display: none;">
+                                <i class='bx bx-x'></i>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div style="margin-top: 30px; padding: 16px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+                            <i class='bx bx-info-circle'></i>
+                            <span>Import Information</span>
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #1e40af; line-height: 1.6;">
+                            <li>The file will automatically extract departments, sections, and students</li>
+                            <li>Existing records will be updated, new records will be created</li>
+                            <li>This operation may take a few moments for large files</li>
+                            <li>Ensure your file follows the standard enrollment format</li>
+                        </ul>
+                    </div>
+                </div>
+                
                 <div class="settings-section" data-section="export">
                     <h3 class="settings-section-title">Export Database</h3>
                     <p class="settings-section-description">
@@ -1172,6 +1222,141 @@ function attachSettingsModalEvents() {
             event.preventDefault();
             submitProfileForm();
         });
+    }
+
+    // Import Masterlist Form
+    const importForm = document.getElementById('importMasterlistForm');
+    const fileInput = document.getElementById('masterlistFileInput');
+    const dropZone = document.getElementById('masterlistDropZone');
+    const fileName = document.getElementById('masterlistFileName');
+    const importBtn = document.getElementById('importMasterlistBtn');
+    const clearBtn = document.getElementById('clearMasterlistBtn');
+    let selectedFile = null;
+
+    if (dropZone && fileInput && fileName && importBtn) {
+        // Click to browse
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                handleFileSelection(selectedFile);
+            }
+        });
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--gold)';
+            dropZone.style.background = 'rgba(212, 175, 55, 0.05)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#ddd';
+            dropZone.style.background = '#f9f9f9';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ddd';
+            dropZone.style.background = '#f9f9f9';
+            
+            if (e.dataTransfer.files.length > 0) {
+                selectedFile = e.dataTransfer.files[0];
+                handleFileSelection(selectedFile);
+            }
+        });
+
+        function handleFileSelection(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['csv', 'xlsx', 'xls'].includes(ext)) {
+                fileName.textContent = `Selected: ${file.name}`;
+                fileName.style.display = 'block';
+                importBtn.disabled = false;
+                clearBtn.style.display = 'inline-flex';
+                dropZone.style.borderColor = '#27ae60';
+                dropZone.querySelector('i').style.color = '#27ae60';
+            } else {
+                showImportAlert('Please select a valid CSV or Excel file.', 'error');
+                clearMasterlistFile();
+            }
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', clearMasterlistFile);
+        }
+
+        function clearMasterlistFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileName.style.display = 'none';
+            fileName.textContent = '';
+            importBtn.disabled = true;
+            clearBtn.style.display = 'none';
+            dropZone.style.borderColor = '#ddd';
+            dropZone.style.background = '#f9f9f9';
+            dropZone.querySelector('i').style.color = '#aaa';
+        }
+
+        if (importForm) {
+            importForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!selectedFile) {
+                    showImportAlert('Please select a file first.', 'error');
+                    return;
+                }
+
+                importBtn.disabled = true;
+                importBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Importing...</span>';
+
+                const formData = new FormData();
+                formData.append('enrollmentList', selectedFile);
+
+                try {
+                    const response = await fetch(getProjectRoot() + '/api/students.php?action=import', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        showImportAlert(result.message || 'Masterlist imported successfully!', 'success');
+                        clearMasterlistFile();
+                        
+                        // Show stats if available
+                        if (result.data) {
+                            const stats = result.data;
+                            const statsMsg = `Created: ${stats.created || 0}, Updated: ${stats.updated || 0}, Skipped: ${stats.skipped || 0}`;
+                            showImportAlert(`Import completed! ${statsMsg}`, 'success');
+                        }
+                    } else {
+                        showImportAlert(result.message || 'Import failed. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showImportAlert('Failed to import masterlist. Please try again.', 'error');
+                } finally {
+                    importBtn.disabled = false;
+                    importBtn.innerHTML = '<i class="bx bx-upload"></i><span>Start Import</span>';
+                }
+            });
+        }
+    }
+
+    function showImportAlert(message, type = 'info') {
+        const alertBox = document.getElementById('importMasterlistAlert');
+        if (!alertBox) return;
+
+        alertBox.textContent = message;
+        alertBox.className = 'settings-alert settings-alert-' + type;
+        alertBox.style.display = 'block';
+
+        setTimeout(() => {
+            alertBox.style.display = 'none';
+        }, 5000);
     }
 
     // Search Events
