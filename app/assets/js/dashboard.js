@@ -1120,8 +1120,8 @@ function createSettingsModal() {
                             </div>
                         </form>
                         
-                        <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
-                            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #1e40af; line-height: 1.6;">
+                        <div style="margin-top: 16px; padding: 12px; background: #fffbeb; border-left: 4px solid var(--gold); border-radius: 8px;">
+                            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #92400e; line-height: 1.6;">
                                 <li>Automatically extracts departments, sections, and students</li>
                                 <li>Updates existing records, creates new ones</li>
                                 <li>May take a few moments for large files</li>
@@ -1350,15 +1350,15 @@ function attachSettingsModalEvents() {
                     const result = await response.json();
 
                     if (result.status === 'success') {
-                        showImportAlert(result.message || 'Masterlist imported successfully!', 'success');
                         clearMasterlistFile();
                         
-                        // Show stats if available
-                        if (result.data) {
-                            const stats = result.data;
-                            const statsMsg = `Created: ${stats.created || 0}, Updated: ${stats.updated || 0}, Skipped: ${stats.skipped || 0}`;
-                            showImportAlert(`Import completed! ${statsMsg}`, 'success');
-                        }
+                        // Show success modal with stats
+                        const stats = result.data || {};
+                        showSuccessModal(
+                            'Import Successful!',
+                            'Your enrollment data has been successfully imported into the system.',
+                            stats
+                        );
                     } else {
                         showImportAlert(result.message || 'Import failed. Please try again.', 'error');
                     }
@@ -1384,6 +1384,83 @@ function attachSettingsModalEvents() {
         setTimeout(() => {
             alertBox.style.display = 'none';
         }, 5000);
+    }
+
+    // Success Modal for Import/Delete operations
+    function showSuccessModal(title, message, stats = null) {
+        // Remove existing modal if any
+        const existing = document.getElementById('dataManagementSuccessModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'dataManagementSuccessModal';
+        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;';
+
+        let statsHTML = '';
+        if (stats) {
+            statsHTML = `
+                <div style="display: flex; gap: 16px; margin-top: 24px; justify-content: center;">
+                    <div style="text-align: center; padding: 16px; background: #f0fdf4; border-radius: 8px; flex: 1;">
+                        <div style="font-size: 24px; font-weight: 700; color: #15803d;">${stats.created || 0}</div>
+                        <div style="font-size: 12px; color: #166534; margin-top: 4px;">Created</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: #fffbeb; border-radius: 8px; flex: 1;">
+                        <div style="font-size: 24px; font-weight: 700; color: #b45309;">${stats.updated || 0}</div>
+                        <div style="font-size: 12px; color: #92400e; margin-top: 4px;">Updated</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: #f9fafb; border-radius: 8px; flex: 1;">
+                        <div style="font-size: 24px; font-weight: 700; color: #6b7280;">${stats.skipped || 0}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Skipped</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--gold) 0%, #FFCC00 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class='bx bx-check' style="font-size: 36px; color: white;"></i>
+                </div>
+                <h3 style="margin: 0 0 12px; font-size: 22px; text-align: center; color: #1a1a1a; font-weight: 700;">${title}</h3>
+                <p style="margin: 0; color: #666; font-size: 14px; text-align: center; line-height: 1.6;">${message}</p>
+                ${statsHTML}
+                <div style="margin-top: 28px; text-align: center;">
+                    <button onclick="document.getElementById('dataManagementSuccessModal').remove()" style="background: linear-gradient(135deg, var(--gold) 0%, #FFCC00 100%); color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); transition: transform 0.2s;">
+                        Done
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(30px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        // Close on Escape key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     // Delete All Data Button
@@ -1419,7 +1496,11 @@ function attachSettingsModalEvents() {
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    showImportAlert('All data has been deleted successfully.', 'success');
+                    showSuccessModal(
+                        'Data Deleted Successfully',
+                        'All student records, sections, and departments have been permanently removed from the system.',
+                        null
+                    );
                 } else {
                     showImportAlert(result.message || 'Failed to delete data.', 'error');
                 }
