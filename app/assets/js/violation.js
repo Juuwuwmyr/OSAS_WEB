@@ -4677,7 +4677,7 @@ function initViolationsModule() {
                         <div class="timeline-item ${activeClass}" data-vid="${v.id}">
                             <div class="timeline-marker"></div>
                             <div class="timeline-content">
-                                <span class="timeline-date">${dateStr} ${timeStr ? '"¢ ' + timeStr : ''}</span>
+                                <span class="timeline-date">${dateStr} ${timeStr ? '• ' + timeStr : ''}</span>
                                 <span class="timeline-title">
                                     ${v.violationLevelLabel || v.level || 'Level'} - ${v.violationTypeLabel || v.type || 'Type'}
                                     ${isCurrent ? '<span style="font-size:10px;background:#eee;padding:2px 6px;border-radius:4px;margin-left:5px;">Viewing</span>' : ''}
