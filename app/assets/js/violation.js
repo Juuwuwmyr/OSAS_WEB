@@ -4320,7 +4320,7 @@ function initViolationsModule() {
         }
 
         async function openDetailsModal(violationId) {
-            console.log('ðŸ“– openDetailsModal called with ID:', violationId);
+            console.log('ðŸ“- openDetailsModal called with ID:', violationId);
             if (!detailsModal) {
                 console.error('âŒ Details modal element (#ViolationDetailsModal) not found!');
                 return;
@@ -5842,7 +5842,7 @@ function initViolationsModule() {
         }
 
         function printEntranceSlip(violation) {
-            console.log('ðŸ–¨ï¸ Requesting Entrance Slip for:', violation.studentName);
+            console.log('ðŸ-¨ï¸ Requesting Entrance Slip for:', violation.studentName);
             
             // Check if violation has ID
             if (!violation.id || violation.id === 'undefined') {

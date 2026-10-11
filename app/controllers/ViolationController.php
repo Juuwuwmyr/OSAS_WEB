@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/ViolationModel.php';
@@ -58,7 +58,7 @@ class ViolationController extends Controller
             }
         }
 
-        // Auto-archive disabled — violations accumulate permanently across months
+        // Auto-archive disabled â€” violations accumulate permanently across months
         // $this->model->checkAndTriggerAutoArchive();
     }
 
@@ -287,7 +287,7 @@ class ViolationController extends Controller
             }
         } elseif (in_array($role, ['Officer', 'CSC Officer'])) {
             if ($forModal && !empty($studentId)) {
-                // Allow full history fetch for offense-level check — no reported_by filter
+                // Allow full history fetch for offense-level check â€” no reported_by filter
                 $reportedByFilter = '';
             } else {
                 // Normal table view: only show violations they recorded
@@ -307,7 +307,7 @@ class ViolationController extends Controller
                 }
             }
         }
-        // admin, OSAS Staff, Faculty Member → no filter, see all violations
+        // admin, OSAS Staff, Faculty Member â†’ no filter, see all violations
 
         try {
             $violations = $this->model->getAllWithStudentInfo(
@@ -423,7 +423,7 @@ class ViolationController extends Controller
         if (!empty($_FILES['attachments'])) {
             $uploadDir = __DIR__ . '/../../app/assets/img/violations/';
 
-            // Ensure the directory exists — create it if needed.
+            // Ensure the directory exists â€” create it if needed.
             // On AWS (/var/www/html) the subfolder may not exist yet, so we
             // create it with 0755 (not 0777) and log any failure so we can debug.
             if (!is_dir($uploadDir)) {
@@ -471,7 +471,7 @@ class ViolationController extends Controller
                     if (move_uploaded_file($tmpName, $destPath)) {
                         $attachmentPaths[] = 'app/assets/img/violations/' . $newFileName;
                     } else {
-                        error_log('ViolationController: move_uploaded_file failed for: ' . $originalName . ' → ' . $destPath);
+                        error_log('ViolationController: move_uploaded_file failed for: ' . $originalName . ' â†’ ' . $destPath);
                     }
                 } else {
                     error_log('ViolationController: Upload error code ' . $_FILES['attachments']['error'][$key] . ' for file index ' . $key);
@@ -609,7 +609,7 @@ class ViolationController extends Controller
 
                 // Use sanction if defined, otherwise fall back to level-name-based messages
                 if ($sanctionName) {
-                    $pushTitle = "{$sanctionName} — {$typeName}";
+                    $pushTitle = "{$sanctionName} â€” {$typeName}";
                     $pushBody = $sanctionDescription
                         ? "Hi {$studentFirstName}, you received \"{$sanctionName}\" for \"{$typeName}\" ({$levelName}). {$sanctionDescription}"
                         : "Hi {$studentFirstName}, a \"{$typeName}\" ({$levelName}) violation has been recorded. Sanction: {$sanctionName}.";
@@ -818,7 +818,7 @@ class ViolationController extends Controller
 
                             (new PushNotificationService())->notifyStudent(
                                 $studentId,
-                                '✅ Violation Resolved',
+                                'âœ… Violation Resolved',
                                 "Hi {$firstName}, your violation ({$current['case_id']}) for \"{$typeName}\" has been marked as resolved by {$editorName}. No further action is required.",
                                 ['type' => 'violation_resolved', 'id' => $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-resolved-' . $id]
                             );
@@ -1338,14 +1338,37 @@ class ViolationController extends Controller
      */
     private function slip_status() {
         $violationId = $this->getGet('violation_id', '');
-        $studentIdCode = $_SESSION['student_id_code'] ?? '';
+        
+        // For admin users, get violation data to extract student_id_code
+        $role = $_SESSION['role'] ?? '';
+        
+        if ($role === 'admin' || $role === 'csc_officer' || $role === 'officer') {
+            // Admin viewing any student's violation
+            if (empty($violationId)) {
+                $this->error('Missing violation_id');
+                return;
+            }
+            
+            // Get the violation to find the student_id_code
+            $violation = $this->model->getById($violationId);
+            if (!$violation) {
+                $this->json(['status' => 'success', 'data' => ['status' => 'none']]);
+                return;
+            }
+            
+            $studentIdCode = $violation['student_id_code'] ?? $violation['studentId'] ?? '';
+        } else {
+            // Student viewing their own violation
+            $studentIdCode = $_SESSION['student_id_code'] ?? '';
+        }
 
         if (empty($violationId) || empty($studentIdCode)) {
-            $this->error('Missing parameters');
+            $this->json(['status' => 'success', 'data' => ['status' => 'none']]);
+            return;
         }
 
         $status = $this->model->getSlipRequestStatus($violationId, $studentIdCode);
-        $this->json(['status' => 'success', 'data' => ['request_status' => $status]]);
+        $this->json(['status' => 'success', 'data' => ['status' => $status]]);
     }
 
     /**
@@ -1441,7 +1464,7 @@ class ViolationController extends Controller
 
         try {
             // Return just the latest violation row (id + created_at + reported_by + case_id)
-            // cheap query — no JOINs needed
+            // cheap query â€” no JOINs needed
             $role             = $_SESSION['role'] ?? '';
             $reportedByFilter = '';
 
@@ -1493,7 +1516,7 @@ class ViolationController extends Controller
             $this->error('Access denied', 'Only Administrators can view recent violations.', 403);
         }
         $limit = min(50, max(1, (int)($this->getGet('limit', 10))));
-        // Include ALL violations — own and others — so the modal shows a full picture
+        // Include ALL violations â€” own and others â€” so the modal shows a full picture
         try {
             $violations = $this->model->getRecent($limit, null, null, null);
             $this->json(['status' => 'success', 'data' => $violations, 'count' => count($violations)]);
@@ -1621,7 +1644,7 @@ class ViolationController extends Controller
         $studentId = $violation['studentId'] ?? '';
 
         // 1.1 Fetch all active violation types + their levels from DB (fully dynamic)
-        // Only 'active' status types appear as rows in the slip — archived/deleted types are excluded.
+        // Only 'active' status types appear as rows in the slip â€” archived/deleted types are excluded.
         $allTypes = $this->model->getViolationTypes(false); // false = active only
         $monthlyViolations = [];
         $typeNames = [];
@@ -1715,7 +1738,7 @@ class ViolationController extends Controller
             // 4.2 Replace violation type labels in the header/checkbox area with checkmarks
             foreach ($typeNames as $typeName) {
                 $isChecked = strcasecmp(trim($typeName), $vTypeLabel) === 0;
-                $mark = $isChecked ? ' ✔' : '';
+                $mark = $isChecked ? ' âœ”' : '';
                 // Safe XML text replacement
                 $xml = str_replace(
                     htmlspecialchars($typeName),
@@ -1738,7 +1761,7 @@ class ViolationController extends Controller
             }
             foreach ($levelsSeen as $lvlName) {
                 $isChecked = strcasecmp(trim($lvlName), $vLevelLabel) === 0;
-                $mark = $isChecked ? ' ✔' : '';
+                $mark = $isChecked ? ' âœ”' : '';
                 $xml = str_replace(
                     htmlspecialchars($lvlName),
                     htmlspecialchars($lvlName) . $mark,
@@ -1838,9 +1861,9 @@ class ViolationController extends Controller
             $rows = $rowMatches[0];
             if (count($rows) < 2) return $tableXml;
 
-            // Detect row types by content markers only — no hardcoded type names
+            // Detect row types by content markers only â€” no hardcoded type names
             // Row 1: has both "Violation" and "Month" text cells
-            // Row 2: level header — has "Permitted" or "Offense" level names
+            // Row 2: level header â€” has "Permitted" or "Offense" level names
             // Data rows: any remaining rows with multiple cells (template rows)
             $row1 = null;
             $row2 = null;
@@ -1895,7 +1918,7 @@ class ViolationController extends Controller
             // The empty cell needs gridSpan = numLevelCols (covers all level columns)
             // and the Month cell has no span (it maps to 1 col by itself... 
             // actually in the original: Month=1col, empty=gridSpan4 covering 4 cols = 5 total date cols)
-            // New layout: Month cell = 1 col? No — looking at XML, Month spans 1 col,
+            // New layout: Month cell = 1 col? No â€” looking at XML, Month spans 1 col,
             // and the 3rd cell has gridSpan=4 (originally). We want them to merge into numLevelCols together.
             // Simplest: give Month cell gridSpan=numLevelCols, remove the empty cell.
             if ($row1 !== null) {
@@ -1939,10 +1962,10 @@ class ViolationController extends Controller
         $cells = $cellMatches[0];
         if (count($cells) < 2) return $row1Xml;
 
-        // Cell 0 = Violation (vMerge:restart) — keep exactly as-is
+        // Cell 0 = Violation (vMerge:restart) â€” keep exactly as-is
         $violationCell = $cells[0];
 
-        // Cell 1 = Month — update its gridSpan to cover all level cols
+        // Cell 1 = Month â€” update its gridSpan to cover all level cols
         $monthCell = $cells[1];
         // Remove any existing gridSpan
         $monthCell = preg_replace('/<w:gridSpan[^\/]*\/>/s', '', $monthCell);
@@ -1978,7 +2001,7 @@ class ViolationController extends Controller
         preg_match_all('/<w:tc[ >].*?<\/w:tc>/s', $row2Xml, $cellMatches);
         $cells = $cellMatches[0];
 
-        // Cell 0 is the vMerge:continue "Violation" cell — keep it
+        // Cell 0 is the vMerge:continue "Violation" cell â€” keep it
         $firstCell = $cells[0] ?? '';
 
         // Use cell 1 as template for level cells (has the right borders/shading)
