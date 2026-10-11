@@ -1406,10 +1406,20 @@ function attachSettingsModalEvents() {
     }
 
     // Success Modal for Import/Delete operations
-    function showSuccessModal(title, message, stats = null) {
+    // type: 'import' (gold) | 'delete' (red)
+    function showSuccessModal(title, message, stats = null, type = 'import') {
         // Remove existing modal if any
         const existing = document.getElementById('dataManagementSuccessModal');
         if (existing) existing.remove();
+
+        const isDelete = type === 'delete';
+        const iconBg        = isDelete ? 'linear-gradient(135deg,#ef4444 0%,#f87171 100%)' : 'linear-gradient(135deg,#f6c90e 0%,#ffd84d 100%)';
+        const iconShadow    = isDelete ? '0 8px 24px rgba(239,68,68,0.35)'                 : '0 8px 24px rgba(212,175,55,0.35)';
+        const iconClass     = isDelete ? 'bx bx-trash'                                     : 'bx bx-check-double';
+        const btnBg         = isDelete ? 'linear-gradient(135deg,#ef4444 0%,#f87171 100%)' : 'linear-gradient(135deg,#d4af37 0%,#ffd84d 100%)';
+        const btnShadow     = isDelete ? '0 4px 14px rgba(239,68,68,0.4)'                  : '0 4px 14px rgba(212,175,55,0.4)';
+        const btnShadowHover= isDelete ? '0 7px 20px rgba(239,68,68,0.45)'                 : '0 7px 20px rgba(212,175,55,0.45)';
+        const btnIcon       = isDelete ? 'bx bx-check'                                     : 'bx bx-check';
 
         // Inject keyframe animations once
         if (!document.getElementById('dmModalStyles')) {
@@ -1444,13 +1454,11 @@ function attachSettingsModalEvents() {
                     width: 72px;
                     height: 72px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #f6c90e 0%, #ffd84d 100%);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin: 0 auto 24px;
                     animation: dmCheckPop 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
-                    box-shadow: 0 8px 24px rgba(212,175,55,0.35);
                 }
                 #dataManagementSuccessModal .dm-icon-ring i {
                     font-size: 38px;
@@ -1474,7 +1482,6 @@ function attachSettingsModalEvents() {
                     display: inline-flex;
                     align-items: center;
                     gap: 6px;
-                    background: linear-gradient(135deg, #d4af37 0%, #ffd84d 100%);
                     color: #fff;
                     border: none;
                     padding: 11px 36px;
@@ -1483,13 +1490,11 @@ function attachSettingsModalEvents() {
                     font-weight: 600;
                     font-family: var(--poppins, 'Poppins', sans-serif);
                     cursor: pointer;
-                    box-shadow: 0 4px 14px rgba(212,175,55,0.4);
                     transition: transform 0.18s ease, box-shadow 0.18s ease;
                     letter-spacing: 0.2px;
                 }
                 #dataManagementSuccessModal .dm-done-btn:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 7px 20px rgba(212,175,55,0.45);
                 }
                 #dataManagementSuccessModal .dm-done-btn:active {
                     transform: translateY(0);
@@ -1504,12 +1509,12 @@ function attachSettingsModalEvents() {
 
         modal.innerHTML = `
             <div class="dm-card">
-                <div class="dm-icon-ring">
-                    <i class='bx bx-check-double'></i>
+                <div class="dm-icon-ring" style="background:${iconBg};box-shadow:${iconShadow};">
+                    <i class='${iconClass}'></i>
                 </div>
                 <h3 class="dm-title">${title}</h3>
                 <p class="dm-msg">${message}</p>
-                <button class="dm-done-btn" id="dmDoneBtn">
+                <button class="dm-done-btn" id="dmDoneBtn" style="background:${btnBg};box-shadow:${btnShadow};" onmouseover="this.style.boxShadow='${btnShadowHover}'" onmouseout="this.style.boxShadow='${btnShadow}'">
                     <i class='bx bx-check'></i> Done
                 </button>
             </div>
@@ -1600,7 +1605,8 @@ function attachSettingsModalEvents() {
                         showSuccessModal(
                             'Data Deleted Successfully',
                             'All student records, sections, and departments have been permanently removed from the system.',
-                            null
+                            null,
+                            'delete'
                         );
                     } else {
                         showImportAlert(result.message || 'Failed to delete data.', 'error');
