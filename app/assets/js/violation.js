@@ -2716,7 +2716,7 @@ function initViolationsModule() {
             const date = new Date();
             date.setHours(hours);
             date.setMinutes(minutes);
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
         function getViolationTypeClass(typeLabel) {
