@@ -2845,9 +2845,14 @@ HOW-TO FOR ADMINS:
         try {
             const data = await this.cbApiFetch({}, { action: 'send', conv_id: this._cbMsgCurrentConvId, body });
             if (data.success) {
+                // UPDATE: Set _cbMsgLastId FIRST to prevent race condition with polling
+                // This ensures the polling won't fetch this same message as "new"
+                const newMsgId = parseInt(data.msg_id);
+                this._cbMsgLastId = newMsgId;
+                
                 const myId = window.OSAS_MSG_USER_ID || 0;
                 const fakeMsg = {
-                    id: data.msg_id,
+                    id: newMsgId,
                     sender_id: myId,
                     body,
                     is_read: 0,
@@ -2857,7 +2862,6 @@ HOW-TO FOR ADMINS:
                 const lastSep = document.querySelector('#cb-msg-bubbles .cb-msg-sep:last-of-type');
                 if (!lastSep || lastSep.textContent !== d) this._cbMsgAppendSep(d);
                 this._cbMsgAppendBubble(fakeMsg);
-                this._cbMsgLastId = parseInt(data.msg_id);
                 this._cbMsgScrollBottom();
                 this.cbMsgLoadConversations();
             }
