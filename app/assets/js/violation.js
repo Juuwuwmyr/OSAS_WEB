@@ -1,4 +1,4 @@
-﻿// violations.js - COMPLETE WORKING VERSION
+// violations.js - COMPLETE WORKING VERSION
 function initViolationsModule() {
     // Prevent double initialization to avoid duplicate event listeners and race conditions
     // This fixes the "Violation details not found" error caused by duplicate table click handlers
@@ -2029,8 +2029,8 @@ function initViolationsModule() {
                         -webkit-backdrop-filter: blur(4px);
                     `;
                     pill.innerHTML = `
-                        <span style="font-size:9px;opacity:0.7;margin-right:1px;">â—</span>
-                        <span>${escapeHtml(levelName)}${totalCount > 1 ? `<span style="opacity:0.65;font-size:8px;margin-left:3px;">${totalCount}Ã—</span>` : ''}</span>
+                        <span style="font-size:9px;opacity:0.7;margin-right:1px;">⚠</span>
+                        <span>${escapeHtml(levelName)}${totalCount > 1 ? `<span style="opacity:0.65;font-size:8px;margin-left:3px;">${totalCount}×</span>` : ''}</span>
                         ${!isPending ? `<button type="button"
                             data-remove-vid="${highest.id}"
                             data-remove-level="${escapeHtml(levelName)}"
@@ -2043,7 +2043,7 @@ function initViolationsModule() {
                                 cursor:pointer; padding:0; flex-shrink:0;
                                 color:${pillText}; font-size:8px; font-weight:900;
                                 line-height:1; transition:background 0.15s;
-                            ">âœ•</button>` : `<span style="opacity:0.5;font-size:8px;">â³</span>`}
+                            ">✕</button>` : `<span style="opacity:0.5;font-size:8px;">⏳</span>`}
                     `;
 
                     pill.addEventListener('click', e => e.stopPropagation());
