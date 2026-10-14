@@ -563,7 +563,7 @@ HOW-TO FOR ADMINS:
 
         // Add departments list
         if (context.departments && context.departments.length > 0) {
-            formatted += 'ðŸ¢ DEPARTMENTS:\n';
+            formatted += 'ðŸ¢ DEPARTMENTS:\n';
             context.departments.forEach(dept => {
                 formatted += `- ${dept.name} (Code: ${dept.code})\n`;
             });
@@ -590,7 +590,7 @@ HOW-TO FOR ADMINS:
 
         // Add recent violations with more detail
         if (context.recent_violations && context.recent_violations.length > 0) {
-            formatted += 'âš ï¸ RECENT VIOLATIONS (actual records):\n';
+            formatted += 'âš ï¸ RECENT VIOLATIONS (actual records):\n';
             context.recent_violations.forEach(violation => {
                 formatted += `- Case ${violation.case_id || violation.id}: ${violation.student_name} (ID: ${violation.student_id}) — Type: ${violation.violation_type}, Level: ${violation.violation_level}, Status: ${violation.status}, Date: ${violation.date}\n`;
             });
@@ -1948,7 +1948,7 @@ HOW-TO FOR ADMINS:
                 }
             } catch (err) {
                 console.error(`Action ${action} failed:`, err);
-                this.addMessage('bot', `⚠️ I tried to perform that action but encountered an error: ${err.message}`);
+                this.addMessage('bot', `⚠️ I tried to perform that action but encountered an error: ${err.message}`);
             }
         }
     }
@@ -1995,7 +1995,7 @@ HOW-TO FOR ADMINS:
      */
     async handleResetSystem(params) {
         try {
-            this.addMessage('bot', 'â³ Resetting system... deleting all students, sections, and departments.');
+            this.addMessage('bot', 'â³ Resetting system... deleting all students, sections, and departments.');
 
             const apiBase = window.location.pathname.includes('/includes/')
                 ? '../api/students.php'
@@ -2015,7 +2015,7 @@ HOW-TO FOR ADMINS:
             }
         } catch (err) {
             console.error('handleResetSystem error:', err);
-            this.addMessage('bot', `⚠️ System reset failed: ${err.message}`);
+            this.addMessage('bot', `⚠️ System reset failed: ${err.message}`);
         }
     }
 
@@ -2025,7 +2025,7 @@ HOW-TO FOR ADMINS:
         // Validation check
         if (!params || !params.module) {
             console.error('Bot Export Error: Missing module parameter', params);
-            this.addMessage('bot', `⚠️ I tried to export a report but didn't know which module to use. Please specify if you want a **violations**, **students**, **departments**, or **sections** report.`);
+            this.addMessage('bot', `⚠️ I tried to export a report but didn't know which module to use. Please specify if you want a **violations**, **students**, **departments**, or **sections** report.`);
             return;
         }
 
@@ -2497,7 +2497,7 @@ HOW-TO FOR ADMINS:
                 }
                 if (Array.isArray(studentResult) && studentResult.length > 1) {
                     const names = studentResult.slice(0,5).map(s => `${s.firstName} ${s.lastName} (${s.studentId})`).join(', ');
-                    this.addMessage('bot', `⚠️ Found ${studentResult.length} students matching "${params.student_name}": ${names}. Please be more specific or use the student ID.`);
+                    this.addMessage('bot', `⚠️ Found ${studentResult.length} students matching "${params.student_name}": ${names}. Please be more specific or use the student ID.`);
                     return;
                 }
                 const student = Array.isArray(studentResult) ? studentResult[0] : studentResult;
@@ -2520,7 +2520,7 @@ HOW-TO FOR ADMINS:
                     throw new Error(`Violation type "${params.violation_type_name}" not found.`);
                 }
                 if (Array.isArray(typeResult) && typeResult.length > 1) {
-                    this.addMessage('bot', `⚠️ Found multiple violation types matching "${params.violation_type_name}". Please be more specific.`);
+                    this.addMessage('bot', `⚠️ Found multiple violation types matching "${params.violation_type_name}". Please be more specific.`);
                     return;
                 }
                 violationTypeId = Array.isArray(typeResult) ? typeResult[0].id : typeResult.id;
