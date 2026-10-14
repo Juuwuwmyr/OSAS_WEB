@@ -1948,7 +1948,7 @@ HOW-TO FOR ADMINS:
                 }
             } catch (err) {
                 console.error(`Action ${action} failed:`, err);
-                this.addMessage('bot', `âš ï¸ I tried to perform that action but encountered an error: ${err.message}`);
+                this.addMessage('bot', `⚠️ I tried to perform that action but encountered an error: ${err.message}`);
             }
         }
     }
@@ -1963,7 +1963,7 @@ HOW-TO FOR ADMINS:
         });
         const data = await res.json();
         if (data.status === 'success') {
-            this.addMessage('bot', `âœ… Successfully created violation type: **${params.name}**`);
+            this.addMessage('bot', `✅ Successfully created violation type: **${params.name}**`);
             // Trigger UI refresh if we are on the violations page
             if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
         } else throw new Error(data.message);
@@ -1984,7 +1984,7 @@ HOW-TO FOR ADMINS:
         });
         const data = await res.json();
         if (data.status === 'success') {
-            this.addMessage('bot', `âœ… Successfully added level **${params.name}** to the violation type.`);
+            this.addMessage('bot', `✅ Successfully added level **${params.name}** to the violation type.`);
             if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
         } else throw new Error(data.message);
     }
@@ -2009,13 +2009,13 @@ HOW-TO FOR ADMINS:
                 if (window._studentsCache) {
                     window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
                 }
-                this.addMessage('bot', 'âœ… System reset complete. All students, sections, and departments have been cleared.\n\nYou can now go to **Students â†’ Import** to upload a fresh enrollment list and everything will be recreated automatically.');
+                this.addMessage('bot', '✅ System reset complete. All students, sections, and departments have been cleared.\n\nYou can now go to **Students â†’ Import** to upload a fresh enrollment list and everything will be recreated automatically.');
             } else {
                 throw new Error(data.message || 'Reset failed');
             }
         } catch (err) {
             console.error('handleResetSystem error:', err);
-            this.addMessage('bot', `âš ï¸ System reset failed: ${err.message}`);
+            this.addMessage('bot', `⚠️ System reset failed: ${err.message}`);
         }
     }
 
@@ -2025,7 +2025,7 @@ HOW-TO FOR ADMINS:
         // Validation check
         if (!params || !params.module) {
             console.error('Bot Export Error: Missing module parameter', params);
-            this.addMessage('bot', `âš ï¸ I tried to export a report but didn't know which module to use. Please specify if you want a **violations**, **students**, **departments**, or **sections** report.`);
+            this.addMessage('bot', `⚠️ I tried to export a report but didn't know which module to use. Please specify if you want a **violations**, **students**, **departments**, or **sections** report.`);
             return;
         }
 
@@ -2497,7 +2497,7 @@ HOW-TO FOR ADMINS:
                 }
                 if (Array.isArray(studentResult) && studentResult.length > 1) {
                     const names = studentResult.slice(0,5).map(s => `${s.firstName} ${s.lastName} (${s.studentId})`).join(', ');
-                    this.addMessage('bot', `âš ï¸ Found ${studentResult.length} students matching "${params.student_name}": ${names}. Please be more specific or use the student ID.`);
+                    this.addMessage('bot', `⚠️ Found ${studentResult.length} students matching "${params.student_name}": ${names}. Please be more specific or use the student ID.`);
                     return;
                 }
                 const student = Array.isArray(studentResult) ? studentResult[0] : studentResult;
@@ -2520,7 +2520,7 @@ HOW-TO FOR ADMINS:
                     throw new Error(`Violation type "${params.violation_type_name}" not found.`);
                 }
                 if (Array.isArray(typeResult) && typeResult.length > 1) {
-                    this.addMessage('bot', `âš ï¸ Found multiple violation types matching "${params.violation_type_name}". Please be more specific.`);
+                    this.addMessage('bot', `⚠️ Found multiple violation types matching "${params.violation_type_name}". Please be more specific.`);
                     return;
                 }
                 violationTypeId = Array.isArray(typeResult) ? typeResult[0].id : typeResult.id;
@@ -2585,7 +2585,7 @@ HOW-TO FOR ADMINS:
                 throw new Error(data.message || 'Failed to create violation.');
             }
             
-            this.addMessage('bot', `âœ… Violation recorded successfully! Case ID: ${data.data?.case_id || 'N/A'}\nLevel: ${nextLevel.name}`);
+            this.addMessage('bot', `✅ Violation recorded successfully! Case ID: ${data.data?.case_id || 'N/A'}\nLevel: ${nextLevel.name}`);
             
             // Refresh violations list if function exists
             if (typeof window.refreshViolationsList === 'function') {
