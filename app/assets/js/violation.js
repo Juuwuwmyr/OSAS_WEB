@@ -3637,7 +3637,28 @@ function initViolationsModule() {
                 return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth && matchesYear;
             });
 
-            console.log('ðŸ“‹ Filtered violations:', filteredViolations.length, 'items');
+            console.log('📋 Filtered violations:', filteredViolations.length, 'items');
+            
+            // ALWAYS sort violations by date/time (LATEST to OLDEST) after filtering
+            // This ensures violations are always displayed from newest to oldest regardless of filter combinations
+            filteredViolations.sort((a, b) => {
+                // Combine date and time for accurate sorting
+                const getDateTime = (v) => {
+                    const dateStr = v.dateReported || v.violationDate || v.date_reported || v.created_at || '';
+                    const timeStr = v.violationTime || v.time || '00:00:00';
+                    const fullDateTime = `${dateStr} ${timeStr}`;
+                    const dt = new Date(fullDateTime);
+                    return isNaN(dt.getTime()) ? 0 : dt.getTime();
+                };
+                
+                const dateTimeA = getDateTime(a);
+                const dateTimeB = getDateTime(b);
+                
+                // Sort DESC (newest first)
+                return dateTimeB - dateTimeA;
+            });
+            
+            console.log('✅ Violations sorted by date (latest to oldest)');
             
             // Pagination calculations
             totalRecords = filteredViolations.length;
