@@ -2869,7 +2869,10 @@ function initReportsModule() {
                 const data = await response.json();
                 
                 if (data.status === 'success' && sectionFilter) {
-                    allSections = data.data || [];
+                    // Handle both flat array (data.data) and paginated (data.data.data)
+                    const raw = data.data;
+                    allSections = Array.isArray(raw) ? raw
+                        : (Array.isArray(raw?.data) ? raw.data : []);
                     filterSectionsByDept('all');
                     console.log(`✅ Loaded ${allSections.length} sections`);
                 }
@@ -2881,13 +2884,16 @@ function initReportsModule() {
         function filterSectionsByDept(deptCode) {
             if (!sectionFilter) return;
 
+            // Guard: ensure allSections is always a real array
+            if (!Array.isArray(allSections)) allSections = [];
+
             const currentVal = sectionFilter.value;
 
             // Filter to matching sections (or all if no dept selected)
             const filtered = deptCode === 'all'
                 ? allSections
                 : allSections.filter(s =>
-                    (s.department_code || s.department || '').toUpperCase() === deptCode.toUpperCase()
+                    (s.department_code || '').toUpperCase() === deptCode.toUpperCase()
                 );
 
             // Rebuild the dropdown
@@ -2896,7 +2902,7 @@ function initReportsModule() {
                 const option = document.createElement('option');
                 option.value = section.section_code || section.code || section.id;
                 option.textContent = (section.section_code || section.code || '') +
-                    (section.section_name ? ' – ' + section.section_name : '');
+                    (section.section_name || section.name ? ' – ' + (section.section_name || section.name) : '');
                 sectionFilter.appendChild(option);
             });
 
