@@ -137,9 +137,8 @@ require_once __DIR__ . '/../../core/View.php';
             </select>
 
             <select id="ViolationsStatusFilter" class="Violations-filter-select">
-              <option value="all">All Records</option>
-              <option value="with_sanction">Has Sanction</option>
-              <option value="no_sanction">No Sanction</option>
+              <option value="all">All Types</option>
+              <!-- Populated dynamically by violation.js after types load -->
             </select>
           </div>
         </div>

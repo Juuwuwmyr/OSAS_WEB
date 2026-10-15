@@ -1714,6 +1714,23 @@ function initViolationsModule() {
 
         function renderViolationTypes() {
             const container = document.getElementById('violationTypesContainer');
+
+            // Populate the violation type filter dropdown in the violations list toolbar
+            if (statusFilter) {
+                const currentVal = statusFilter.value;
+                statusFilter.innerHTML = '<option value="all">All Types</option>';
+                violationTypes.filter(t => t.status !== 'archived').forEach(type => {
+                    const opt = document.createElement('option');
+                    opt.value = type.id;
+                    opt.textContent = type.name;
+                    statusFilter.appendChild(opt);
+                });
+                // Restore previous selection if still valid
+                if (Array.from(statusFilter.options).some(o => o.value === currentVal)) {
+                    statusFilter.value = currentVal;
+                }
+            }
+
             if (!container) return;
             
             container.innerHTML = '';
@@ -3577,9 +3594,7 @@ function initViolationsModule() {
                 const matchesDept = currentDept === 'all' || v.department === currentDept || v.department_code === currentDept;
                 const matchesStatus = currentView === 'current' ? (
                     statusValue === 'all' ||
-                    (statusValue === 'with_sanction' && v.sanctionName) ||
-                    (statusValue === 'no_sanction' && !v.sanctionName) ||
-                    v.status === statusValue  // backward compat
+                    String(v.violationType) === String(statusValue)
                 ) : true;
 
                 // Month filtering for archive
