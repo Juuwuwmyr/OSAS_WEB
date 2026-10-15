@@ -105,7 +105,7 @@ require_once __DIR__ . '/../../core/View.php';
         </select>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" style="display:none;">
         <label for="ReportsStatusFilter">Status</label>
         <select id="ReportsStatusFilter" class="Reports-filter-select">
           <option value="all">All Status</option>
@@ -651,6 +651,7 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
 
         <div class="filter-modal-group">
+        <div class="filter-modal-group" style="display:none;">
           <label for="FM_Status">Status</label>
           <select id="FM_Status" class="Reports-filter-select">
             <option value="all">All Status</option>
