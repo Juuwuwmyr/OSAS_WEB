@@ -305,10 +305,7 @@ function initReportsModule() {
                 const maxLevel = type.max_level || 3;
                 const level = Math.min(count, maxLevel);
 
-                let badgeClass;
-                if (level >= maxLevel) badgeClass = 'disciplinary';
-                else if (level >= Math.ceil(maxLevel / 2)) badgeClass = 'warning';
-                else badgeClass = 'permitted';
+                let badgeClass = 'warning'; // always orange for offense badges — green is reserved for resolved
 
                 const shortName = type.name.length > 14 ? `${type.name.slice(0, 12)}…` : type.name;
                 const offenseLabel = level >= maxLevel ? 'DISCIPLINARY' : `${getOrdinal(level)} OFFENSE`;
