@@ -1241,6 +1241,7 @@ function initReportsModule() {
                 if (sortByFilter) sortByFilter.value = 'total_desc';
                 if (dateRangeGroup) dateRangeGroup.style.display = 'none';
                 if (searchInput) searchInput.value = '';
+                filterSectionsByDept('all');
                 currentPage = 1;
                 loadReports(true, true); // Force refresh on clear
             });
@@ -1253,6 +1254,7 @@ function initReportsModule() {
                 if (sectionFilter) sectionFilter.value = 'all';
                 if (statusFilter) statusFilter.value = 'all';
                 if (violationTypeFilter) violationTypeFilter.value = 'all';
+                filterSectionsByDept('all');
                 currentPage = 1;
                 loadReports(true, true); // Force refresh on reset
             });
@@ -2925,6 +2927,11 @@ function initReportsModule() {
             // Restore previous selection if it still exists, otherwise reset to 'all'
             const exists = Array.from(sectionFilter.options).some(o => o.value === currentVal);
             sectionFilter.value = exists ? currentVal : 'all';
+
+            // Enable/disable based on whether a department is selected
+            sectionFilter.disabled = (deptCode === 'all');
+            sectionFilter.style.opacity = (deptCode === 'all') ? '0.45' : '';
+            sectionFilter.style.cursor  = (deptCode === 'all') ? 'not-allowed' : '';
         }
         
         // ========== INITIAL LOAD ==========
