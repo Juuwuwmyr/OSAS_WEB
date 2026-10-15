@@ -1177,6 +1177,9 @@ function initReportsModule() {
         // 10. FILTER FUNCTIONALITY
         if (deptFilter) {
             deptFilter.addEventListener('change', function() {
+                // Filter section dropdown to only show sections for the selected department
+                filterSectionsByDept(this.value);
+                if (sectionFilter) sectionFilter.value = 'all';
                 currentPage = 1;
                 loadReports(true, true); // Force refresh on filter change
             });
@@ -2857,31 +2860,49 @@ function initReportsModule() {
             }
         }
 
+        // All sections loaded from API — used to filter dropdown by department
+        let allSections = [];
+
         async function loadSections() {
             try {
                 const response = await fetch(API_BASE + 'sections.php');
                 const data = await response.json();
                 
                 if (data.status === 'success' && sectionFilter) {
-                    // Clear existing options except "All"
-                    const allOption = sectionFilter.querySelector('option[value="all"]');
-                    sectionFilter.innerHTML = '';
-                    if (allOption) {
-                        sectionFilter.appendChild(allOption);
-                    }
-                    
-                    // Add sections
-                    data.data.forEach(section => {
-                        const option = document.createElement('option');
-                        option.value = section.section_code || section.code || section.id;
-                        option.textContent = section.section_code || section.code || section.section_name || section.name;
-                        sectionFilter.appendChild(option);
-                    });
-                    console.log(`✅ Loaded ${data.data.length} sections`);
+                    allSections = data.data || [];
+                    filterSectionsByDept('all');
+                    console.log(`✅ Loaded ${allSections.length} sections`);
                 }
             } catch (error) {
                 console.error('❌ Error loading sections:', error);
             }
+        }
+
+        function filterSectionsByDept(deptCode) {
+            if (!sectionFilter) return;
+
+            const currentVal = sectionFilter.value;
+
+            // Filter to matching sections (or all if no dept selected)
+            const filtered = deptCode === 'all'
+                ? allSections
+                : allSections.filter(s =>
+                    (s.department_code || s.department || '').toUpperCase() === deptCode.toUpperCase()
+                );
+
+            // Rebuild the dropdown
+            sectionFilter.innerHTML = '<option value="all">All Sections</option>';
+            filtered.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.section_code || section.code || section.id;
+                option.textContent = (section.section_code || section.code || '') +
+                    (section.section_name ? ' – ' + section.section_name : '');
+                sectionFilter.appendChild(option);
+            });
+
+            // Restore previous selection if it still exists, otherwise reset to 'all'
+            const exists = Array.from(sectionFilter.options).some(o => o.value === currentVal);
+            sectionFilter.value = exists ? currentVal : 'all';
         }
         
         // ========== INITIAL LOAD ==========
