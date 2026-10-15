@@ -476,8 +476,11 @@ class StudentModel extends Model {
         try {
             $this->conn->begin_transaction();
 
-            // 1. Delete student user accounts
-            $this->conn->query("DELETE FROM users WHERE student_id IS NOT NULL AND role = 'user'");
+            // Do NOT delete user accounts — doing so would orphan conversations
+            // and direct_messages which reference users.id. Instead, mark them
+            // inactive. importAll() will reactivate them with the same user IDs,
+            // preserving all chat history.
+            $this->conn->query("UPDATE users SET is_active = 0 WHERE student_id IS NOT NULL AND role = 'user'");
 
             // 2. Clear students (TRUNCATE resets AUTO_INCREMENT too)
             $this->conn->query("SET FOREIGN_KEY_CHECKS = 0");
@@ -590,7 +593,7 @@ class StudentModel extends Model {
         $userInsertStmt = $this->conn->prepare(
             "INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())"
         );
-        $userUpdateStmt = $this->conn->prepare("UPDATE users SET full_name=?, is_active=1 WHERE id=?");
+        $userUpdateStmt = $this->conn->prepare("UPDATE users SET full_name=?, is_active=1, student_id=? WHERE id=?");
 
         $defaultPassword  = password_hash('password123', PASSWORD_DEFAULT);
         $processedInBatch = [];
@@ -624,10 +627,10 @@ class StudentModel extends Model {
                     );
                     $updateStmt->execute();
 
-                    // Update user full_name
+                    // Update user full_name and re-activate with same user ID (preserves conversations)
                     $userId = $existingUsers[$studentId] ?? null;
                     if ($userId) {
-                        $userUpdateStmt->bind_param("si", $fullName, $userId);
+                        $userUpdateStmt->bind_param("ssi", $fullName, $studentId, $userId);
                         $userUpdateStmt->execute();
                     }
                     $updated++;
