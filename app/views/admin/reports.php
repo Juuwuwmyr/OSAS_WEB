@@ -62,7 +62,10 @@ require_once __DIR__ . '/../../core/View.php';
     </div>
 
     <div id="ReportsTypeStatsContainer" class="Reports-stats-type-container">
-      <p class="Reports-stats-loading">Loading violation types...</p>
+      <div style="display:flex;align-items:center;gap:8px;color:var(--dark-grey);font-size:12px;padding:8px 0;">
+        <i class='bx bx-loader-alt bx-spin' style="font-size:16px;color:#D4AF37;"></i>
+        <span>Loading...</span>
+      </div>
     </div>
   </div>
 
