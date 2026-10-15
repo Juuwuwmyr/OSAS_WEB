@@ -5149,8 +5149,8 @@ body.dark .Violations-status-badge.resolved {
 .violation-list-item.warning::before      { background: #f59e0b; }
 .violation-list-item.disciplinary::before { background: #ef4444; }
 .violation-list-item.permitted::before    { background: #f59e0b; }
-.violation-list-item.resolved::before     { background: #3b82f6; }
-.violation-list-item.Resolved::before     { background: #3b82f6; }
+.violation-list-item.resolved::before     { background: #10b981; }
+.violation-list-item.Resolved::before     { background: #10b981; }
 .violation-list-item.Permitted::before    { background: #f59e0b; }
 
 .violation-list-item:hover {
