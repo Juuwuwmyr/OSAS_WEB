@@ -370,7 +370,7 @@ require_once __DIR__ . '/../../core/View.php';
 
         <div class="Reports-form-actions">
           <button type="button" class="Reports-btn-outline" id="cancelReportsModal">Cancel</button>
-          <button type="submit" class="Reports-btn-primary">
+          <button type="submit" id="btnSubmitGenerate" class="Reports-btn-primary">
             <i class='bx bx-file'></i> Generate Report
           </button>
         </div>

@@ -1429,6 +1429,16 @@ function initReportsModule() {
                     return;
                 }
 
+                // Disable button and show loading state to prevent spam
+                const submitBtn = document.getElementById('btnSubmitGenerate');
+                const originalBtnHTML = submitBtn ? submitBtn.innerHTML : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;
+                    submitBtn.style.opacity = '0.75';
+                    submitBtn.style.cursor = 'not-allowed';
+                }
+
                 try {
                     // Build request params
                     const params = new URLSearchParams();
@@ -1474,6 +1484,14 @@ function initReportsModule() {
                 } catch (error) {
                     console.error('Error generating reports:', error);
                     alert('Error generating reports: ' + error.message);
+                } finally {
+                    // Always restore button regardless of success or failure
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnHTML;
+                        submitBtn.style.opacity = '';
+                        submitBtn.style.cursor = '';
+                    }
                 }
             });
         }
