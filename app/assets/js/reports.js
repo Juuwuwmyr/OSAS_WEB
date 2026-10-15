@@ -1430,16 +1430,14 @@ function initReportsModule() {
                 }
 
                 try {
-                    // Generate reports from violations
+                    // Build request params
                     const params = new URLSearchParams();
                     params.append('generate', 'true');
                     if (startDate) params.append('startDate', startDate);
                     if (endDate) params.append('endDate', endDate);
-                    
                     if (reportFormat) params.append('reportFormat', reportFormat);
                     if (reportType) params.append('reportType', reportType);
 
-                    // Add filters
                     const departments = Array.from(document.querySelectorAll('input[name="departments"]:checked'))
                         .map(cb => cb.value).join(',');
                     if (departments) params.append('departments', departments);
@@ -1450,55 +1448,28 @@ function initReportsModule() {
 
                     const response = await fetch(API_BASE + 'reports.php?' + params.toString());
                     const data = await response.json();
-                    
-                if (data.status === 'success') {
-                    // Use message from server
-                    showSuccess(data.message || `Reports generated successfully!`);
-                    
-                    // Check for client-side download (PDF)
-                    if (reportFormat === 'pdf') {
-                        if (data.reports && data.reports.length > 0) {
-                            // Get the checkbox directly from the document to be absolutely sure
-                            const includeChartsCheckbox = document.getElementById('includeCharts');
-                            const isChecked = includeChartsCheckbox ? includeChartsCheckbox.checked : false;
-                            
-                            console.log('📊 Exporting report...', {
-                                format: reportFormat,
-                                totalReports: data.reports.length,
-                                isChecked: isChecked,
-                                selectedViolationTypes: data.selectedViolationTypes
-                            });
-                            
+
+                    if (data.status === 'success') {
+                        showSuccess(data.message || 'Reports generated successfully!');
+
+                        const includeChartsCheckbox = document.getElementById('includeCharts');
+                        const isChecked = includeChartsCheckbox ? includeChartsCheckbox.checked : false;
+
+                        if (!data.reports || data.reports.length === 0) {
+                            showError('No reports found for the selected criteria.');
+                        } else if (reportFormat === 'pdf') {
                             await downloadPDF(data.reports, reportName || 'Violation Report', isChecked, reportType, data.selectedViolationTypes);
-                        } else {
-                            showError('No reports found to export for the selected criteria.');
-                        }
-                    }
-                    
-                    closeGenerateModal();
-                    // Reload reports
-                    loadReports(true, true); // Force refresh after generating report
-                } else {
-                    showError('Error generating reports: ' + (data.message || 'Unknown error'));
-                }
-                    // Check for client-side download (DOCX)
-                    if (reportFormat === 'docx') {
-                        if (data.reports && data.reports.length > 0) {
-                            // Get the checkbox directly from the document to be absolutely sure
-                            const includeChartsCheckbox = document.getElementById('includeCharts');
-                            const isChecked = includeChartsCheckbox ? includeChartsCheckbox.checked : false;
-                            
-                            console.log('📝 Exporting DOCX report...', {
-                                format: reportFormat,
-                                totalReports: data.reports.length,
-                                isChecked: isChecked,
-                                selectedViolationTypes: data.selectedViolationTypes
-                            });
-                            
+                        } else if (reportFormat === 'docx') {
                             await downloadDOCX(data.reports, reportName || 'Violation Report', isChecked, data.selectedViolationTypes);
-                        } else {
-                            showError('No reports found to export for the selected criteria.');
+                        } else if (reportFormat === 'excel') {
+                            const filename = (reportName || 'Violation_Report').replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xls';
+                            await generateExcel(data.reports, filename);
                         }
+
+                        closeGenerateModal();
+                        loadReports(true, true);
+                    } else {
+                        showError('Error generating reports: ' + (data.message || 'Unknown error'));
                     }
                 } catch (error) {
                     console.error('Error generating reports:', error);

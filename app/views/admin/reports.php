@@ -313,6 +313,8 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="reportFormat">Format</label>
             <select id="reportFormat" name="reportFormat" required>
               <option value="pdf">PDF Document (Non-editable)</option>
+              <option value="docx">Word Document (.docx)</option>
+              <option value="excel">Excel Spreadsheet (.xlsx)</option>
             </select>
           </div>
         </div>
