@@ -158,8 +158,9 @@ class ReportController extends Controller {
             // Get reports
             $reports = $this->model->getStudentReports($filters);
             
-            // Get statistics
-            $stats = $this->model->getReportStats($filters);
+            // Get statistics — always use unfiltered counts so summary cards
+            // show global totals regardless of the current table filters
+            $stats = $this->model->getReportStats([]);
             $violationTypes = $this->model->getViolationTypesList();
             
             error_log("ReportController: Retrieved " . count($reports) . " reports");
