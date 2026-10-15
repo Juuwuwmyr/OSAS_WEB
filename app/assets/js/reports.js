@@ -2918,8 +2918,7 @@ function initReportsModule() {
             filtered.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section.section_code || section.code || section.id;
-                option.textContent = (section.section_code || section.code || '') +
-                    (section.section_name || section.name ? ' – ' + (section.section_name || section.name) : '');
+                option.textContent = section.section_code || section.code || section.section_name || section.name || section.id;
                 sectionFilter.appendChild(option);
             });
 
