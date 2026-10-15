@@ -325,6 +325,7 @@ class ReportModel extends Model {
         $department = $filters['department'] ?? 'all';
         $section = $filters['section'] ?? 'all';
         $status = $filters['status'] ?? 'all';
+        $violationType = $filters['violationType'] ?? 'all';
         $startDate = $filters['startDate'] ?? null;
         $endDate = $filters['endDate'] ?? null;
         $search = $filters['search'] ?? '';
@@ -365,6 +366,18 @@ class ReportModel extends Model {
             $query .= " AND r.status = ?";
             $params[] = $status;
             $types .= "s";
+        }
+
+        // Filter to students who have at least one active violation of the selected type
+        if ($violationType !== 'all' && !empty($violationType)) {
+            $query .= " AND EXISTS (
+                SELECT 1 FROM violations v
+                WHERE BINARY v.student_id = BINARY r.student_id
+                  AND v.violation_type_id = ?
+                  AND v.is_archived = 0
+            )";
+            $params[] = (int)$violationType;
+            $types .= "i";
         }
         
         if ($startDate && $endDate) {
