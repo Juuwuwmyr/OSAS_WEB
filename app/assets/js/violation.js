@@ -116,6 +116,7 @@ function initViolationsModule() {
         const searchInput = document.getElementById('searchViolation');
         const deptFilter = document.getElementById('ViolationsFilter');
         const statusFilter = document.getElementById('ViolationsStatusFilter');
+        const sortOrderFilter = document.getElementById('ViolationsSortOrder');
         const dateFromFilter = document.getElementById('ViolationDateFrom');
         const dateToFilter = document.getElementById('ViolationDateTo');
         const exportBtn = document.getElementById('btnExportViolations');
@@ -3654,10 +3655,9 @@ function initViolationsModule() {
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
             
-            // ALWAYS sort violations by date/time (LATEST to OLDEST) after filtering
-            // This ensures violations are always displayed from newest to oldest regardless of filter combinations
+            // Sort by date/time — direction controlled by the sort order dropdown
+            const sortDir = sortOrderFilter ? sortOrderFilter.value : 'desc';
             filteredViolations.sort((a, b) => {
-                // Combine date and time for accurate sorting
                 const getDateTime = (v) => {
                     const dateStr = v.dateReported || v.violationDate || v.date_reported || v.created_at || '';
                     const timeStr = v.violationTime || v.time || '00:00:00';
@@ -3665,12 +3665,9 @@ function initViolationsModule() {
                     const dt = new Date(fullDateTime);
                     return isNaN(dt.getTime()) ? 0 : dt.getTime();
                 };
-                
-                const dateTimeA = getDateTime(a);
-                const dateTimeB = getDateTime(b);
-                
-                // Sort DESC (newest first)
-                return dateTimeB - dateTimeA;
+
+                const diff = getDateTime(b) - getDateTime(a); // desc by default
+                return sortDir === 'asc' ? -diff : diff;
             });
             
             console.log('✅ Violations sorted by date (latest to oldest)');
@@ -6937,6 +6934,10 @@ function initViolationsModule() {
 
         if (statusFilter) {
             statusFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        }
+
+        if (sortOrderFilter) {
+            sortOrderFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         }
 
         if (dateFromFilter) {

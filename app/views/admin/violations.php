@@ -140,6 +140,11 @@ require_once __DIR__ . '/../../core/View.php';
               <option value="all">All Types</option>
               <!-- Populated dynamically by violation.js after types load -->
             </select>
+
+            <select id="ViolationsSortOrder" class="Violations-filter-select">
+              <option value="desc">Newest First</option>
+              <option value="asc">Oldest First</option>
+            </select>
           </div>
         </div>
 
