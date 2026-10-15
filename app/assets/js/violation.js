@@ -7265,6 +7265,7 @@ function initViolationsModule() {
                     updateStats();
                     loadDepartments();
                     addRefreshButton();
+                    renderViolationTypes(); // populate type filter dropdown from cache
                     loadViolations(false).then(() => { renderViolations(); updateStats(); });
                     loadStudents(false);
                     if (violationTypes.length === 0) loadViolationTypes();
