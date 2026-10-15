@@ -5,7 +5,8 @@ window.reportsGlobalCache = window.reportsGlobalCache || {
     reports: [],
     allReports: [],
     reportViolationTypes: [],
-    reportsLastLoaded: 0
+    reportsLastLoaded: 0,
+    globalStats: null  // unfiltered summary card data — never overwritten by table filters
 };
 
 function initReportsModule() {
@@ -78,6 +79,7 @@ function initReportsModule() {
         let allReports = window.reportsGlobalCache.allReports;
         let reportViolationTypes = window.reportsGlobalCache.reportViolationTypes;
         let reportsLastLoaded = window.reportsGlobalCache.reportsLastLoaded;
+        let globalStats = window.reportsGlobalCache.globalStats; // unfiltered card stats
         const REPORTS_CACHE_DURATION = 30000; // 30 seconds cache (shorter for real-time data)
         
         // Global cache invalidation function
@@ -458,6 +460,13 @@ function initReportsModule() {
                 window.reportsGlobalCache.allReports = allReports;
                 window.reportsGlobalCache.reportsLastLoaded = reportsLastLoaded;
 
+                // Cache the unfiltered stats for the summary cards — only update
+                // when the API returns stats (which are always unfiltered from the server)
+                if (data.stats) {
+                    globalStats = data.stats;
+                    window.reportsGlobalCache.globalStats = globalStats;
+                }
+
                 if (data.violationTypes && data.violationTypes.length) {
                     setReportViolationTypes(data.violationTypes);
                 }
@@ -484,7 +493,7 @@ function initReportsModule() {
                 if (data.stats) {
                     calculateStats(data.stats);
                 } else {
-                    calculateStats();
+                    calculateStats(globalStats || undefined);
                 }
                 
                 // Apply client-side filtering and sorting
@@ -713,7 +722,7 @@ function initReportsModule() {
                 }
             }
 
-            calculateStats();
+            calculateStats(globalStats || undefined);
             const showingEl = document.getElementById('showingReportsCount');
             const totalEl = document.getElementById('totalReportsCount');
             if (showingEl) showingEl.textContent = pageItems.length;
