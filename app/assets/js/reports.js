@@ -797,19 +797,11 @@ function initReportsModule() {
                 loadViolationTypes();
             }
             
-            // Set default dates
-            const today = new Date();
-            const startDate = document.getElementById('startDate');
-            const endDate = document.getElementById('endDate');
-            
-            if (startDate) {
-                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                startDate.value = firstDay.toISOString().split('T')[0];
-            }
-            
-            if (endDate) {
-                endDate.value = today.toISOString().split('T')[0];
-            }
+            // Start/End Date are optional — leave blank so default is all violations
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            if (startDateEl) startDateEl.value = '';
+            if (endDateEl) endDateEl.value = '';
         }
 
         function openDetailsModal(reportId) {
@@ -1432,7 +1424,7 @@ function initReportsModule() {
                 const startDate = document.getElementById('startDate').value;
                 const endDate = document.getElementById('endDate').value;
                 
-                if (!reportName || !reportType || !reportFormat || !startDate || !endDate) {
+                if (!reportName || !reportType || !reportFormat) {
                     alert('Please fill in all required fields.');
                     return;
                 }

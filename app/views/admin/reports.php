@@ -322,7 +322,7 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="startDate">Start Date</label>
             <div class="date-input-wrapper">
               <i class='bx bx-calendar'></i>
-              <input type="date" id="startDate" name="startDate" required>
+              <input type="date" id="startDate" name="startDate" placeholder="Optional">
             </div>
           </div>
           
@@ -330,7 +330,7 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="endDate">End Date</label>
             <div class="date-input-wrapper">
               <i class='bx bx-calendar'></i>
-              <input type="date" id="endDate" name="endDate" required>
+              <input type="date" id="endDate" name="endDate" placeholder="Optional">
             </div>
           </div>
         </div>
