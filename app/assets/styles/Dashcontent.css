@@ -433,11 +433,11 @@
 }
 
 #content main .table-data .violators .violator-list li.low-priority {
-    border-left: 10px solid #69f0ae;
+    border-left: 10px solid #ffab40;
 }
 
 #content main .table-data .violators .violator-list li.low-priority .violations {
-    color: #66bb6a;
+    color: #ffab40;
 }
 
 #content main .table-data .violators .violator-list li:last-child {
