@@ -643,11 +643,19 @@ class StudentModel extends Model {
                     );
                     $insertStmt->execute();
 
-                    // Create user account
-                    try {
-                        $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
-                        $userInsertStmt->execute();
-                    } catch (Exception $userEx) { /* user already exists */ }
+                    // Reuse existing user if present (e.g. after deleteAll — preserves conversations)
+                    // Otherwise create a fresh user account
+                    $existingUserId = $existingUsers[$studentId] ?? null;
+                    if ($existingUserId) {
+                        // Reactivate the old user with the SAME user ID — conversations stay intact
+                        $userUpdateStmt->bind_param("ssi", $fullName, $studentId, $existingUserId);
+                        $userUpdateStmt->execute();
+                    } else {
+                        try {
+                            $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
+                            $userInsertStmt->execute();
+                        } catch (Exception $userEx) { /* user already exists */ }
+                    }
 
                     $created++;
                 }
