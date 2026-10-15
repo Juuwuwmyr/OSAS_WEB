@@ -2865,17 +2865,34 @@ function initReportsModule() {
 
         async function loadSections() {
             try {
-                const response = await fetch(API_BASE + 'sections.php');
-                const data = await response.json();
-                
-                if (data.status === 'success' && sectionFilter) {
-                    // Handle both flat array (data.data) and paginated (data.data.data)
+                // Sections API is paginated — fetch all pages
+                let page = 1;
+                let collected = [];
+
+                while (true) {
+                    const response = await fetch(`${API_BASE}sections.php?page=${page}&limit=100`);
+                    const data = await response.json();
+
+                    if (data.status !== 'success') break;
+
+                    // Response shape: data.data.sections[] (paginated)
                     const raw = data.data;
-                    allSections = Array.isArray(raw) ? raw
-                        : (Array.isArray(raw?.data) ? raw.data : []);
-                    filterSectionsByDept('all');
-                    console.log(`✅ Loaded ${allSections.length} sections`);
+                    const batch = Array.isArray(raw)
+                        ? raw
+                        : (Array.isArray(raw?.sections) ? raw.sections
+                        : (Array.isArray(raw?.data) ? raw.data : []));
+
+                    if (batch.length === 0) break;
+                    collected = collected.concat(batch);
+
+                    const totalPages = raw?.total_pages ?? 1;
+                    if (page >= totalPages) break;
+                    page++;
                 }
+
+                allSections = collected;
+                filterSectionsByDept('all');
+                console.log(`✅ Loaded ${allSections.length} sections`);
             } catch (error) {
                 console.error('❌ Error loading sections:', error);
             }
