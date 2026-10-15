@@ -5695,6 +5695,17 @@ body.dark .Violations-status-badge.resolved {
   padding: 0 20px 20px;
 }
 
+#slipRequestsListView {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px;
+}
+
+#slipRequestsListView .violation-list-item {
+  margin-bottom: 0;
+}
+
 #slipRequestsTable {
   width: 100%;
   border-collapse: collapse;
