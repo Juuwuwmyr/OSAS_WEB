@@ -129,55 +129,13 @@ class ReportModel extends Model {
                   LEFT JOIN departments d ON s.department = d.department_code
                   LEFT JOIN sections sec ON s.section_id = sec.id
                   LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
-                  WHERE s.status != 'archived'";
+                  WHERE s.status != 'archived' AND v.is_archived = 0";
         
+        // NOTE: No date/dept/type filters here — the reports table is always a
+        // full all-time aggregate per student. Filtered views are handled by
+        // getStudentReports() which queries this table + the violations table.
         $params = [];
         $types = "";
-        
-        // Apply date filters if provided
-        if ($startDate && $endDate) {
-            $query .= " AND v.violation_date BETWEEN ? AND ?";
-            $params[] = $startDate;
-            $params[] = $endDate;
-            $types .= "ss";
-        } elseif ($startDate) {
-            $query .= " AND v.violation_date >= ?";
-            $params[] = $startDate;
-            $types .= "s";
-        } elseif ($endDate) {
-            $query .= " AND v.violation_date <= ?";
-            $params[] = $endDate;
-            $types .= "s";
-        }
-
-        // Apply department filters
-        if (!empty($filters['departments'])) {
-            $deptPlaceholders = implode(',', array_fill(0, count($filters['departments']), '?'));
-            $query .= " AND s.department IN ($deptPlaceholders)";
-            foreach ($filters['departments'] as $dept) {
-                $params[] = $dept;
-                $types .= "s";
-            }
-        }
-
-        // Apply violation type filters
-        if (!empty($filters['violationTypes'])) {
-            $violationConditions = [];
-            foreach ($filters['violationTypes'] as $type) {
-                if (is_numeric($type)) {
-                    $violationConditions[] = "v.violation_type_id = " . (int)$type;
-                } elseif ($type === 'uniform') {
-                    $violationConditions[] = "vt.name LIKE '%Uniform%'";
-                } elseif ($type === 'footwear') {
-                    $violationConditions[] = "(vt.name LIKE '%Footwear%' OR vt.name LIKE '%Shoe%')";
-                } elseif ($type === 'no_id') {
-                    $violationConditions[] = "vt.name LIKE '%ID%'";
-                }
-            }
-            if (!empty($violationConditions)) {
-                $query .= " AND (" . implode(' OR ', $violationConditions) . ")";
-            }
-        }
         
         $query .= " GROUP BY s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
                            s.contact_number, s.avatar, s.department, s.section_id, 
@@ -381,16 +339,32 @@ class ReportModel extends Model {
         }
         
         if ($startDate && $endDate) {
-            $query .= " AND r.report_period_start >= ? AND r.report_period_end <= ?";
+            // Filter to students who have at least one active violation in the date range
+            $query .= " AND EXISTS (
+                SELECT 1 FROM violations v2
+                WHERE BINARY v2.student_id = BINARY r.student_id
+                  AND v2.violation_date BETWEEN ? AND ?
+                  AND v2.is_archived = 0
+            )";
             $params[] = $startDate;
             $params[] = $endDate;
             $types .= "ss";
         } elseif ($startDate) {
-            $query .= " AND r.report_period_start >= ?";
+            $query .= " AND EXISTS (
+                SELECT 1 FROM violations v2
+                WHERE BINARY v2.student_id = BINARY r.student_id
+                  AND v2.violation_date >= ?
+                  AND v2.is_archived = 0
+            )";
             $params[] = $startDate;
             $types .= "s";
         } elseif ($endDate) {
-            $query .= " AND r.report_period_end <= ?";
+            $query .= " AND EXISTS (
+                SELECT 1 FROM violations v2
+                WHERE BINARY v2.student_id = BINARY r.student_id
+                  AND v2.violation_date <= ?
+                  AND v2.is_archived = 0
+            )";
             $params[] = $endDate;
             $types .= "s";
         }

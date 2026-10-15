@@ -60,14 +60,25 @@ class ReportController extends Controller {
                 if ($format === 'pdf' || $format === 'docx' || $format === 'excel') {
                     $reportFilters = [
                         'department' => $departments ?? 'all',
-                        'startDate' => $startDate,
-                        'endDate' => $endDate,
-                        'status' => 'all',
-                        'section' => 'all'
+                        'startDate'  => $startDate,
+                        'endDate'    => $endDate,
+                        'status'     => 'all',
+                        'section'    => 'all',
+                        'search'     => ''
                     ];
+
+                    // Pass the first violation type for the violationType filter
+                    // (EXISTS subquery in getStudentReports handles single type filtering;
+                    //  for multi-type the date-scoped typeCounts will reflect all types)
                     if ($violationTypes) {
-                        $reportFilters['violationType'] = $violationTypes;
+                        $vtArray = array_filter(array_map('trim', explode(',', $violationTypes)));
+                        // Only apply single-type filter if exactly one type selected
+                        if (count($vtArray) === 1) {
+                            $reportFilters['violationType'] = $vtArray[0];
+                        }
+                        // Multi-type: no restriction — all students in date/dept range are included
                     }
+
                     $reportsData = $this->model->getStudentReports($reportFilters);
                     
                     // Get selected violation types for charts
