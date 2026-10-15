@@ -3047,6 +3047,9 @@ HOW-TO FOR ADMINS:
         const bubbles = document.getElementById('cb-msg-bubbles');
         const loader  = document.getElementById('cb-msg-bubbles-loader');
         if (!bubbles) return;
+
+        // Dedup guard — skip if a bubble with this message ID already exists
+        if (msg.id && bubbles.querySelector(`[data-msg-id="${msg.id}"]`)) return;
         const myId  = parseInt(window.OSAS_MSG_USER_ID) || 0;
         const isMine = parseInt(msg.sender_id) === myId;
         const row = document.createElement('div');
