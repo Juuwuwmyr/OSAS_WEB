@@ -1613,6 +1613,11 @@ function attachSettingsModalEvents() {
                             null,
                             'delete'
                         );
+                        // Show Restore button immediately after successful delete
+                        const restoreBtn = document.getElementById('btnRestoreLastImport');
+                        const importInfo = document.getElementById('lastImportInfo');
+                        if (restoreBtn) restoreBtn.style.display = '';
+                        if (importInfo) importInfo.style.display = '';
                     } else {
                         showImportAlert(result.message || 'Failed to delete data.', 'error');
                     }
