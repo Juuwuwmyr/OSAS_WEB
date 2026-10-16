@@ -1143,13 +1143,18 @@ function createSettingsModal() {
                                 Warning: This will delete all students, their login accounts, all sections, and all departments.
                             </p>
                         </div>
-                        
-                        <div class="settings-actions">
+
+                        <div class="settings-actions" style="gap: 10px;">
                             <button type="button" class="settings-btn" id="btnDeleteAllData" style="background: #dc2626; color: white; border-color: #dc2626;">
                                 <i class='bx bx-trash'></i>
                                 <span>Delete All Data</span>
                             </button>
+                            <button type="button" class="settings-btn" id="btnRestoreLastImport" style="background: #16a34a; color: white; border-color: #16a34a; display: none;">
+                                <i class='bx bx-undo'></i>
+                                <span>Restore Last Import</span>
+                            </button>
                         </div>
+                        <p id="lastImportInfo" style="margin: 10px 0 0; font-size: 12px; color: #6b7280; display: none;"></p>
                     </div>
                 </div>
                 
@@ -1632,6 +1637,56 @@ function attachSettingsModalEvents() {
             };
             modal.removeEventListener('click', overlayHandler);
             modal.addEventListener('click', overlayHandler);
+        });
+    }
+
+    // ── Check if a last import file exists and show/hide Restore button ──────
+    (async () => {
+        try {
+            const res  = await fetch(getProjectRoot() + '/api/students.php?action=hasLastImport');
+            const data = await res.json();
+            const restoreBtn  = document.getElementById('btnRestoreLastImport');
+            const importInfo  = document.getElementById('lastImportInfo');
+            if (data.has_import && restoreBtn) {
+                restoreBtn.style.display = '';
+                if (importInfo) {
+                    importInfo.style.display = '';
+                    importInfo.textContent = `Last import: ${data.filename} (${data.modified})`;
+                }
+            }
+        } catch (e) { /* silent — restore button stays hidden */ }
+    })();
+
+    // ── Restore Last Import handler ──────────────────────────────────────────
+    const restoreImportBtn = document.getElementById('btnRestoreLastImport');
+    if (restoreImportBtn) {
+        restoreImportBtn.addEventListener('click', async () => {
+            if (!confirm('Re-import the last uploaded masterlist? This will restore all students, sections, and departments from that file.')) return;
+
+            restoreImportBtn.disabled = true;
+            restoreImportBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Restoring...</span>';
+
+            try {
+                const res    = await fetch(getProjectRoot() + '/api/students.php?action=restoreLastImport', { method: 'POST' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    const d = result.data || {};
+                    showSuccessModal(
+                        'Data Restored Successfully',
+                        `Students restored from last import — ${d.created ?? 0} created, ${d.updated ?? 0} updated, ${d.skipped ?? 0} skipped.`,
+                        null,
+                        'success'
+                    );
+                } else {
+                    showImportAlert(result.message || 'Restore failed.', 'error');
+                }
+            } catch (err) {
+                console.error('Restore import error:', err);
+                showImportAlert('Failed to restore. Please try again.', 'error');
+            } finally {
+                restoreImportBtn.disabled = false;
+                restoreImportBtn.innerHTML = '<i class="bx bx-undo"></i><span>Restore Last Import</span>';
+            }
         });
     }
 

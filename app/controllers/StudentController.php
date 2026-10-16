@@ -366,7 +366,16 @@ class StudentController extends Controller {
 
             $results = $this->model->importAll($jsonData);
             
-            // Cleanup
+            // Keep a copy as the "last import" so it can be restored after Delete All
+            $lastImportDir = __DIR__ . '/../../uploads/imports/';
+            // Remove any previous last_import.* files
+            foreach (glob($lastImportDir . 'last_import.*') as $old) {
+                @unlink($old);
+            }
+            $lastImportPath = $lastImportDir . 'last_import.' . $ext;
+            @copy($filepath, $lastImportPath);
+
+            // Cleanup original upload
             unlink($filepath);
             $jsonFile = __DIR__ . '/../../../scripts/students_data_' . basename($filename, '.' . $ext) . '.json';
             if (file_exists($jsonFile)) unlink($jsonFile);
@@ -376,6 +385,61 @@ class StudentController extends Controller {
             if (file_exists($filepath)) unlink($filepath);
             $this->error('Import failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Restore last import — re-runs importAll() using the saved last_import file.
+     * Called after "Delete All Data" to bring students/sections/departments back.
+     */
+    public function restoreLastImport() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $importDir = __DIR__ . '/../../uploads/imports/';
+        $found = glob($importDir . 'last_import.*');
+        if (empty($found)) {
+            $this->error('No previous import found. Please upload a masterlist file first.');
+        }
+
+        $filepath = $found[0];
+        $ext = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+
+        try {
+            set_time_limit(300);
+            ini_set('memory_limit', '256M');
+
+            if ($ext === 'csv') {
+                $jsonData = $this->parseCSV($filepath);
+            } elseif ($ext === 'xlsx' || $ext === 'xls') {
+                $jsonData = $this->parseExcelWithPython($filepath);
+            } else {
+                $this->error('Saved import file has unsupported format.');
+            }
+
+            if (!$jsonData || !isset($jsonData['students'])) {
+                $this->error('Failed to parse saved import file.');
+            }
+
+            $results = $this->model->importAll($jsonData);
+            $this->success('Data restored successfully from last import!', $results);
+        } catch (Exception $e) {
+            $this->error('Restore failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check whether a last_import file exists (for the UI to show/hide the Restore button).
+     */
+    public function hasLastImport() {
+        $importDir = __DIR__ . '/../../uploads/imports/';
+        $found = glob($importDir . 'last_import.*');
+        $this->json([
+            'status' => 'success',
+            'has_import' => !empty($found),
+            'filename' => !empty($found) ? basename($found[0]) : null,
+            'modified' => !empty($found) ? date('M d, Y', filemtime($found[0])) : null,
+        ]);
     }
 
     private function parseCSV($filepath) {

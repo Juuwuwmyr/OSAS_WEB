@@ -43,6 +43,12 @@ switch ($action) {
     case 'deleteAll':
         $controller->deleteAll();
         break;
+    case 'restoreLastImport':
+        $controller->restoreLastImport();
+        break;
+    case 'hasLastImport':
+        $controller->hasLastImport();
+        break;
     default:
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $controller->index();
