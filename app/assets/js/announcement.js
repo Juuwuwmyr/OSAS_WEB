@@ -422,11 +422,11 @@
             title: 'Archive Announcement?',
             message: 'This will hide the announcement from the public. You can restore it anytime from the archived list.',
             icon: 'bx-archive',
-            iconBg: '#fef3c7',
-            iconColor: '#d97706',
+            iconBg: '#fee2e2',
+            iconColor: '#ef4444',
             confirmText: 'Archive',
-            confirmBg: '#d97706',
-            confirmShadow: 'rgba(217,119,6,0.3)'
+            confirmBg: '#ef4444',
+            confirmShadow: 'rgba(239,68,68,0.3)'
         });
         if (!confirmed) return;
         try {
