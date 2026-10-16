@@ -161,7 +161,7 @@ class AnnouncementController extends Controller {
                 require_once __DIR__ . '/../services/PushNotificationService.php';
                 (new PushNotificationService())->notifyAllStudents(
                     ucfirst($type) . ' announcement: ' . $title,
-                    strlen($message) > 120 ? substr($message, 0, 117) . '...' : $message,
+                    (function($msg) { $plain = trim(strip_tags(html_entity_decode($msg, ENT_QUOTES | ENT_HTML5, 'UTF-8'))); return strlen($plain) > 120 ? substr($plain, 0, 117) . '...' : $plain; })($message),
                     ['type' => 'announcement', 'id' => (int) $id, 'page' => 'user-page/announcements', 'tag' => 'announcement-' . $id, 'url' => '/']
                 );
                 ob_end_clean();
