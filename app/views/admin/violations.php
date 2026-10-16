@@ -103,7 +103,6 @@ require_once __DIR__ . '/../../core/View.php';
         <h2 class="Violations-table-title" id="violationsTableTitle">Violations List</h2>
         <div class="Violations-tabs">
           <button class="Violations-tab-btn active" data-view="current">Current Month</button>
-          <button class="Violations-tab-btn" data-view="archive">Archive</button>
           <button class="Violations-tab-btn" data-view="requests">Slip Requests</button>
         </div>
       </div>
