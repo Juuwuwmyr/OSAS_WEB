@@ -418,7 +418,17 @@
     }
 
     async function archiveAnnouncement(id) {
-        if (!confirm('Archive this announcement?')) return;
+        const confirmed = await showAnnouncementConfirmModal({
+            title: 'Archive Announcement?',
+            message: 'This will hide the announcement from the public. You can restore it anytime from the archived list.',
+            icon: 'bx-archive',
+            iconBg: '#fef3c7',
+            iconColor: '#d97706',
+            confirmText: 'Archive',
+            confirmBg: '#d97706',
+            confirmShadow: 'rgba(217,119,6,0.3)'
+        });
+        if (!confirmed) return;
         try {
             const response = await fetch(`${ANNOUNCEMENT_API}?action=archive&id=${id}`, { method: 'POST', credentials: 'same-origin' });
             const data = await response.json();
@@ -429,6 +439,88 @@
         } catch (error) {
             notify('Error: ' + error.message, 'error');
         }
+    }
+
+    /**
+     * Reusable custom confirmation modal for the announcements module.
+     * Returns a Promise<boolean> — resolves true on confirm, false on cancel.
+     */
+    function showAnnouncementConfirmModal({ title, message, icon, iconBg, iconColor, confirmText, confirmBg, confirmShadow }) {
+        return new Promise((resolve) => {
+            // Remove any stale instance
+            const existing = document.getElementById('announcementConfirmModal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'announcementConfirmModal';
+            modal.style.cssText = `
+                display:flex; position:fixed; inset:0; z-index:999999;
+                align-items:center; justify-content:center;
+                background:rgba(0,0,0,0.45);
+                font-family:var(--poppins,'Poppins',sans-serif);
+                animation:fadeInBg 0.18s ease;
+            `;
+            modal.innerHTML = `
+                <div style="
+                    background:#fff; border-radius:20px; padding:36px 32px 28px;
+                    max-width:420px; width:90%; box-shadow:0 24px 64px rgba(0,0,0,0.18);
+                    text-align:center; font-family:var(--poppins,'Poppins',sans-serif);
+                    animation:slideUpIn 0.22s cubic-bezier(.34,1.56,.64,1);
+                ">
+                    <div style="
+                        width:64px; height:64px; border-radius:50%;
+                        background:${iconBg}; display:flex; align-items:center;
+                        justify-content:center; margin:0 auto 20px;
+                        box-shadow:0 4px 16px ${confirmShadow};
+                    ">
+                        <i class='bx ${icon}' style="font-size:30px; color:${iconColor};"></i>
+                    </div>
+                    <h3 style="
+                        margin:0 0 10px; font-size:19px; font-weight:700;
+                        color:#111827; letter-spacing:-0.2px;
+                        font-family:var(--poppins,'Poppins',sans-serif);
+                    ">${title}</h3>
+                    <p style="
+                        margin:0 0 28px; color:#6b7280; font-size:13.5px;
+                        line-height:1.65; font-family:var(--poppins,'Poppins',sans-serif);
+                    ">${message}</p>
+                    <div style="display:flex; gap:10px;">
+                        <button id="announcementConfirmCancel" style="
+                            flex:1; padding:11px; border:1.5px solid #e5e7eb;
+                            border-radius:10px; background:#fff; cursor:pointer;
+                            font-size:13.5px; font-weight:600; color:#6b7280;
+                            font-family:var(--poppins,'Poppins',sans-serif);
+                            transition:all 0.18s;
+                        ">Cancel</button>
+                        <button id="announcementConfirmOk" style="
+                            flex:1; padding:11px; border:none; border-radius:10px;
+                            background:${confirmBg}; color:#fff; cursor:pointer;
+                            font-size:13.5px; font-weight:600;
+                            font-family:var(--poppins,'Poppins',sans-serif);
+                            box-shadow:0 4px 12px ${confirmShadow};
+                            transition:all 0.18s;
+                        ">${confirmText}</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeInBg   { from { opacity:0 } to { opacity:1 } }
+                    @keyframes slideUpIn  { from { opacity:0; transform:translateY(24px) scale(0.97) } to { opacity:1; transform:none } }
+                </style>
+            `;
+
+            document.body.appendChild(modal);
+
+            const cleanup = (result) => {
+                modal.style.animation = 'fadeInBg 0.15s ease reverse forwards';
+                setTimeout(() => modal.remove(), 150);
+                resolve(result);
+            };
+
+            modal.querySelector('#announcementConfirmOk').addEventListener('click', () => cleanup(true));
+            modal.querySelector('#announcementConfirmCancel').addEventListener('click', () => cleanup(false));
+            // Click backdrop to cancel
+            modal.addEventListener('click', (e) => { if (e.target === modal) cleanup(false); });
+        });
     }
 
     async function restoreAnnouncement(id) {
