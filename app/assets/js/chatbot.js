@@ -1615,7 +1615,13 @@ HOW-TO FOR ADMINS:
             `;
         }
 
-        container.appendChild(row);
+        // Insert before the loading indicator so it always stays at the bottom
+        const loadingEl = document.getElementById('chatbot-loading');
+        if (loadingEl && loadingEl.parentNode === container) {
+            container.insertBefore(row, loadingEl);
+        } else {
+            container.appendChild(row);
+        }
         container.scrollTop = container.scrollHeight;
     }
 
@@ -2130,9 +2136,14 @@ HOW-TO FOR ADMINS:
                 </div>
             `;
 
-            container.appendChild(row);
+            // Insert before the loading indicator so it always stays at the bottom
+            const loadingEl = document.getElementById('chatbot-loading');
+            if (loadingEl && loadingEl.parentNode === container) {
+                container.insertBefore(row, loadingEl);
+            } else {
+                container.appendChild(row);
+            }
             container.scrollTop = container.scrollHeight;
-            console.log('ðŸ¤– handleExportPDF - Download button added to DOM');
 
             // Attach click event to the newly created button
             const btn = row.querySelector('.cb-download-btn');
