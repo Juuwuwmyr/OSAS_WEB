@@ -1,4 +1,4 @@
-// violations.js - COMPLETE WORKING VERSION
+﻿// violations.js - COMPLETE WORKING VERSION
 function initViolationsModule() {
     // Prevent double initialization to avoid duplicate event listeners and race conditions
     // This fixes the "Violation details not found" error caused by duplicate table click handlers
@@ -4750,7 +4750,7 @@ function initViolationsModule() {
                         const clicked = studentHistory.find(v => v.id == vid) || violations.find(v => v.id == vid);
                         if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
-                        const label = `${clicked.violationLevelLabel || ''} "” ${clicked.violationTypeLabel || ''} Â· ${formatDate(clicked.dateReported || clicked.date)}`;
+                        const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
                         const imageAttachments = clicked.attachments.filter(f => {
                             const s = String(f);
                             // blob: object URLs are always images (we only create them from File objects)
