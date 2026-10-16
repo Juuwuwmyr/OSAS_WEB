@@ -945,6 +945,10 @@ HOW-TO FOR ADMINS:
 
         // Clear current chat
         container.innerHTML = '';
+
+        // Re-append the loading indicator (hidden) so showLoading/hideLoading keep working
+        const loadingEl = document.getElementById('chatbot-loading');
+        if (loadingEl) { loadingEl.style.display = 'none'; container.appendChild(loadingEl); }
         this.conversationHistory = session.messages ? [...session.messages] : [];
         this.currentSessionId = session.id;
 
@@ -1032,6 +1036,9 @@ HOW-TO FOR ADMINS:
                     <div class="cb-bubble cb-bot-bubble">${welcomeText}</div>
                 </div>
             `;
+            // Re-append the loading indicator (hidden) so showLoading/hideLoading keep working
+            const loadingEl = document.getElementById('chatbot-loading');
+            if (loadingEl) { loadingEl.style.display = 'none'; container.appendChild(loadingEl); }
         }
 
         // Re-enable input

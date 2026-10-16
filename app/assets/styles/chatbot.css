@@ -436,7 +436,7 @@ body.dark .cb-chip:hover {
 
 /* ── Typing indicator ────────────────────────────────────── */
 .cb-typing {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 8px;
     padding: 8px 16px 12px;
