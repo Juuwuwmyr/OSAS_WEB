@@ -1460,8 +1460,8 @@ HOW-TO FOR ADMINS:
         const _exportMatch = (function(msg) {
             const m = msg.toLowerCase();
 
-            // Must want some kind of file or output
-            if (!/\b(download|export|generate|give|create|make|get|produce|print|save|show|list|summarize|summary|report|pdf|docx|word|excel|csv|file|doc|i-download|i-export|gawa|gawin|kumuha|bigyan|ibigay|ipakita)\b/.test(m)) return null;
+            // Must want some kind of file or output — keep only unambiguous export-intent words
+            if (!/\b(download|export|generate|report|pdf|docx|excel|csv|i-download|i-export|gawa(?:in)?\s+report|kumuha(?:\s+ng)?\s+report|bigyan(?:\s+ng)?\s+report)\b/.test(m)) return null;
 
             // Optional date filter
             let dateFilter = null;
@@ -1493,8 +1493,8 @@ HOW-TO FOR ADMINS:
                 return { module: 'sections', date: dateFilter };
             }
 
-            // Generic request with no specific module → default to violations
-            return { module: 'violations', date: dateFilter };
+            // No specific module matched — do not guess; return null to avoid false triggers
+            return null;
         })(message);
 
         // Show loading

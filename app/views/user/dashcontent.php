@@ -318,7 +318,12 @@ require_once __DIR__ . '/../../core/View.php';
 
 // ── Compliance ring (called by userDashboardData after load) ──
 window.updateComplianceRing = function (total, resolved) {
-  var pct = total > 0 ? Math.round((resolved / total) * 100) : 100;
+  // Compliance is based on how few unresolved violations the student has.
+  // Scale: 0 unresolved = 100%, each unresolved violation costs 20% (floor at 0%).
+  // Max threshold = 5 violations means 0% compliance.
+  var unresolved = Math.max(0, total - resolved);
+  var MAX_VIOLATIONS = 5;
+  var pct = total === 0 ? 100 : Math.max(0, Math.round((1 - unresolved / MAX_VIOLATIONS) * 100));
   var fill = document.getElementById('sdRingFill');
   var pctEl = document.getElementById('sdRingPct');
   var chip  = document.getElementById('sdStatusChip');
