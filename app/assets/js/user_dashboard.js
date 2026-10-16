@@ -697,9 +697,12 @@ function fetchAndUpdateUserTopnavAvatar() {
         }
 
         // 2. Update mobile sidebar profile avatar (.msb-avatar-wrap)
-        const msbInitials = document.querySelector('.msb-avatar-wrap .msb-avatar-initials');
-        if (msbInitials) {
-          // Replace initials span with actual image
+        const msbWrap = document.querySelector('.msb-avatar-wrap');
+        if (msbWrap) {
+          const existingMsbImg = msbWrap.querySelector('.msb-avatar-img');
+          if (existingMsbImg) existingMsbImg.remove();
+
+          const msbInitials = msbWrap.querySelector('.msb-avatar-initials');
           const msbImg = document.createElement('img');
           msbImg.src = avatarPath;
           msbImg.alt = 'Profile';
@@ -708,8 +711,8 @@ function fetchAndUpdateUserTopnavAvatar() {
             this.remove();
             if (msbInitials) msbInitials.style.display = 'flex';
           };
-          msbInitials.style.display = 'none';
-          msbInitials.parentNode.insertBefore(msbImg, msbInitials);
+          if (msbInitials) msbInitials.style.display = 'none';
+          msbWrap.insertBefore(msbImg, msbInitials || msbWrap.firstChild);
         }
 
         // Also update localStorage so next load is instant
