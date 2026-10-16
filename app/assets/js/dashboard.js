@@ -1226,6 +1226,25 @@ function createSettingsModal() {
                 </div>
             </div>
         </div>
+
+        <!-- RESTORE LAST IMPORT CONFIRMATION MODAL -->
+        <div id="SettingsRestoreModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;align-items:center;justify-content:center;font-family:var(--poppins,'Poppins',sans-serif);">
+            <div style="background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.18);text-align:center;font-family:var(--poppins,'Poppins',sans-serif);">
+                <div style="width:64px;height:64px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 4px 16px rgba(22,163,74,0.2);">
+                    <i class='bx bx-undo' style="font-size:30px;color:#16a34a;"></i>
+                </div>
+                <h3 style="margin:0 0 10px;font-size:19px;font-weight:700;color:#111827;font-family:var(--poppins,'Poppins',sans-serif);letter-spacing:-0.2px;">Restore Last Import?</h3>
+                <p style="margin:0 0 20px;color:#6b7280;font-size:13.5px;line-height:1.65;font-family:var(--poppins,'Poppins',sans-serif);">This will re-import the last uploaded masterlist and restore all <strong style="color:#374151;">students</strong>, <strong style="color:#374151;">sections</strong>, and <strong style="color:#374151;">departments</strong> from that file.</p>
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px 16px;margin-bottom:24px;display:flex;align-items:flex-start;gap:8px;text-align:left;">
+                    <i class='bx bx-info-circle' style="font-size:16px;color:#16a34a;margin-top:1px;flex-shrink:0;"></i>
+                    <p style="margin:0;font-size:12.5px;color:#166534;font-family:var(--poppins,'Poppins',sans-serif);line-height:1.55;">Existing records will be updated and new ones created. No data currently in the system will be deleted.</p>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button id="btnSettingsRestoreCancel" style="flex:1;padding:11px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;font-size:13.5px;font-family:var(--poppins,'Poppins',sans-serif);font-weight:600;color:#6b7280;transition:all 0.18s;">Cancel</button>
+                    <button id="btnSettingsRestoreConfirm" style="flex:1;padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;cursor:pointer;font-size:13.5px;font-weight:600;font-family:var(--poppins,'Poppins',sans-serif);box-shadow:0 4px 12px rgba(22,163,74,0.3);transition:all 0.18s;">Restore</button>
+                </div>
+            </div>
+        </div>
     `;
 
     document.body.appendChild(overlay);
@@ -1665,33 +1684,53 @@ function attachSettingsModalEvents() {
     // ── Restore Last Import handler ──────────────────────────────────────────
     const restoreImportBtn = document.getElementById('btnRestoreLastImport');
     if (restoreImportBtn) {
-        restoreImportBtn.addEventListener('click', async () => {
-            if (!confirm('Re-import the last uploaded masterlist? This will restore all students, sections, and departments from that file.')) return;
+        restoreImportBtn.addEventListener('click', () => {
+            const restoreModal   = document.getElementById('SettingsRestoreModal');
+            const cancelBtn      = document.getElementById('btnSettingsRestoreCancel');
+            const confirmBtn     = document.getElementById('btnSettingsRestoreConfirm');
+            if (!restoreModal || !cancelBtn || !confirmBtn) return;
 
-            restoreImportBtn.disabled = true;
-            restoreImportBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Restoring...</span>';
+            // Show the modal
+            restoreModal.style.display = 'flex';
 
-            try {
-                const res    = await fetch(getProjectRoot() + '/api/students.php?action=restoreLastImport', { method: 'POST' });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    const d = result.data || {};
-                    showSuccessModal(
-                        'Data Restored Successfully',
-                        `Students restored from last import — ${d.created ?? 0} created, ${d.updated ?? 0} updated, ${d.skipped ?? 0} skipped.`,
-                        null,
-                        'success'
-                    );
-                } else {
-                    showImportAlert(result.message || 'Restore failed.', 'error');
+            // Cancel — close modal without doing anything
+            const cancelHandler = () => {
+                restoreModal.style.display = 'none';
+            };
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            document.getElementById('btnSettingsRestoreCancel').addEventListener('click', cancelHandler);
+
+            // Confirm — run the restore
+            const freshConfirm = confirmBtn.cloneNode(true);
+            confirmBtn.replaceWith(freshConfirm);
+            document.getElementById('btnSettingsRestoreConfirm').addEventListener('click', async () => {
+                restoreModal.style.display = 'none';
+
+                restoreImportBtn.disabled = true;
+                restoreImportBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i><span>Restoring...</span>';
+
+                try {
+                    const res    = await fetch(getProjectRoot() + '/api/students.php?action=restoreLastImport', { method: 'POST' });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const d = result.data || {};
+                        showSuccessModal(
+                            'Data Restored Successfully',
+                            `Students restored from last import — ${d.created ?? 0} created, ${d.updated ?? 0} updated, ${d.skipped ?? 0} skipped.`,
+                            null,
+                            'success'
+                        );
+                    } else {
+                        showImportAlert(result.message || 'Restore failed.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Restore import error:', err);
+                    showImportAlert('Failed to restore. Please try again.', 'error');
+                } finally {
+                    restoreImportBtn.disabled = false;
+                    restoreImportBtn.innerHTML = '<i class="bx bx-undo"></i><span>Restore Last Import</span>';
                 }
-            } catch (err) {
-                console.error('Restore import error:', err);
-                showImportAlert('Failed to restore. Please try again.', 'error');
-            } finally {
-                restoreImportBtn.disabled = false;
-                restoreImportBtn.innerHTML = '<i class="bx bx-undo"></i><span>Restore Last Import</span>';
-            }
+            });
         });
     }
 
